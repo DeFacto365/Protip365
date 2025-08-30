@@ -19,6 +19,8 @@ struct ShiftsCalendarView: View {
     @State private var tipOut = ""
     @State private var selectedEmployerId: UUID? = nil
     @State private var employers: [Employer] = []
+    @State private var didntWork = false
+    @State private var didntWorkReason = ""
     
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
@@ -27,6 +29,35 @@ struct ShiftsCalendarView: View {
     
     enum TimePickerField {
         case start, end
+    }
+    
+    enum DidntWorkReason: String, CaseIterable {
+        case sick = "sick"
+        case cancelledByEmployer = "cancelled_by_employer"
+        case cancelledByMe = "cancelled_by_me"
+        
+        var localizedText: String {
+            switch self {
+            case .sick:
+                switch language {
+                case "fr": return "J'étais malade"
+                case "es": return "Estaba enfermo"
+                default: return "I was sick"
+                }
+            case .cancelledByEmployer:
+                switch language {
+                case "fr": return "Mon quart a été annulé par l'employeur"
+                case "es": return "Mi turno fue cancelado por el empleador"
+                default: return "My shift was cancelled by employer"
+                }
+            case .cancelledByMe:
+                switch language {
+                case "fr": return "J'ai dû annuler mon quart"
+                case "es": return "Tuve que cancelar mi turno"
+                default: return "I had to cancel my shift"
+                }
+            }
+        }
     }
     
     // Check if date is in the future
@@ -155,11 +186,17 @@ struct ShiftsCalendarView: View {
                 Divider()
             }
             
+            // Didn't Work Section (only for past/today dates)
+            if !isFutureDate {
+                Divider()
+                didntWorkSection
+            }
+            
             // Time Section
             timeSelectionView
             
             // Earnings Section
-            if !isFutureDate {
+            if !isFutureDate && !didntWork {
                 Divider()
                 earningsFormView
             }
@@ -202,6 +239,48 @@ struct ShiftsCalendarView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
     
+    // MARK: - Didn't Work Section
+    var didntWorkSection: some View {
+        VStack(spacing: 12) {
+            // Didn't Work Toggle
+            HStack {
+                Toggle(isOn: $didntWork) {
+                    Text(didntWorkText)
+                        .foregroundColor(.primary)
+                }
+                .onChange(of: didntWork) { _, newValue in
+                    if newValue {
+                        // Clear time and earnings when didn't work is selected
+                        startTime = Date()
+                        endTime = Date()
+                        hours = ""
+                        sales = ""
+                        tips = ""
+                        tipOut = ""
+                    }
+                }
+            }
+            
+            // Reason Dropdown (only show if didn't work is selected)
+            if didntWork {
+                HStack {
+                    Text(reasonText)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Picker("", selection: $didntWorkReason) {
+                        ForEach(DidntWorkReason.allCases, id: \.self) { reason in
+                            Text(reason.localizedText).tag(reason.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(.blue)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+    }
+    
     // MARK: - Time Selection View
     var timeSelectionView: some View {
         Group {
@@ -212,6 +291,7 @@ struct ShiftsCalendarView: View {
                 Spacer()
                 DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
+                    .disabled(didntWork)
                     .focused($focusedTimePicker, equals: .start)
                     .onChange(of: startTime) { _, _ in
                         calculateHours()
@@ -233,6 +313,7 @@ struct ShiftsCalendarView: View {
                 Spacer()
                 DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
+                    .disabled(didntWork)
                     .focused($focusedTimePicker, equals: .end)
                     .onChange(of: endTime) { _, _ in
                         calculateHours()
@@ -582,6 +663,9 @@ struct ShiftsCalendarView: View {
     
     // MARK: - Computed Properties
     var isFormValid: Bool {
+        if didntWork {
+            return !didntWorkReason.isEmpty
+        }
         let calculatedHours = endTime.timeIntervalSince(startTime) / 3600
         return calculatedHours > 0
     }
@@ -871,14 +955,15 @@ struct ShiftsCalendarView: View {
                     let employer_id: UUID?
                     let start_time: String?
                     let end_time: String?
+                    let notes: String?
                 }
                 
                 // Calculate hours from start/end time
-                let calculatedHours = endTime.timeIntervalSince(startTime) / 3600
+                let calculatedHours = didntWork ? 0 : endTime.timeIntervalSince(startTime) / 3600
                 
-                let salesValue = isFutureDate ? 0 : (Double(sales) ?? 0)
-                let tipsValue = isFutureDate ? 0 : (Double(tips) ?? 0)
-                let tipOutValue = isFutureDate ? nil : Double(tipOut)
+                let salesValue = isFutureDate || didntWork ? 0 : (Double(sales) ?? 0)
+                let tipsValue = isFutureDate || didntWork ? 0 : (Double(tips) ?? 0)
+                let tipOutValue = isFutureDate || didntWork ? nil : Double(tipOut)
                 
                 let newShift = NewShift(
                     user_id: userId,
@@ -889,8 +974,9 @@ struct ShiftsCalendarView: View {
                     cash_out: tipOutValue,
                     hourly_rate: hourlyRate,
                     employer_id: selectedEmployerId,
-                    start_time: startTimeString,
-                    end_time: endTimeString
+                    start_time: didntWork ? nil : startTimeString,
+                    end_time: didntWork ? nil : endTimeString,
+                    notes: didntWork ? didntWorkReason : nil
                 )
                 
                 if let editingShift = editingShift {
@@ -1030,6 +1116,22 @@ struct ShiftsCalendarView: View {
         case "fr": return "Supprimer le quart"
         case "es": return "Eliminar turno"
         default: return "Delete Shift"
+        }
+    }
+    
+    var didntWorkText: String {
+        switch language {
+        case "fr": return "Je n'ai pas travaillé"
+        case "es": return "No trabajé"
+        default: return "Didn't work"
+        }
+    }
+    
+    var reasonText: String {
+        switch language {
+        case "fr": return "Raison"
+        case "es": return "Razón"
+        default: return "Reason"
         }
     }
 }
