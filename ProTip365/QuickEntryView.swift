@@ -18,6 +18,17 @@ struct QuickEntryView: View {
     var isShiftMode: Bool = false
     var onSave: () -> Void
     var onCancel: () -> Void
+    
+    // Time picker states
+    @State private var startTime = Date()
+    @State private var endTime = Date()
+    @State private var selectedEmployerId: UUID? = nil
+    @State private var employers: [Employer] = []
+    @FocusState private var focusedTimePicker: TimePickerField?
+    
+    enum TimePickerField {
+        case start, end
+    }
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
     @Environment(\.dismiss) var dismiss
@@ -52,6 +63,13 @@ struct QuickEntryView: View {
         entryDate > Date()
     }
     
+    func calculateHours() {
+        let hours = endTime.timeIntervalSince(startTime) / 3600
+        if hours > 0 {
+            entryHours = String(format: "%.1f", hours)
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -76,21 +94,61 @@ struct QuickEntryView: View {
                     }
                 }
                 
-                Section {
-                    HStack {
-                        Text(hoursLabel)
-                        Spacer()
-                        TextField("0.0", text: $entryHours)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .focused($focusedField, equals: .hours)
-                            .frame(width: 100)
-                            .onChange(of: entryHours) { _, _ in
-                                // Auto-dismiss keyboard after a short delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    focusedField = nil
+                // Employer Selection
+                if useEmployers {
+                    Section {
+                        HStack {
+                            Text(employerLabel)
+                            Spacer()
+                            Picker("", selection: $selectedEmployerId) {
+                                Text("None").tag(nil as UUID?)
+                                ForEach(employers) { employer in
+                                    Text(employer.name).tag(employer.id as UUID?)
                                 }
                             }
+                            .pickerStyle(.menu)
+                            .tint(.blue)
+                        }
+                    }
+                }
+                
+                // Time Selection
+                Section {
+                    HStack {
+                        Text(startsText)
+                        Spacer()
+                        DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                            .focused($focusedTimePicker, equals: .start)
+                            .onChange(of: startTime) { _, _ in
+                                calculateHours()
+                                // Dismiss picker after selection
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    focusedTimePicker = nil
+                                }
+                            }
+                    }
+                    
+                    HStack {
+                        Text(endsText)
+                        Spacer()
+                        DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                            .focused($focusedTimePicker, equals: .end)
+                            .onChange(of: endTime) { _, _ in
+                                calculateHours()
+                                // Dismiss picker after selection
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    focusedTimePicker = nil
+                                }
+                            }
+                    }
+                    
+                    HStack {
+                        Text(hoursText)
+                        Spacer()
+                        Text(entryHours.isEmpty ? "0.0" : entryHours)
+                            .foregroundColor(.secondary)
                         if getHoursTarget() > 0 && !isShiftMode {
                             Text("/ \(String(format: "%.0f", getHoursTarget()))")
                                 .font(.caption)
@@ -200,6 +258,9 @@ struct QuickEntryView: View {
             }
             .navigationTitle(editingShift != nil ? editShiftTitle : (isShiftMode ? newShiftTitle : newEntryTitle))
             .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadEmployers()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(cancelButton) {
@@ -261,6 +322,27 @@ struct QuickEntryView: View {
         return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
     }
     
+    func loadEmployers() async {
+        guard useEmployers else { return }
+        
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            let employers: [Employer] = try await SupabaseManager.shared.client
+                .from("employers")
+                .select()
+                .eq("user_id", value: userId)
+                .order("name")
+                .execute()
+                .value
+            
+            await MainActor.run {
+                self.employers = employers
+            }
+        } catch {
+            print("Error loading employers: \(error)")
+        }
+    }
+    
     // Localization
     var newEntryTitle: String {
         switch language {
@@ -299,6 +381,30 @@ struct QuickEntryView: View {
         case "fr": return "Employeur"
         case "es": return "Empleador"
         default: return "Employer"
+        }
+    }
+    
+    var startsText: String {
+        switch language {
+        case "fr": return "Début"
+        case "es": return "Inicio"
+        default: return "Starts"
+        }
+    }
+    
+    var endsText: String {
+        switch language {
+        case "fr": return "Fin"
+        case "es": return "Fin"
+        default: return "Ends"
+        }
+    }
+    
+    var hoursText: String {
+        switch language {
+        case "fr": return "Heures"
+        case "es": return "Horas"
+        default: return "Hours"
         }
     }
     
