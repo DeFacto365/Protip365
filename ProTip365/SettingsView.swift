@@ -74,7 +74,7 @@ struct SettingsView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Name Section
@@ -89,7 +89,7 @@ struct SettingsView: View {
                             .cornerRadius(8)
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Language Section
@@ -106,7 +106,7 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Work Defaults Section
@@ -153,7 +153,7 @@ struct SettingsView: View {
                         }
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Tip Targets Section
@@ -181,7 +181,7 @@ struct SettingsView: View {
                                   color: .purple)
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Sales Targets Section
@@ -209,7 +209,7 @@ struct SettingsView: View {
                                   color: .orange)
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Hours Targets Section
@@ -240,7 +240,7 @@ struct SettingsView: View {
                                   isHours: true)
                     }
                     .padding()
-                    .glassCard()
+                    .liquidGlassCard()
                     .padding(.horizontal)
                     
                     // Save Button
