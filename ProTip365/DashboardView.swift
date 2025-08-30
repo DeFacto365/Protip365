@@ -275,7 +275,7 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("v1.0.10")
+                    Text("v1.0.11")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -28,13 +28,23 @@ struct QuickEntryView: View {
     var calculatedSalary: Double {
         let hours = Double(entryHours) ?? 0
         let rate = useEmployers ? (employerHourlyRate ?? hourlyRate) : hourlyRate
+        
+        // Prevent NaN values
+        guard !hours.isNaN && !rate.isNaN else { return 0 }
+        guard hours >= 0 && rate >= 0 else { return 0 }
+        
         return hours * rate
     }
     
     var calculatedTotal: Double {
         let tips = Double(entryTips) ?? 0
         let tipOut = Double(entryTipOut) ?? 0
-        return calculatedSalary + tips - tipOut
+        let salary = calculatedSalary
+        
+        // Prevent NaN values
+        guard !tips.isNaN && !tipOut.isNaN && !salary.isNaN else { return 0 }
+        
+        return salary + tips - tipOut
     }
     
     var isFutureDate: Bool {
@@ -174,25 +184,43 @@ struct QuickEntryView: View {
     
     func getSalesTarget() -> Double {
         switch currentPeriod {
-        case 1: return userTargets.weeklySales / 7
-        case 2: return userTargets.monthlySales / 30
-        default: return userTargets.dailySales
+        case 1: 
+            let target = userTargets.weeklySales / 7
+            return target.isNaN ? 0 : target
+        case 2: 
+            let target = userTargets.monthlySales / 30
+            return target.isNaN ? 0 : target
+        default: 
+            let target = userTargets.dailySales
+            return target.isNaN ? 0 : target
         }
     }
     
     func getTipsTarget() -> Double {
         switch currentPeriod {
-        case 1: return userTargets.weeklyTips / 7
-        case 2: return userTargets.monthlyTips / 30
-        default: return userTargets.dailyTips
+        case 1: 
+            let target = userTargets.weeklyTips / 7
+            return target.isNaN ? 0 : target
+        case 2: 
+            let target = userTargets.monthlyTips / 30
+            return target.isNaN ? 0 : target
+        default: 
+            let target = userTargets.dailyTips
+            return target.isNaN ? 0 : target
         }
     }
     
     func getHoursTarget() -> Double {
         switch currentPeriod {
-        case 1: return userTargets.weeklyHours / 7
-        case 2: return userTargets.monthlyHours / 30
-        default: return userTargets.dailyHours
+        case 1: 
+            let target = userTargets.weeklyHours / 7
+            return target.isNaN ? 0 : target
+        case 2: 
+            let target = userTargets.monthlyHours / 30
+            return target.isNaN ? 0 : target
+        default: 
+            let target = userTargets.dailyHours
+            return target.isNaN ? 0 : target
         }
     }
     
