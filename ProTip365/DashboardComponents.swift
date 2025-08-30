@@ -6,6 +6,7 @@ struct GlassStatCard: View {
     let value: String
     let icon: String
     let color: Color
+    let subtitle: String?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -31,6 +32,14 @@ struct GlassStatCard: View {
                     .foregroundStyle(.primary)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
             }
         }
         .padding(16)

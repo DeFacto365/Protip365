@@ -42,12 +42,12 @@ struct SettingsView: View {
                     VStack(spacing: 16) {
                         // Logo Icon
                         ZStack {
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.purple)
-                                .frame(width: 80, height: 80)
+                                .frame(width: 60, height: 60)
                             
                             Text("%")
-                                .font(.system(size: 40, weight: .bold))
+                                .font(.system(size: 30, weight: .bold))
                                 .foregroundColor(.orange)
                         }
                         
@@ -154,6 +154,22 @@ struct SettingsView: View {
                     }
                     .padding()
                     .liquidGlassCard()
+                    .padding(.horizontal)
+                    
+                    // Targets Explanation
+                    VStack(spacing: 8) {
+                        Text("🎯 Set your goals")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("Set daily, weekly, and monthly targets. Your dashboard will show progress like '2.0/8h' for hours worked vs expected.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
                     .padding(.horizontal)
                     
                     // Tip Targets Section

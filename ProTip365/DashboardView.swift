@@ -119,7 +119,8 @@ struct DashboardView: View {
                                         title: totalSalaryText,
                                         value: formatIncomeWithTarget(),
                                         icon: "dollarsign.circle.fill",
-                                        color: .green
+                                        color: .green,
+                                        subtitle: "Base pay from hours worked"
                                     )
                                     .onTapGesture {
                                         if !currentStats.shifts.isEmpty {
@@ -138,7 +139,8 @@ struct DashboardView: View {
                                             title: tipsText,
                                             value: formatTipsWithTarget(),
                                             icon: "banknote.fill",
-                                            color: .blue
+                                            color: .blue,
+                                            subtitle: "Customer tips received"
                                         )
                                         .onTapGesture {
                                             if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
@@ -172,7 +174,8 @@ struct DashboardView: View {
                                         title: tipOutText,
                                         value: currentStats.tipOut > 0 ? "-" + formatCurrency(currentStats.tipOut) : formatCurrency(0),
                                         icon: "minus.circle.fill",
-                                        color: .red
+                                        color: .red,
+                                        subtitle: "Tips shared with team"
                                     )
                                     .onTapGesture {
                                         if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
@@ -189,7 +192,8 @@ struct DashboardView: View {
                                         title: totalRevenueText,
                                         value: formatCurrency(currentStats.totalRevenue),
                                         icon: "chart.line.uptrend.xyaxis",
-                                        color: .orange
+                                        color: .orange,
+                                        subtitle: "Salary + tips - tip out"
                                     )
                                     .onTapGesture {
                                         if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
@@ -209,7 +213,8 @@ struct DashboardView: View {
                                         title: hoursWorkedText,
                                         value: formatHoursWithTarget(),
                                         icon: "clock.fill",
-                                        color: .teal
+                                        color: .teal,
+                                        subtitle: "Actual vs expected hours"
                                     )
                                     .onTapGesture {
                                         if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
@@ -226,7 +231,8 @@ struct DashboardView: View {
                                         title: salesText,
                                         value: formatSalesWithTarget(),
                                         icon: "cart.fill",
-                                        color: .indigo
+                                        color: .indigo,
+                                        subtitle: "Total sales served"
                                     )
                                     .onTapGesture {
                                         if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
@@ -269,7 +275,7 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("v1.0.9")
+                    Text("v1.0.10")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

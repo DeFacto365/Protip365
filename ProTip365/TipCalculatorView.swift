@@ -37,6 +37,22 @@ struct TipCalculatorView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
+                        // Helpful explanation
+                        VStack(spacing: 8) {
+                            Text("💡 Quick tip calculator")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("Enter your bill amount and adjust tip percentage. Split the total between multiple people if needed.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                        
                         // Bill Amount Input Card - MORE COMPACT
                         VStack(spacing: 12) {
                             HStack {

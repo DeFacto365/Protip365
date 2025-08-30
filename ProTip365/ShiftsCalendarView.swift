@@ -48,6 +48,24 @@ struct ShiftsCalendarView: View {
                 // Form Section
                 ScrollView {
                     VStack(spacing: 20) {
+                        // Helpful explanation
+                        if dailyShifts.isEmpty && !isAddingNew {
+                            VStack(spacing: 8) {
+                                Text("📅 Schedule your shifts")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                
+                                Text("• Future dates: Schedule expected shifts (no earnings shown)\n• Past dates: Record actual work with earnings")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding()
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
+                        
                         // Show form if editing/adding or no shifts
                         if editingShift != nil || isAddingNew || dailyShifts.isEmpty {
                             shiftFormView
