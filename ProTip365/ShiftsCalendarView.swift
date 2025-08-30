@@ -23,6 +23,11 @@ struct ShiftsCalendarView: View {
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
+    @FocusState private var focusedTimePicker: TimePickerField?
+    
+    enum TimePickerField {
+        case start, end
+    }
     
     // Check if date is in the future
     var isFutureDate: Bool {
@@ -73,6 +78,7 @@ struct ShiftsCalendarView: View {
                             saveShift()
                         }
                         .disabled(!isFormValid)
+
                     }
                 }
             }
@@ -146,7 +152,7 @@ struct ShiftsCalendarView: View {
                 Button(action: {
                     showDeleteAlert = true
                 }) {
-                    Text("Delete Shift")
+                    Text(deleteShiftText)
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -162,7 +168,7 @@ struct ShiftsCalendarView: View {
     // MARK: - Employer Selection View
     var employerSelectionView: some View {
         HStack {
-            Text("Employer")
+            Text(employerText)
                 .foregroundColor(.primary)
             Spacer()
             Picker("", selection: $selectedEmployerId) {
@@ -183,13 +189,18 @@ struct ShiftsCalendarView: View {
         Group {
             // Start Time
             HStack {
-                Text("Starts")
+                Text(startsText)
                     .foregroundColor(.primary)
                 Spacer()
                 DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
+                    .focused($focusedTimePicker, equals: .start)
                     .onChange(of: startTime) { _, _ in
                         calculateHours()
+                        // Dismiss picker after selection
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            focusedTimePicker = nil
+                        }
                     }
             }
             .padding()
@@ -199,13 +210,18 @@ struct ShiftsCalendarView: View {
             
             // End Time
             HStack {
-                Text("Ends")
+                Text(endsText)
                     .foregroundColor(.primary)
                 Spacer()
                 DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
+                    .focused($focusedTimePicker, equals: .end)
                     .onChange(of: endTime) { _, _ in
                         calculateHours()
+                        // Dismiss picker after selection
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            focusedTimePicker = nil
+                        }
                     }
             }
             .padding()
@@ -215,7 +231,7 @@ struct ShiftsCalendarView: View {
             
             // Hours (calculated)
             HStack {
-                Text("Hours")
+                Text(isFutureDate ? expectedHoursText : hoursText)
                     .foregroundColor(.secondary)
                 Spacer()
                 Text(hours.isEmpty ? "0.0" : hours)
@@ -300,10 +316,10 @@ struct ShiftsCalendarView: View {
             
             Divider()
             
-            ForEach(dailyShifts.sorted { $0.start_time ?? "" < $1.start_time ?? "" }, id: \.id) { shift in
+            ForEach(dailyShifts.sorted(by: { $0.start_time ?? "" < $1.start_time ?? "" }), id: \.id) { shift in
                 shiftRowView(shift: shift)
                 
-                if shift.id != dailyShifts.sorted { $0.start_time ?? "" < $1.start_time ?? "" }.last?.id {
+                if shift.id != dailyShifts.sorted(by: { $0.start_time ?? "" < $1.start_time ?? "" }).last?.id {
                     Divider()
                 }
             }
@@ -354,11 +370,26 @@ struct ShiftsCalendarView: View {
                     
                     Spacer()
                     
-                    // Total income
-                    Text(formatCurrency(shift.total_income ?? 0))
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.green)
+                    // Check if this is a future shift (expected vs actual)
+                    let isFutureShift = isShiftInFuture(shift.shift_date)
+                    
+                    if isFutureShift {
+                        // Future shift - show expected hours only
+                        Text(expectedText)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                    } else {
+                        // Past/today shift - show actual earnings
+                        Text(formatCurrency(shift.total_income ?? 0))
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+                    }
                 }
                 
                 // Employer if enabled
@@ -373,36 +404,52 @@ struct ShiftsCalendarView: View {
                     }
                 }
                 
-                // Details row
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading) {
-                        Text("Sales")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(formatCurrency(shift.sales))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    
-                    VStack(alignment: .leading) {
-                        Text("Tips")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(formatCurrency(shift.tips))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    
-                    if (shift.cash_out ?? 0) > 0 {
+                // Details row - only show for actual shifts (past/today)
+                let isFutureShift = isShiftInFuture(shift.shift_date)
+                
+                if !isFutureShift {
+                    HStack(spacing: 20) {
                         VStack(alignment: .leading) {
-                            Text("Tip Out")
+                            Text("Sales")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(formatCurrency(shift.cash_out ?? 0))
+                            Text(formatCurrency(shift.sales))
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundColor(.red)
                         }
+                        
+                        VStack(alignment: .leading) {
+                            Text("Tips")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(formatCurrency(shift.tips))
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        
+                        if (shift.cash_out ?? 0) > 0 {
+                            VStack(alignment: .leading) {
+                                Text("Tip Out")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formatCurrency(shift.cash_out ?? 0))
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                } else {
+                    // Future shift - show expected hours only
+                    HStack {
+                        Text(expectedHoursText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(shift.hours, specifier: "%.1f")h")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
                     }
                 }
                 
@@ -517,7 +564,8 @@ struct ShiftsCalendarView: View {
     
     // MARK: - Computed Properties
     var isFormValid: Bool {
-        !hours.isEmpty && hours != "0" && hours != "0.0"
+        let calculatedHours = endTime.timeIntervalSince(startTime) / 3600
+        return calculatedHours > 0
     }
     
     var weekDays: [Date] {
@@ -543,6 +591,19 @@ struct ShiftsCalendarView: View {
     }
     
     // MARK: - Helper Functions
+    func isShiftInFuture(_ shiftDateString: String) -> Bool {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let shiftDate = dateFormatter.date(from: shiftDateString) else { return false }
+        
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let shiftDay = calendar.startOfDay(for: shiftDate)
+        
+        return shiftDay > today
+    }
+    
     func dayOfWeekText(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE"
@@ -766,6 +827,7 @@ struct ShiftsCalendarView: View {
         Task {
             do {
                 let userId = try await SupabaseManager.shared.client.auth.session.user.id
+                
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
                 
@@ -793,13 +855,20 @@ struct ShiftsCalendarView: View {
                     let end_time: String?
                 }
                 
+                // Calculate hours from start/end time
+                let calculatedHours = endTime.timeIntervalSince(startTime) / 3600
+                
+                let salesValue = isFutureDate ? 0 : (Double(sales) ?? 0)
+                let tipsValue = isFutureDate ? 0 : (Double(tips) ?? 0)
+                let tipOutValue = isFutureDate ? nil : Double(tipOut)
+                
                 let newShift = NewShift(
                     user_id: userId,
                     shift_date: dateFormatter.string(from: selectedDate),
-                    hours: Double(hours) ?? 0,
-                    sales: isFutureDate ? 0 : (Double(sales) ?? 0),
-                    tips: isFutureDate ? 0 : (Double(tips) ?? 0),
-                    cash_out: isFutureDate ? nil : Double(tipOut),
+                    hours: calculatedHours,
+                    sales: salesValue,
+                    tips: tipsValue,
+                    cash_out: tipOutValue,
                     hourly_rate: hourlyRate,
                     employer_id: selectedEmployerId,
                     start_time: startTimeString,
@@ -887,6 +956,62 @@ struct ShiftsCalendarView: View {
         case "fr": return "Ajouter une nouvelle entrée"
         case "es": return "Agregar nueva entrada"
         default: return "Add New Entry"
+        }
+    }
+    
+    var expectedText: String {
+        switch language {
+        case "fr": return "Prévu"
+        case "es": return "Previsto"
+        default: return "Expected"
+        }
+    }
+    
+    var expectedHoursText: String {
+        switch language {
+        case "fr": return "Heures prévues"
+        case "es": return "Horas previstas"
+        default: return "Expected Hours"
+        }
+    }
+    
+    var hoursText: String {
+        switch language {
+        case "fr": return "Heures"
+        case "es": return "Horas"
+        default: return "Hours"
+        }
+    }
+    
+    var startsText: String {
+        switch language {
+        case "fr": return "Commence"
+        case "es": return "Empieza"
+        default: return "Starts"
+        }
+    }
+    
+    var endsText: String {
+        switch language {
+        case "fr": return "Termine"
+        case "es": return "Termina"
+        default: return "Ends"
+        }
+    }
+    
+    var employerText: String {
+        switch language {
+        case "fr": return "Employeur"
+        case "es": return "Empleador"
+        default: return "Employer"
+        }
+    }
+    
+    var deleteShiftText: String {
+        switch language {
+        case "fr": return "Supprimer le quart"
+        case "es": return "Eliminar turno"
+        default: return "Delete Shift"
         }
     }
 }

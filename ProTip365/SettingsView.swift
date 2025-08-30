@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var showSuggestIdeas = false
     @State private var suggestionText = ""
     @State private var isSendingSuggestion = false
-    @State private var saveButtonText = "Save Settings"
+    @State private var saveButtonText = ""
     @State private var isSaving = false
     @State private var showError = false
     @State private var errorMessage = ""
@@ -38,19 +38,35 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // User Info Card
-                    VStack(spacing: 12) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.linearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
+                    // App Logo Card
+                    VStack(spacing: 16) {
+                        // Logo Icon
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.purple)
+                                .frame(width: 80, height: 80)
+                            
+                            Text("%")
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(.orange)
+                        }
+                        
+                        // App Name
+                        HStack(spacing: 0) {
+                            Text("ProTip")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.purple)
+                            
+                            Text("365")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.orange)
+                        }
                         
                         Text(userName.isEmpty ? "User" : userName)
-                            .font(.title2)
-                            .fontWeight(.semibold)
+                            .font(.headline)
+                            .fontWeight(.medium)
                         
                         Text(userEmail)
                             .font(.subheadline)
@@ -63,11 +79,11 @@ struct SettingsView: View {
                     
                     // Name Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Name", systemImage: "person.fill")
+                        Label(nameLabel, systemImage: "person.fill")
                             .font(.headline)
                             .foregroundColor(.secondary)
                         
-                        TextField("Your name", text: $userName)
+                        TextField(yourNamePlaceholder, text: $userName)
                             .padding(8)
                             .background(.ultraThinMaterial)
                             .cornerRadius(8)
@@ -398,11 +414,12 @@ struct SettingsView: View {
             await loadUserInfo()
             await loadSettings()
             useMultipleEmployers = useMultipleEmployersStorage
+            saveButtonText = saveSettingsText
         }
         .onChange(of: saveButtonText) { _, newValue in
-            if newValue == "Saved!" {
+            if newValue == savedText {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    saveButtonText = "Save Settings"
+                    saveButtonText = saveSettingsText
                 }
             }
         }
@@ -558,7 +575,7 @@ struct SettingsView: View {
                 
                 await MainActor.run {
                     isSaving = false
-                    saveButtonText = "Saved!"
+                    saveButtonText = savedText
                     
                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                     impactFeedback.impactOccurred()
@@ -636,7 +653,7 @@ struct SettingsView: View {
                 let session = try await SupabaseManager.shared.client.auth.session
                 
                 // Get Supabase URL from your SupabaseManager
-                let supabaseURL = "https://ebffiippfaebdaaddbo-a4bo.supabase.co" // Your actual Supabase URL
+                let supabaseURL = "https://ztzpjsbfzcccvbacgskc.supabase.co" // Your actual Supabase URL
                 guard let url = URL(string: "\(supabaseURL)/functions/v1/send-suggestion") else {
                     throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }
@@ -716,6 +733,38 @@ struct SettingsView: View {
         case "fr": return "Choisir la langue"
         case "es": return "Elegir idioma"
         default: return "Choose Language"
+        }
+    }
+    
+    var nameLabel: String {
+        switch language {
+        case "fr": return "Nom"
+        case "es": return "Nombre"
+        default: return "Name"
+        }
+    }
+    
+    var yourNamePlaceholder: String {
+        switch language {
+        case "fr": return "Votre nom"
+        case "es": return "Su nombre"
+        default: return "Your name"
+        }
+    }
+    
+    var saveSettingsText: String {
+        switch language {
+        case "fr": return "Enregistrer"
+        case "es": return "Guardar"
+        default: return "Save Settings"
+        }
+    }
+    
+    var savedText: String {
+        switch language {
+        case "fr": return "Enregistré!"
+        case "es": return "¡Guardado!"
+        default: return "Saved!"
         }
     }
     

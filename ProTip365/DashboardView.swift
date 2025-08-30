@@ -24,6 +24,7 @@ struct DashboardView: View {
     
     @AppStorage("language") private var language = "en"
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
+    @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     
     struct Stats {
         var hours: Double = 0
@@ -140,7 +141,7 @@ struct DashboardView: View {
                                             color: .blue
                                         )
                                         .onTapGesture {
-                                            if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                            if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                                 selectedDetailType = "tips"
                                                 detailShifts = currentStats.shifts
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -174,7 +175,7 @@ struct DashboardView: View {
                                         color: .red
                                     )
                                     .onTapGesture {
-                                        if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                             selectedDetailType = "tipout"
                                             detailShifts = currentStats.shifts
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -191,7 +192,7 @@ struct DashboardView: View {
                                         color: .orange
                                     )
                                     .onTapGesture {
-                                        if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                             selectedDetailType = "revenue"
                                             detailShifts = currentStats.shifts
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -211,7 +212,7 @@ struct DashboardView: View {
                                         color: .teal
                                     )
                                     .onTapGesture {
-                                        if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                             selectedDetailType = "hours"
                                             detailShifts = currentStats.shifts
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -228,19 +229,19 @@ struct DashboardView: View {
                                         color: .indigo
                                     )
                                     .onTapGesture {
-                                        if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                             selectedDetailType = "sales"
                                             detailShifts = currentStats.shifts
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                                 showingDetail = true
                                             }
                                             HapticFeedback.light()
+                                            }
                                         }
-                                    }
                                 }
                                 
                                 // Show hint for clickable cards
-                                if selectedPeriod != 0 && !currentStats.shifts.isEmpty {
+                                if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
                                     Text(tapToViewDetailsText)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
@@ -266,6 +267,13 @@ struct DashboardView: View {
             }
             .navigationTitle(dashboardTitle)
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Text("v1.0.8")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
             .sheet(isPresented: $showingDetail) {
                 DetailView(
                     shifts: detailShifts.sorted { $0.shift_date > $1.shift_date },
@@ -289,6 +297,9 @@ struct DashboardView: View {
                     userTargets: userTargets,
                     currentPeriod: selectedPeriod,
                     hourlyRate: defaultHourlyRate,
+                    useEmployers: useMultipleEmployers,
+                    employerName: nil,
+                    employerHourlyRate: nil,
                     onSave: saveQuickEntry,
                     onCancel: {
                         showingQuickEntry = false
@@ -308,6 +319,9 @@ struct DashboardView: View {
                     userTargets: userTargets,
                     currentPeriod: selectedPeriod,
                     hourlyRate: shift.hourly_rate ?? defaultHourlyRate,
+                    useEmployers: useMultipleEmployers,
+                    employerName: shift.employer_name,
+                    employerHourlyRate: shift.hourly_rate,
                     onSave: { updateShift(shift) },
                     onCancel: {
                         editingShift = nil

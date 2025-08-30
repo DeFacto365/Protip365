@@ -12,6 +12,9 @@ struct QuickEntryView: View {
     var userTargets: DashboardView.UserTargets
     var currentPeriod: Int
     var hourlyRate: Double
+    var useEmployers: Bool = false
+    var employerName: String? = nil
+    var employerHourlyRate: Double? = nil
     var onSave: () -> Void
     var onCancel: () -> Void
     @AppStorage("language") private var language = "en"
@@ -24,7 +27,8 @@ struct QuickEntryView: View {
     
     var calculatedSalary: Double {
         let hours = Double(entryHours) ?? 0
-        return hours * hourlyRate
+        let rate = useEmployers ? (employerHourlyRate ?? hourlyRate) : hourlyRate
+        return hours * rate
     }
     
     var calculatedTotal: Double {
@@ -46,6 +50,16 @@ struct QuickEntryView: View {
                         .onChange(of: entryDate) { _, _ in
                             focusedField = nil
                         }
+                    
+                    if useEmployers, let employerName = employerName {
+                        HStack {
+                            Text(employerLabel)
+                            Spacer()
+                            Text(employerName)
+                                .foregroundColor(.blue)
+                                .fontWeight(.medium)
+                        }
+                    }
                 }
                 
                 Section {
@@ -213,6 +227,14 @@ struct QuickEntryView: View {
         case "fr": return "Date"
         case "es": return "Fecha"
         default: return "Date"
+        }
+    }
+    
+    var employerLabel: String {
+        switch language {
+        case "fr": return "Employeur"
+        case "es": return "Empleador"
+        default: return "Employer"
         }
     }
     

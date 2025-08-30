@@ -98,6 +98,6 @@ struct EmptyStateCard: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity)
-        .glassCard()
+                        .liquidGlassCard()
     }
 }

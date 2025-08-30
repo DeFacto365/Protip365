@@ -72,7 +72,7 @@ struct EmployersView: View {
                             }
                             .padding(40)
                             .frame(maxWidth: .infinity)
-                            .glassCard()
+                            .liquidGlassCard()
                             .padding(.horizontal)
                             .padding(.top, 40)
                         } else {
@@ -364,7 +364,7 @@ struct EmployerCard: View {
             }
         }
         .padding()
-        .glassCard()
+                        .liquidGlassCard()
     }
 }
 

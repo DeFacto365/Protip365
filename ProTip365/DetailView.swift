@@ -16,6 +16,10 @@ struct DetailView: View {
         shifts.reduce(0) { $0 + $1.tips }
     }
     
+    var totalSalary: Double {
+        shifts.reduce(0) { $0 + ($1.hours * ($1.hourly_rate ?? 15.0)) }
+    }
+    
     var totalIncome: Double {
         shifts.reduce(0) { $0 + ($1.total_income ?? 0) }
     }
@@ -50,6 +54,16 @@ struct DetailView: View {
                                 }
                                 
                                 HStack(spacing: 20) {
+                                    VStack(alignment: .leading) {
+                                        Text(salaryText)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text(formatCurrency(shift.hours * (shift.hourly_rate ?? 15.0)))
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.primary)
+                                    }
+                                    
                                     VStack(alignment: .leading) {
                                         Text(salesText)
                                             .font(.caption)
@@ -94,6 +108,16 @@ struct DetailView: View {
                     
                     Section {
                         VStack(spacing: 12) {
+                            HStack {
+                                Text(totalSalaryLabel)
+                                    .font(.headline)
+                                Spacer()
+                                Text(formatCurrency(totalSalary))
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.blue)
+                            }
+                            
                             HStack {
                                 Text(totalSalesLabel)
                                     .font(.subheadline)
@@ -255,6 +279,22 @@ struct DetailView: View {
         case "fr": return "Revenu total"
         case "es": return "Ingresos totales"
         default: return "Total Revenue"
+        }
+    }
+    
+    var salaryText: String {
+        switch language {
+        case "fr": return "Salaire"
+        case "es": return "Salario"
+        default: return "Salary"
+        }
+    }
+    
+    var totalSalaryLabel: String {
+        switch language {
+        case "fr": return "Salaire total"
+        case "es": return "Salario total"
+        default: return "Total Salary"
         }
     }
     
