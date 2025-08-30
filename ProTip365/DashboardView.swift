@@ -11,6 +11,7 @@ struct DashboardView: View {
     @State private var selectedDetailType = ""
     @State private var detailShifts: [ShiftIncome] = []
     @State private var showingQuickEntry = false
+    @State private var showingQuickShift = false
     @State private var editingShift: ShiftIncome? = nil
     @State private var userTargets = UserTargets()
     
@@ -61,29 +62,57 @@ struct DashboardView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Quick Add Button
-                        Button(action: {
-                            showingQuickEntry = true
-                            HapticFeedback.light()
-                        }) {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title2)
-                                Text(quickAddText)
-                                    .fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.blue, .blue.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                        // Quick Add Buttons
+                        HStack(spacing: 12) {
+                            // Add Entry Button (Past/Today)
+                            Button(action: {
+                                showingQuickEntry = true
+                                HapticFeedback.light()
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                    Text(quickAddText)
+                                        .fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [.blue, .blue.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                                 )
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(16)
-                            .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
+                                .foregroundColor(.white)
+                                .cornerRadius(16)
+                                .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
+                            }
+                            
+                            // Add Shift Button (Future)
+                            Button(action: {
+                                showingQuickShift = true
+                                HapticFeedback.light()
+                            }) {
+                                HStack {
+                                    Image(systemName: "calendar.badge.plus")
+                                        .font(.title2)
+                                    Text(quickAddShiftText)
+                                        .fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [.green, .green.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .foregroundColor(.white)
+                                .cornerRadius(16)
+                                .shadow(color: .green.opacity(0.3), radius: 10, x: 0, y: 5)
+                            }
                         }
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -275,7 +304,7 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("v1.0.11")
+                    Text("v1.0.12")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -306,9 +335,33 @@ struct DashboardView: View {
                     useEmployers: useMultipleEmployers,
                     employerName: nil,
                     employerHourlyRate: nil,
+                    isShiftMode: false,
                     onSave: saveQuickEntry,
                     onCancel: {
                         showingQuickEntry = false
+                        clearQuickEntry()
+                    }
+                )
+            }
+            .sheet(isPresented: $showingQuickShift) {
+                QuickEntryView(
+                    entryDate: $entryDate,
+                    entrySales: $entrySales,
+                    entryTips: $entryTips,
+                    entryTipOut: $entryTipOut,
+                    entryHours: $entryHours,
+                    isSaving: $isSavingEntry,
+                    editingShift: nil,
+                    userTargets: userTargets,
+                    currentPeriod: selectedPeriod,
+                    hourlyRate: defaultHourlyRate,
+                    useEmployers: useMultipleEmployers,
+                    employerName: nil,
+                    employerHourlyRate: nil,
+                    isShiftMode: true,
+                    onSave: saveQuickEntry,
+                    onCancel: {
+                        showingQuickShift = false
                         clearQuickEntry()
                     }
                 )
@@ -328,6 +381,7 @@ struct DashboardView: View {
                     useEmployers: useMultipleEmployers,
                     employerName: shift.employer_name,
                     employerHourlyRate: shift.hourly_rate,
+                    isShiftMode: dateFromString(shift.shift_date) ?? Date() > Date(),
                     onSave: { updateShift(shift) },
                     onCancel: {
                         editingShift = nil
@@ -641,6 +695,14 @@ struct DashboardView: View {
         case "fr": return "Ajouter une entrée"
         case "es": return "Agregar entrada"
         default: return "Add entry"
+        }
+    }
+    
+    var quickAddShiftText: String {
+        switch language {
+        case "fr": return "Ajouter un quart"
+        case "es": return "Agregar turno"
+        default: return "Add shift"
         }
     }
     

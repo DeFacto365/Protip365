@@ -15,6 +15,7 @@ struct QuickEntryView: View {
     var useEmployers: Bool = false
     var employerName: String? = nil
     var employerHourlyRate: Double? = nil
+    var isShiftMode: Bool = false
     var onSave: () -> Void
     var onCancel: () -> Void
     @AppStorage("language") private var language = "en"
@@ -81,7 +82,7 @@ struct QuickEntryView: View {
                             .multilineTextAlignment(.trailing)
                             .focused($focusedField, equals: .hours)
                             .frame(width: 100)
-                        if getHoursTarget() > 0 {
+                        if getHoursTarget() > 0 && !isShiftMode {
                             Text("/ \(String(format: "%.0f", getHoursTarget()))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -170,7 +171,7 @@ struct QuickEntryView: View {
                     .disabled(isSaving || entryHours.isEmpty)
                 }
             }
-            .navigationTitle(editingShift != nil ? editShiftTitle : newEntryTitle)
+            .navigationTitle(editingShift != nil ? editShiftTitle : (isShiftMode ? newShiftTitle : newEntryTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -239,6 +240,14 @@ struct QuickEntryView: View {
         case "fr": return "Nouvelle entrée"
         case "es": return "Nueva entrada"
         default: return "New Entry"
+        }
+    }
+    
+    var newShiftTitle: String {
+        switch language {
+        case "fr": return "Nouveau quart"
+        case "es": return "Nuevo turno"
+        default: return "New Shift"
         }
     }
     
