@@ -15,6 +15,14 @@ struct DashboardView: View {
     @State private var editingShift: ShiftIncome? = nil
     @State private var userTargets = UserTargets()
     
+    // New managers for Phase 1 & 2 features
+    @StateObject private var exportManager = ExportManager()
+    @StateObject private var alertManager = AlertManager()
+    @StateObject private var achievementManager = AchievementManager()
+    @State private var showingExportOptions = false
+    @State private var showingShareSheet = false
+    @State private var shareText = ""
+    
     // Quick Entry Form States
     @State private var entryDate = Date()
     @State private var entrySales = ""
@@ -303,10 +311,28 @@ struct DashboardView: View {
             .navigationTitle(dashboardTitle)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        showingExportOptions = true
+                    }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(.blue)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("v1.0.15")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Button(action: {
+                            shareCurrentStats()
+                        }) {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(.green)
+                        }
+                        
+                        Text("v1.0.16")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             .sheet(isPresented: $showingDetail) {
@@ -392,6 +418,30 @@ struct DashboardView: View {
         .task {
             await loadStats()
             await loadTargets()
+            
+            // Check for alerts and achievements
+            alertManager.checkForMissingShifts(shifts: currentStats.shifts, targets: userTargets)
+            alertManager.checkForTargetAchievements(currentStats: currentStats, targets: userTargets, period: selectedPeriod)
+            achievementManager.checkForAchievements(shifts: currentStats.shifts, currentStats: currentStats, targets: userTargets)
+        }
+        .sheet(isPresented: $showingExportOptions) {
+            ExportOptionsView(exportManager: exportManager, shifts: currentStats.shifts, language: language)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(activityItems: [shareText])
+        }
+        .alert("Alert", isPresented: $alertManager.showAlert) {
+            Button(alertManager.currentAlert?.action ?? "OK") {
+                // Handle alert action
+            }
+            Button("Dismiss") {
+                alertManager.showAlert = false
+            }
+        } message: {
+            Text(alertManager.currentAlert?.message ?? "")
+        }
+        .sheet(isPresented: $achievementManager.showAchievement) {
+            AchievementView(achievement: achievementManager.currentAchievement!)
         }
     }
     
@@ -480,6 +530,25 @@ struct DashboardView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.date(from: dateString)
+    }
+    
+    func shareCurrentStats() {
+        let periodName = selectedPeriod == 0 ? "Today" : selectedPeriod == 1 ? "This Week" : "This Month"
+        
+        shareText = """
+        📊 ProTip365 - \(periodName) Summary
+        
+        💰 Total Revenue: \(formatCurrency(currentStats.totalRevenue))
+        💵 Tips: \(formatCurrency(currentStats.tips))
+        ⏰ Hours: \(String(format: "%.1f", currentStats.hours))h
+        🛒 Sales: \(formatCurrency(currentStats.sales))
+        
+        🎯 Tip Percentage: \(String(format: "%.1f", currentStats.tipPercentage))%
+        
+        #ProTip365 #Waitstaff #Tips
+        """
+        
+        showingShareSheet = true
     }
     
     func getStartOfWeek(for date: Date, weekStartDay: Int) -> Date {
