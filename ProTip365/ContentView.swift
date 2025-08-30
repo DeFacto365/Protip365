@@ -4,35 +4,64 @@ import Supabase
 struct ContentView: View {
     @State private var isAuthenticated = false
     @AppStorage("language") private var language = "en"
+    @Environment(\.horizontalSizeClass) var sizeClass
     
     var body: some View {
         Group {
             if isAuthenticated {
-                TabView {
-                    DashboardView()
-                        .tabItem {
-                            Label(dashboardTab, systemImage: "chart.bar")
+                if sizeClass == .regular {
+                    // iPad Layout - Use sidebar navigation
+                    NavigationSplitView {
+                        List {
+                            NavigationLink(destination: DashboardView()) {
+                                Label(dashboardTab, systemImage: "chart.bar")
+                            }
+                            NavigationLink(destination: ShiftsCalendarView()) {
+                                Label(addShiftTab, systemImage: "plus.circle.fill")
+                            }
+                            NavigationLink(destination: EmployersView()) {
+                                Label(employersTab, systemImage: "building.2")
+                            }
+                            NavigationLink(destination: TipCalculatorView()) {
+                                Label(calculatorTab, systemImage: "percent")
+                            }
+                            NavigationLink(destination: SettingsView()) {
+                                Label(settingsTab, systemImage: "gear")
+                            }
                         }
-                    
-                    ShiftEntryView()
-                        .tabItem {
-                            Label(addShiftTab, systemImage: "plus.circle.fill")
-                        }
-                    
-                    EmployersView()
-                        .tabItem {
-                            Label(employersTab, systemImage: "building.2")
-                        }
-                    
-                    TipCalculatorView()
-                        .tabItem {
-                            Label(calculatorTab, systemImage: "percent")
-                        }
-                    
-                    SettingsView()
-                        .tabItem {
-                            Label(settingsTab, systemImage: "gear")
-                        }
+                        .navigationTitle("ProTip365")
+                        .listStyle(.sidebar)
+                    } detail: {
+                        DashboardView()
+                    }
+                } else {
+                    // iPhone Layout - Keep tab bar
+                    TabView {
+                        DashboardView()
+                            .tabItem {
+                                Label(dashboardTab, systemImage: "chart.bar")
+                            }
+                        
+                        ShiftsCalendarView()
+                            .tabItem {
+                                Label(addShiftTab, systemImage: "plus.circle.fill")
+                            }
+                        
+                        EmployersView()
+                            .tabItem {
+                                Label(employersTab, systemImage: "building.2")
+                            }
+                        
+                        TipCalculatorView()
+                            .tabItem {
+                                Label(calculatorTab, systemImage: "percent")
+                            }
+                        
+                        SettingsView()
+                            .tabItem {
+                                Label(settingsTab, systemImage: "gear")
+                            }
+                    }
                 }
             } else {
                 AuthView(isAuthenticated: $isAuthenticated)
@@ -45,7 +74,7 @@ struct ContentView: View {
     
     func checkAuth() async {
         do {
-            let session = try await SupabaseManager.shared.client.auth.session
+            _ = try await SupabaseManager.shared.client.auth.session
             await MainActor.run {
                 isAuthenticated = true
             }
@@ -74,9 +103,9 @@ struct ContentView: View {
     
     var addShiftTab: String {
         switch language {
-        case "fr": return "Ajouter"
-        case "es": return "Agregar"
-        default: return "Add Shift"
+        case "fr": return "Quarts"
+        case "es": return "Turnos"
+        default: return "Shifts"
         }
     }
     

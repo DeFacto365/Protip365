@@ -19,33 +19,9 @@
 		85946DEB2E625D8C0018C7F9 /* ProTip365.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProTip365.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		85946E212E626A4F0018C7F9 /* Exceptions for "ProTip365" folder in "ProTip365" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Project_Update.md,
-			);
-			target = 85946DEA2E625D8C0018C7F9 /* ProTip365 */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		85946E222E626A4F0018C7F9 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 85946DE72E625D8C0018C7F9 /* Sources */;
-			membershipExceptions = (
-				Project_Update.md,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		85946DED2E625D8C0018C7F9 /* ProTip365 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				85946E212E626A4F0018C7F9 /* Exceptions for "ProTip365" folder in "ProTip365" target */,
-				85946E222E626A4F0018C7F9 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */,
-			);
 			path = ProTip365;
 			sourceTree = "<group>";
 		};

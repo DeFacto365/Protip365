@@ -20,6 +20,8 @@ struct Shift: Codable, Identifiable {
     let cash_out: Double?
     let cash_out_note: String?
     let notes: String?
+    let start_time: String?
+    let end_time: String?
     let created_at: Date?
 }
 
@@ -38,6 +40,8 @@ struct ShiftIncome: Codable, Identifiable {
     let net_tips: Double?
     let total_income: Double?
     let tip_percentage: Double?
+    let start_time: String?
+    let end_time: String?
 }
 
 struct UserProfile: Codable {
@@ -47,4 +51,5 @@ struct UserProfile: Codable {
     let target_tip_daily: Double
     let target_tip_weekly: Double
     let target_tip_monthly: Double
+    let name: String?  // Changed from user_name to name
 }

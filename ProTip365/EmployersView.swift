@@ -5,59 +5,118 @@ struct EmployersView: View {
     @State private var employers: [Employer] = []
     @State private var showAddEmployer = false
     @State private var newEmployerName = ""
-    @State private var newEmployerRate = "15.00"
+    @State private var newEmployerRate = ""
+    @State private var isLoading = false
+    @State private var showDeleteAlert = false
+    @State private var employerToDelete: Employer?
     @AppStorage("language") private var language = "en"
     
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(employers) { employer in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(employer.name)
-                            .font(.headline)
-                        HStack {
-                            Text(hourlyRateText)
-                            Text("$\(employer.hourly_rate, specifier: "%.2f")/hr")
-                                .fontWeight(.semibold)
+            ZStack {
+                // Background
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Add Employer Button
+                        Button(action: { showAddEmployer = true }) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                Text(addEmployerButton)
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [.blue, .blue.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(16)
+                            .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
                         }
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top)
+                        
+                        if employers.isEmpty && !isLoading {
+                            // Empty State
+                            VStack(spacing: 16) {
+                                Image(systemName: "building.2.crop.circle")
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.blue, .purple],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                
+                                Text(noEmployersText)
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                
+                                Text(noEmployersMessage)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding(40)
+                            .frame(maxWidth: .infinity)
+                            .glassCard()
+                            .padding(.horizontal)
+                            .padding(.top, 40)
+                        } else {
+                            // Employers List
+                            ForEach(employers) { employer in
+                                EmployerCard(
+                                    employer: employer,
+                                    onDelete: {
+                                        employerToDelete = employer
+                                        showDeleteAlert = true
+                                    }
+                                )
+                                .padding(.horizontal)
+                            }
+                        }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.bottom)
                 }
-                .onDelete(perform: deleteEmployer)
             }
             .navigationTitle(employersTitle)
-            .toolbar {
-                Button(action: { showAddEmployer = true }) {
-                    Image(systemName: "plus")
-                }
-            }
+            .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showAddEmployer) {
-                NavigationStack {
-                    Form {
-                        TextField(employerNamePlaceholder, text: $newEmployerName)
-                        TextField(hourlyRatePlaceholder, text: $newEmployerRate)
-                            .keyboardType(.decimalPad)
+                AddEmployerSheet(
+                    name: $newEmployerName,
+                    rate: $newEmployerRate,
+                    onSave: addEmployer,
+                    onCancel: {
+                        showAddEmployer = false
+                        newEmployerName = ""
+                        newEmployerRate = ""
                     }
-                    .navigationTitle(addEmployerTitle)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(cancelText) {
-                                showAddEmployer = false
-                                newEmployerName = ""
-                                newEmployerRate = "15.00"
-                            }
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button(saveText) {
-                                Task {
-                                    await addEmployer()
-                                }
-                            }
-                        }
+                )
+            }
+            .alert(deleteConfirmTitle, isPresented: $showDeleteAlert) {
+                Button(cancelText, role: .cancel) {
+                    employerToDelete = nil
+                }
+                Button(deleteText, role: .destructive) {
+                    if let employer = employerToDelete {
+                        deleteEmployer(employer)
                     }
+                }
+            } message: {
+                Text(deleteConfirmMessage)
+            }
+            .overlay {
+                if isLoading {
+                    LoadingOverlay(isLoading: $isLoading)
                 }
             }
         }
@@ -67,6 +126,7 @@ struct EmployersView: View {
     }
     
     func loadEmployers() async {
+        isLoading = true
         do {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
             employers = try await SupabaseManager.shared.client
@@ -75,8 +135,10 @@ struct EmployersView: View {
                 .eq("user_id", value: userId)
                 .execute()
                 .value
+            isLoading = false
         } catch {
             print("Error loading employers: \(error)")
+            isLoading = false
         }
     }
     
@@ -103,28 +165,32 @@ struct EmployersView: View {
             
             showAddEmployer = false
             newEmployerName = ""
-            newEmployerRate = "15.00"
+            newEmployerRate = ""
             await loadEmployers()
+            
+            HapticFeedback.success()
         } catch {
             print("Error adding employer: \(error)")
+            HapticFeedback.error()
         }
     }
     
-    func deleteEmployer(at offsets: IndexSet) {
+    func deleteEmployer(_ employer: Employer) {
         Task {
-            for index in offsets {
-                let employer = employers[index]
-                do {
-                    try await SupabaseManager.shared.client
-                        .from("employers")
-                        .delete()
-                        .eq("id", value: employer.id)
-                        .execute()
-                } catch {
-                    print("Error deleting employer: \(error)")
-                }
+            do {
+                try await SupabaseManager.shared.client
+                    .from("employers")
+                    .delete()
+                    .eq("id", value: employer.id)
+                    .execute()
+                
+                await loadEmployers()
+                employerToDelete = nil
+                HapticFeedback.success()
+            } catch {
+                print("Error deleting employer: \(error)")
+                HapticFeedback.error()
             }
-            await loadEmployers()
         }
     }
     
@@ -137,35 +203,51 @@ struct EmployersView: View {
         }
     }
     
-    var addEmployerTitle: String {
+    var addEmployerButton: String {
         switch language {
-        case "fr": return "Ajouter Employeur"
-        case "es": return "Agregar Empleador"
+        case "fr": return "Ajouter un employeur"
+        case "es": return "Agregar empleador"
         default: return "Add Employer"
         }
     }
     
-    var employerNamePlaceholder: String {
+    var noEmployersText: String {
         switch language {
-        case "fr": return "Nom de l'employeur"
-        case "es": return "Nombre del empleador"
-        default: return "Employer name"
+        case "fr": return "Aucun employeur"
+        case "es": return "Sin empleadores"
+        default: return "No Employers"
         }
     }
     
-    var hourlyRatePlaceholder: String {
+    var noEmployersMessage: String {
         switch language {
-        case "fr": return "Taux horaire"
-        case "es": return "Tarifa por hora"
-        default: return "Hourly rate"
+        case "fr": return "Ajoutez votre premier employeur pour commencer"
+        case "es": return "Agregue su primer empleador para comenzar"
+        default: return "Add your first employer to get started"
         }
     }
     
-    var hourlyRateText: String {
+    var deleteConfirmTitle: String {
         switch language {
-        case "fr": return "Taux:"
-        case "es": return "Tarifa:"
-        default: return "Rate:"
+        case "fr": return "Confirmer la suppression"
+        case "es": return "Confirmar eliminación"
+        default: return "Confirm Delete"
+        }
+    }
+    
+    var deleteConfirmMessage: String {
+        switch language {
+        case "fr": return "Êtes-vous sûr de vouloir supprimer cet employeur?"
+        case "es": return "¿Está seguro de que desea eliminar este empleador?"
+        default: return "Are you sure you want to delete this employer?"
+        }
+    }
+    
+    var deleteText: String {
+        switch language {
+        case "fr": return "Supprimer"
+        case "es": return "Eliminar"
+        default: return "Delete"
         }
     }
     
@@ -176,12 +258,167 @@ struct EmployersView: View {
         default: return "Cancel"
         }
     }
+}
+
+// MARK: - Components
+
+struct EmployerCard: View {
+    let employer: Employer
+    let onDelete: () -> Void
+    @AppStorage("language") private var language = "en"
     
-    var saveText: String {
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(employer.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "dollarsign.circle")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                    Text("\(employer.hourly_rate, specifier: "%.2f")/hr")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .font(.body)
+                    .foregroundColor(.red)
+                    .padding(8)
+                    .background(Color.red.opacity(0.1))
+                    .clipShape(Circle())
+            }
+        }
+        .padding()
+        .glassCard()
+    }
+}
+
+struct AddEmployerSheet: View {
+    @Binding var name: String
+    @Binding var rate: String
+    let onSave: () async -> Void
+    let onCancel: () -> Void
+    @State private var isSaving = false
+    @AppStorage("language") private var language = "en"
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name, rate
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(employerNamePlaceholder, text: $name)
+                        .focused($focusedField, equals: .name)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                focusedField = .name
+                            }
+                        }
+                } header: {
+                    Text(employerNameSection)
+                }
+                
+                Section {
+                    HStack {
+                        Text("$")
+                        TextField("15.00", text: $rate)
+                            .keyboardType(.decimalPad)
+                            .focused($focusedField, equals: .rate)
+                        Text("/hr")
+                    }
+                } header: {
+                    Text(hourlyRateSection)
+                }
+            }
+            .navigationTitle(addEmployerTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(cancelButton) {
+                        onCancel()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saveButton) {
+                        Task {
+                            isSaving = true
+                            await onSave()
+                            isSaving = false
+                        }
+                    }
+                    .disabled(name.isEmpty || rate.isEmpty || isSaving)
+                }
+            }
+            .overlay {
+                if isSaving {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+                }
+            }
+        }
+    }
+    
+    // Localization
+    var addEmployerTitle: String {
+        switch language {
+        case "fr": return "Nouvel Employeur"
+        case "es": return "Nuevo Empleador"
+        default: return "New Employer"
+        }
+    }
+    
+    var employerNameSection: String {
+        switch language {
+        case "fr": return "Nom de l'employeur"
+        case "es": return "Nombre del empleador"
+        default: return "Employer Name"
+        }
+    }
+    
+    var employerNamePlaceholder: String {
+        switch language {
+        case "fr": return "Restaurant ABC"
+        case "es": return "Restaurante ABC"
+        default: return "Restaurant ABC"
+        }
+    }
+    
+    var hourlyRateSection: String {
+        switch language {
+        case "fr": return "Taux horaire"
+        case "es": return "Tarifa por hora"
+        default: return "Hourly Rate"
+        }
+    }
+    
+    var saveButton: String {
         switch language {
         case "fr": return "Sauvegarder"
         case "es": return "Guardar"
         default: return "Save"
         }
     }
+    
+    var cancelButton: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
 }
+

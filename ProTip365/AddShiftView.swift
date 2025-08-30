@@ -1,8 +1,11 @@
 import SwiftUI
 import Supabase
 
-struct ShiftEntryView: View {
-    @State private var selectedDate = Date()
+struct AddShiftView: View {
+    let selectedDate: Date
+    @Binding var isPresented: Bool
+    let onSave: () -> Void
+    
     @State private var hours = ""
     @State private var hourlyRate = ""
     @State private var sales = ""
@@ -11,23 +14,30 @@ struct ShiftEntryView: View {
     @State private var notes = ""
     @State private var selectedEmployerIndex = 0
     @State private var employers: [Employer] = []
-    @State private var showSuccess = false
     @State private var useEmployer = false
+    @State private var isLoading = false
     @AppStorage("language") private var language = "en"
     
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker(dateLabel, selection: $selectedDate, displayedComponents: .date)
-                    TextField(hoursLabel, text: $hours)
-                        .keyboardType(.decimalPad)
+                    HStack {
+                        Image(systemName: "calendar")
+                            .foregroundColor(.secondary)
+                        Text(dateFormatter.string(from: selectedDate))
+                            .font(.headline)
+                    }
                 } header: {
-                    Text(dateTimeSection)
+                    Text(dateSection)
                 }
                 
                 Section {
+                    TextField(hoursLabel, text: $hours)
+                        .keyboardType(.decimalPad)
+                    
                     Toggle(useEmployerLabel, isOn: $useEmployer)
+                    
                     if useEmployer && !employers.isEmpty {
                         Picker(selectEmployerLabel, selection: $selectedEmployerIndex) {
                             Text(noneLabel).tag(0)
@@ -36,19 +46,22 @@ struct ShiftEntryView: View {
                             }
                         }
                     }
+                    
                     if !useEmployer {
                         TextField(hourlyRateLabel, text: $hourlyRate)
                             .keyboardType(.decimalPad)
                     }
                 } header: {
-                    Text(employerSection)
+                    Text(workDetailsSection)
                 }
                 
                 Section {
                     TextField(salesLabel, text: $sales)
                         .keyboardType(.decimalPad)
+                    
                     TextField(tipsLabel, text: $tips)
                         .keyboardType(.decimalPad)
+                    
                     TextField(cashOutLabel, text: $cashOut)
                         .keyboardType(.decimalPad)
                 } header: {
@@ -61,31 +74,43 @@ struct ShiftEntryView: View {
                 } header: {
                     Text(notesSection)
                 }
-                
-                Button(action: saveShift) {
-                    HStack {
-                        Spacer()
-                        Text(saveShiftButton)
-                            .fontWeight(.semibold)
-                        Spacer()
-                    }
-                }
-                .listRowBackground(Color.blue)
-                .foregroundColor(.white)
             }
             .navigationTitle(addShiftTitle)
-            .alert(successTitle, isPresented: $showSuccess) {
-                Button("OK") {
-                    clearForm()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(cancelButton) {
+                        isPresented = false
+                    }
                 }
-            } message: {
-                Text(successMessage)
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saveButton) {
+                        saveShift()
+                    }
+                    .disabled(hours.isEmpty || tips.isEmpty)
+                }
+            }
+            .overlay {
+                if isLoading {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+                }
             }
         }
         .task {
             await loadEmployers()
             await loadDefaults()
         }
+    }
+    
+    var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        return formatter
     }
     
     func loadEmployers() async {
@@ -121,6 +146,8 @@ struct ShiftEntryView: View {
     }
     
     func saveShift() {
+        isLoading = true
+        
         Task {
             do {
                 let userId = try await SupabaseManager.shared.client.auth.session.user.id
@@ -161,44 +188,41 @@ struct ShiftEntryView: View {
                     .insert(newShift)
                     .execute()
                 
-                showSuccess = true
+                await MainActor.run {
+                    onSave()
+                    isPresented = false
+                }
             } catch {
                 print("Error saving shift: \(error)")
+                await MainActor.run {
+                    isLoading = false
+                }
             }
         }
-    }
-    
-    func clearForm() {
-        hours = ""
-        sales = ""
-        tips = ""
-        cashOut = ""
-        notes = ""
-        selectedEmployerIndex = 0
     }
     
     // Localization
     var addShiftTitle: String {
         switch language {
-        case "fr": return "Ajouter Quart"
-        case "es": return "Agregar Turno"
+        case "fr": return "Ajouter un quart"
+        case "es": return "Agregar turno"
         default: return "Add Shift"
         }
     }
     
-    var dateTimeSection: String {
-        switch language {
-        case "fr": return "Date et Heures"
-        case "es": return "Fecha y Horas"
-        default: return "Date & Hours"
-        }
-    }
-    
-    var dateLabel: String {
+    var dateSection: String {
         switch language {
         case "fr": return "Date"
         case "es": return "Fecha"
         default: return "Date"
+        }
+    }
+    
+    var workDetailsSection: String {
+        switch language {
+        case "fr": return "Détails du travail"
+        case "es": return "Detalles del trabajo"
+        default: return "Work Details"
         }
     }
     
@@ -207,14 +231,6 @@ struct ShiftEntryView: View {
         case "fr": return "Heures travaillées"
         case "es": return "Horas trabajadas"
         default: return "Hours worked"
-        }
-    }
-    
-    var employerSection: String {
-        switch language {
-        case "fr": return "Employeur (Optionnel)"
-        case "es": return "Empleador (Opcional)"
-        default: return "Employer (Optional)"
         }
     }
     
@@ -298,27 +314,19 @@ struct ShiftEntryView: View {
         }
     }
     
-    var saveShiftButton: String {
+    var cancelButton: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
+    
+    var saveButton: String {
         switch language {
         case "fr": return "Sauvegarder"
         case "es": return "Guardar"
-        default: return "Save Shift"
-        }
-    }
-    
-    var successTitle: String {
-        switch language {
-        case "fr": return "Succès"
-        case "es": return "Éxito"
-        default: return "Success"
-        }
-    }
-    
-    var successMessage: String {
-        switch language {
-        case "fr": return "Quart sauvegardé!"
-        case "es": return "Turno guardado!"
-        default: return "Shift saved!"
+        default: return "Save"
         }
     }
 }

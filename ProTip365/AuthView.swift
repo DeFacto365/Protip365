@@ -9,6 +9,9 @@ struct AuthView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var isLoading = false
+    @State private var showPasswordReset = false
+    @State private var resetEmail = ""
+    @State private var showResetSuccess = false
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
     
@@ -44,21 +47,34 @@ struct AuthView: View {
                 Spacer()
                 
                 // Logo and title
-                VStack(spacing: 12) {
-                    Image(systemName: "dollarsign.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.blue)
-                        .symbolRenderingMode(.hierarchical)
+                VStack(spacing: 16) {
+                    // App Icon/Logo
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 100, height: 100)
+                            .shadow(radius: 10)
+                        
+                        Text("%")
+                            .font(.system(size: 60, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
                     
-                    Text("ProTip365")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text(welcomeText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        Text("ProTip365")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        
+                        Text(welcomeText)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .padding(.bottom, 40)
+                .padding(.bottom, 30)
                 
                 // Input fields
                 VStack(spacing: 16) {
@@ -103,6 +119,22 @@ struct AuthView: View {
                                 authenticate()
                             }
                     }
+                    
+                    // Forgot Password - Only show when signing in
+                    if !isSignUp {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                resetEmail = email // Pre-fill with current email if available
+                                showPasswordReset = true
+                            }) {
+                                Text(forgotPasswordText)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding(.top, -8)
+                    }
                 }
                 .padding(.horizontal)
                 
@@ -131,6 +163,7 @@ struct AuthView: View {
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isSignUp.toggle()
+                            password = "" // Clear password when switching modes
                         }
                     }) {
                         Text(isSignUp ? switchToSignIn : switchToSignUp)
@@ -154,6 +187,80 @@ struct AuthView: View {
         } message: {
             Text(errorMessage)
         }
+        .sheet(isPresented: $showPasswordReset) {
+            NavigationStack {
+                VStack(spacing: 20) {
+                    // Icon
+                    Image(systemName: "envelope.badge")
+                        .font(.system(size: 50))
+                        .foregroundColor(.blue)
+                        .padding(.top, 40)
+                    
+                    // Title
+                    Text(resetPasswordTitle)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    // Description
+                    Text(resetPasswordDescription)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    // Email field
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(emailPlaceholder)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        TextField(emailPlaceholder, text: $resetEmail)
+                            .textFieldStyle(.plain)
+                            .font(.body)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .textContentType(.emailAddress)
+                    }
+                    .padding(.horizontal)
+                    
+                    // Send button
+                    Button(action: sendPasswordReset) {
+                        Text(sendResetLinkButton)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    .disabled(resetEmail.isEmpty)
+                    .opacity(resetEmail.isEmpty ? 0.6 : 1.0)
+                    .padding(.horizontal)
+                    
+                    Spacer()
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(cancelButton) {
+                            showPasswordReset = false
+                            resetEmail = ""
+                        }
+                    }
+                }
+            }
+        }
+        .alert(successTitle, isPresented: $showResetSuccess) {
+            Button("OK") {
+                showPasswordReset = false
+                resetEmail = ""
+            }
+        } message: {
+            Text(resetSuccessMessage)
+        }
     }
     
     func authenticate() {
@@ -166,21 +273,20 @@ struct AuthView: View {
             do {
                 if isSignUp {
                     // Sign up the user
-                    let response = try await SupabaseManager.shared.client.auth.signUp(
+                    _ = try await SupabaseManager.shared.client.auth.signUp(
                         email: email,
                         password: password
                     )
                     
                     // After successful signup, automatically sign them in
-                    if response.user != nil {
-                        try await SupabaseManager.shared.client.auth.signIn(
-                            email: email,
-                            password: password
-                        )
-                        await MainActor.run {
-                            isAuthenticated = true
-                            isLoading = false
-                        }
+                    // No need to check if user is nil - if we got here without error, signup succeeded
+                    try await SupabaseManager.shared.client.auth.signIn(
+                        email: email,
+                        password: password
+                    )
+                    await MainActor.run {
+                        isAuthenticated = true
+                        isLoading = false
                     }
                 } else {
                     // Just sign in
@@ -198,6 +304,27 @@ struct AuthView: View {
                     errorMessage = error.localizedDescription
                     showError = true
                     isLoading = false
+                }
+            }
+        }
+    }
+    
+    func sendPasswordReset() {
+        guard !resetEmail.isEmpty else { return }
+        
+        Task {
+            do {
+                try await SupabaseManager.shared.client.auth.resetPasswordForEmail(
+                    resetEmail,
+                    redirectTo: URL(string: "protip365://reset-password")
+                )
+                await MainActor.run {
+                    showResetSuccess = true
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    showError = true
                 }
             }
         }
@@ -233,6 +360,14 @@ struct AuthView: View {
         case "fr": return "Mot de passe"
         case "es": return "Contraseña"
         default: return "Password"
+        }
+    }
+    
+    var forgotPasswordText: String {
+        switch language {
+        case "fr": return "Mot de passe oublié?"
+        case "es": return "¿Olvidaste tu contraseña?"
+        default: return "Forgot Password?"
         }
     }
     
@@ -273,6 +408,54 @@ struct AuthView: View {
         case "fr": return "Erreur"
         case "es": return "Error"
         default: return "Error"
+        }
+    }
+    
+    var resetPasswordTitle: String {
+        switch language {
+        case "fr": return "Réinitialiser le mot de passe"
+        case "es": return "Restablecer contraseña"
+        default: return "Reset Password"
+        }
+    }
+    
+    var resetPasswordDescription: String {
+        switch language {
+        case "fr": return "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe."
+        case "es": return "Ingrese su correo electrónico y le enviaremos un enlace para restablecer su contraseña."
+        default: return "Enter your email address and we'll send you a link to reset your password."
+        }
+    }
+    
+    var sendResetLinkButton: String {
+        switch language {
+        case "fr": return "Envoyer le lien"
+        case "es": return "Enviar enlace"
+        default: return "Send Reset Link"
+        }
+    }
+    
+    var cancelButton: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
+    
+    var successTitle: String {
+        switch language {
+        case "fr": return "Succès"
+        case "es": return "Éxito"
+        default: return "Success"
+        }
+    }
+    
+    var resetSuccessMessage: String {
+        switch language {
+        case "fr": return "Si un compte existe avec cette adresse e-mail, vous recevrez un lien de réinitialisation."
+        case "es": return "Si existe una cuenta con este correo, recibirá un enlace de restablecimiento."
+        default: return "If an account exists with this email, you'll receive a reset link."
         }
     }
 }

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTip365 - Easy Tip Tracking for Every Shift</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4c4aa1 0%, #ee6d00 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .logo-icon {
+            display: inline-block;
+            background: #ee6d00;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            line-height: 50px;
+            margin-right: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            display: inline-block;
+        }
+
+        .logo-protip {
+            color: #4c4aa1;
+        }
+
+        .logo-365 {
+            color: #ee6d00;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #4c4aa1 0%, #ee6d00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            background: #4c4aa1;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 74, 161, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 74, 161, 0.4);
+        }
+
+        .cta-button.orange {
+            background: #ee6d00;
+            box-shadow: 0 4px 15px rgba(238, 109, 0, 0.3);
+        }
+
+        .cta-button.orange:hover {
+            box-shadow: 0 6px 20px rgba(238, 109, 0, 0.4);
+        }
+
+        /* Problem Section */
+        .problem {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .problem h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4c4aa1;
+        }
+
+        .problem-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .problem-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border-left: 5px solid #ee6d00;
+        }
+
+        .problem-card h3 {
+            color: #ee6d00;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        /* Solution Section */
+        .solution {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #4c4aa1 0%, #ee6d00 100%);
+            color: white;
+        }
+
+        .solution h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .solution-item {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .solution-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .solution-item h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        /* Why 365 Section */
+        .why-365 {
+            padding: 80px 0;
+            background: white;
+            text-align: center;
+        }
+
+        .why-365 h2 {
+            font-size: 2.5rem;
+            color: #4c4aa1;
+            margin-bottom: 30px;
+        }
+
+        .why-365 p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Screenshots Section */
+        .screenshots {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+
+        .screenshots h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #4c4aa1;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .screenshot-item {
+            text-align: center;
+        }
+
+        .phone-mockup {
+            width: 200px;
+            height: 400px;
+            border-radius: 25px;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .phone-mockup img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .phone-mockup .mockup-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #4c4aa1 0%, #ee6d00 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .screenshot-caption {
+            font-weight: 600;
+            color: #4c4aa1;
+        }
+
+        /* Download Section */
+        .download {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .download h2 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 50px;
+            color: #4c4aa1;
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .download-card {
+            background: #f8f9fa;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .download-card:hover {
+            transform: translateY(-5px);
+            border-color: #4c4aa1;
+            box-shadow: 0 10px 30px rgba(76, 74, 161, 0.1);
+        }
+
+        .store-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #4c4aa1;
+        }
+
+        .download-button {
+            background: #ee6d00;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .download-button:hover {
+            background: #d65a00;
+            transform: translateY(-2px);
+        }
+
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            background: #ddd;
+            margin: 20px auto;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* Footer */
+        .footer {
+            background: #333;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            margin-top: 20px;
+        }
+
+        .footer-links a {
+            color: #ccc;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .footer-links a:hover {
+            color: #ee6d00;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .problem-content,
+            .solution-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .screenshot-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .download-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">%</span>
+                <span class="logo-text">
+                    <span class="logo-protip">ProTip</span><span class="logo-365">365</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Easy tip tracking for every shift.</h1>
+            <p>Your income, safe and clear — 365 days a year. Stop losing money on paper slips and Excel files.</p>
+            <div class="cta-buttons">
+                <a href="#" class="cta-button">Download on the App Store</a>
+                <a href="#" class="cta-button orange">Get it on Google Play</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem">
+        <div class="container">
+            <h2>Paper slips don't last. Excel files don't travel.</h2>
+            <div class="problem-content">
+                <div class="problem-card">
+                    <h3>Lost Paper Slips</h3>
+                    <p>Writing shifts on paper that gets lost, stained, or forgotten. Your hard-earned tips deserve better.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>Manual Calculations</h3>
+                    <p>Spending hours at home transferring data from paper to Excel, trying to remember what you wrote.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>Scattered Information</h3>
+                    <p>Your income data scattered across paper, phone calendar, and computer files. Nothing stays organized.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="solution">
+        <div class="container">
+            <h2>ProTip365 keeps it all together.</h2>
+            <div class="solution-grid">
+                <div class="solution-item">
+                    <div class="solution-icon">📅</div>
+                    <h3>Create Shifts Instantly</h3>
+                    <p>Set your start and end times in seconds. No more paper calendars or phone notes.</p>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-icon">💰</div>
+                    <h3>Log Everything Fast</h3>
+                    <p>Record hours, sales, and tips before you leave. Your data is safe and organized.</p>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-icon">📊</div>
+                    <h3>See Your Progress</h3>
+                    <p>Daily, weekly, and monthly breakdowns with tip percentages. Know exactly how you're doing.</p>
+                </div>
+                <div class="solution-item">
+                    <div class="solution-icon">🏢</div>
+                    <h3>Multiple Employers</h3>
+                    <p>Work at different restaurants? Track each one separately without mixing up your numbers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why 365 Section -->
+    <section class="why-365">
+        <div class="container">
+            <h2>Why 365?</h2>
+            <p>Because your work doesn't stop at the end of a shift. ProTip365 keeps your records with you every day of the year, ensuring you never lose track of your income again.</p>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="screenshots">
+        <div class="container">
+            <h2>See ProTip365 in Action</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjNGM0YWEwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5EYXNoYm9hcmQ8L3RleHQ+Cjwvc3ZnPgo=" alt="Dashboard View" />
+                    </div>
+                    <div class="screenshot-caption">Dashboard View</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZWU2ZDAwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5TaGlmdCBFbnRyeTwvdGV4dD4KPC9zdmc+Cg==" alt="Shift Entry" />
+                    </div>
+                    <div class="screenshot-caption">Shift Entry</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjNGM0YWEwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5UaXAgQ2FsY3VsYXRvcjwvdGV4dD4KPC9zdmc+Cg==" alt="Tip Calculator" />
+                    </div>
+                    <div class="screenshot-caption">Tip Calculator</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZWU2ZDAwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5EYWlseSBTdW1tYXJ5PC90ZXh0Pgo8L3N2Zz4K" alt="Daily Summary" />
+                    </div>
+                    <div class="screenshot-caption">Daily Summary</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjNGM0YWEwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5XZWVrbHkgU3VtbWFyeTwvdGV4dD4KPC9zdmc+Cg==" alt="Weekly Summary" />
+                    </div>
+                    <div class="screenshot-caption">Weekly Summary</div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="phone-mockup">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDIwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZWU2ZDAwIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2Ij5Qcm9UaXAzNjU8L3RleHQ+Cjx0ZXh0IHg9IjEwMCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5Nb250aGx5IFN1bW1hcnk8L3RleHQ+Cjwvc3ZnPgo=" alt="Monthly Summary" />
+                    </div>
+                    <div class="screenshot-caption">Monthly Summary</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download">
+        <div class="container">
+            <h2>Get ProTip365 Today</h2>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div class="store-icon">🍎</div>
+                    <h3>iOS App</h3>
+                    <p>Available on the App Store for iPhone and iPad</p>
+                    <a href="#" class="download-button">Download for iOS</a>
+                    <div class="qr-code">QR Code</div>
+                </div>
+                <div class="download-card">
+                    <div class="store-icon">🤖</div>
+                    <h3>Android App</h3>
+                    <p>Available on Google Play for Android devices</p>
+                    <a href="#" class="download-button">Download for Android</a>
+                    <div class="qr-code">QR Code</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; ProTip365. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Use</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
