@@ -59,7 +59,10 @@ struct QuickEntryView: View {
                     DatePicker(dateLabel, selection: $entryDate, displayedComponents: .date)
                         .disabled(editingShift != nil)
                         .onChange(of: entryDate) { _, _ in
-                            focusedField = nil
+                            // Auto-dismiss picker after selection
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                focusedField = nil
+                            }
                         }
                     
                     if useEmployers, let employerName = employerName {
@@ -82,6 +85,12 @@ struct QuickEntryView: View {
                             .multilineTextAlignment(.trailing)
                             .focused($focusedField, equals: .hours)
                             .frame(width: 100)
+                            .onChange(of: entryHours) { _, _ in
+                                // Auto-dismiss keyboard after a short delay
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    focusedField = nil
+                                }
+                            }
                         if getHoursTarget() > 0 && !isShiftMode {
                             Text("/ \(String(format: "%.0f", getHoursTarget()))")
                                 .font(.caption)
@@ -108,6 +117,12 @@ struct QuickEntryView: View {
                                 .multilineTextAlignment(.trailing)
                                 .focused($focusedField, equals: .sales)
                                 .frame(width: 100)
+                                .onChange(of: entrySales) { _, _ in
+                                    // Auto-dismiss keyboard after a short delay
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        focusedField = nil
+                                    }
+                                }
                             if getSalesTarget() > 0 {
                                 Text("/ \(formatCurrency(getSalesTarget()))")
                                     .font(.caption)
@@ -123,6 +138,12 @@ struct QuickEntryView: View {
                                 .multilineTextAlignment(.trailing)
                                 .focused($focusedField, equals: .tips)
                                 .frame(width: 100)
+                                .onChange(of: entryTips) { _, _ in
+                                    // Auto-dismiss keyboard after a short delay
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        focusedField = nil
+                                    }
+                                }
                             if getTipsTarget() > 0 {
                                 Text("/ \(formatCurrency(getTipsTarget()))")
                                     .font(.caption)
@@ -138,6 +159,12 @@ struct QuickEntryView: View {
                                 .multilineTextAlignment(.trailing)
                                 .focused($focusedField, equals: .tipOut)
                                 .frame(width: 100)
+                                .onChange(of: entryTipOut) { _, _ in
+                                    // Auto-dismiss keyboard after a short delay
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        focusedField = nil
+                                    }
+                                }
                         }
                         
                         // Total (calculated)
