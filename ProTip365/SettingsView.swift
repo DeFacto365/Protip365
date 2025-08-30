@@ -14,26 +14,25 @@ struct SettingsView: View {
     @State private var targetHoursDaily = ""
     @State private var targetHoursWeekly = ""
     @State private var targetHoursMonthly = ""
-    @State private var weekStartDay = 0 // 0 = Sunday, 1 = Monday, etc.
+    @State private var weekStartDay = 0
+    @State private var useMultipleEmployers = false
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
     @State private var isDeletingAccount = false
     @State private var showSuggestIdeas = false
     @State private var suggestionText = ""
-    @State private var showingSuggestSuccess = false
     @State private var isSendingSuggestion = false
-    @State private var showingSaveSuccess = false
+    @State private var saveButtonText = "Save Settings"
     @State private var isSaving = false
     @State private var showError = false
     @State private var errorMessage = ""
     @AppStorage("language") private var language = "en"
+    @AppStorage("useMultipleEmployers") private var useMultipleEmployersStorage = false
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) var sizeClass
     
     let weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-    let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     
     var body: some View {
         NavigationStack {
@@ -103,23 +102,30 @@ struct SettingsView: View {
                         HStack {
                             Label(hourlyRateLabel, systemImage: "dollarsign.circle")
                             Spacer()
-                            TextField("15.00", text: $defaultHourlyRate)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 100)
-                                .padding(8)
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(8)
-                                .onTapGesture {
-                                    if defaultHourlyRate == "15.00" || defaultHourlyRate == "0.00" {
-                                        defaultHourlyRate = ""
-                                    }
+                            TextField("15.00", text: $defaultHourlyRate, onEditingChanged: { editing in
+                                if editing && (defaultHourlyRate == "15.00" || defaultHourlyRate == "0.00") {
+                                    defaultHourlyRate = ""
                                 }
+                            })
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 100)
+                            .padding(8)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(8)
                         }
                         
-                        VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: $useMultipleEmployers) {
+                            Label(useMultipleEmployersLabel, systemImage: "building.2.fill")
+                        }
+                        .onChange(of: useMultipleEmployers) { _, newValue in
+                            useMultipleEmployersStorage = newValue
+                        }
+                        
+                        HStack {
                             Label(weekStartLabel, systemImage: "calendar")
-                            Picker(weekStartLabel, selection: $weekStartDay) {
+                            Spacer()
+                            Picker("", selection: $weekStartDay) {
                                 ForEach(0..<7) { index in
                                     Text(localizedWeekDay(index)).tag(index)
                                 }
@@ -229,59 +235,41 @@ struct SettingsView: View {
                                     .scaleEffect(0.8)
                                     .tint(.white)
                             } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text(saveButton)
+                                Image(systemName: saveButtonText == "Saved!" ? "checkmark.circle.fill" : "checkmark.circle.fill")
+                                Text(saveButtonText)
                                     .fontWeight(.semibold)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(saveButtonText == "Saved!" ? Color.green : Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                     .disabled(isSaving)
                     .padding(.horizontal)
                     
-                    // Support & Feedback Section
-                    VStack(spacing: 12) {
-                        // Support Button with availability check
-                        if UIApplication.shared.canOpenURL(URL(string: "mailto:")!) {
-                            Link(destination: URL(string: "mailto:support@protip365.com?subject=ProTip365%20Support%20Request")!) {
-                                HStack {
-                                    Image(systemName: "envelope.fill")
-                                        .foregroundColor(.blue)
-                                    Text(supportButton)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "arrow.up.forward.square")
-                                        .foregroundColor(.secondary)
-                                        .font(.caption)
-                                }
-                                .padding()
-                                .glassCard()
+                    // Support & Feedback Section - COMBINED
+                    VStack(spacing: 0) {
+                        // Support
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                                .foregroundColor(.blue)
+                            VStack(alignment: .leading) {
+                                Text(supportButton)
+                                    .foregroundColor(.primary)
+                                Text("support@protip365.com")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
-                            .padding(.horizontal)
-                        } else {
-                            // Fallback for simulator - just show the email address
-                            HStack {
-                                Image(systemName: "envelope.fill")
-                                    .foregroundColor(.blue)
-                                VStack(alignment: .leading) {
-                                    Text(supportButton)
-                                        .foregroundColor(.primary)
-                                    Text("support@protip365.com")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                Spacer()
-                            }
-                            .padding()
-                            .glassCard()
-                            .padding(.horizontal)
+                            Spacer()
                         }
+                        .padding()
+                        .background(Color(.secondarySystemGroupedBackground))
                         
-                        // Feedback Button
+                        Divider()
+                        
+                        // Suggest Ideas
                         Button(action: { showSuggestIdeas = true }) {
                             HStack {
                                 Image(systemName: "lightbulb.fill")
@@ -294,49 +282,42 @@ struct SettingsView: View {
                                     .font(.caption)
                             }
                             .padding()
-                            .glassCard()
                         }
-                        .padding(.horizontal)
+                        .background(Color(.secondarySystemGroupedBackground))
                     }
-                    
-                    // Sign Out Button
-                    Button(action: { showSignOutAlert = true }) {
-                        HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text(signOutButton)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                        )
-                    }
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(10)
                     .padding(.horizontal)
                     
-                    // Delete Account Button
-                    Button(action: { showDeleteAccountAlert = true }) {
-                        HStack {
-                            Image(systemName: "trash.fill")
-                            Text(deleteAccountButton)
+                    // Account Actions Section - Apple UI Style
+                    VStack(spacing: 0) {
+                        Button(action: { showSignOutAlert = true }) {
+                            HStack {
+                                Text(signOutButton)
+                                    .foregroundColor(.red)
+                                Spacer()
+                            }
+                            .padding()
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.15))
-                        .foregroundColor(.red)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                        )
+                        .background(Color(.secondarySystemGroupedBackground))
+                        
+                        Divider()
+                            .padding(.leading)
+                        
+                        Button(action: { showDeleteAccountAlert = true }) {
+                            HStack {
+                                Text(deleteAccountButton)
+                                    .foregroundColor(.red)
+                                Spacer()
+                            }
+                            .padding()
+                        }
+                        .background(Color(.secondarySystemGroupedBackground))
                     }
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(10)
                     .padding(.horizontal)
-                    .padding(.top, -10)
                     
-                    // Clean bottom spacing - no version text
                     Spacer()
                         .frame(height: 30)
                 }
@@ -347,14 +328,7 @@ struct SettingsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle(settingsTitle)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Image(systemName: "dollarsign.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.blue)
-                        .symbolRenderingMode(.hierarchical)
-                }
-            }
+            // Removed the dollar sign icon from toolbar
             .alert(signOutConfirmTitle, isPresented: $showSignOutAlert) {
                 Button(cancelButton, role: .cancel) { }
                 Button(signOutButton, role: .destructive) {
@@ -372,11 +346,6 @@ struct SettingsView: View {
                 }
             } message: {
                 Text(deleteAccountConfirmMessage)
-            }
-            .alert(saveSuccessTitle, isPresented: $showingSaveSuccess) {
-                Button("OK") { }
-            } message: {
-                Text(saveSuccessMessage)
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK") { }
@@ -422,20 +391,20 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    .alert(successTitle, isPresented: $showingSuggestSuccess) {
-                        Button("OK") {
-                            showSuggestIdeas = false
-                            suggestionText = ""
-                        }
-                    } message: {
-                        Text(thankYouMessage)
-                    }
                 }
             }
         }
         .task {
             await loadUserInfo()
             await loadSettings()
+            useMultipleEmployers = useMultipleEmployersStorage
+        }
+        .onChange(of: saveButtonText) { _, newValue in
+            if newValue == "Saved!" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    saveButtonText = "Save Settings"
+                }
+            }
         }
     }
     
@@ -445,18 +414,17 @@ struct SettingsView: View {
             Label(label, systemImage: icon)
                 .foregroundColor(color)
             Spacer()
-            TextField(placeholder, text: value)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 100)
-                .padding(8)
-                .background(.ultraThinMaterial)
-                .cornerRadius(8)
-                .onTapGesture {
-                    if value.wrappedValue == "0" || value.wrappedValue == "0.00" || value.wrappedValue == "0.0" {
-                        value.wrappedValue = ""
-                    }
+            TextField(placeholder, text: value, onEditingChanged: { editing in
+                if editing && (value.wrappedValue == "0" || value.wrappedValue == "0.00" || value.wrappedValue == "0.0" || value.wrappedValue == placeholder) {
+                    value.wrappedValue = ""
                 }
+            })
+            .keyboardType(.decimalPad)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 100)
+            .padding(8)
+            .background(.ultraThinMaterial)
+            .cornerRadius(8)
         }
     }
     
@@ -502,6 +470,7 @@ struct SettingsView: View {
                 let target_hours_monthly: Double?
                 let week_start: Int?
                 let name: String?
+                let use_multiple_employers: Bool?
             }
             
             let profiles: [Profile] = try await SupabaseManager.shared.client
@@ -527,6 +496,11 @@ struct SettingsView: View {
                 targetHoursWeekly = (userProfile.target_hours_weekly ?? 0) > 0 ? String(format: "%.0f", userProfile.target_hours_weekly ?? 0) : ""
                 targetHoursMonthly = (userProfile.target_hours_monthly ?? 0) > 0 ? String(format: "%.0f", userProfile.target_hours_monthly ?? 0) : ""
                 weekStartDay = userProfile.week_start ?? 0
+                
+                if let useEmployers = userProfile.use_multiple_employers {
+                    useMultipleEmployers = useEmployers
+                    useMultipleEmployersStorage = useEmployers
+                }
             }
         } catch {
             print("Error loading settings: \(error)")
@@ -554,6 +528,7 @@ struct SettingsView: View {
                     let language: String
                     let week_start: Int
                     let name: String?
+                    let use_multiple_employers: Bool
                 }
                 
                 let updates = ProfileUpdate(
@@ -569,7 +544,8 @@ struct SettingsView: View {
                     target_hours_monthly: Double(targetHoursMonthly) ?? 0,
                     language: language,
                     week_start: weekStartDay,
-                    name: userName.isEmpty ? nil : userName
+                    name: userName.isEmpty ? nil : userName,
+                    use_multiple_employers: useMultipleEmployers
                 )
                 
                 try await SupabaseManager.shared.client
@@ -582,7 +558,7 @@ struct SettingsView: View {
                 
                 await MainActor.run {
                     isSaving = false
-                    showingSaveSuccess = true
+                    saveButtonText = "Saved!"
                     
                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                     impactFeedback.impactOccurred()
@@ -607,7 +583,7 @@ struct SettingsView: View {
                 let session = try await SupabaseManager.shared.client.auth.session
                 let token = session.accessToken
                 
-                guard let url = URL(string: "https://ebffiippfaebdaaddbo-a4bo.supabase.co/functions/v1/delete-account") else {
+                guard let url = URL(string: "https://ztzpjsbfzcccvbacgskc.supabase.co/functions/v1/delete-account") else {
                     throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }
                 
@@ -649,6 +625,7 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Send Suggestion Function
     func sendSuggestion() {
         guard !suggestionText.isEmpty else { return }
         
@@ -656,52 +633,44 @@ struct SettingsView: View {
         
         Task {
             do {
-                let userEmail = try await SupabaseManager.shared.client.auth.session.user.email ?? "Unknown"
+                let session = try await SupabaseManager.shared.client.auth.session
                 
-                let url = URL(string: "https://api.resend.com/emails")!
+                // Get Supabase URL from your SupabaseManager
+                let supabaseURL = "https://ebffiippfaebdaaddbo-a4bo.supabase.co" // Your actual Supabase URL
+                guard let url = URL(string: "\(supabaseURL)/functions/v1/send-suggestion") else {
+                    throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                }
+                
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
-                request.setValue("Bearer re_AAy3MDpT_LcKgzmGMquUXojtuhbVBoCGp", forHTTPHeaderField: "Authorization")
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
-                let emailData = [
-                    "from": "ProTip365 <feedback@protip365.com>",
-                    "to": ["web@florabump.com"],
-                    "subject": "ProTip365 - New Suggestion",
-                    "html": """
-                        <h2>New Suggestion from ProTip365</h2>
-                        <p><strong>From:</strong> \(userEmail)</p>
-                        <p><strong>Date:</strong> \(Date().formatted())</p>
-                        <hr>
-                        <p><strong>Suggestion:</strong></p>
-                        <p>\(suggestionText.replacingOccurrences(of: "\n", with: "<br>"))</p>
-                    """
-                ]
+                let body = ["suggestion": suggestionText]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
-                request.httpBody = try JSONSerialization.data(withJSONObject: emailData)
+                let (data, response) = try await URLSession.shared.data(for: request)
                 
-                let (_, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse,
-                   httpResponse.statusCode == 200 {
-                    await MainActor.run {
-                        isSendingSuggestion = false
-                        showingSuggestSuccess = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        await MainActor.run {
+                            isSendingSuggestion = false
                             showSuggestIdeas = false
                             suggestionText = ""
+                            HapticFeedback.success()
                         }
-                    }
-                } else {
-                    await MainActor.run {
-                        isSendingSuggestion = false
+                    } else {
+                        let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let errorMessage = errorData?["error"] as? String ?? "Unknown error"
+                        throw NSError(domain: "", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
                     }
                 }
             } catch {
                 await MainActor.run {
                     isSendingSuggestion = false
+                    errorMessage = "Failed to send: \(error.localizedDescription)"
+                    showError = true
                 }
-                print("Error sending suggestion: \(error)")
             }
         }
     }
@@ -763,6 +732,14 @@ struct SettingsView: View {
         case "fr": return "Taux horaire"
         case "es": return "Tarifa por hora"
         default: return "Hourly Rate"
+        }
+    }
+    
+    var useMultipleEmployersLabel: String {
+        switch language {
+        case "fr": return "Utiliser plusieurs employeurs"
+        case "es": return "Usar múltiples empleadores"
+        default: return "Use Multiple Employers"
         }
     }
     
@@ -870,14 +847,6 @@ struct SettingsView: View {
         }
     }
     
-    var feedbackSection: String {
-        switch language {
-        case "fr": return "Commentaires"
-        case "es": return "Comentarios"
-        default: return "Feedback"
-        }
-    }
-    
     var suggestIdeasButton: String {
         switch language {
         case "fr": return "Suggérer des idées"
@@ -915,46 +884,6 @@ struct SettingsView: View {
         case "fr": return "Envoyer"
         case "es": return "Enviar"
         default: return "Send"
-        }
-    }
-    
-    var successTitle: String {
-        switch language {
-        case "fr": return "Merci!"
-        case "es": return "¡Gracias!"
-        default: return "Thank you!"
-        }
-    }
-    
-    var thankYouMessage: String {
-        switch language {
-        case "fr": return "Merci pour vos suggestions, nous les apprécions vraiment!"
-        case "es": return "Gracias por sus sugerencias, realmente las apreciamos!"
-        default: return "Thank you for your suggestions, we really appreciate it!"
-        }
-    }
-    
-    var saveButton: String {
-        switch language {
-        case "fr": return "Sauvegarder"
-        case "es": return "Guardar"
-        default: return "Save Settings"
-        }
-    }
-    
-    var saveSuccessTitle: String {
-        switch language {
-        case "fr": return "Succès"
-        case "es": return "Éxito"
-        default: return "Success"
-        }
-    }
-    
-    var saveSuccessMessage: String {
-        switch language {
-        case "fr": return "Vos paramètres ont été sauvegardés avec succès."
-        case "es": return "Su configuración se ha guardado correctamente."
-        default: return "Your settings have been saved successfully."
         }
     }
     
@@ -1014,4 +943,3 @@ struct SettingsView: View {
         }
     }
 }
-

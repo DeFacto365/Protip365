@@ -4,8 +4,12 @@ import Supabase
 struct EmployersView: View {
     @State private var employers: [Employer] = []
     @State private var showAddEmployer = false
+    @State private var showEditEmployer = false
+    @State private var editingEmployer: Employer?
     @State private var newEmployerName = ""
     @State private var newEmployerRate = ""
+    @State private var editEmployerName = ""
+    @State private var editEmployerRate = ""
     @State private var isLoading = false
     @State private var showDeleteAlert = false
     @State private var employerToDelete: Employer?
@@ -76,6 +80,12 @@ struct EmployersView: View {
                             ForEach(employers) { employer in
                                 EmployerCard(
                                     employer: employer,
+                                    onEdit: {
+                                        editingEmployer = employer
+                                        editEmployerName = employer.name
+                                        editEmployerRate = String(format: "%.2f", employer.hourly_rate)
+                                        showEditEmployer = true
+                                    },
                                     onDelete: {
                                         employerToDelete = employer
                                         showDeleteAlert = true
@@ -99,6 +109,19 @@ struct EmployersView: View {
                         showAddEmployer = false
                         newEmployerName = ""
                         newEmployerRate = ""
+                    }
+                )
+            }
+            .sheet(isPresented: $showEditEmployer) {
+                EditEmployerSheet(
+                    name: $editEmployerName,
+                    rate: $editEmployerRate,
+                    onSave: updateEmployer,
+                    onCancel: {
+                        showEditEmployer = false
+                        editingEmployer = nil
+                        editEmployerName = ""
+                        editEmployerRate = ""
                     }
                 )
             }
@@ -171,6 +194,39 @@ struct EmployersView: View {
             HapticFeedback.success()
         } catch {
             print("Error adding employer: \(error)")
+            HapticFeedback.error()
+        }
+    }
+    
+    func updateEmployer() async {
+        guard let employer = editingEmployer else { return }
+        
+        do {
+            struct EmployerUpdate: Encodable {
+                let name: String
+                let hourly_rate: Double
+            }
+            
+            let update = EmployerUpdate(
+                name: editEmployerName,
+                hourly_rate: Double(editEmployerRate) ?? 15.00
+            )
+            
+            try await SupabaseManager.shared.client
+                .from("employers")
+                .update(update)
+                .eq("id", value: employer.id)
+                .execute()
+            
+            showEditEmployer = false
+            editingEmployer = nil
+            editEmployerName = ""
+            editEmployerRate = ""
+            await loadEmployers()
+            
+            HapticFeedback.success()
+        } catch {
+            print("Error updating employer: \(error)")
             HapticFeedback.error()
         }
     }
@@ -264,6 +320,7 @@ struct EmployersView: View {
 
 struct EmployerCard: View {
     let employer: Employer
+    let onEdit: () -> Void
     let onDelete: () -> Void
     @AppStorage("language") private var language = "en"
     
@@ -286,13 +343,24 @@ struct EmployerCard: View {
             
             Spacer()
             
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.body)
-                    .foregroundColor(.red)
-                    .padding(8)
-                    .background(Color.red.opacity(0.1))
-                    .clipShape(Circle())
+            HStack(spacing: 12) {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.body)
+                        .foregroundColor(.blue)
+                        .padding(8)
+                        .background(Color.blue.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.body)
+                        .foregroundColor(.red)
+                        .padding(8)
+                        .background(Color.red.opacity(0.1))
+                        .clipShape(Circle())
+                }
             }
         }
         .padding()
@@ -422,3 +490,125 @@ struct AddEmployerSheet: View {
     }
 }
 
+// Edit Employer Sheet - NEW
+struct EditEmployerSheet: View {
+    @Binding var name: String
+    @Binding var rate: String
+    let onSave: () async -> Void
+    let onCancel: () -> Void
+    @State private var isSaving = false
+    @AppStorage("language") private var language = "en"
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name, rate
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(employerNamePlaceholder, text: $name)
+                        .focused($focusedField, equals: .name)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                focusedField = .name
+                            }
+                        }
+                } header: {
+                    Text(employerNameSection)
+                }
+                
+                Section {
+                    HStack {
+                        Text("$")
+                        TextField("15.00", text: $rate)
+                            .keyboardType(.decimalPad)
+                            .focused($focusedField, equals: .rate)
+                        Text("/hr")
+                    }
+                } header: {
+                    Text(hourlyRateSection)
+                }
+            }
+            .navigationTitle(editEmployerTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(cancelButton) {
+                        onCancel()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saveButton) {
+                        Task {
+                            isSaving = true
+                            await onSave()
+                            isSaving = false
+                        }
+                    }
+                    .disabled(name.isEmpty || rate.isEmpty || isSaving)
+                }
+            }
+            .overlay {
+                if isSaving {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+                }
+            }
+        }
+    }
+    
+    // Localization
+    var editEmployerTitle: String {
+        switch language {
+        case "fr": return "Modifier l'employeur"
+        case "es": return "Editar empleador"
+        default: return "Edit Employer"
+        }
+    }
+    
+    var employerNameSection: String {
+        switch language {
+        case "fr": return "Nom de l'employeur"
+        case "es": return "Nombre del empleador"
+        default: return "Employer Name"
+        }
+    }
+    
+    var employerNamePlaceholder: String {
+        switch language {
+        case "fr": return "Restaurant ABC"
+        case "es": return "Restaurante ABC"
+        default: return "Restaurant ABC"
+        }
+    }
+    
+    var hourlyRateSection: String {
+        switch language {
+        case "fr": return "Taux horaire"
+        case "es": return "Tarifa por hora"
+        default: return "Hourly Rate"
+        }
+    }
+    
+    var saveButton: String {
+        switch language {
+        case "fr": return "Sauvegarder"
+        case "es": return "Guardar"
+        default: return "Save"
+        }
+    }
+    
+    var cancelButton: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
+}

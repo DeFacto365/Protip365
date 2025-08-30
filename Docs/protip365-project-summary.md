@@ -31,6 +31,7 @@
 - Tip percentage calculation
 - Visual stats with colored cards
 - Empty state handling
+- Detail view with delay fix for proper data loading
 
 ### 3. **Shift Management** 
 - Weekly calendar view with iOS 18-style UI
@@ -66,8 +67,12 @@
 - Language selection (English, French, Spanish)
 - Default hourly rate (when not using employers)
 - Tip targets (daily/weekly/monthly)
+- Sales targets (daily/weekly/monthly)
+- Hours targets (daily/weekly/monthly)
+- Week start day selection
 - Use multiple employers toggle
 - Sign out functionality
+- Delete account functionality
 - Save confirmation animation
 - Currency symbol based on locale
 
@@ -82,7 +87,16 @@
 - target_tip_daily: Double
 - target_tip_weekly: Double
 - target_tip_monthly: Double
+- target_sales_daily: Double
+- target_sales_weekly: Double
+- target_sales_monthly: Double
+- target_hours_daily: Double
+- target_hours_weekly: Double
+- target_hours_monthly: Double
+- week_start: Int
 - language: String
+- name: String
+- use_multiple_employers: Bool
 - created_at: Timestamp
 ```
 
@@ -107,6 +121,8 @@
 - notes: String
 - hourly_rate: Double
 - employer_id: UUID (Optional)
+- start_time: String
+- end_time: String
 - created_at: Timestamp
 ```
 
@@ -115,21 +131,28 @@
 - All shift fields plus:
 - total_income: Calculated as (hours × hourly_rate) + tips - cash_out
 - employer_name: Joined from employers table
+- base_income: Double
+- net_tips: Double
+- tip_percentage: Double
 ```
 
 ## Recent Updates & Fixes
-1. Fixed calendar positioning at top of screen
-2. Added clickable detail views for all dashboard stats
-3. Implemented iOS 18-style form design
-4. Removed success alerts for smoother UX
-5. Added currency formatting based on device locale
-6. Fixed landscape orientation support
-7. Implemented save button animation feedback
-8. Simplified tip calculator (removed Done button)
-9. Fixed empty state for weekly/monthly views
-10. Added proper error handling for Supabase queries
-11. Fixed AnyJSON handling for user metadata
-12. Resolved string interpolation formatting issues
+1. **Split DashboardView into multiple files for better maintainability**
+2. **Fixed detail view "No data" issue with async delay**
+3. Fixed calendar positioning at top of screen
+4. Added clickable detail views for all dashboard stats
+5. Implemented iOS 18-style form design
+6. Removed success alerts for smoother UX
+7. Added currency formatting based on device locale
+8. Fixed landscape orientation support
+9. Implemented save button animation feedback
+10. Simplified tip calculator (removed Done button)
+11. Fixed empty state for weekly/monthly views
+12. Added proper error handling for Supabase queries
+13. Fixed AnyJSON handling for user metadata
+14. Resolved string interpolation formatting issues
+15. Added sales and hours targets to settings
+16. Fixed month view to show last 30 days instead of current month
 
 ## File Structure
 ```
@@ -137,13 +160,21 @@ ProTip365/
 ├── ProTip365App.swift          # App entry point
 ├── ContentView.swift           # Tab navigation
 ├── AuthView.swift              # Sign in/up screens
-├── DashboardView.swift         # Main stats dashboard
-├── ShiftCalendarView.swift     # Shift management
+├── DashboardView.swift         # Main dashboard logic (570 lines)
+├── DashboardComponents.swift   # Dashboard UI components (90 lines)
+├── QuickEntryView.swift        # Quick entry form (230 lines)
+├── DetailView.swift            # Shift detail view (200 lines)
+├── ShiftsCalendarView.swift    # Shift management
 ├── EmployersView.swift         # Employer management
 ├── TipCalculatorView.swift     # Tip calculator
 ├── SettingsView.swift          # User settings
 ├── SupabaseManager.swift       # Supabase client singleton
 ├── Models.swift                # Data models (Codable structs)
+├── ThemeExtension.swift        # UI styling and components
+├── BiometricAuthManager.swift  # Biometric authentication
+├── LockScreenView.swift        # Lock screen UI
+├── SubscriptionManager.swift   # In-app purchases
+├── SubscriptionView.swift      # Subscription UI
 └── Info.plist                  # App configuration
 ```
 
@@ -163,6 +194,11 @@ ProTip365/
 - employer_id: UUID?
 - employer_name: String?
 - total_income: Double?
+- base_income: Double?
+- net_tips: Double?
+- tip_percentage: Double?
+- start_time: String?
+- end_time: String?
 - created_at: String
 ```
 
@@ -172,18 +208,36 @@ ProTip365/
 - user_id: UUID
 - name: String
 - hourly_rate: Double
-- created_at: String
+- created_at: Date
 ```
 
 ### UserProfile
 ```swift
 - user_id: UUID
 - default_hourly_rate: Double
+- week_start: Int
 - target_tip_daily: Double
 - target_tip_weekly: Double
 - target_tip_monthly: Double
-- language: String
-- created_at: String
+- name: String?
+```
+
+### Shift
+```swift
+- id: UUID?
+- user_id: UUID
+- employer_id: UUID?
+- shift_date: String
+- hours: Double
+- hourly_rate: Double?
+- sales: Double
+- tips: Double
+- cash_out: Double?
+- cash_out_note: String?
+- notes: String?
+- start_time: String?
+- end_time: String?
+- created_at: Date?
 ```
 
 ## Localization
@@ -196,20 +250,28 @@ ProTip365/
 - iOS 18-style form designs
 - Adaptive color scheme support
 - Landscape orientation support
-- Tab bar with icons
+- Tab bar with icons (iPad uses sidebar navigation)
 - Pull-to-refresh capability
 - Loading states
 - Empty state messages
 - Validation feedback
 - Currency formatting per locale
+- Glass morphism effects
+- Haptic feedback
+- Success toast notifications
 
 ## Known Issues/Considerations
 1. Keyboard may not show in simulator for tip calculator (works on real device)
 2. No data export functionality yet
-3. No shift deletion in calendar view (only through database)
-4. No dark mode specific styling (uses system defaults)
-5. localStorage not supported in artifacts
-6. Limited to 20 recent chats in past_chats_tools
+3. No dark mode specific styling (uses system defaults)
+4. localStorage not supported in artifacts
+
+## Fixed Issues
+1. ✅ Dashboard detail view "No data" issue (fixed with async delay)
+2. ✅ Large file maintainability (split into multiple files)
+3. ✅ String encoding issues with French/Spanish characters
+4. ✅ Empty state for weekly/monthly views
+5. ✅ Calendar view shift deletion
 
 ## Environment Setup
 
@@ -227,16 +289,19 @@ ProTip365/
 4. Bundle ID: com.yourcompany.ProTip365
 
 ## Testing Checklist
-- [ ] Authentication flow (sign up, sign in, sign out)
-- [ ] Dashboard stats calculation
-- [ ] Shift creation and editing
-- [ ] Employer management
-- [ ] Language switching
-- [ ] Landscape orientation
-- [ ] Empty states
-- [ ] Data persistence
-- [ ] Tip calculator accuracy
-- [ ] Settings save confirmation
+- [x] Authentication flow (sign up, sign in, sign out)
+- [x] Dashboard stats calculation
+- [x] Dashboard detail views
+- [x] Shift creation and editing
+- [x] Employer management
+- [x] Language switching
+- [x] Landscape orientation
+- [x] Empty states
+- [x] Data persistence
+- [x] Tip calculator accuracy
+- [x] Settings save confirmation
+- [x] Target goals display
+- [x] Week start day functionality
 
 ## Next Potential Features
 - Data export (CSV/PDF reports)
@@ -251,16 +316,19 @@ ProTip365/
 - Apple Watch companion app
 - Widget for today's earnings
 - Siri shortcuts integration
+- Biometric authentication (partially implemented)
+- Subscription features (partially implemented)
 
 ## API Endpoints Used
 All through Supabase client:
 - `/auth/signup` - User registration
 - `/auth/signin` - User login
 - `/auth/signout` - User logout
+- `/auth/resetPasswordForEmail` - Password reset
 - `/rest/v1/users_profile` - Profile CRUD
 - `/rest/v1/employers` - Employers CRUD
 - `/rest/v1/shifts` - Shifts CRUD
-- `/rest/v1/v_shift_income` - Income calculations
+- `/rest/v1/v_shift_income` - Income calculations view
 
 ## Build & Deploy Instructions
 
@@ -285,12 +353,28 @@ All through Supabase client:
 - iOS Distribution Certificate
 - App Store Provisioning Profile
 
+## Code Architecture
+
+### File Organization
+- **Main Views**: Core app screens (Dashboard, Settings, etc.)
+- **Components**: Reusable UI components (split from main views)
+- **Models**: Data structures and Codable implementations
+- **Managers**: Singleton services (Supabase, Biometric, Subscription)
+- **Extensions**: UI helpers and styling
+
+### State Management
+- `@State` for local view state
+- `@AppStorage` for user preferences
+- `@StateObject` for view models
+- `@Environment` for system settings
+
 ## Performance Optimizations
 - Lazy loading of shift data
 - Efficient date calculations
 - Minimal re-renders with @State
 - Async/await for all API calls
 - Proper error handling
+- Split large files for faster compilation
 
 ## Security Considerations
 - Row Level Security (RLS) in Supabase
@@ -298,6 +382,7 @@ All through Supabase client:
 - Secure authentication tokens
 - No sensitive data in UserDefaults
 - HTTPS only communication
+- Biometric authentication support
 
 ## Support & Maintenance
 - Regular Supabase SDK updates
@@ -308,13 +393,15 @@ All through Supabase client:
 
 ## Version History
 - v1.0.0 - Initial release with core features
+- v1.1.0 - Added sales/hours targets, fixed detail view issues
+- v1.2.0 - Split dashboard into multiple files for maintainability
 - Current - All features listed above implemented
 
 ## Contact & Resources
 - Project Location: `~/Github/ProTip365/`
 - Min iOS Version: 17.0
 - Swift Version: 5.9
-- Last Updated: August 2025
+- Last Updated: December 2024
 
 ---
 

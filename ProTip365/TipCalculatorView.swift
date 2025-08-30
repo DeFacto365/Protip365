@@ -36,9 +36,9 @@ struct TipCalculatorView: View {
                 .ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 24) {
-                        // Bill Amount Input Card
-                        VStack(spacing: 16) {
+                    VStack(spacing: 20) {
+                        // Bill Amount Input Card - MORE COMPACT
+                        VStack(spacing: 12) {
                             HStack {
                                 Image(systemName: "receipt")
                                     .font(.headline)
@@ -49,23 +49,24 @@ struct TipCalculatorView: View {
                                 Spacer()
                             }
                             
-                            // Bill Amount Display
+                            // Bill Amount Display - SMALLER SIZE
                             Button(action: {
                                 isShowingNumberPad.toggle()
                                 HapticFeedback.light()
                             }) {
                                 HStack {
                                     Text(getCurrencySymbol())
-                                        .font(.largeTitle)
+                                        .font(.title)
                                         .fontWeight(.light)
                                         .foregroundStyle(.secondary)
                                     
                                     Text(billAmount.isEmpty ? "0.00" : billAmount)
-                                        .font(.system(size: 48, weight: .medium, design: .rounded))
+                                        .font(.system(size: 36, weight: .medium, design: .rounded))
                                         .foregroundStyle(.primary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .padding()
+                                .padding(.vertical, 12)
+                                .padding(.horizontal)
                                 .background(Color(.systemGray6))
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
@@ -79,7 +80,7 @@ struct TipCalculatorView: View {
                         )
                         
                         // Tip Percentage Card
-                        VStack(spacing: 20) {
+                        VStack(spacing: 16) {
                             HStack {
                                 Image(systemName: "percent")
                                     .font(.headline)
@@ -94,9 +95,9 @@ struct TipCalculatorView: View {
                                     .foregroundStyle(.blue)
                             }
                             
-                            // Quick Tip Buttons
-                            HStack(spacing: 12) {
-                                ForEach([10, 15, 18, 20, 25], id: \.self) { percentage in
+                            // Quick Tip Buttons - CHANGED TO 30%
+                            HStack(spacing: 10) {
+                                ForEach([10, 15, 18, 20, 30], id: \.self) { percentage in
                                     Button(action: {
                                         withAnimation(.spring(response: 0.3)) {
                                             tipPercentage = Double(percentage)
@@ -104,18 +105,19 @@ struct TipCalculatorView: View {
                                         HapticFeedback.light()
                                     }) {
                                         Text("\(percentage)%")
-                                            .font(.headline)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
                                             .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 14)
+                                            .padding(.vertical, 12)
                                             .background(
                                                 tipPercentage == Double(percentage) ?
                                                     AnyShapeStyle(Color.blue) :
                                                     AnyShapeStyle(.regularMaterial)
                                             )
                                             .foregroundColor(tipPercentage == Double(percentage) ? .white : .primary)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
                                                     .stroke(.white.opacity(0.2), lineWidth: tipPercentage == Double(percentage) ? 0 : 1)
                                             )
                                     }
@@ -123,7 +125,7 @@ struct TipCalculatorView: View {
                             }
                             
                             // Custom Slider
-                            VStack(spacing: 8) {
+                            VStack(spacing: 6) {
                                 Slider(value: $tipPercentage, in: 0...30, step: 1)
                                     .tint(.blue)
                                     .onChange(of: tipPercentage) { _, _ in
