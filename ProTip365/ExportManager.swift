@@ -40,15 +40,15 @@ class ExportManager: ObservableObject {
                 shift.start_time ?? "",
                 shift.end_time ?? "",
                 String(format: "%.1f", shift.hours),
-                String(format: "%.2f", shift.hourly_rate),
-                String(format: "%.2f", shift.hours * shift.hourly_rate),
+                String(format: "%.2f", shift.hourly_rate ?? 0),
+                String(format: "%.2f", shift.hours * (shift.hourly_rate ?? 0)),
                 String(format: "%.2f", shift.sales),
                 String(format: "%.2f", shift.tips),
                 String(format: "%.2f", shift.cash_out ?? 0),
                 String(format: "%.2f", shift.total_income ?? 0),
                 String(format: "%.1f", shift.tip_percentage ?? 0),
                 shift.employer_name ?? "",
-                shift.notes ?? ""
+                ""
             ]
             
             csvContent += row.joined(separator: ",") + "\n"

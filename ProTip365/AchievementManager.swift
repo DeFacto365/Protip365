@@ -1,6 +1,57 @@
 import Foundation
 import SwiftUI
 
+// Define AchievementType enum at the top level
+enum AchievementType: String, Codable, CaseIterable {
+    case tipMaster = "tip_master"
+    case consistencyKing = "consistency_king"
+    case tipTargetCrusher = "tip_target_crusher"
+    case highEarner = "high_earner"
+    
+    var title: String {
+        switch self {
+        case .tipMaster: return "Tip Master"
+        case .consistencyKing: return "Consistency King"
+        case .tipTargetCrusher: return "Target Crusher"
+        case .highEarner: return "High Earner"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .tipMaster: return "Achieve 20%+ tip average"
+        case .consistencyKing: return "Enter data for 7 consecutive days"
+        case .tipTargetCrusher: return "Exceed tip target by 50%"
+        case .highEarner: return "Earn $30+/hour average"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .tipMaster: return "star.fill"
+        case .consistencyKing: return "crown.fill"
+        case .tipTargetCrusher: return "target"
+        case .highEarner: return "dollarsign.circle.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .tipMaster: return .yellow
+        case .consistencyKing: return .purple
+        case .tipTargetCrusher: return .orange
+        case .highEarner: return .green
+        }
+    }
+}
+
+enum StreakType: String, CaseIterable {
+    case entryStreak = "entry_streak"
+    case tipTargetStreak = "tip_target_streak"
+    case salesTargetStreak = "sales_target_streak"
+    case hoursTargetStreak = "hours_target_streak"
+}
+
 class AchievementManager: ObservableObject {
     @Published var achievements: [Achievement] = []
     @Published var currentStreaks: [StreakType: Int] = [:]
@@ -129,7 +180,7 @@ class AchievementManager: ObservableObject {
 }
 
 struct Achievement: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let type: AchievementType
     let title: String
     let description: String
@@ -137,53 +188,13 @@ struct Achievement: Identifiable, Codable {
     let dateUnlocked: Date
     var isUnlocked: Bool
     
-    enum AchievementType: String, Codable, CaseIterable {
-        case tipMaster = "tip_master"
-        case consistencyKing = "consistency_king"
-        case tipTargetCrusher = "tip_target_crusher"
-        case highEarner = "high_earner"
-        
-        var title: String {
-            switch self {
-            case .tipMaster: return "Tip Master"
-            case .consistencyKing: return "Consistency King"
-            case .tipTargetCrusher: return "Target Crusher"
-            case .highEarner: return "High Earner"
-            }
-        }
-        
-        var description: String {
-            switch self {
-            case .tipMaster: return "Achieve 20%+ tip average"
-            case .consistencyKing: return "Enter data for 7 consecutive days"
-            case .tipTargetCrusher: return "Exceed tip target by 50%"
-            case .highEarner: return "Earn $30+/hour average"
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .tipMaster: return "star.fill"
-            case .consistencyKing: return "crown.fill"
-            case .tipTargetCrusher: return "target"
-            case .highEarner: return "dollarsign.circle.fill"
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .tipMaster: return .yellow
-            case .consistencyKing: return .purple
-            case .tipTargetCrusher: return .orange
-            case .highEarner: return .green
-            }
-        }
+    init(type: AchievementType, title: String, description: String, message: String, dateUnlocked: Date, isUnlocked: Bool) {
+        self.id = UUID()
+        self.type = type
+        self.title = title
+        self.description = description
+        self.message = message
+        self.dateUnlocked = dateUnlocked
+        self.isUnlocked = isUnlocked
     }
-}
-
-enum StreakType: String, CaseIterable {
-    case entryStreak = "entry_streak"
-    case tipTargetStreak = "tip_target_streak"
-    case salesTargetStreak = "sales_target_streak"
-    case hoursTargetStreak = "hours_target_streak"
 }

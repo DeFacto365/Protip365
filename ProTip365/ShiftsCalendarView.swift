@@ -36,7 +36,7 @@ struct ShiftsCalendarView: View {
         case cancelledByEmployer = "cancelled_by_employer"
         case cancelledByMe = "cancelled_by_me"
         
-        var localizedText: String {
+        func localizedText(for language: String) -> String {
             switch self {
             case .sick:
                 switch language {
@@ -269,7 +269,7 @@ struct ShiftsCalendarView: View {
                     Spacer()
                     Picker("", selection: $didntWorkReason) {
                         ForEach(DidntWorkReason.allCases, id: \.self) { reason in
-                            Text(reason.localizedText).tag(reason.rawValue)
+                            Text(reason.localizedText(for: language)).tag(reason.rawValue)
                         }
                     }
                     .pickerStyle(.menu)
