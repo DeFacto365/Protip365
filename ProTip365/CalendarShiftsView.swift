@@ -72,49 +72,65 @@ struct CalendarShiftsView: View {
         .padding(.horizontal)
     }
     
-    // MARK: - Action Buttons (using existing pages)
+    // MARK: - Action Buttons (iOS 26 style with proper date logic)
     private var actionButtonsView: some View {
         HStack(spacing: 16) {
-            // Add Entry Button (only enabled for past dates) - Navigate to ShiftsCalendarView
-            NavigationLink(destination: ShiftsCalendarView()) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                    Text(addEntryText)
-                        .font(.headline)
-                        .fontWeight(.semibold)
+            // Add Entry Button (only enabled for past/today dates)
+            if isPastDateOrToday {
+                NavigationLink(destination: ShiftsCalendarView()) {
+                    actionButtonStyle(
+                        icon: "plus.circle.fill",
+                        text: addEntryText,
+                        color: Color(hex: "0288FF")
+                    )
                 }
-                .foregroundColor(isPastDate ? Color(hex: "0288FF") : .secondary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            } else {
+                actionButtonStyle(
+                    icon: "plus.circle.fill",
+                    text: addEntryText,
+                    color: .secondary,
+                    disabled: true
                 )
             }
-            .disabled(!isPastDate)
             
-            // Add Shift Button (always enabled) - Navigate to ShiftsCalendarView  
-            NavigationLink(destination: ShiftsCalendarView()) {
-                HStack {
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.title2)
-                    Text(addShiftText)
-                        .font(.headline)
-                        .fontWeight(.semibold)
+            // Add Shift Button (only enabled for today/future dates)
+            if isTodayOrFuture {
+                NavigationLink(destination: ShiftsCalendarView()) {
+                    actionButtonStyle(
+                        icon: "calendar.badge.plus",
+                        text: addShiftText,
+                        color: Color(hex: "0288FF")
+                    )
                 }
-                .foregroundColor(Color(hex: "0288FF"))
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground))
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            } else {
+                actionButtonStyle(
+                    icon: "calendar.badge.plus",
+                    text: addShiftText,
+                    color: .secondary,
+                    disabled: true
                 )
             }
         }
         .padding(.horizontal)
+    }
+    
+    private func actionButtonStyle(icon: String, text: String, color: Color, disabled: Bool = false) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.title2)
+            Text(text)
+                .font(.headline)
+                .fontWeight(.semibold)
+        }
+        .foregroundColor(color)
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(disabled ? Color(UIColor.systemBackground).opacity(0.5) : Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(disabled ? 0.05 : 0.1), radius: 4, x: 0, y: 2)
+        )
+        .opacity(disabled ? 0.6 : 1.0)
     }
     
     // MARK: - Helper Functions
@@ -130,6 +146,20 @@ struct CalendarShiftsView: View {
         let today = calendar.startOfDay(for: Date())
         let selected = calendar.startOfDay(for: selectedDate)
         return selected < today
+    }
+    
+    private var isPastDateOrToday: Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let selected = calendar.startOfDay(for: selectedDate)
+        return selected <= today
+    }
+    
+    private var isTodayOrFuture: Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let selected = calendar.startOfDay(for: selectedDate)
+        return selected >= today
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -196,90 +226,74 @@ struct CalendarShiftsView: View {
     }
 }
 
-// MARK: - Calendar Date View
+// MARK: - Calendar Date View (iOS 26 Style)
 struct CalendarDateView: View {
     let date: Date
     let shifts: [ShiftIncome]
     
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 4) {
+            // Date number
             Text("\(Calendar.current.component(.day, from: date))")
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: 17, weight: isToday ? .bold : .medium))
                 .foregroundColor(isToday ? .white : .primary)
             
+            // iOS 26 style colored dots for events
             if !shifts.isEmpty {
-                // Show shift indicator
-                if shifts.count == 1 {
-                    // Single shift - show time or hours
-                    if let shift = shifts.first {
-                        if let startTime = shift.start_time, let endTime = shift.end_time {
-                            Text(formatTimeRange(startTime, endTime))
-                                .font(.system(size: 8, weight: .medium))
-                                .foregroundColor(isToday ? .white : Color(hex: "0288FF"))
-                        } else {
-                            Text("\(shift.hours, specifier: "%.0f")h")
-                                .font(.system(size: 8, weight: .medium))
-                                .foregroundColor(isToday ? .white : Color(hex: "0288FF"))
+                HStack(spacing: 2) {
+                    ForEach(Array(shifts.enumerated()), id: \.offset) { index, shift in
+                        if index < 3 { // Show max 3 dots
+                            Circle()
+                                .fill(colorForShift(shift, index: index))
+                                .frame(width: 6, height: 6)
                         }
                     }
-                } else {
-                    // Multiple shifts - show count
-                    Text("\(shifts.count) shifts")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.orange)
-                        .cornerRadius(4)
+                    
+                    // Show "+N" if more than 3 shifts
+                    if shifts.count > 3 {
+                        Text("+\(shifts.count - 3)")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
                 }
+            } else {
+                // Empty space to maintain consistent height
+                Spacer()
+                    .frame(height: 6)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: 44, height: 44)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(backgroundColorForDate)
+            Circle()
+                .fill(isToday ? Color.black : Color.clear)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(borderColorForDate, lineWidth: 1)
-        )
+        .contentShape(Rectangle())
     }
     
     private var isToday: Bool {
         Calendar.current.isDate(date, inSameDayAs: Date())
     }
     
-    private var backgroundColorForDate: Color {
-        if isToday {
-            return Color(hex: "0288FF")
-        } else if !shifts.isEmpty {
-            return Color(hex: "0288FF").opacity(0.1)
+    private func colorForShift(_ shift: ShiftIncome, index: Int) -> Color {
+        // Use different colors based on shift status and earnings
+        if shift.has_earnings {
+            // Completed shifts with earnings
+            if let total = shift.total_income, total > 0 {
+                return [Color.green, Color.blue, Color.purple][index % 3]
+            } else {
+                return Color.orange // Completed but no earnings
+            }
         } else {
-            return Color.clear
+            // Planned shifts (no earnings yet)
+            switch shift.shift_status {
+            case "planned":
+                return [Color.cyan, Color.mint, Color.indigo][index % 3]
+            case "missed":
+                return Color.red
+            default:
+                return [Color.gray, Color.secondary, Color.primary][index % 3]
+            }
         }
-    }
-    
-    private var borderColorForDate: Color {
-        if !shifts.isEmpty {
-            return Color(hex: "0288FF")
-        } else {
-            return Color.gray.opacity(0.3)
-        }
-    }
-    
-    private func formatTimeRange(_ startTime: String, _ endTime: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let displayFormatter = DateFormatter()
-        displayFormatter.timeStyle = .short
-        
-        if let start = formatter.date(from: startTime),
-           let end = formatter.date(from: endTime) {
-            let startString = displayFormatter.string(from: start)
-            let endString = displayFormatter.string(from: end)
-            return "\(startString)-\(endString)"
-        }
-        return ""
     }
 }
 
@@ -403,23 +417,23 @@ struct CustomCalendarView: View {
             }
             .padding(.horizontal, 4)
             
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+            // iOS 26 style calendar grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 8) {
                 ForEach(monthDates, id: \.self) { date in
                     CalendarDateView(date: date, shifts: shiftsForDate(date))
-                        .frame(height: 50)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selectedDate = date
                         }
                         .opacity(calendar.isDate(date, equalTo: currentMonth, toGranularity: .month) ? 1.0 : 0.3)
                         .overlay(
+                            // iOS 26 style selection indicator
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color(hex: "0288FF"), lineWidth: calendar.isDate(date, inSameDayAs: selectedDate) ? 2 : 0)
                         )
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal)
         }
         .padding()
     }
