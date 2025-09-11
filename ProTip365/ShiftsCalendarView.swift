@@ -21,10 +21,12 @@ struct ShiftsCalendarView: View {
     @State private var employers: [Employer] = []
     @State private var didntWork = false
     @State private var didntWorkReason = ""
+    @State private var isSaving = false
     
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
+    @AppStorage("defaultEmployerId") private var defaultEmployerIdString: String?
     @FocusState private var focusedTimePicker: TimePickerField?
     
     enum TimePickerField {
@@ -68,17 +70,38 @@ struct ShiftsCalendarView: View {
         return selected > today
     }
     
+    // Check if date is in the past (not today or future)
+    var isPastDate: Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let selected = calendar.startOfDay(for: selectedDate)
+        return selected < today
+    }
+    
+    // Check if current shift has data that prevents deletion
+    var hasShiftData: Bool {
+        guard let shift = editingShift else { return false }
+        return shift.hours > 0 || shift.sales > 0 || shift.tips > 0 || (shift.cash_out ?? 0) > 0
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Week Calendar at the top
                 weekCalendarView
                     .padding(.vertical, 12)
-                    .background(Color(.systemGroupedBackground))
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
                 // Form Section
                 ScrollView {
                     VStack(spacing: 20) {
+                        // Daily Shifts Section (shown first for consistency with other pages)
+                        if !dailyShifts.isEmpty {
+                            dailyShiftsView
+                        }
+                        
                         // Helpful explanation
                         if dailyShifts.isEmpty && !isAddingNew {
                             VStack(spacing: 8) {
@@ -92,8 +115,7 @@ struct ShiftsCalendarView: View {
                                     .multilineTextAlignment(.leading)
                             }
                             .padding()
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                            .liquidGlassCard(material: .ultraThin)
                             .padding(.horizontal)
                         }
                         
@@ -101,37 +123,50 @@ struct ShiftsCalendarView: View {
                         if editingShift != nil || isAddingNew || dailyShifts.isEmpty {
                             shiftFormView
                         }
-                        
-                        // Daily Shifts Section
-                        if !dailyShifts.isEmpty {
-                            dailyShiftsView
-                        }
                     }
                     .padding(.vertical)
+                    .padding(.bottom, 100) // Extra space to avoid bottom tab bar
                 }
             }
             .navigationTitle("Shifts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Cancel (X) button - top left when editing
                 ToolbarItem(placement: .navigationBarLeading) {
                     if editingShift != nil || isAddingNew {
-                        Button("Cancel") {
+                        Button(action: {
+                            HapticFeedback.selection()
                             cancelEditing()
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.secondary)
                         }
                     }
                 }
                 
+                // Save (checkmark) button - top right when editing  
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if editingShift != nil || isAddingNew || dailyShifts.isEmpty {
-                        Button("Save") {
+                        Button(action: {
+                            HapticFeedback.medium()
                             saveShift()
+                        }) {
+                            if isSaving {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .tint(Color(hex: "0288FF"))
+                            } else {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(Color(hex: "0288FF"))
+                            }
                         }
-                        .disabled(!isFormValid)
-
+                        .disabled(!isFormValid || isSaving)
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color(UIColor.systemGroupedBackground))
             .alert("Delete Shift", isPresented: $showDeleteAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Delete", role: .destructive) {
@@ -145,6 +180,11 @@ struct ShiftsCalendarView: View {
             await loadShifts()
             await loadEmployers()
             loadShiftsForDate(selectedDate)
+            
+            // Initialize default employer after loading employers
+            if dailyShifts.isEmpty {
+                resetFormForNewEntry()
+            }
         }
     }
     
@@ -170,13 +210,12 @@ struct ShiftsCalendarView: View {
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.green.opacity(0.2))
-                        .foregroundColor(.green)
+                        .background(Color(hex: "0288FF").opacity(0.2))
+                        .foregroundColor(Color(hex: "0288FF"))
                         .cornerRadius(6)
                 }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
             
             Divider()
             
@@ -186,8 +225,8 @@ struct ShiftsCalendarView: View {
                 Divider()
             }
             
-            // Didn't Work Section (only for past/today dates)
-            if !isFutureDate {
+            // Didn't Work Section (only for past dates, not today or future)
+            if isPastDate {
                 Divider()
                 didntWorkSection
             }
@@ -204,20 +243,47 @@ struct ShiftsCalendarView: View {
             // Delete button
             if editingShift != nil {
                 Divider()
-                Button(action: {
-                    showDeleteAlert = true
-                }) {
-                    Text(deleteShiftText)
-                        .foregroundColor(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding()
+                
+                if hasShiftData {
+                    // Show message when shift has data
+                    VStack(spacing: 8) {
+                        Text(cannotDeleteText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button(action: {}) {
+                            Text(deleteShiftText)
+                                .foregroundColor(.gray)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+                        .disabled(true)
+                        .background(Color(UIColor.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
+                } else {
+                    // Normal delete button when no data
+                    Button(action: {
+                        showDeleteAlert = true
+                    }) {
+                        Text(deleteShiftText)
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    }
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 }
-                .background(Color(.secondarySystemGroupedBackground))
             }
         }
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(10)
-        .padding(.horizontal)
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .padding(.horizontal)
     }
     
     // MARK: - Employer Selection View
@@ -236,7 +302,6 @@ struct ShiftsCalendarView: View {
             .tint(.blue)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
     }
     
     // MARK: - Didn't Work Section
@@ -248,7 +313,9 @@ struct ShiftsCalendarView: View {
                     Text(didntWorkText)
                         .foregroundColor(.primary)
                 }
+                .toggleStyle(IOSStandardToggleStyle())
                 .onChange(of: didntWork) { _, newValue in
+                    HapticFeedback.selection()
                     if newValue {
                         // Clear time and earnings when didn't work is selected
                         startTime = Date()
@@ -273,12 +340,19 @@ struct ShiftsCalendarView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(.blue)
+                    .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .onChange(of: selectedEmployerId) { _, _ in
+                        HapticFeedback.selection()
+                    }
                 }
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
     
     // MARK: - Time Selection View
@@ -293,16 +367,18 @@ struct ShiftsCalendarView: View {
                     .labelsHidden()
                     .disabled(didntWork)
                     .focused($focusedTimePicker, equals: .start)
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(8)
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     .onChange(of: startTime) { _, _ in
+                        HapticFeedback.selection()
                         calculateHours()
-                        // Dismiss picker after selection
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             focusedTimePicker = nil
                         }
                     }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
             
             Divider()
             
@@ -315,16 +391,21 @@ struct ShiftsCalendarView: View {
                     .labelsHidden()
                     .disabled(didntWork)
                     .focused($focusedTimePicker, equals: .end)
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(8)
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     .onChange(of: endTime) { _, _ in
+                        HapticFeedback.selection()
                         calculateHours()
-                        // Dismiss picker after selection
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             focusedTimePicker = nil
                         }
                     }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             
             Divider()
             
@@ -337,7 +418,9 @@ struct ShiftsCalendarView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -353,12 +436,15 @@ struct ShiftsCalendarView: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 120)
+                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
                     .onChange(of: sales) { _, newValue in
                         sales = formatPositiveNumber(newValue)
                     }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             
             Divider()
             
@@ -371,12 +457,15 @@ struct ShiftsCalendarView: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 120)
+                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
                     .onChange(of: tips) { _, newValue in
                         tips = formatPositiveNumber(newValue)
                     }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             
             Divider()
             
@@ -389,12 +478,15 @@ struct ShiftsCalendarView: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 120)
+                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
                     .onChange(of: tipOut) { _, newValue in
                         tipOut = formatPositiveNumber(newValue)
                     }
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
     }
     
@@ -411,7 +503,9 @@ struct ShiftsCalendarView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             
             Divider()
             
@@ -432,18 +526,21 @@ struct ShiftsCalendarView: View {
             }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(hex: "0288FF"))
                     Text(addNewEntryText)
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(hex: "0288FF"))
                     Spacer()
                 }
                 .padding()
             }
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(10)
-        .padding(.horizontal)
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .padding(.horizontal)
     }
     
     // MARK: - Shift Row View
@@ -487,7 +584,7 @@ struct ShiftsCalendarView: View {
                         Text(formatCurrency(shift.total_income ?? 0))
                             .font(.subheadline)
                             .fontWeight(.bold)
-                            .foregroundColor(.green)
+                            .foregroundColor(Color(hex: "0288FF"))
                     }
                 }
                 
@@ -567,7 +664,7 @@ struct ShiftsCalendarView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(editingShift?.id == shift.id ? Color.blue.opacity(0.1) : Color(.secondarySystemGroupedBackground))
+            .background(editingShift?.id == shift.id ? Color.blue.opacity(0.1) : Color(UIColor.secondarySystemGroupedBackground))
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -582,7 +679,7 @@ struct ShiftsCalendarView: View {
                     Task { await loadShifts() }
                 }) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(hex: "0288FF"))
                 }
                 
                 Spacer()
@@ -597,7 +694,7 @@ struct ShiftsCalendarView: View {
                     Task { await loadShifts() }
                 }) {
                     Image(systemName: "chevron.right")
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color(hex: "0288FF"))
                 }
             }
             .padding(.horizontal)
@@ -647,17 +744,16 @@ struct ShiftsCalendarView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(isTodayDate(date) ? Color.blue :
-                              isSelected(date) ? Color.blue.opacity(0.2) :
-                              Color(.secondarySystemGroupedBackground))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(isSelected(date) && !isTodayDate(date) ? Color.blue : Color.clear, lineWidth: 2)
-                )
             }
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isTodayDate(date) ? Color(hex: "0288FF") : (isSelected(date) ? Color(hex: "0288FF").opacity(0.1) : Color(UIColor.systemBackground)))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected(date) ? Color(hex: "0288FF") : Color.gray.opacity(0.3), lineWidth: isSelected(date) ? 2 : 1)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
         }
     }
     
@@ -845,11 +941,11 @@ struct ShiftsCalendarView: View {
                 startTime = calendar.date(bySettingHour: startHour, minute: startMinute, second: 0, of: selectedDate) ?? selectedDate
                 endTime = calendar.date(bySettingHour: endHour, minute: endMinute, second: 0, of: selectedDate) ?? selectedDate
             } else {
-                startTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+                startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
                 endTime = calendar.date(byAdding: .hour, value: Int(shift.hours), to: startTime) ?? selectedDate
             }
         } else {
-            startTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+            startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
             endTime = calendar.date(byAdding: .hour, value: Int(shift.hours), to: startTime) ?? selectedDate
         }
     }
@@ -866,9 +962,9 @@ struct ShiftsCalendarView: View {
         sales = ""
         tips = ""
         tipOut = ""
-        selectedEmployerId = nil
+        // selectedEmployerId is now set by loadUserProfile() - don't reset it here
         let calendar = Calendar.current
-        startTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+        startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
         endTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: selectedDate) ?? selectedDate
         calculateHours()
     }
@@ -919,14 +1015,49 @@ struct ShiftsCalendarView: View {
                 .eq("user_id", value: userId)
                 .execute()
                 .value
+                
+            // Load default employer from user profile
+            await loadUserProfile()
         } catch {
             print("Error loading employers: \(error)")
+        }
+    }
+    
+    // MARK: - Load User Profile
+    func loadUserProfile() async {
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            
+            struct Profile: Decodable {
+                let default_employer_id: String?
+            }
+            
+            let profiles: [Profile] = try await SupabaseManager.shared.client
+                .from("users_profile")
+                .select("default_employer_id")
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+                
+            if let userProfile = profiles.first,
+               let defaultEmployerIdString = userProfile.default_employer_id,
+               let defaultEmployerId = UUID(uuidString: defaultEmployerIdString) {
+                await MainActor.run {
+                    selectedEmployerId = defaultEmployerId
+                }
+            }
+        } catch {
+            print("Error loading user profile: \(error)")
         }
     }
     
     // MARK: - Save Shift
     func saveShift() {
         Task {
+            await MainActor.run {
+                isSaving = true
+            }
+            
             do {
                 let userId = try await SupabaseManager.shared.client.auth.session.user.id
                 
@@ -997,10 +1128,14 @@ struct ShiftsCalendarView: View {
                 await MainActor.run {
                     editingShift = nil
                     isAddingNew = false
+                    isSaving = false
                     HapticFeedback.success()
                 }
                 
             } catch {
+                await MainActor.run {
+                    isSaving = false
+                }
                 print("Error saving shift: \(error)")
                 HapticFeedback.error()
             }
@@ -1116,6 +1251,14 @@ struct ShiftsCalendarView: View {
         case "fr": return "Supprimer le quart"
         case "es": return "Eliminar turno"
         default: return "Delete Shift"
+        }
+    }
+    
+    var cannotDeleteText: String {
+        switch language {
+        case "fr": return "Pour supprimer ce quart, vous devez d'abord supprimer les données (heures, ventes, pourboires)."
+        case "es": return "Para eliminar este turno, primero debe eliminar los datos (horas, ventas, propinas)."
+        default: return "To delete this shift, you must first delete the data (hours, sales, tips)."
         }
     }
     
