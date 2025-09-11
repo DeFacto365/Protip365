@@ -3,7 +3,6 @@ import Supabase
 
 struct ShiftsCalendarView: View {
     @State private var selectedDate = Date()
-    @State private var weekOffset = 0
     @State private var allShifts: [ShiftIncome] = []
     @State private var dailyShifts: [ShiftIncome] = []
     @State private var editingShift: ShiftIncome? = nil
@@ -87,13 +86,6 @@ struct ShiftsCalendarView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Week Calendar at the top
-                weekCalendarView
-                    .padding(.vertical, 12)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(16)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                
                 // Form Section
                 ScrollView {
                     VStack(spacing: 20) {
@@ -668,94 +660,6 @@ struct ShiftsCalendarView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Week Calendar View
-    var weekCalendarView: some View {
-        VStack(spacing: 12) {
-            // Week navigation
-            HStack {
-                Button(action: {
-                    weekOffset -= 1
-                    Task { await loadShifts() }
-                }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(Color(hex: "0288FF"))
-                }
-                
-                Spacer()
-                
-                Text(weekRangeText)
-                    .font(.headline)
-                
-                Spacer()
-                
-                Button(action: {
-                    weekOffset += 1
-                    Task { await loadShifts() }
-                }) {
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Color(hex: "0288FF"))
-                }
-            }
-            .padding(.horizontal)
-            
-            // Days of week
-            HStack(spacing: 4) {
-                ForEach(weekDays, id: \.self) { date in
-                    dayButtonView(date: date)
-                }
-            }
-            .padding(.horizontal)
-        }
-    }
-    
-    // MARK: - Day Button View
-    func dayButtonView(date: Date) -> some View {
-        VStack(spacing: 4) {
-            Text(dayOfWeekText(date))
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Button(action: {
-                selectedDate = date
-                loadShiftsForDate(date)
-            }) {
-                VStack(spacing: 2) {
-                    Text("\(Calendar.current.component(.day, from: date))")
-                        .font(.headline)
-                        .foregroundColor(isTodayDate(date) ? .white : .primary)
-                    
-                    if let hoursText = getTotalHoursForDate(date) {
-                        Text(hoursText)
-                            .font(.caption2)
-                            .foregroundColor(isTodayDate(date) ? .white : .blue)
-                    }
-                    
-                    if getShiftCountForDate(date) > 1 {
-                        Text("\(getShiftCountForDate(date))")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Color.orange)
-                            .cornerRadius(4)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isTodayDate(date) ? Color(hex: "0288FF") : (isSelected(date) ? Color(hex: "0288FF").opacity(0.1) : Color(UIColor.systemBackground)))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected(date) ? Color(hex: "0288FF") : Color.gray.opacity(0.3), lineWidth: isSelected(date) ? 2 : 1)
-            )
-            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-        }
-    }
-    
     // MARK: - Computed Properties
     var isFormValid: Bool {
         if didntWork {
@@ -765,27 +669,6 @@ struct ShiftsCalendarView: View {
         return calculatedHours > 0
     }
     
-    var weekDays: [Date] {
-        let calendar = Calendar.current
-        let today = Date()
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for:
-            calendar.date(byAdding: .weekOfYear, value: weekOffset, to: today) ?? today
-        )?.start ?? today
-        
-        return (0..<7).compactMap { dayOffset in
-            calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek)
-        }
-    }
-    
-    var weekRangeText: String {
-        let days = weekDays
-        guard let first = days.first, let last = days.last else { return "" }
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        
-        return "\(formatter.string(from: first)) - \(formatter.string(from: last))"
-    }
     
     // MARK: - Helper Functions
     func isShiftInFuture(_ shiftDateString: String) -> Bool {
@@ -986,8 +869,10 @@ struct ShiftsCalendarView: View {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             
-            let startDate = weekDays.first ?? Date()
-            let endDate = weekDays.last ?? Date()
+            // Load shifts for current month plus/minus 1 month for better coverage
+            let calendar = Calendar.current
+            let startDate = calendar.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
+            let endDate = calendar.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
             
             allShifts = try await SupabaseManager.shared.client
                 .from("v_shift_income")
