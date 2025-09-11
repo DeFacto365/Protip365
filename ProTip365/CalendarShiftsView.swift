@@ -4,8 +4,6 @@ import Supabase
 struct CalendarShiftsView: View {
     @State private var selectedDate = Date()
     @State private var allShifts: [ShiftIncome] = []
-    @State private var showingAddShift = false
-    @State private var showingAddEntry = false
     @AppStorage("language") private var language = "en"
     
     // Calendar date range - show current month plus/minus 2 months
@@ -47,24 +45,6 @@ struct CalendarShiftsView: View {
             .task {
                 await loadAllShifts()
             }
-            .sheet(isPresented: $showingAddShift) {
-                AddShiftView(
-                    selectedDate: selectedDate,
-                    isPresented: $showingAddShift,
-                    onSave: {
-                        Task { await loadAllShifts() }
-                    }
-                )
-            }
-            .sheet(isPresented: $showingAddEntry) {
-                AddShiftView(
-                    selectedDate: selectedDate,
-                    isPresented: $showingAddEntry,
-                    onSave: {
-                        Task { await loadAllShifts() }
-                    }
-                )
-            }
         }
     }
     
@@ -92,13 +72,11 @@ struct CalendarShiftsView: View {
         .padding(.horizontal)
     }
     
-    // MARK: - Action Buttons (like Dashboard)
+    // MARK: - Action Buttons (using existing pages)
     private var actionButtonsView: some View {
         HStack(spacing: 16) {
-            // Add Entry Button (only enabled for past dates)
-            Button(action: {
-                showingAddEntry = true
-            }) {
+            // Add Entry Button (only enabled for past dates) - Navigate to ShiftsCalendarView
+            NavigationLink(destination: ShiftsCalendarView()) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
@@ -117,10 +95,8 @@ struct CalendarShiftsView: View {
             }
             .disabled(!isPastDate)
             
-            // Add Shift Button (always enabled)
-            Button(action: {
-                showingAddShift = true
-            }) {
+            // Add Shift Button (always enabled) - Navigate to ShiftsCalendarView  
+            NavigationLink(destination: ShiftsCalendarView()) {
                 HStack {
                     Image(systemName: "calendar.badge.plus")
                         .font(.title2)
