@@ -313,7 +313,6 @@ struct ShiftsCalendarView: View {
                     Text(didntWorkText)
                         .foregroundColor(.primary)
                 }
-                .toggleStyle(IOSStandardToggleStyle())
                 .onChange(of: didntWork) { _, newValue in
                     HapticFeedback.selection()
                     if newValue {

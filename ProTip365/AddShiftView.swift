@@ -153,7 +153,6 @@ struct AddShiftView: View {
                     }
                     
                     Toggle(useEmployerLabel, isOn: $useEmployer)
-                        .toggleStyle(IOSStandardToggleStyle())
                     
                     if useEmployer && !employers.isEmpty {
                         Picker(selectEmployerLabel, selection: $selectedEmployerIndex) {

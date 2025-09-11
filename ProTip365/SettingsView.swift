@@ -193,7 +193,6 @@ struct SettingsView: View {
                         Toggle(isOn: $useMultipleEmployers) {
                             Label(useMultipleEmployersLabel, systemImage: "building.2.fill")
                         }
-                        .toggleStyle(IOSStandardToggleStyle())
                         .onChange(of: useMultipleEmployers) { _, newValue in
                             useMultipleEmployersStorage = newValue
                         }
