@@ -5,6 +5,7 @@ struct DashboardView: View {
     @State private var todayStats = Stats()
     @State private var weekStats = Stats()
     @State private var monthStats = Stats()
+    @State private var statsPreloaded = false
     @State private var selectedPeriod = 0
     @State private var isLoading = false
     @State private var showingDetail = false
@@ -17,7 +18,6 @@ struct DashboardView: View {
     
     // New managers for Phase 1 & 2 features
     @StateObject private var exportManager = ExportManager()
-    @StateObject private var alertManager = AlertManager()
     @StateObject private var achievementManager = AchievementManager()
     @State private var showingExportOptions = false
     @State private var showingShareSheet = false
@@ -28,8 +28,17 @@ struct DashboardView: View {
     @State private var entrySales = ""
     @State private var entryTips = ""
     @State private var entryTipOut = ""
+    @State private var entryOther = ""
     @State private var entryHours = ""
     @State private var isSavingEntry = false
+    
+    // Edit Shift Form States
+    @State private var editEntryDate = Date()
+    @State private var editEntrySales = ""
+    @State private var editEntryTips = ""
+    @State private var editEntryTipOut = ""
+    @State private var editEntryOther = ""
+    @State private var editEntryHours = ""
     
     @AppStorage("language") private var language = "en"
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
@@ -40,9 +49,10 @@ struct DashboardView: View {
         var sales: Double = 0
         var tips: Double = 0
         var tipOut: Double = 0
+        var other: Double = 0
         var income: Double = 0  // This is salary (hours × rate)
         var tipPercentage: Double = 0
-        var totalRevenue: Double = 0  // salary + tips - tipout
+        var totalRevenue: Double = 0  // salary + tips + other - tipout
         var shifts: [ShiftIncome] = []
     }
     
@@ -64,12 +74,19 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea()
+                // Enhanced iOS 26 Background with Liquid Glass
+                LinearGradient(
+                    colors: [
+                        Color(.systemBackground),
+                        Color(.systemGroupedBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 24) {
                         // Quick Add Buttons
                         HStack(spacing: 12) {
                             // Add Entry Button (Past/Today)
@@ -112,14 +129,14 @@ struct DashboardView: View {
                                 .padding()
                                 .background(
                                     LinearGradient(
-                                        colors: [.green, .green.opacity(0.8)],
+                                        colors: [Color(hex: "0288FF"), Color(hex: "0288FF").opacity(0.8)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
                                 )
                                 .foregroundColor(.white)
                                 .cornerRadius(16)
-                                .shadow(color: .green.opacity(0.3), radius: 10, x: 0, y: 5)
+                                .shadow(color: Color(hex: "0288FF").opacity(0.3), radius: 10, x: 0, y: 5)
                             }
                         }
                         .padding(.horizontal)
@@ -133,21 +150,14 @@ struct DashboardView: View {
                         }
                         .pickerStyle(.segmented)
                         .padding()
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .liquidGlassCard(material: .ultraThin)
                         .padding(.horizontal)
                         .onChange(of: selectedPeriod) { _, _ in
                             HapticFeedback.selection()
-                            Task {
-                                await loadStats()
-                            }
                         }
                         
-                        if isLoading {
-                            ProgressView()
-                                .padding(50)
-                                .frame(maxWidth: .infinity)
-                        } else {
+                        // Stats Cards (always show, with loading indicator overlay if needed)
+                        ZStack {
                             // Stats Cards
                             VStack(spacing: 16) {
                                 // First Row: Total Salary and Tips (with percentage)
@@ -156,18 +166,14 @@ struct DashboardView: View {
                                         title: totalSalaryText,
                                         value: formatIncomeWithTarget(),
                                         icon: "dollarsign.circle.fill",
-                                        color: .green,
+                                        color: Color(hex: "0288FF"),
                                         subtitle: "Base pay from hours worked"
                                     )
                                     .onTapGesture {
-                                        if !currentStats.shifts.isEmpty {
-                                            selectedDetailType = "income"
-                                            detailShifts = currentStats.shifts
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                showingDetail = true
-                                            }
-                                            HapticFeedback.light()
-                                        }
+                                        selectedDetailType = "income"
+                                        detailShifts = currentStats.shifts
+                                        showingDetail = true
+                                        HapticFeedback.light()
                                     }
                                     
                                     // Tips card with percentage badge
@@ -180,14 +186,10 @@ struct DashboardView: View {
                                             subtitle: "Customer tips received"
                                         )
                                         .onTapGesture {
-                                            if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
-                                                selectedDetailType = "tips"
-                                                detailShifts = currentStats.shifts
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                    showingDetail = true
-                                                }
-                                                HapticFeedback.light()
-                                            }
+                                            selectedDetailType = "tips"
+                                            detailShifts = currentStats.shifts
+                                            showingDetail = true
+                                            HapticFeedback.light()
                                         }
                                         
                                         // Percentage badge
@@ -205,24 +207,20 @@ struct DashboardView: View {
                                     }
                                 }
                                 
-                                // Second Row: Tip Out and Total Revenue
+                                // Second Row: Other and Total Revenue
                                 HStack(spacing: 16) {
                                     GlassStatCard(
-                                        title: tipOutText,
-                                        value: currentStats.tipOut > 0 ? "-" + formatCurrency(currentStats.tipOut) : formatCurrency(0),
-                                        icon: "minus.circle.fill",
-                                        color: .red,
-                                        subtitle: "Tips shared with team"
+                                        title: otherText,
+                                        value: formatCurrency(currentStats.other),
+                                        icon: "plus.circle.fill",
+                                        color: .green,
+                                        subtitle: "Other amount received"
                                     )
                                     .onTapGesture {
-                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
-                                            selectedDetailType = "tipout"
-                                            detailShifts = currentStats.shifts
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                showingDetail = true
-                                            }
-                                            HapticFeedback.light()
-                                        }
+                                        selectedDetailType = "other"
+                                        detailShifts = currentStats.shifts
+                                        showingDetail = true
+                                        HapticFeedback.light()
                                     }
                                     
                                     GlassStatCard(
@@ -230,17 +228,13 @@ struct DashboardView: View {
                                         value: formatCurrency(currentStats.totalRevenue),
                                         icon: "chart.line.uptrend.xyaxis",
                                         color: .orange,
-                                        subtitle: "Salary + tips - tip out"
+                                        subtitle: "Salary + tips + other - tip out"
                                     )
                                     .onTapGesture {
-                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
-                                            selectedDetailType = "revenue"
-                                            detailShifts = currentStats.shifts
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                showingDetail = true
-                                            }
-                                            HapticFeedback.light()
-                                        }
+                                        selectedDetailType = "revenue"
+                                        detailShifts = currentStats.shifts
+                                        showingDetail = true
+                                        HapticFeedback.light()
                                     }
                                 }
                                 
@@ -254,14 +248,10 @@ struct DashboardView: View {
                                         subtitle: "Actual vs expected hours"
                                     )
                                     .onTapGesture {
-                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
-                                            selectedDetailType = "hours"
-                                            detailShifts = currentStats.shifts
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                showingDetail = true
-                                            }
-                                            HapticFeedback.light()
-                                        }
+                                        selectedDetailType = "hours"
+                                        detailShifts = currentStats.shifts
+                                        showingDetail = true
+                                        HapticFeedback.light()
                                     }
                                     
                                     GlassStatCard(
@@ -272,19 +262,15 @@ struct DashboardView: View {
                                         subtitle: "Total sales served"
                                     )
                                     .onTapGesture {
-                                        if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
-                                            selectedDetailType = "sales"
-                                            detailShifts = currentStats.shifts
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                showingDetail = true
-                                            }
-                                            HapticFeedback.light()
-                                            }
-                                        }
+                                        selectedDetailType = "sales"
+                                        detailShifts = currentStats.shifts
+                                        showingDetail = true
+                                        HapticFeedback.light()
+                                    }
                                 }
                                 
                                 // Show hint for clickable cards
-                                if /* selectedPeriod != 0 && */ !currentStats.shifts.isEmpty {
+                                if !currentStats.shifts.isEmpty {
                                     Text(tapToViewDetailsText)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
@@ -294,45 +280,32 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
                         
-                        // Empty State
-                        if currentStats.hours == 0 && !isLoading {
-                            EmptyStateCard(period: selectedPeriod, language: language)
-                                .padding(.horizontal)
-                                .padding(.top, 20)
-                        }
                     }
-                    .padding(.vertical)
+                    
+                    // Loading indicator overlay (only show during initial load)
+                    if isLoading && !statsPreloaded {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.clear)
+                    }
                 }
+                .padding(.vertical, 24)
                 .refreshable {
-                    await loadStats()
+                    await preloadAllStats()
                     await loadTargets()
                 }
             }
             .navigationTitle(dashboardTitle)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        showingExportOptions = true
-                    }) {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.blue)
-                    }
-                }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack {
-                        Button(action: {
-                            shareCurrentStats()
-                        }) {
-                            Image(systemName: "square.and.arrow.up")
-                                .foregroundColor(.green)
-                        }
-                        
-                        Text("v1.0.16")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    // App logo
+                    Image("Logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 60, height: 60)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
             .sheet(isPresented: $showingDetail) {
@@ -352,6 +325,7 @@ struct DashboardView: View {
                     entrySales: $entrySales,
                     entryTips: $entryTips,
                     entryTipOut: $entryTipOut,
+                    entryOther: $entryOther,
                     entryHours: $entryHours,
                     isSaving: $isSavingEntry,
                     editingShift: nil,
@@ -375,6 +349,7 @@ struct DashboardView: View {
                     entrySales: $entrySales,
                     entryTips: $entryTips,
                     entryTipOut: $entryTipOut,
+                    entryOther: $entryOther,
                     entryHours: $entryHours,
                     isSaving: $isSavingEntry,
                     editingShift: nil,
@@ -394,11 +369,12 @@ struct DashboardView: View {
             }
             .sheet(item: $editingShift) { shift in
                 QuickEntryView(
-                    entryDate: .constant(dateFromString(shift.shift_date) ?? Date()),
-                    entrySales: .constant(String(format: "%.2f", shift.sales)),
-                    entryTips: .constant(String(format: "%.2f", shift.tips)),
-                    entryTipOut: .constant(String(format: "%.2f", shift.cash_out ?? 0)),
-                    entryHours: .constant(String(format: "%.1f", shift.hours)),
+                    entryDate: $editEntryDate,
+                    entrySales: $editEntrySales,
+                    entryTips: $editEntryTips,
+                    entryTipOut: $editEntryTipOut,
+                    entryOther: $editEntryOther,
+                    entryHours: $editEntryHours,
                     isSaving: $isSavingEntry,
                     editingShift: shift,
                     userTargets: userTargets,
@@ -408,20 +384,26 @@ struct DashboardView: View {
                     employerName: shift.employer_name,
                     employerHourlyRate: shift.hourly_rate,
                     isShiftMode: dateFromString(shift.shift_date) ?? Date() > Date(),
-                    onSave: { updateShift(shift) },
+                    onSave: { startTime, endTime in updateShift(shift, startTime: startTime, endTime: endTime) },
                     onCancel: {
                         editingShift = nil
+                    },
+                    onDelete: {
+                        deleteShift(shift)
                     }
                 )
             }
         }
+        .onChange(of: editingShift) { _, newShift in
+            if let shift = newShift {
+                initializeEditingData(shift)
+            }
+        }
         .task {
-            await loadStats()
+            await preloadAllStats()
             await loadTargets()
             
-            // Check for alerts and achievements
-            alertManager.checkForMissingShifts(shifts: currentStats.shifts, targets: userTargets)
-            alertManager.checkForTargetAchievements(currentStats: currentStats, targets: userTargets, period: selectedPeriod)
+            // Check for achievements only
             achievementManager.checkForAchievements(shifts: currentStats.shifts, currentStats: currentStats, targets: userTargets)
         }
         .sheet(isPresented: $showingExportOptions) {
@@ -429,16 +411,6 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(activityItems: [shareText])
-        }
-        .alert("Alert", isPresented: $alertManager.showAlert) {
-            Button(alertManager.currentAlert?.action ?? "OK") {
-                // Handle alert action
-            }
-            Button("Dismiss") {
-                alertManager.showAlert = false
-            }
-        } message: {
-            Text(alertManager.currentAlert?.message ?? "")
         }
         .sheet(isPresented: $achievementManager.showAchievement) {
             AchievementView(achievement: achievementManager.currentAchievement!)
@@ -604,9 +576,12 @@ struct DashboardView: View {
         }
     }
     
-    func loadStats() async {
+    func preloadAllStats() async {
         isLoading = true
-        defer { isLoading = false }
+        defer { 
+            isLoading = false 
+            statsPreloaded = true
+        }
         
         do {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
@@ -628,53 +603,72 @@ struct DashboardView: View {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             
-            var query = SupabaseManager.shared.client
+            // Load Today's data
+            let todayQuery = SupabaseManager.shared.client
                 .from("v_shift_income")
                 .select()
                 .eq("user_id", value: userId.uuidString)
+                .eq("shift_date", value: dateFormatter.string(from: today))
             
-            switch selectedPeriod {
-            case 0: // Today
-                query = query.eq("shift_date", value: dateFormatter.string(from: today))
-            case 1: // This Week - USING WEEK START SETTING
-                let weekStart = getStartOfWeek(for: today, weekStartDay: weekStartDay)
-                let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart)!
-                query = query
-                    .gte("shift_date", value: dateFormatter.string(from: weekStart))
-                    .lte("shift_date", value: dateFormatter.string(from: weekEnd))
-            case 2: // This Month - Last 30 days
-                let monthAgo = Calendar.current.date(byAdding: .day, value: -30, to: today)!
-                query = query.gte("shift_date", value: dateFormatter.string(from: monthAgo))
-            default:
-                break
-            }
+            let todayShifts: [ShiftIncome] = try await todayQuery.execute().value
+            var todayStatsTemp = Stats()
+            todayStatsTemp.shifts = todayShifts
             
-            let shifts: [ShiftIncome] = try await query.execute().value
+            // Load Week's data
+            let weekStart = getStartOfWeek(for: today, weekStartDay: weekStartDay)
+            let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart)!
+            let weekQuery = SupabaseManager.shared.client
+                .from("v_shift_income")
+                .select()
+                .eq("user_id", value: userId.uuidString)
+                .gte("shift_date", value: dateFormatter.string(from: weekStart))
+                .lte("shift_date", value: dateFormatter.string(from: weekEnd))
             
-            var stats = Stats()
-            stats.shifts = shifts
+            let weekShifts: [ShiftIncome] = try await weekQuery.execute().value
+            var weekStatsTemp = Stats()
+            weekStatsTemp.shifts = weekShifts
             
-            for shift in shifts {
-                stats.hours += shift.hours
-                stats.sales += shift.sales
-                stats.tips += shift.tips
-                stats.income += (shift.hours * (shift.hourly_rate ?? defaultHourlyRate))
-                stats.tipOut += (shift.cash_out ?? 0)
-            }
+            // Load Month's data
+            let monthAgo = Calendar.current.date(byAdding: .day, value: -30, to: today)!
+            let monthQuery = SupabaseManager.shared.client
+                .from("v_shift_income")
+                .select()
+                .eq("user_id", value: userId.uuidString)
+                .gte("shift_date", value: dateFormatter.string(from: monthAgo))
             
-            // Calculate total revenue: salary + tips - tip out
-            stats.totalRevenue = stats.income + stats.tips - stats.tipOut
+            let monthShifts: [ShiftIncome] = try await monthQuery.execute().value
+            var monthStatsTemp = Stats()
+            monthStatsTemp.shifts = monthShifts
             
-            if stats.sales > 0 {
-                stats.tipPercentage = (stats.tips / stats.sales) * 100
-            }
-            
-            await MainActor.run {
-                switch selectedPeriod {
-                case 1: weekStats = stats
-                case 2: monthStats = stats
-                default: todayStats = stats
+            // Calculate stats for each period
+            func calculateStats(for shifts: [ShiftIncome]) -> Stats {
+                var stats = Stats()
+                stats.shifts = shifts
+                
+                for shift in shifts {
+                    stats.hours += shift.hours
+                    stats.sales += shift.sales
+                    stats.tips += shift.tips
+                    stats.income += (shift.hours * (shift.hourly_rate ?? defaultHourlyRate))
+                    stats.tipOut += (shift.cash_out ?? 0)
+                    stats.other += (shift.other ?? 0)
                 }
+                
+                // Calculate total revenue: salary + tips + other - tip out
+                stats.totalRevenue = stats.income + stats.tips + stats.other - stats.tipOut
+                
+                if stats.sales > 0 {
+                    stats.tipPercentage = (stats.tips / stats.sales) * 100
+                }
+                
+                return stats
+            }
+            
+            // Update all stats
+            await MainActor.run {
+                todayStats = calculateStats(for: todayShifts)
+                weekStats = calculateStats(for: weekShifts)
+                monthStats = calculateStats(for: monthShifts)
             }
             
         } catch {
@@ -682,7 +676,7 @@ struct DashboardView: View {
         }
     }
     
-    func saveQuickEntry() {
+    func saveQuickEntry(startTime: String?, endTime: String?) {
         Task {
             isSavingEntry = true
             
@@ -698,7 +692,10 @@ struct DashboardView: View {
                     let sales: Double
                     let tips: Double
                     let cash_out: Double?
+                    let other: Double?
                     let hourly_rate: Double
+                    let start_time: String?
+                    let end_time: String?
                 }
                 
                 let newShift = NewShift(
@@ -708,7 +705,10 @@ struct DashboardView: View {
                     sales: Double(entrySales) ?? 0,
                     tips: Double(entryTips) ?? 0,
                     cash_out: Double(entryTipOut),
-                    hourly_rate: defaultHourlyRate
+                    other: Double(entryOther),
+                    hourly_rate: defaultHourlyRate,
+                    start_time: startTime,
+                    end_time: endTime
                 )
                 
                 try await SupabaseManager.shared.client
@@ -723,7 +723,7 @@ struct DashboardView: View {
                     HapticFeedback.success()
                 }
                 
-                await loadStats()
+                await preloadAllStats()
                 
             } catch {
                 await MainActor.run {
@@ -735,10 +735,110 @@ struct DashboardView: View {
         }
     }
     
-    func updateShift(_ shift: ShiftIncome) {
+    func updateShift(_ shift: ShiftIncome, startTime: String?, endTime: String?) {
         Task {
-            await loadStats()
-            editingShift = nil
+            do {
+                isSavingEntry = true
+                let userId = try await SupabaseManager.shared.client.auth.session.user.id
+                
+                struct UpdatedShiftIncome: Encodable {
+                    let actual_hours: Double
+                    let sales: Double
+                    let tips: Double
+                    let cash_out: Double
+                    let other: Double
+                    let actual_start_time: String?
+                    let actual_end_time: String?
+                }
+                
+                let updatedIncome = UpdatedShiftIncome(
+                    actual_hours: Double(editEntryHours) ?? 0,
+                    sales: Double(editEntrySales) ?? 0,
+                    tips: Double(editEntryTips) ?? 0,
+                    cash_out: Double(editEntryTipOut) ?? 0,
+                    other: Double(editEntryOther) ?? 0,
+                    actual_start_time: startTime,
+                    actual_end_time: endTime
+                )
+                
+                // If earnings record exists, update it; otherwise create new one
+                if let incomeId = shift.income_id {
+                    try await SupabaseManager.shared.client
+                        .from("shift_income")
+                        .update(updatedIncome)
+                        .eq("id", value: incomeId.uuidString)
+                        .execute()
+                } else {
+                    // Create new earnings record
+                    struct NewShiftIncome: Encodable {
+                        let shift_id: String
+                        let user_id: String
+                        let actual_hours: Double
+                        let sales: Double
+                        let tips: Double
+                        let cash_out: Double
+                        let other: Double
+                        let actual_start_time: String?
+                        let actual_end_time: String?
+                    }
+                    
+                    let newIncome = NewShiftIncome(
+                        shift_id: shift.shift_id?.uuidString ?? shift.id.uuidString,
+                        user_id: userId.uuidString,
+                        actual_hours: Double(editEntryHours) ?? 0,
+                        sales: Double(editEntrySales) ?? 0,
+                        tips: Double(editEntryTips) ?? 0,
+                        cash_out: Double(editEntryTipOut) ?? 0,
+                        other: Double(editEntryOther) ?? 0,
+                        actual_start_time: startTime,
+                        actual_end_time: endTime
+                    )
+                    
+                    try await SupabaseManager.shared.client
+                        .from("shift_income")
+                        .insert(newIncome)
+                        .execute()
+                }
+                
+                await preloadAllStats()
+                
+                await MainActor.run {
+                    isSavingEntry = false
+                    editingShift = nil
+                }
+            } catch {
+                print("Error updating shift: \(error)")
+                await MainActor.run {
+                    isSavingEntry = false
+                }
+            }
+        }
+    }
+    
+    func deleteShift(_ shift: ShiftIncome) {
+        Task {
+            do {
+                isSavingEntry = true
+                
+                try await SupabaseManager.shared.client
+                    .from("shifts")
+                    .delete()
+                    .eq("id", value: shift.id.uuidString)
+                    .execute()
+                
+                await preloadAllStats()
+                
+                await MainActor.run {
+                    isSavingEntry = false
+                    editingShift = nil
+                    HapticFeedback.success()
+                }
+            } catch {
+                print("Error deleting shift: \(error)")
+                await MainActor.run {
+                    isSavingEntry = false
+                }
+            }
         }
     }
     
@@ -747,16 +847,22 @@ struct DashboardView: View {
         entrySales = ""
         entryTips = ""
         entryTipOut = ""
+        entryOther = ""
         entryHours = ""
+    }
+    
+    func initializeEditingData(_ shift: ShiftIncome) {
+        editEntryDate = dateFromString(shift.shift_date) ?? Date()
+        editEntrySales = String(format: "%.2f", shift.sales)
+        editEntryTips = String(format: "%.2f", shift.tips)
+        editEntryTipOut = String(format: "%.2f", shift.cash_out ?? 0)
+        editEntryOther = String(format: "%.2f", shift.other ?? 0)
+        editEntryHours = String(format: "%.1f", shift.hours)
     }
     
     // Localization
     var dashboardTitle: String {
-        switch language {
-        case "fr": return "Tableau de bord"
-        case "es": return "Panel de control"
-        default: return "Dashboard"
-        }
+        return "Pro Tip 365"
     }
     
     var quickAddText: String {
@@ -823,11 +929,11 @@ struct DashboardView: View {
         }
     }
     
-    var tipOutText: String {
+    var otherText: String {
         switch language {
-        case "fr": return "Partage pourboire"
-        case "es": return "Propina compartida"
-        default: return "Tip Out"
+        case "fr": return "Autre"
+        case "es": return "Otro"
+        default: return "Other"
         }
     }
     

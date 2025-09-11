@@ -170,7 +170,7 @@ struct iOS26LiquidGlassMainView: View {
         var items = [
             TabItem(id: "dashboard", icon: "chart.bar", label: "Dashboard", activeIcon: "chart.bar.fill"),
             TabItem(id: "shifts", icon: "calendar", label: "Shifts", activeIcon: "calendar.circle.fill"),
-            TabItem(id: "calendar", icon: "calendar.badge.clock", label: "Calendar", activeIcon: "calendar.badge.clock.fill")
+            TabItem(id: "calendar", icon: "calendar.badge.clock", label: "Calendar", activeIcon: "calendar.badge.clock")
         ]
         
         // Only add employers if enabled

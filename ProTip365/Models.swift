@@ -44,8 +44,8 @@ struct ShiftIncomeData: Codable, Identifiable {
 // Combined view model that includes both planned shift and actual earnings
 struct ShiftIncome: Codable, Identifiable, Equatable {
     let income_id: UUID? // ID from shift_income table (null if no earnings recorded)
-    let shift_id: UUID   // ID from shifts table (always present)
-    var id: UUID { shift_id } // Identifiable requirement - use shift_id as primary identifier
+    let shift_id: UUID?  // ID from shifts table (should always be present, but making optional for safety)
+    var id: UUID { shift_id ?? income_id ?? UUID() } // Identifiable requirement - use shift_id or fallback
     let user_id: UUID
     let employer_id: UUID?
     let employer_name: String?
