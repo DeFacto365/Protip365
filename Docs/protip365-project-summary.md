@@ -138,6 +138,41 @@
 
 ## Recent Updates & Fixes
 
+### **v1.0.18 - Calendar & Entry Improvements (September 2025)**
+1. **Calendar View Redesign**:
+   - Reduced top padding for better space utilization
+   - Moved edit/delete buttons to bottom of entry cards
+   - Financial data organized in 3 aligned columns (Caption, Actual, Budget)
+   - Replaced time display with hours format (actual/expected)
+   - Employer name now smaller to fit on one line
+
+2. **Budget Comparison Feature**:
+   - Added daily budget targets display in calendar entries
+   - Sales shows actual/target (e.g., $350/500)
+   - Tips shows actual/target (e.g., $125/100)
+   - Salary shows actual/expected based on hours × rate
+   - Fixed database table reference (users_profile not profiles)
+
+3. **Didn't Work Feature**:
+   - Toggle for marking shifts as missed
+   - Reason codes (Sick, Shift Cancelled, etc.) with translations
+   - Proper display in calendar with red status badge
+   - Zero hours calculation when didn't work is selected
+
+4. **Date/Time Handling Fixes**:
+   - Fixed overnight shift support (crossing midnight)
+   - End date calendar now closes on selection
+   - Fixed end date preservation when editing times
+   - Smart validation ensures start time before end time
+   - Automatic date adjustment for overnight shifts
+
+5. **UI Polish**:
+   - Blue placeholder text in input fields for better visibility
+   - Total amount spans two columns for larger numbers
+   - Financial section shifted left for more space
+   - Settings cancel button now properly dismisses view
+   - Other field restored to revenue calculations
+
 ### **v1.0.16 - Analytics & Engagement System**
 1. **CSV Export System**: Complete data export with detailed and summary formats
 2. **Smart Alert System**: Missing data reminders and achievement celebrations
@@ -179,15 +214,17 @@ ProTip365/
 │   └── LockScreenView.swift        # Lock screen UI
 │
 ├── Main Views/
-│   ├── DashboardView.swift         # Main dashboard logic (820 lines)
-│   ├── DashboardComponents.swift  # Dashboard UI components (90 lines)
-│   ├── QuickEntryView.swift        # Quick entry form (230 lines)
-│   ├── DetailView.swift            # Shift detail view (200 lines)
-│   ├── ShiftsCalendarView.swift    # Shift management
+│   ├── DashboardView.swift         # Main dashboard logic
+│   ├── DashboardComponents.swift  # Dashboard UI components
+│   ├── AddEntryView.swift          # Add/Edit shift entry (1300+ lines)
+│   ├── CalendarShiftsView.swift    # Calendar with shift entries (800+ lines)
+│   ├── CalendarView.swift          # Calendar component
+│   ├── DetailedEntriesView.swift   # Detailed shift list
 │   ├── EmployersView.swift        # Employer management
 │   ├── TipCalculatorView.swift     # Tip calculator
-│   ├── SettingsView.swift          # User settings
-│   └── SubscriptionView.swift      # Subscription UI
+│   ├── SettingsView.swift          # User settings (800+ lines)
+│   ├── SubscriptionView.swift      # Subscription UI
+│   └── iOS26LiquidGlassTabBar.swift # Custom tab bar
 │
 ├── Analytics Features (v1.0.16)/
 │   ├── ExportManager.swift         # CSV export functionality

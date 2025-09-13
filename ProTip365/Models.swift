@@ -1,6 +1,6 @@
 import Foundation
 
-struct Employer: Codable, Identifiable {
+struct Employer: Codable, Identifiable, Hashable {
     let id: UUID
     let user_id: UUID
     let name: String
@@ -15,7 +15,8 @@ struct Shift: Codable, Identifiable, Hashable {
     let user_id: UUID
     let employer_id: UUID?
     let shift_date: String
-    let expected_hours: Double
+    let expected_hours: Double?
+    let hours: Double? // This is the expected_hours field from the database
     let lunch_break_minutes: Int?
     let hourly_rate: Double?
     let notes: String?
@@ -50,7 +51,7 @@ struct ShiftIncome: Codable, Identifiable, Equatable {
     let employer_id: UUID?
     let employer_name: String?
     let shift_date: String
-    let expected_hours: Double
+    let expected_hours: Double?
     let lunch_break_minutes: Int?
     let net_expected_hours: Double? // expected_hours minus lunch break
     let hours: Double // actual hours (0 if no earnings recorded)
@@ -69,6 +70,7 @@ struct ShiftIncome: Codable, Identifiable, Equatable {
     let has_earnings: Bool // true if earnings data exists
     let shift_created_at: String?
     let earnings_created_at: String?
+    let notes: String? // Added notes field for display
 }
 
 struct UserProfile: Codable {

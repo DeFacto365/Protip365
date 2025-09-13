@@ -7,32 +7,38 @@ struct AchievementView: View {
     
     var body: some View {
         ZStack {
-            // Background
+            // Background with glass effect
             Color.black.opacity(0.8)
                 .ignoresSafeArea()
+                .modifier(GlassEffectRoundedModifier(cornerRadius: 0))
             
             VStack(spacing: 30) {
-                // Achievement Icon
+                // Achievement Icon with enhanced glass effects
                 ZStack {
                     Circle()
                         .fill(achievement.type.color)
                         .frame(width: 120, height: 120)
+                        .modifier(GlassEffectModifier())
                         .shadow(color: achievement.type.color.opacity(0.3), radius: 20, x: 0, y: 10)
                     
                     Image(systemName: achievement.type.icon)
                         .font(.system(size: 50, weight: .bold))
                         .foregroundColor(.white)
+                        .modifier(GlassEffectModifier())
+                        .frame(width: 60, height: 60)
                 }
                 .scaleEffect(showConfetti ? 1.1 : 1.0)
                 .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showConfetti)
                 
-                // Achievement Text
+                // Achievement Text with glass effects
                 VStack(spacing: 12) {
                     Text("🎉 Achievement Unlocked! 🎉")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
+                        .modifier(GlassEffectRoundedModifier(cornerRadius: 8))
+                        .padding(.horizontal, 8)
                     
                     Text(achievement.title)
                         .font(.title)

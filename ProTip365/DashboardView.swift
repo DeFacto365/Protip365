@@ -2,6 +2,7 @@ import SwiftUI
 import Supabase
 
 struct DashboardView: View {
+    @EnvironmentObject var supabaseManager: SupabaseManager
     @State private var todayStats = Stats()
     @State private var weekStats = Stats()
     @State private var monthStats = Stats()
@@ -11,14 +12,13 @@ struct DashboardView: View {
     @State private var showingDetail = false
     @State private var selectedDetailType = ""
     @State private var detailShifts: [ShiftIncome] = []
-    @State private var showingQuickEntry = false
-    @State private var showingQuickShift = false
     @State private var editingShift: ShiftIncome? = nil
     @State private var userTargets = UserTargets()
     
     // New managers for Phase 1 & 2 features
     @StateObject private var exportManager = ExportManager()
     @StateObject private var achievementManager = AchievementManager()
+    @Namespace private var namespace
     @State private var showingExportOptions = false
     @State private var showingShareSheet = false
     @State private var shareText = ""
@@ -74,238 +74,45 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Enhanced iOS 26 Background with Liquid Glass
-                LinearGradient(
-                    colors: [
-                        Color(.systemBackground),
-                        Color(.systemGroupedBackground)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Liquid Glass Background with extension effect
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                    .backgroundExtensionEffect()
                 
                 ScrollView {
-                    VStack(spacing: 24) {
-                        // Quick Add Buttons
-                        HStack(spacing: 12) {
-                            // Add Entry Button (Past/Today)
-                            Button(action: {
-                                showingQuickEntry = true
-                                HapticFeedback.light()
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.title2)
-                                    Text(quickAddText)
-                                        .fontWeight(.semibold)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    LinearGradient(
-                                        colors: [.blue, .blue.opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .foregroundColor(.white)
-                                .cornerRadius(16)
-                                .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
-                            }
-                            
-                            // Add Shift Button (Future)
-                            Button(action: {
-                                showingQuickShift = true
-                                HapticFeedback.light()
-                            }) {
-                                HStack {
-                                    Image(systemName: "calendar.badge.plus")
-                                        .font(.title2)
-                                    Text(quickAddShiftText)
-                                        .fontWeight(.semibold)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color(hex: "0288FF"), Color(hex: "0288FF").opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .foregroundColor(.white)
-                                .cornerRadius(16)
-                                .shadow(color: Color(hex: "0288FF").opacity(0.3), radius: 10, x: 0, y: 5)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
+                    VStack(spacing: Constants.dashboardSectionSpacing) {
+                        // Period Selector (Contextual Layer)
+                        periodSelectorSection
                         
-                        // Period Selector with glass effect
-                        Picker("Period", selection: $selectedPeriod) {
-                            Text(todayText).tag(0)
-                            Text(weekText).tag(1)
-                            Text(monthText).tag(2)
-                        }
-                        .pickerStyle(.segmented)
-                        .padding()
-                        .liquidGlassCard(material: .ultraThin)
-                        .padding(.horizontal)
-                        .onChange(of: selectedPeriod) { _, _ in
-                            HapticFeedback.selection()
-                        }
-                        
-                        // Stats Cards (always show, with loading indicator overlay if needed)
-                        ZStack {
-                            // Stats Cards
-                            VStack(spacing: 16) {
-                                // First Row: Total Salary and Tips (with percentage)
-                                HStack(spacing: 16) {
-                                    GlassStatCard(
-                                        title: totalSalaryText,
-                                        value: formatIncomeWithTarget(),
-                                        icon: "dollarsign.circle.fill",
-                                        color: Color(hex: "0288FF"),
-                                        subtitle: "Base pay from hours worked"
-                                    )
-                                    .onTapGesture {
-                                        selectedDetailType = "income"
-                                        detailShifts = currentStats.shifts
-                                        showingDetail = true
-                                        HapticFeedback.light()
-                                    }
-                                    
-                                    // Tips card with percentage badge
-                                    ZStack(alignment: .topTrailing) {
-                                        GlassStatCard(
-                                            title: tipsText,
-                                            value: formatTipsWithTarget(),
-                                            icon: "banknote.fill",
-                                            color: .blue,
-                                            subtitle: "Customer tips received"
-                                        )
-                                        .onTapGesture {
-                                            selectedDetailType = "tips"
-                                            detailShifts = currentStats.shifts
-                                            showingDetail = true
-                                            HapticFeedback.light()
-                                        }
-                                        
-                                        // Percentage badge
-                                        if currentStats.tipPercentage > 0 {
-                                            Text(String(format: "%.0f%%", currentStats.tipPercentage))
-                                                .font(.caption)
-                                                .fontWeight(.bold)
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(Color.purple)
-                                                .cornerRadius(8)
-                                                .offset(x: -8, y: 8)
-                                        }
-                                    }
-                                }
-                                
-                                // Second Row: Other and Total Revenue
-                                HStack(spacing: 16) {
-                                    GlassStatCard(
-                                        title: otherText,
-                                        value: formatCurrency(currentStats.other),
-                                        icon: "plus.circle.fill",
-                                        color: .green,
-                                        subtitle: "Other amount received"
-                                    )
-                                    .onTapGesture {
-                                        selectedDetailType = "other"
-                                        detailShifts = currentStats.shifts
-                                        showingDetail = true
-                                        HapticFeedback.light()
-                                    }
-                                    
-                                    GlassStatCard(
-                                        title: totalRevenueText,
-                                        value: formatCurrency(currentStats.totalRevenue),
-                                        icon: "chart.line.uptrend.xyaxis",
-                                        color: .orange,
-                                        subtitle: "Salary + tips + other - tip out"
-                                    )
-                                    .onTapGesture {
-                                        selectedDetailType = "revenue"
-                                        detailShifts = currentStats.shifts
-                                        showingDetail = true
-                                        HapticFeedback.light()
-                                    }
-                                }
-                                
-                                // Third Row: Hours and Sales
-                                HStack(spacing: 16) {
-                                    GlassStatCard(
-                                        title: hoursWorkedText,
-                                        value: formatHoursWithTarget(),
-                                        icon: "clock.fill",
-                                        color: .teal,
-                                        subtitle: "Actual vs expected hours"
-                                    )
-                                    .onTapGesture {
-                                        selectedDetailType = "hours"
-                                        detailShifts = currentStats.shifts
-                                        showingDetail = true
-                                        HapticFeedback.light()
-                                    }
-                                    
-                                    GlassStatCard(
-                                        title: salesText,
-                                        value: formatSalesWithTarget(),
-                                        icon: "cart.fill",
-                                        color: .indigo,
-                                        subtitle: "Total sales served"
-                                    )
-                                    .onTapGesture {
-                                        selectedDetailType = "sales"
-                                        detailShifts = currentStats.shifts
-                                        showingDetail = true
-                                        HapticFeedback.light()
-                                    }
-                                }
-                                
-                                // Show hint for clickable cards
-                                if !currentStats.shifts.isEmpty {
-                                    Text(tapToViewDetailsText)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .padding(.top, 4)
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                        
+                        // Stats Cards (Main Content Layer)
+                        statsCardsSection
                     }
-                    
-                    // Loading indicator overlay (only show during initial load)
-                    if isLoading && !statsPreloaded {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.clear)
-                    }
+                    .padding(.horizontal, Constants.leadingContentInset)
+                    .padding(.bottom, Constants.tabBarHeight + Constants.safeAreaPadding)
                 }
-                .padding(.vertical, 24)
                 .refreshable {
                     await preloadAllStats()
                     await loadTargets()
                 }
+                
+                // Loading indicator overlay (only show during initial load)
+                if isLoading && !statsPreloaded {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.clear)
+                }
             }
-            .navigationTitle(dashboardTitle)
+            .navigationTitle("Pro Tip 365")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // App logo
-                    Image("Logo")
+                    Image("Logo2")
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 60, height: 60)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
             }
             .sheet(isPresented: $showingDetail) {
@@ -319,101 +126,22 @@ struct DashboardView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showingQuickEntry) {
-                QuickEntryView(
-                    entryDate: $entryDate,
-                    entrySales: $entrySales,
-                    entryTips: $entryTips,
-                    entryTipOut: $entryTipOut,
-                    entryOther: $entryOther,
-                    entryHours: $entryHours,
-                    isSaving: $isSavingEntry,
-                    editingShift: nil,
-                    userTargets: userTargets,
-                    currentPeriod: selectedPeriod,
-                    hourlyRate: defaultHourlyRate,
-                    useEmployers: useMultipleEmployers,
-                    employerName: nil,
-                    employerHourlyRate: nil,
-                    isShiftMode: false,
-                    onSave: saveQuickEntry,
-                    onCancel: {
-                        showingQuickEntry = false
-                        clearQuickEntry()
-                    }
-                )
+            .task {
+                await preloadAllStats()
+                await loadTargets()
+                
+                // Check for achievements only
+                achievementManager.checkForAchievements(shifts: currentStats.shifts, currentStats: currentStats, targets: userTargets)
             }
-            .sheet(isPresented: $showingQuickShift) {
-                QuickEntryView(
-                    entryDate: $entryDate,
-                    entrySales: $entrySales,
-                    entryTips: $entryTips,
-                    entryTipOut: $entryTipOut,
-                    entryOther: $entryOther,
-                    entryHours: $entryHours,
-                    isSaving: $isSavingEntry,
-                    editingShift: nil,
-                    userTargets: userTargets,
-                    currentPeriod: selectedPeriod,
-                    hourlyRate: defaultHourlyRate,
-                    useEmployers: useMultipleEmployers,
-                    employerName: nil,
-                    employerHourlyRate: nil,
-                    isShiftMode: true,
-                    onSave: saveQuickEntry,
-                    onCancel: {
-                        showingQuickShift = false
-                        clearQuickEntry()
-                    }
-                )
+            .sheet(isPresented: $showingExportOptions) {
+                ExportOptionsView(exportManager: exportManager, shifts: currentStats.shifts, language: language)
             }
-            .sheet(item: $editingShift) { shift in
-                QuickEntryView(
-                    entryDate: $editEntryDate,
-                    entrySales: $editEntrySales,
-                    entryTips: $editEntryTips,
-                    entryTipOut: $editEntryTipOut,
-                    entryOther: $editEntryOther,
-                    entryHours: $editEntryHours,
-                    isSaving: $isSavingEntry,
-                    editingShift: shift,
-                    userTargets: userTargets,
-                    currentPeriod: selectedPeriod,
-                    hourlyRate: shift.hourly_rate ?? defaultHourlyRate,
-                    useEmployers: useMultipleEmployers,
-                    employerName: shift.employer_name,
-                    employerHourlyRate: shift.hourly_rate,
-                    isShiftMode: dateFromString(shift.shift_date) ?? Date() > Date(),
-                    onSave: { startTime, endTime in updateShift(shift, startTime: startTime, endTime: endTime) },
-                    onCancel: {
-                        editingShift = nil
-                    },
-                    onDelete: {
-                        deleteShift(shift)
-                    }
-                )
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheet(activityItems: [shareText])
             }
-        }
-        .onChange(of: editingShift) { _, newShift in
-            if let shift = newShift {
-                initializeEditingData(shift)
+            .sheet(isPresented: $achievementManager.showAchievement) {
+                AchievementView(achievement: achievementManager.currentAchievement!)
             }
-        }
-        .task {
-            await preloadAllStats()
-            await loadTargets()
-            
-            // Check for achievements only
-            achievementManager.checkForAchievements(shifts: currentStats.shifts, currentStats: currentStats, targets: userTargets)
-        }
-        .sheet(isPresented: $showingExportOptions) {
-            ExportOptionsView(exportManager: exportManager, shifts: currentStats.shifts, language: language)
-        }
-        .sheet(isPresented: $showingShareSheet) {
-            ShareSheet(activityItems: [shareText])
-        }
-        .sheet(isPresented: $achievementManager.showAchievement) {
-            AchievementView(achievement: achievementManager.currentAchievement!)
         }
     }
     
@@ -427,9 +155,9 @@ struct DashboardView: View {
     
     var periodText: String {
         switch selectedPeriod {
-        case 1: return weekText
-        case 2: return monthText
-        default: return todayText
+        case 1: return "Week"
+        case 2: return "Month"
+        default: return "Today"
         }
     }
     
@@ -487,6 +215,13 @@ struct DashboardView: View {
             return "\(hours)/\(String(format: "%.0f", target))h"
         }
         return "\(hours)h"
+    }
+    
+    func formatDateShort(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
     
     func formatCurrency(_ amount: Double) -> String {
@@ -628,13 +363,16 @@ struct DashboardView: View {
             var weekStatsTemp = Stats()
             weekStatsTemp.shifts = weekShifts
             
-            // Load Month's data
-            let monthAgo = Calendar.current.date(byAdding: .day, value: -30, to: today)!
+            // Load Month's data (current calendar month)
+            let calendar = Calendar.current
+            let monthStart = calendar.dateInterval(of: .month, for: today)?.start ?? today
+            let monthEnd = calendar.dateInterval(of: .month, for: today)?.end ?? today
             let monthQuery = SupabaseManager.shared.client
                 .from("v_shift_income")
                 .select()
                 .eq("user_id", value: userId.uuidString)
-                .gte("shift_date", value: dateFormatter.string(from: monthAgo))
+                .gte("shift_date", value: dateFormatter.string(from: monthStart))
+                .lt("shift_date", value: dateFormatter.string(from: monthEnd))
             
             let monthShifts: [ShiftIncome] = try await monthQuery.execute().value
             var monthStatsTemp = Stats()
@@ -643,24 +381,31 @@ struct DashboardView: View {
             // Calculate stats for each period
             func calculateStats(for shifts: [ShiftIncome]) -> Stats {
                 var stats = Stats()
-                stats.shifts = shifts
-                
-                for shift in shifts {
+                // Only include shifts that have earnings (actual worked shifts)
+                stats.shifts = shifts.filter { $0.has_earnings }
+
+                for shift in stats.shifts {
+                    // Use actual hours from shift_income
                     stats.hours += shift.hours
                     stats.sales += shift.sales
                     stats.tips += shift.tips
-                    stats.income += (shift.hours * (shift.hourly_rate ?? defaultHourlyRate))
+                    // Use base_income if available (from v_shift_income view), otherwise calculate
+                    if let baseIncome = shift.base_income {
+                        stats.income += baseIncome
+                    } else {
+                        stats.income += (shift.hours * (shift.hourly_rate ?? defaultHourlyRate))
+                    }
                     stats.tipOut += (shift.cash_out ?? 0)
                     stats.other += (shift.other ?? 0)
                 }
-                
+
                 // Calculate total revenue: salary + tips + other - tip out
                 stats.totalRevenue = stats.income + stats.tips + stats.other - stats.tipOut
-                
+
                 if stats.sales > 0 {
                     stats.tipPercentage = (stats.tips / stats.sales) * 100
                 }
-                
+
                 return stats
             }
             
@@ -676,288 +421,163 @@ struct DashboardView: View {
         }
     }
     
-    func saveQuickEntry(startTime: String?, endTime: String?) {
-        Task {
-            isSavingEntry = true
-            
-            do {
-                let userId = try await SupabaseManager.shared.client.auth.session.user.id
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                
-                struct NewShift: Encodable {
-                    let user_id: String
-                    let shift_date: String
-                    let hours: Double
-                    let sales: Double
-                    let tips: Double
-                    let cash_out: Double?
-                    let other: Double?
-                    let hourly_rate: Double
-                    let start_time: String?
-                    let end_time: String?
-                }
-                
-                let newShift = NewShift(
-                    user_id: userId.uuidString,
-                    shift_date: dateFormatter.string(from: entryDate),
-                    hours: Double(entryHours) ?? 0,
-                    sales: Double(entrySales) ?? 0,
-                    tips: Double(entryTips) ?? 0,
-                    cash_out: Double(entryTipOut),
-                    other: Double(entryOther),
-                    hourly_rate: defaultHourlyRate,
-                    start_time: startTime,
-                    end_time: endTime
-                )
-                
-                try await SupabaseManager.shared.client
-                    .from("shifts")
-                    .insert(newShift)
-                    .execute()
-                
-                await MainActor.run {
-                    isSavingEntry = false
-                    showingQuickEntry = false
-                    clearQuickEntry()
-                    HapticFeedback.success()
-                }
-                
-                await preloadAllStats()
-                
-            } catch {
-                await MainActor.run {
-                    isSavingEntry = false
-                    HapticFeedback.error()
-                }
-                print("Error saving quick entry: \(error)")
-            }
+
+    // MARK: - Liquid Glass Layout Sections
+
+    private var periodSelectorSection: some View {
+        Picker("Period", selection: $selectedPeriod) {
+            Text("Today").tag(0)
+            Text("Week").tag(1)
+            Text("Month").tag(2)
+        }
+        .pickerStyle(.segmented)
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+        .onChange(of: selectedPeriod) { _, _ in
+            HapticFeedback.selection()
         }
     }
     
-    func updateShift(_ shift: ShiftIncome, startTime: String?, endTime: String?) {
-        Task {
-            do {
-                isSavingEntry = true
-                let userId = try await SupabaseManager.shared.client.auth.session.user.id
-                
-                struct UpdatedShiftIncome: Encodable {
-                    let actual_hours: Double
-                    let sales: Double
-                    let tips: Double
-                    let cash_out: Double
-                    let other: Double
-                    let actual_start_time: String?
-                    let actual_end_time: String?
-                }
-                
-                let updatedIncome = UpdatedShiftIncome(
-                    actual_hours: Double(editEntryHours) ?? 0,
-                    sales: Double(editEntrySales) ?? 0,
-                    tips: Double(editEntryTips) ?? 0,
-                    cash_out: Double(editEntryTipOut) ?? 0,
-                    other: Double(editEntryOther) ?? 0,
-                    actual_start_time: startTime,
-                    actual_end_time: endTime
-                )
-                
-                // If earnings record exists, update it; otherwise create new one
-                if let incomeId = shift.income_id {
-                    try await SupabaseManager.shared.client
-                        .from("shift_income")
-                        .update(updatedIncome)
-                        .eq("id", value: incomeId.uuidString)
-                        .execute()
-                } else {
-                    // Create new earnings record
-                    struct NewShiftIncome: Encodable {
-                        let shift_id: String
-                        let user_id: String
-                        let actual_hours: Double
-                        let sales: Double
-                        let tips: Double
-                        let cash_out: Double
-                        let other: Double
-                        let actual_start_time: String?
-                        let actual_end_time: String?
+    private var statsCardsSection: some View {
+        // Stats Cards with advanced GlassEffectContainer for morphing animations
+        GlassEffectContainer(spacing: 16) {
+            VStack(spacing: 16) {
+                // First Row: Total Salary and Tips (with percentage)
+                HStack(spacing: 16) {
+                    GlassStatCard(
+                        title: "Total Salary",
+                        value: formatIncomeWithTarget(),
+                        icon: "dollarsign.circle.fill",
+                        color: .blue,
+                        subtitle: "Base pay from hours worked"
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        selectedDetailType = "income"
+                        // Filter shifts that have salary/income (base_income > 0)
+                        detailShifts = currentStats.shifts.filter { shift in
+                            if let baseIncome = shift.base_income {
+                                return baseIncome > 0
+                            }
+                            return (shift.hours * (shift.hourly_rate ?? defaultHourlyRate)) > 0
+                        }
+                        showingDetail = true
+                        HapticFeedback.light()
                     }
                     
-                    let newIncome = NewShiftIncome(
-                        shift_id: shift.shift_id?.uuidString ?? shift.id.uuidString,
-                        user_id: userId.uuidString,
-                        actual_hours: Double(editEntryHours) ?? 0,
-                        sales: Double(editEntrySales) ?? 0,
-                        tips: Double(editEntryTips) ?? 0,
-                        cash_out: Double(editEntryTipOut) ?? 0,
-                        other: Double(editEntryOther) ?? 0,
-                        actual_start_time: startTime,
-                        actual_end_time: endTime
+                    // Tips card with percentage badge
+                    ZStack(alignment: .topTrailing) {
+                        GlassStatCard(
+                            title: "Tips",
+                            value: formatTipsWithTarget(),
+                            icon: "banknote.fill",
+                            color: .blue,
+                            subtitle: "Customer tips received"
+                        )
+                        .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                        .onTapGesture {
+                            selectedDetailType = "tips"
+                            // Filter shifts that have tips > 0
+                            detailShifts = currentStats.shifts.filter { $0.tips > 0 }
+                            showingDetail = true
+                            HapticFeedback.light()
+                        }
+                        
+                        // Percentage badge
+                        if currentStats.tipPercentage > 0 {
+                            Text(String(format: "%.0f%%", currentStats.tipPercentage))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.purple)
+                                .cornerRadius(8)
+                                .offset(x: -8, y: 8)
+                        }
+                    }
+                }
+                
+                // Second Row: Other and Total Revenue
+                HStack(spacing: 16) {
+                    GlassStatCard(
+                        title: "Other",
+                        value: formatCurrency(currentStats.other),
+                        icon: "plus.circle.fill",
+                        color: .green,
+                        subtitle: "Other amount received"
                     )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        selectedDetailType = "other"
+                        // Filter shifts that have other income > 0
+                        detailShifts = currentStats.shifts.filter { ($0.other ?? 0) > 0 }
+                        showingDetail = true
+                        HapticFeedback.light()
+                    }
                     
-                    try await SupabaseManager.shared.client
-                        .from("shift_income")
-                        .insert(newIncome)
-                        .execute()
+                    GlassStatCard(
+                        title: "Total Revenue",
+                        value: formatCurrency(currentStats.totalRevenue),
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: .orange,
+                        subtitle: "Salary + tips + other - tip out"
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        selectedDetailType = "total"
+                        // Show all shifts with any income (total_income > 0)
+                        detailShifts = currentStats.shifts.filter { ($0.total_income ?? 0) > 0 }
+                        showingDetail = true
+                        HapticFeedback.light()
+                    }
                 }
                 
-                await preloadAllStats()
-                
-                await MainActor.run {
-                    isSavingEntry = false
-                    editingShift = nil
+                // Third Row: Hours and Sales
+                HStack(spacing: 16) {
+                    GlassStatCard(
+                        title: "Hours Worked",
+                        value: formatHoursWithTarget(),
+                        icon: "clock.fill",
+                        color: .teal,
+                        subtitle: "Actual vs expected hours"
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        selectedDetailType = "hours"
+                        // Filter shifts that have hours > 0
+                        detailShifts = currentStats.shifts.filter { $0.hours > 0 }
+                        showingDetail = true
+                        HapticFeedback.light()
+                    }
+                    
+                    GlassStatCard(
+                        title: "Sales",
+                        value: formatSalesWithTarget(),
+                        icon: "cart.fill",
+                        color: .indigo,
+                        subtitle: "Total sales served"
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        selectedDetailType = "sales"
+                        // Filter shifts that have sales > 0
+                        detailShifts = currentStats.shifts.filter { $0.sales > 0 }
+                        showingDetail = true
+                        HapticFeedback.light()
+                    }
                 }
-            } catch {
-                print("Error updating shift: \(error)")
-                await MainActor.run {
-                    isSavingEntry = false
+                
+                // Show hint for clickable cards
+                if !currentStats.shifts.isEmpty {
+                    Text("Tap a card to view details")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
                 }
             }
         }
     }
     
-    func deleteShift(_ shift: ShiftIncome) {
-        Task {
-            do {
-                isSavingEntry = true
-                
-                try await SupabaseManager.shared.client
-                    .from("shifts")
-                    .delete()
-                    .eq("id", value: shift.id.uuidString)
-                    .execute()
-                
-                await preloadAllStats()
-                
-                await MainActor.run {
-                    isSavingEntry = false
-                    editingShift = nil
-                    HapticFeedback.success()
-                }
-            } catch {
-                print("Error deleting shift: \(error)")
-                await MainActor.run {
-                    isSavingEntry = false
-                }
-            }
-        }
-    }
-    
-    func clearQuickEntry() {
-        entryDate = Date()
-        entrySales = ""
-        entryTips = ""
-        entryTipOut = ""
-        entryOther = ""
-        entryHours = ""
-    }
-    
-    func initializeEditingData(_ shift: ShiftIncome) {
-        editEntryDate = dateFromString(shift.shift_date) ?? Date()
-        editEntrySales = String(format: "%.2f", shift.sales)
-        editEntryTips = String(format: "%.2f", shift.tips)
-        editEntryTipOut = String(format: "%.2f", shift.cash_out ?? 0)
-        editEntryOther = String(format: "%.2f", shift.other ?? 0)
-        editEntryHours = String(format: "%.1f", shift.hours)
-    }
-    
-    // Localization
-    var dashboardTitle: String {
-        return "Pro Tip 365"
-    }
-    
-    var quickAddText: String {
-        switch language {
-        case "fr": return "Ajouter une entrée"
-        case "es": return "Agregar entrada"
-        default: return "Add entry"
-        }
-    }
-    
-    var quickAddShiftText: String {
-        switch language {
-        case "fr": return "Ajouter un quart"
-        case "es": return "Agregar turno"
-        default: return "Add shift"
-        }
-    }
-    
-    var todayText: String {
-        switch language {
-        case "fr": return "Aujourd'hui"
-        case "es": return "Hoy"
-        default: return "Today"
-        }
-    }
-    
-    var weekText: String {
-        switch language {
-        case "fr": return "Semaine"
-        case "es": return "Semana"
-        default: return "Week"
-        }
-    }
-    
-    var monthText: String {
-        switch language {
-        case "fr": return "Mois"
-        case "es": return "Mes"
-        default: return "Month"
-        }
-    }
-    
-    var totalSalaryText: String {
-        switch language {
-        case "fr": return "Salaire total"
-        case "es": return "Salario total"
-        default: return "Total Salary"
-        }
-    }
-    
-    var totalRevenueText: String {
-        switch language {
-        case "fr": return "Revenu total"
-        case "es": return "Ingresos totales"
-        default: return "Total Revenue"
-        }
-    }
-    
-    var tipsText: String {
-        switch language {
-        case "fr": return "Pourboires"
-        case "es": return "Propinas"
-        default: return "Tips"
-        }
-    }
-    
-    var otherText: String {
-        switch language {
-        case "fr": return "Autre"
-        case "es": return "Otro"
-        default: return "Other"
-        }
-    }
-    
-    var hoursWorkedText: String {
-        switch language {
-        case "fr": return "Heures travaillées"
-        case "es": return "Horas trabajadas"
-        default: return "Hours Worked"
-        }
-    }
-    
-    var salesText: String {
-        switch language {
-        case "fr": return "Ventes"
-        case "es": return "Ventas"
-        default: return "Sales"
-        }
-    }
-    
-    var tapToViewDetailsText: String {
-        switch language {
-        case "fr": return "Touchez une carte pour voir les détails"
-        case "es": return "Toca una tarjeta para ver detalles"
-        default: return "Tap a card to view details"
-        }
-    }
 }

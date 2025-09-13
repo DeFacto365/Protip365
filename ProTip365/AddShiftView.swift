@@ -1,630 +1,777 @@
 import SwiftUI
-import Supabase
 
 struct AddShiftView: View {
-    let selectedDate: Date
-    @Binding var isPresented: Bool
-    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
     
-    // Shift selection state
-    @State private var availableShifts: [Shift] = []
-    @State private var selectedShift: Shift?
-    @State private var showShiftPicker = false
-    
-    // Form fields for earnings data
-    @State private var actualHours = ""
-    @State private var sales = ""
-    @State private var tips = ""
-    @State private var cashOut = ""
-    @State private var other = ""
-    @State private var actualStartTime = ""
-    @State private var actualEndTime = ""
-    @State private var notes = ""
-    
-    // Quick shift creation fields (when no existing shift)
-    @State private var expectedHours = ""
-    @State private var lunchBreakMinutes = ""
-    @State private var selectedEmployerIndex = 0
+    // MARK: - Parameters
+    let editingShift: ShiftIncome?
+    let initialDate: Date?
+
+    // MARK: - Initializer
+    init(editingShift: ShiftIncome? = nil, initialDate: Date? = nil) {
+        self.editingShift = editingShift
+        self.initialDate = initialDate
+    }
+
+    // MARK: - State Variables
+    @State private var selectedDate = Date()
+    @State private var selectedEmployer: Employer?
+    @State private var startTime = Date()
+    @State private var endTime = Date()
+    @State private var selectedLunchBreak = "None"
+    @State private var comments = ""
     @State private var employers: [Employer] = []
-    @State private var useEmployer = false
-    @State private var hourlyRate = ""
-    
     @State private var isLoading = false
-    @State private var showUnsavedChangesAlert = false
-    @AppStorage("language") private var language = "en"
+    @State private var isInitializing = true
+    @State private var showDatePicker = false
+    @State private var showStartDatePicker = false
+    @State private var showEndDatePicker = false
+    @State private var showEmployerPicker = false
+    @State private var showStartTimePicker = false
+    @State private var showEndTimePicker = false
+    @State private var showLunchBreakPicker = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
-    var hasUnsavedChanges: Bool {
-        return !actualHours.isEmpty || !sales.isEmpty || !tips.isEmpty || 
-               !cashOut.isEmpty || !other.isEmpty || !notes.isEmpty
+    // MARK: - Computed Properties
+    private var lunchBreakOptions = ["None", "15 min", "30 min", "45 min", "60 min"]
+    
+    private var expectedHours: Double {
+        let calendar = Calendar.current
+        let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
+        let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
+        
+        let startMinutes = (startComponents.hour ?? 0) * 60 + (startComponents.minute ?? 0)
+        let endMinutes = (endComponents.hour ?? 0) * 60 + (endComponents.minute ?? 0)
+        
+        var totalMinutes = endMinutes - startMinutes
+        if totalMinutes < 0 {
+            totalMinutes += 24 * 60 // Add 24 hours if end time is next day
+        }
+        
+        // Subtract lunch break
+        let lunchMinutes = lunchBreakMinutes
+        totalMinutes -= lunchMinutes
+        
+        return Double(totalMinutes) / 60.0
     }
     
-    var isSelectedDateTodayOrFuture: Bool {
-        Calendar.current.isDate(selectedDate, inSameDayAs: Date()) || selectedDate > Date()
-    }
-    
-    var needsShiftSelection: Bool {
-        availableShifts.count > 1
-    }
-    
-    // Break down complex UI into smaller computed properties
-    var dateSectionView: some View {
-        Section {
-            HStack {
-                Image(systemName: "calendar")
-                    .foregroundColor(.secondary)
-                Text(dateSection)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(dateFormatter.string(from: selectedDate))
-                    .font(.caption)
-                    .foregroundStyle(.blue)
-            }
-            .listRowBackground(Color.clear)
+    private var lunchBreakMinutes: Int {
+        switch selectedLunchBreak {
+        case "15 min": return 15
+        case "30 min": return 30
+        case "45 min": return 45
+        case "60 min": return 60
+        default: return 0
         }
     }
     
-    // Break down the shift selection into smaller pieces
-    func shiftDisplayView(for shift: Shift) -> some View {
-        VStack(alignment: .leading) {
-            Text(shift.start_time ?? "No time")
-            if let employer = employers.first(where: { $0.id == shift.employer_id }) {
-                Text(employer.name)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-    
-    var shiftPicker: some View {
-        Picker("Select Shift", selection: $selectedShift) {
-            ForEach(availableShifts, id: \.id) { shift in
-                shiftDisplayView(for: shift)
-                    .tag(shift as Shift?)
-            }
-        }
-    }
-    
-    var shiftSelectionSection: some View {
-        Group {
-            if needsShiftSelection {
-                Section {
-                    shiftPicker
-                } header: {
-                    Text("Which shift is this for?")
-                }
-                .listRowBackground(Color.clear)
-            }
-        }
-    }
-    
-    var plannedShiftSection: some View {
-        Group {
-            if let shift = (selectedShift ?? availableShifts.first) {
-                Section {
-                    HStack {
-                        Text("Expected Hours:")
-                        Spacer()
-                        Text("\(shift.expected_hours, specifier: "%.1f")h")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let employer = employers.first(where: { $0.id == shift.employer_id }) {
-                        HStack {
-                            Text("Employer:")
-                            Spacer()
-                            Text(employer.name)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    if let startTime = shift.start_time, let endTime = shift.end_time {
-                        HStack {
-                            Text("Planned Time:")
-                            Spacer()
-                            Text("\(startTime) - \(endTime)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Planned Shift")
-                }
-                .listRowBackground(Color.clear)
-            }
-        }
-    }
-    
-    var quickShiftCreationSection: some View {
-        Group {
-            if availableShifts.isEmpty {
-                Section {
-                    TextField("Expected Hours", text: $expectedHours)
-                        .keyboardType(.decimalPad)
-                    
-                    HStack {
-                        Text("Lunch Break")
-                        Spacer()
-                        TextField("0", text: $lunchBreakMinutes)
-                            .keyboardType(.numberPad)
-                            .frame(width: 60)
-                            .multilineTextAlignment(.trailing)
-                        Text("min")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Toggle(useEmployerLabel, isOn: $useEmployer)
-                    
-                    if useEmployer && !employers.isEmpty {
-                        Picker(selectEmployerLabel, selection: $selectedEmployerIndex) {
-                            Text(noneLabel).tag(0)
-                            ForEach(Array(employers.enumerated()), id: \.offset) { index, employer in
-                                Text(employer.name).tag(index + 1)
-                            }
-                        }
-                    }
-                    
-                    if !useEmployer {
-                        TextField(hourlyRateLabel, text: $hourlyRate)
-                            .keyboardType(.decimalPad)
-                    }
-                } header: {
-                    Text("Create Shift")
-                }
-                .listRowBackground(Color.clear)
-            }
-        }
-    }
-    
-    var earningsSectionView: some View {
-        Group {
-            if !isSelectedDateTodayOrFuture {
-                Section {
-                    TextField("Actual Hours Worked", text: $actualHours)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    
-                    TextField(salesLabel, text: $sales)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    
-                    TextField(tipsLabel, text: $tips)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    
-                    TextField(cashOutLabel, text: $cashOut)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    
-                    TextField("Other Income ($)", text: $other)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                } header: {
-                    Text(earningsSection)
-                }
-                .listRowBackground(Color.clear)
-            }
-        }
-    }
-    
-    var notesSectionView: some View {
-        Section {
-            TextField(notesPlaceholder, text: $notes, axis: .vertical)
-                .lineLimit(3...6)
-        } header: {
-            Text(notesSection)
-        }
-        .listRowBackground(Color.clear)
-    }
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                dateSectionView
-                shiftSelectionSection
-                plannedShiftSection  
-                quickShiftCreationSection
-                earningsSectionView
-                notesSectionView
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color(UIColor.systemGroupedBackground))
-            .navigationTitle(addShiftTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(action: {
-                        if hasUnsavedChanges {
-                            showUnsavedChangesAlert = true
-                        } else {
-                            isPresented = false
-                        }
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.body)
-                            .fontWeight(.medium)
-                    }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(action: {
-                        saveShift()
-                    }) {
-                        Image(systemName: "checkmark")
-                            .font(.body)
-                            .fontWeight(.medium)
-                    }
-                    .disabled(isSelectedDateTodayOrFuture ? 
-                             (availableShifts.isEmpty && expectedHours.isEmpty) : 
-                             (actualHours.isEmpty || tips.isEmpty))
-                }
-            }
-            .overlay {
-                if isLoading {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .scaleEffect(1.2)
-                }
-            }
-        }
-        .task {
-            await loadEmployers()
-            await loadExistingShifts()
-            await loadDefaults()
-        }
-        .alert(unsavedChangesTitle, isPresented: $showUnsavedChangesAlert) {
-            Button(saveButton) {
-                saveShift()
-            }
-            Button(discardChangesButton, role: .destructive) {
-                isPresented = false
-            }
-            Button(cancelButton, role: .cancel) { }
-        } message: {
-            Text(unsavedChangesMessage)
-        }
-    }
-    
-    var dateFormatter: DateFormatter {
+    private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateStyle = .long
+        formatter.dateStyle = .medium
         return formatter
     }
     
-    func loadEmployers() async {
-        do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            employers = try await SupabaseManager.shared.client
-                .from("employers")
-                .select()
-                .eq("user_id", value: userId)
-                .execute()
-                .value
-        } catch {
-            print("Error loading employers: \(error)")
-        }
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
     }
     
-    func loadExistingShifts() async {
-        do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
+    // MARK: - Body
+    var body: some View {
+        ZStack {
+            // iOS 26 Gray Background
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
             
-            let shifts: [Shift] = try await SupabaseManager.shared.client
-                .from("shifts")
-                .select()
-                .eq("user_id", value: userId)
-                .eq("shift_date", value: dateFormatter.string(from: selectedDate))
-                .execute()
-                .value
-            
-            await MainActor.run {
-                availableShifts = shifts
-                // Auto-select if only one shift exists
-                if shifts.count == 1 {
-                    selectedShift = shifts.first
+            if isInitializing {
+                // Show loading state while initializing
+                VStack {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .padding()
+                    Text("Loading...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    // iOS 26 Style Header
+                    headerView
+                    
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Main Form Card - iOS 26 Style
+                            mainFormCard
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 20)
+                    }
                 }
             }
-        } catch {
-            print("Error loading existing shifts: \(error)")
+        }
+        .onAppear {
+            Task {
+                await initializeView()
+            }
+        }
+        .alert("Error Saving Shift", isPresented: $showErrorAlert) {
+            Button("OK") { }
+        } message: {
+            Text(errorMessage)
         }
     }
     
-    func loadDefaults() async {
-        do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            
-            struct Profile: Decodable {
-                let default_hourly_rate: Double
-                let default_employer_id: String?
-                let use_multiple_employers: Bool?
+    // MARK: - iOS 26 Style Header
+    private var headerView: some View {
+        HStack {
+            // Cancel Button with iOS 26 style
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "xmark")
+                    .font(.title2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .frame(width: 32, height: 32)
+                    .background(Color(.systemGray5))
+                    .clipShape(Circle())
             }
             
-            let profiles: [Profile] = try await SupabaseManager.shared.client
-                .from("users_profile")
-                .select("default_hourly_rate, default_employer_id, use_multiple_employers")
-                .eq("user_id", value: userId)
-                .execute()
-                .value
+            Spacer()
             
-            if let userProfile = profiles.first {
-                await MainActor.run {
-                    hourlyRate = String(format: "%.2f", userProfile.default_hourly_rate)
-                    
-                    // Set default employer if multiple employers is enabled AND there are employers available
-                    if let useMultiple = userProfile.use_multiple_employers, useMultiple, !employers.isEmpty {
-                        useEmployer = true
-                        
-                        // If a default employer is set, select it
-                        if let defaultEmployerIdString = userProfile.default_employer_id,
-                           let defaultEmployerId = UUID(uuidString: defaultEmployerIdString),
-                           let employerIndex = employers.firstIndex(where: { $0.id == defaultEmployerId }) {
-                            selectedEmployerIndex = employerIndex + 1  // +1 because index 0 is "None"
-                        } else {
-                            // No default set, but employers are available - select the first one
-                            selectedEmployerIndex = 1  // First employer (index 0 is "None")
+            Text(editingShift != nil ? "Edit Shift" : "New Shift")
+                .font(.headline)
+                .fontWeight(.semibold)
+            
+            Spacer()
+            
+            // Save Button with iOS 26 style
+            Button(action: {
+                saveShift()
+            }) {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(width: 32, height: 32)
+                } else {
+                    Image(systemName: "checkmark")
+                        .font(.title2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .frame(width: 32, height: 32)
+                }
+            }
+            .background(Color(.systemGray5))
+            .clipShape(Circle())
+            .disabled(isLoading)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    // MARK: - Main Form Card - iOS 26 Style
+    private var mainFormCard: some View {
+        VStack(spacing: 0) {
+            // Employer Row (moved to top)
+            HStack {
+                Text("Employer")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showEmployerPicker.toggle()
+                        // Close other pickers when opening employer picker
+                        showStartDatePicker = false
+                        showEndDatePicker = false
+                        showStartTimePicker = false
+                        showEndTimePicker = false
+                        showLunchBreakPicker = false
+                    }
+                }) {
+                    Text(selectedEmployer?.name ?? "Select Employer")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Inline Employer Picker
+            if showEmployerPicker {
+                Picker("Select Employer", selection: $selectedEmployer) {
+                    ForEach(employers, id: \.id) { employer in
+                        Text(employer.name)
+                            .tag(employer as Employer?)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .onChange(of: selectedEmployer) {
+                    // Auto-close picker after selection with iOS-like delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showEmployerPicker = false
                         }
                     }
                 }
             }
-        } catch {
-            print("Error loading defaults: \(error)")
+            
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // Starts Row
+            HStack {
+                Text("Starts")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    // Date Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showStartDatePicker.toggle()
+                            // Close other pickers when opening date picker
+                            showEndDatePicker = false
+                            showStartTimePicker = false
+                            showEndTimePicker = false
+                            showEmployerPicker = false
+                            showLunchBreakPicker = false
+                        }
+                    }) {
+                        Text(dateFormatter.string(from: selectedDate))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    
+                    // Time Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showStartTimePicker.toggle()
+                            // Close other pickers when opening time picker
+                            showStartDatePicker = false
+                            showEndDatePicker = false
+                            showEndTimePicker = false
+                            showEmployerPicker = false
+                            showLunchBreakPicker = false
+                        }
+                    }) {
+                        Text(timeFormatter.string(from: startTime))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Inline Date Picker
+            if showStartDatePicker {
+                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+            
+            // Inline Start Time Picker
+            if showStartTimePicker {
+                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+            
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // Ends Row
+            HStack {
+                Text("Ends")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    // Date Button (same as start date)
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showEndDatePicker.toggle()
+                            // Close other pickers when opening date picker
+                            showStartDatePicker = false
+                            showStartTimePicker = false
+                            showEndTimePicker = false
+                            showEmployerPicker = false
+                            showLunchBreakPicker = false
+                        }
+                    }) {
+                        Text(dateFormatter.string(from: selectedDate))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    
+                    // Time Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showEndTimePicker.toggle()
+                            // Close other pickers when opening time picker
+                            showStartDatePicker = false
+                            showEndDatePicker = false
+                            showStartTimePicker = false
+                            showEmployerPicker = false
+                            showLunchBreakPicker = false
+                        }
+                    }) {
+                        Text(timeFormatter.string(from: endTime))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Inline End Time Picker
+            if showEndTimePicker {
+                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+            
+            // Inline End Date Picker
+            if showEndDatePicker {
+                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+            
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // Lunch Break Row
+            HStack {
+                Text("Lunch Break")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showLunchBreakPicker.toggle()
+                        // Close other pickers when opening lunch break picker
+                        showStartDatePicker = false
+                        showEndDatePicker = false
+                        showStartTimePicker = false
+                        showEndTimePicker = false
+                        showEmployerPicker = false
+                    }
+                }) {
+                    Text(selectedLunchBreak)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Inline Lunch Break Picker
+            if showLunchBreakPicker {
+                Picker("Select Lunch Break", selection: $selectedLunchBreak) {
+                    ForEach(lunchBreakOptions, id: \.self) { option in
+                        Text(option).tag(option)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .onChange(of: selectedLunchBreak) {
+                    // Auto-close picker after selection with iOS-like delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showLunchBreakPicker = false
+                        }
+                    }
+                }
+            }
+            
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // Shift Expected Hours Row - BOLD
+            HStack {
+                Text("Shift Expected Hours")
+                    .font(.body)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Text(String(format: "%.1f hours", expectedHours))
+                    .font(.body)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // Comments Row
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Comments")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                TextField("Add notes...", text: $comments, axis: .vertical)
+                    .font(.body)
+                    .textFieldStyle(.plain)
+                    .lineLimit(2...2)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
+    }
+    
+    // MARK: - Helper Functions
+    private func initializeView() async {
+        // First load employers
+        await loadEmployers()
+
+        // Then setup default times (which may depend on employers being loaded)
+        await setupDefaultTimes()
+
+        // Finally, mark initialization as complete
+        await MainActor.run {
+            isInitializing = false
         }
     }
     
-    func saveShift() {
+    private func loadEmployers() async {
+        do {
+            let fetchedEmployers = try await SupabaseManager.shared.fetchEmployers()
+            
+            await MainActor.run {
+                self.employers = fetchedEmployers
+                
+                // If editing, set the employer from the shift
+                if let shift = editingShift,
+                   let employerId = shift.employer_id {
+                    selectedEmployer = fetchedEmployers.first { $0.id == employerId }
+                }
+                // Set default employer if none selected
+                else if selectedEmployer == nil && !fetchedEmployers.isEmpty {
+                    // Just use first employer as default for now
+                    selectedEmployer = fetchedEmployers.first
+                }
+            }
+        } catch {
+            print("Error loading employers: \(error)")
+            // Even on error, mark as not initializing to show the UI
+            await MainActor.run {
+                isInitializing = false
+            }
+        }
+    }
+    
+    private func setupDefaultTimes() async {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // If editing, populate with existing shift data
+        if let shift = editingShift {
+            print("📝 Setting up edit mode for shift ID: \(shift.shift_id ?? UUID())")
+            print("📝 Shift date: \(shift.shift_date)")
+            print("📝 Employer ID: \(shift.employer_id?.uuidString ?? "none")")
+            print("📝 Start time: \(shift.start_time ?? "none")")
+            print("📝 End time: \(shift.end_time ?? "none")")
+
+            // Parse shift date first
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let shiftDate = dateFormatter.date(from: shift.shift_date) ?? Date()
+
+            await MainActor.run {
+                selectedDate = shiftDate
+            }
+
+            // Parse start and end times
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm:ss"
+            // Also try HH:mm format if HH:mm:ss fails
+            let timeFormatterShort = DateFormatter()
+            timeFormatterShort.dateFormat = "HH:mm"
+
+            if let startTimeString = shift.start_time {
+                var startDateParsed = timeFormatter.date(from: startTimeString)
+                if startDateParsed == nil {
+                    startDateParsed = timeFormatterShort.date(from: startTimeString)
+                }
+
+                if let startDateParsed = startDateParsed {
+                    // Combine with selected date
+                    let startComponents = calendar.dateComponents([.hour, .minute], from: startDateParsed)
+                    var dateComponents = calendar.dateComponents([.year, .month, .day], from: shiftDate)
+                    dateComponents.hour = startComponents.hour
+                    dateComponents.minute = startComponents.minute
+                    if let combinedDate = calendar.date(from: dateComponents) {
+                        await MainActor.run {
+                            startTime = combinedDate
+                        }
+                    }
+                }
+            }
+
+            if let endTimeString = shift.end_time {
+                var endDateParsed = timeFormatter.date(from: endTimeString)
+                if endDateParsed == nil {
+                    endDateParsed = timeFormatterShort.date(from: endTimeString)
+                }
+
+                if let endDateParsed = endDateParsed {
+                    // Combine with selected date
+                    let endComponents = calendar.dateComponents([.hour, .minute], from: endDateParsed)
+                    var dateComponents = calendar.dateComponents([.year, .month, .day], from: shiftDate)
+                    dateComponents.hour = endComponents.hour
+                    dateComponents.minute = endComponents.minute
+                    if let combinedDate = calendar.date(from: dateComponents) {
+                        await MainActor.run {
+                            endTime = combinedDate
+                        }
+                    }
+                }
+            }
+
+            // Set lunch break
+            if let lunchMinutes = shift.lunch_break_minutes {
+                await MainActor.run {
+                    switch lunchMinutes {
+                    case 15: selectedLunchBreak = "15 min"
+                    case 30: selectedLunchBreak = "30 min"
+                    case 45: selectedLunchBreak = "45 min"
+                    case 60: selectedLunchBreak = "60 min"
+                    default: selectedLunchBreak = "None"
+                    }
+                }
+            }
+
+            // Set employer - now employers should be loaded
+            if let employerId = shift.employer_id {
+                await MainActor.run {
+                    selectedEmployer = employers.first { $0.id == employerId }
+                    print("📝 Selected employer: \(selectedEmployer?.name ?? "not found")")
+                }
+            }
+
+            // Load notes separately from shifts table since they're not in ShiftIncome view
+            if let shiftId = shift.shift_id {
+                await loadNotesForShift(shiftId: shiftId)
+            }
+        } else {
+            // Default times for new shift
+            await MainActor.run {
+                // Use initialDate if provided, otherwise use today
+                let baseDate = initialDate ?? now
+                selectedDate = baseDate
+
+                // Set start time to 8:00 AM on the selected date
+                var startComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+                startComponents.hour = 8
+                startComponents.minute = 0
+                startTime = calendar.date(from: startComponents) ?? baseDate
+
+                // Set end time to 5:00 PM on the selected date
+                var endComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+                endComponents.hour = 17
+                endComponents.minute = 0
+                endTime = calendar.date(from: endComponents) ?? baseDate
+            }
+        }
+    }
+    
+    private func loadNotesForShift(shiftId: UUID) async {
+        do {
+            print("📝 Loading notes for shift ID: \(shiftId)")
+
+            // Create a simple struct just for notes
+            struct NoteOnly: Decodable {
+                let notes: String?
+            }
+
+            let result: NoteOnly = try await SupabaseManager.shared.client
+                .from("shifts")
+                .select("notes")
+                .eq("id", value: shiftId)
+                .single()
+                .execute()
+                .value
+
+            if let notes = result.notes {
+                await MainActor.run {
+                    comments = notes
+                    print("📝 Loaded notes: \(notes)")
+                }
+            } else {
+                print("📝 No notes found for shift")
+            }
+        } catch {
+            print("Error loading notes: \(error)")
+        }
+    }
+
+    private func saveShift() {
+        guard let employer = selectedEmployer else {
+            print("❌ No employer selected")
+            return
+        }
+        
+        print("💾 Starting to save shift...")
+        print("📅 Date: \(selectedDate)")
+        print("👤 Employer: \(employer.name)")
+        print("⏰ Start: \(startTime)")
+        print("⏰ End: \(endTime)")
+        print("🍽️ Lunch Break: \(selectedLunchBreak)")
+        print("📝 Comments: \(comments)")
+        print("⏱️ Expected Hours: \(expectedHours)")
+        
         isLoading = true
         
         Task {
             do {
-                let userId = try await SupabaseManager.shared.client.auth.session.user.id
+                // Get current user ID
+                let session = try await SupabaseManager.shared.client.auth.session
+                let userId = session.user.id
+                print("👤 User ID: \(userId)")
+                
+                // Format dates as strings
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
+                let timeFormatter = DateFormatter()
+                timeFormatter.dateFormat = "HH:mm"
                 
-                var targetShift: Shift?
-                
-                // Step 1: Ensure we have a shift to link to
-                if let existingShift = (selectedShift ?? availableShifts.first) {
-                    targetShift = existingShift
-                } else {
-                    // Create new shift first
-                    var selectedEmployer: Employer? = nil
-                    if useEmployer && selectedEmployerIndex > 0 && selectedEmployerIndex <= employers.count {
-                        selectedEmployer = employers[selectedEmployerIndex - 1]
+                if let existingShift = editingShift {
+                    // Update existing shift - use shift_id which is the ID from shifts table
+                    guard let shiftId = existingShift.shift_id else {
+                        throw NSError(domain: "AddShiftView", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid shift ID"])
                     }
-                    
-                    struct NewShift: Encodable {
-                        let user_id: String
-                        let shift_date: String
-                        let expected_hours: Double
-                        let lunch_break_minutes: Int
-                        let hourly_rate: Double
-                        let employer_id: String?
-                        let start_time: String?
-                        let end_time: String?
-                        let status: String
-                    }
-                    
-                    let timeFormatter = DateFormatter()
-                    timeFormatter.dateFormat = "HH:mm:ss"
-                    
-                    let newShiftData = NewShift(
-                        user_id: userId.uuidString,
+
+                    let updatedShift = Shift(
+                        id: shiftId,  // Use the shift_id from the ShiftIncome model
+                        user_id: userId,
+                        employer_id: employer.id,
                         shift_date: dateFormatter.string(from: selectedDate),
-                        expected_hours: Double(expectedHours) ?? 0,
-                        lunch_break_minutes: Int(lunchBreakMinutes) ?? 0,
-                        hourly_rate: selectedEmployer?.hourly_rate ?? (Double(hourlyRate) ?? 15.00),
-                        employer_id: selectedEmployer?.id.uuidString,
-                        start_time: nil,
-                        end_time: nil,
-                        status: isSelectedDateTodayOrFuture ? "planned" : "completed"
+                        expected_hours: expectedHours,
+                        hours: expectedHours,
+                        lunch_break_minutes: lunchBreakMinutes,
+                        hourly_rate: employer.hourly_rate,
+                        notes: comments.isEmpty ? nil : comments,
+                        start_time: timeFormatter.string(from: startTime),
+                        end_time: timeFormatter.string(from: endTime),
+                        status: "planned",
+                        created_at: nil
+                    )
+
+                    print("📦 Updating shift with ID: \(shiftId)")
+                    print("📦 Shift details: \(updatedShift)")
+
+                    // Update in Supabase
+                    try await SupabaseManager.shared.updateShift(updatedShift)
+                    print("✅ Shift updated successfully!")
+                } else {
+                    // Create new shift
+                    let newShift = Shift(
+                        id: UUID(),
+                        user_id: userId,
+                        employer_id: employer.id,
+                        shift_date: dateFormatter.string(from: selectedDate),
+                        expected_hours: expectedHours,
+                        hours: expectedHours,
+                        lunch_break_minutes: lunchBreakMinutes,
+                        hourly_rate: employer.hourly_rate,
+                        notes: comments.isEmpty ? nil : comments,
+                        start_time: timeFormatter.string(from: startTime),
+                        end_time: timeFormatter.string(from: endTime),
+                        status: "planned",
+                        created_at: Date()
                     )
                     
-                    let createdShifts: [Shift] = try await SupabaseManager.shared.client
-                        .from("shifts")
-                        .insert(newShiftData)
-                        .select()
-                        .execute()
-                        .value
+                    print("📦 Created shift object: \(newShift)")
                     
-                    targetShift = createdShifts.first
+                    // Save to Supabase
+                    try await SupabaseManager.shared.saveShift(newShift)
+                    print("✅ Shift saved successfully!")
                 }
                 
-                // Step 2: Create earnings data (only for past dates)
-                if !isSelectedDateTodayOrFuture, let shift = targetShift {
-                    struct ShiftIncomeEntry: Encodable {
-                        let shift_id: String
-                        let user_id: String
-                        let actual_hours: Double
-                        let sales: Double
-                        let tips: Double
-                        let cash_out: Double
-                        let other: Double
-                        let notes: String
-                    }
-                    
-                    let incomeData = ShiftIncomeEntry(
-                        shift_id: shift.id?.uuidString ?? "",
-                        user_id: userId.uuidString,
-                        actual_hours: Double(actualHours) ?? 0,
-                        sales: Double(sales) ?? 0,
-                        tips: Double(tips) ?? 0,
-                        cash_out: Double(cashOut) ?? 0,
-                        other: Double(other) ?? 0,
-                        notes: notes
-                    )
-                    
-                    try await SupabaseManager.shared.client
-                        .from("shift_income")
-                        .insert(incomeData)
-                        .execute()
-                }
-                
-                await MainActor.run {
-                    onSave()
-                    isPresented = false
-                }
-            } catch {
-                print("Error saving shift: \(error)")
                 await MainActor.run {
                     isLoading = false
+                    dismiss()
+                }
+            } catch {
+                print("❌ Error saving shift: \(error)")
+                print("❌ Error details: \(error.localizedDescription)")
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
                 }
             }
         }
     }
-    
-    // Localization
-    var addShiftTitle: String {
-        switch language {
-        case "fr": return "Ajouter un quart"
-        case "es": return "Agregar turno"
-        default: return "Add Shift"
-        }
-    }
-    
-    var dateSection: String {
-        switch language {
-        case "fr": return "Date"
-        case "es": return "Fecha"
-        default: return "Date"
-        }
-    }
-    
-    var workDetailsSection: String {
-        switch language {
-        case "fr": return "Détails du travail"
-        case "es": return "Detalles del trabajo"
-        default: return "Work Details"
-        }
-    }
-    
-    var hoursLabel: String {
-        switch language {
-        case "fr": return "Heures travaillées"
-        case "es": return "Horas trabajadas"
-        default: return "Hours worked"
-        }
-    }
-    
-    var useEmployerLabel: String {
-        switch language {
-        case "fr": return "Utiliser un employeur"
-        case "es": return "Usar empleador"
-        default: return "Use employer"
-        }
-    }
-    
-    var selectEmployerLabel: String {
-        switch language {
-        case "fr": return "Sélectionner"
-        case "es": return "Seleccionar"
-        default: return "Select"
-        }
-    }
-    
-    var noneLabel: String {
-        switch language {
-        case "fr": return "Aucun"
-        case "es": return "Ninguno"
-        default: return "None"
-        }
-    }
-    
-    var hourlyRateLabel: String {
-        switch language {
-        case "fr": return "Taux horaire ($)"
-        case "es": return "Tarifa por hora ($)"
-        default: return "Hourly rate ($)"
-        }
-    }
-    
-    var earningsSection: String {
-        switch language {
-        case "fr": return "Revenus"
-        case "es": return "Ganancias"
-        default: return "Earnings"
-        }
-    }
-    
-    var salesLabel: String {
-        switch language {
-        case "fr": return "Ventes ($)"
-        case "es": return "Ventas ($)"
-        default: return "Sales ($)"
-        }
-    }
-    
-    var tipsLabel: String {
-        switch language {
-        case "fr": return "Pourboires ($)"
-        case "es": return "Propinas ($)"
-        default: return "Tips ($)"
-        }
-    }
-    
-    var cashOutLabel: String {
-        switch language {
-        case "fr": return "Partage pourboire ($)"
-        case "es": return "Propina compartida ($)"
-        default: return "Tip out ($)"
-        }
-    }
-    
-    var notesSection: String {
-        switch language {
-        case "fr": return "Notes"
-        case "es": return "Notas"
-        default: return "Notes"
-        }
-    }
-    
-    var notesPlaceholder: String {
-        switch language {
-        case "fr": return "Notes optionnelles..."
-        case "es": return "Notas opcionales..."
-        default: return "Optional notes..."
-        }
-    }
-    
-    var cancelButton: String {
-        switch language {
-        case "fr": return "Annuler"
-        case "es": return "Cancelar"
-        default: return "Cancel"
-        }
-    }
-    
-    var saveButton: String {
-        switch language {
-        case "fr": return "Sauvegarder"
-        case "es": return "Guardar"
-        default: return "Save"
-        }
-    }
-    
-    var unsavedChangesTitle: String {
-        switch language {
-        case "fr": return "Modifications non sauvegardées"
-        case "es": return "Cambios no guardados"
-        default: return "Unsaved Changes"
-        }
-    }
-    
-    var unsavedChangesMessage: String {
-        switch language {
-        case "fr": return "Voulez-vous sauvegarder vos modifications ou les abandonner?"
-        case "es": return "¿Quieres guardar tus cambios o descartarlos?"
-        default: return "Do you want to save your changes or discard them?"
-        }
-    }
-    
-    var discardChangesButton: String {
-        switch language {
-        case "fr": return "Abandonner"
-        case "es": return "Descartar"
-        default: return "Discard"
-        }
-    }
+}
+
+#Preview {
+    AddShiftView()
 }

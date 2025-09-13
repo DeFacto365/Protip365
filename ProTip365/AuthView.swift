@@ -22,9 +22,24 @@ struct AuthView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Language selector at top
+                // Language selector and debug button at top
                 HStack {
+                    // Debug button for configuration
+                    Button(action: {
+                        print("🐛 Debug: Configuration Check")
+                        let config = ConfigManager.shared
+                        config.printConfigurationStatus()
+                        let isValid = config.validateConfiguration()
+                        print("🔍 Configuration valid: \(isValid)")
+                    }) {
+                        Image(systemName: "ladybug.fill")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                    }
+                    .padding(.trailing, 8)
+
                     Spacer()
+
                     Menu {
                         Button("English") { language = "en" }
                         Button("Français") { language = "fr" }
@@ -49,20 +64,13 @@ struct AuthView: View {
                 // Logo and title
                 VStack(spacing: 16) {
                     // App Icon/Logo
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(LinearGradient(
-                                colors: [Color.blue, Color.purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
-                            .frame(width: 100, height: 100)
-                            .shadow(radius: 10)
-                        
-                        Text("%")
-                            .font(.system(size: 60, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                    }
+                    Image(systemName: "percent")
+                        .font(.system(size: 60, weight: .bold))
+                        .foregroundColor(.primary)
+                        .frame(width: 100, height: 100)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .shadow(radius: 10)
                     
                     VStack(spacing: 8) {
                         Text("ProTip365")
@@ -264,46 +272,76 @@ struct AuthView: View {
     }
     
     func authenticate() {
-        guard !email.isEmpty, !password.isEmpty else { return }
-        
+        print("🔐 Starting authentication process...")
+        print("   Email: \(email)")
+        print("   Password length: \(password.count)")
+        print("   Is Sign Up: \(isSignUp)")
+
+        guard !email.isEmpty, !password.isEmpty else {
+            print("❌ ERROR: Email or password is empty")
+            return
+        }
+
         isLoading = true
         focusedField = nil
-        
+
         Task {
             do {
+                print("📡 Attempting to authenticate with Supabase...")
+
                 if isSignUp {
+                    print("📝 Starting sign up process...")
                     // Sign up the user
                     _ = try await SupabaseManager.shared.client.auth.signUp(
                         email: email,
                         password: password
                     )
-                    
+                    print("✅ Sign up successful, attempting automatic sign in...")
+
                     // After successful signup, automatically sign them in
                     // No need to check if user is nil - if we got here without error, signup succeeded
-                    try await SupabaseManager.shared.client.auth.signIn(
+                    _ = try await SupabaseManager.shared.client.auth.signIn(
                         email: email,
                         password: password
                     )
+                    print("✅ Sign in after signup successful")
+
                     await MainActor.run {
                         isAuthenticated = true
                         isLoading = false
+                        print("🎉 User authenticated successfully!")
                     }
                 } else {
+                    print("🔑 Starting sign in process...")
                     // Just sign in
-                    try await SupabaseManager.shared.client.auth.signIn(
+                    _ = try await SupabaseManager.shared.client.auth.signIn(
                         email: email,
                         password: password
                     )
+                    print("✅ Sign in successful")
+
                     await MainActor.run {
                         isAuthenticated = true
                         isLoading = false
+                        print("🎉 User authenticated successfully!")
                     }
                 }
             } catch {
+                print("❌ Authentication failed with error:")
+                print("   Error type: \(type(of: error))")
+                print("   Error description: \(error.localizedDescription)")
+                print("   Error debug description: \(String(describing: error))")
+
+                // Try to get more specific error information
+                if let authError = error as? AuthError {
+                    print("   AuthError details: \(authError)")
+                }
+
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     showError = true
                     isLoading = false
+                    print("🚨 Authentication error displayed to user: \(errorMessage)")
                 }
             }
         }

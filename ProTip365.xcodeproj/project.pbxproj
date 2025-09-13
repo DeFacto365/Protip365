@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		855AA5932E6363F2006D4C41 /* ProTip365 Monthly.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 855AA5922E6363F2006D4C41 /* ProTip365 Monthly.storekit */; };
 		855AA5972E636523006D4C41 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 855AA5962E636523006D4C41 /* StoreKit.framework */; };
 		85946DFB2E625E270018C7F9 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 85946DFA2E625E270018C7F9 /* Auth */; };
 		85946DFD2E625E270018C7F9 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 85946DFC2E625E270018C7F9 /* Functions */; };
@@ -18,17 +17,25 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		855AA5922E6363F2006D4C41 /* ProTip365 Monthly.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = "ProTip365 Monthly.storekit"; path = "ProTip365/ProTip365 Monthly.storekit"; sourceTree = "<group>"; };
 		855AA5962E636523006D4C41 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		85946DEB2E625D8C0018C7F9 /* ProTip365.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProTip365.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		857BD2942E7462150083E719 /* Exceptions for "ProTip365" folder in "ProTip365" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 85946DEA2E625D8C0018C7F9 /* ProTip365 */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 		85120BAC2E6390B400994CC6 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = 85946DE72E625D8C0018C7F9 /* Sources */;
 			membershipExceptions = (
-				"supabase/functions/send-suggestion/index.ts",
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -37,6 +44,7 @@
 		85946DED2E625D8C0018C7F9 /* ProTip365 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				857BD2942E7462150083E719 /* Exceptions for "ProTip365" folder in "ProTip365" target */,
 				85120BAC2E6390B400994CC6 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */,
 			);
 			path = ProTip365;
@@ -73,7 +81,6 @@
 		85946DE22E625D8C0018C7F9 = {
 			isa = PBXGroup;
 			children = (
-				855AA5922E6363F2006D4C41 /* ProTip365 Monthly.storekit */,
 				85946DED2E625D8C0018C7F9 /* ProTip365 */,
 				855AA5882E62E69F006D4C41 /* Frameworks */,
 				85946DEC2E625D8C0018C7F9 /* Products */,
@@ -161,7 +168,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				855AA5932E6363F2006D4C41 /* ProTip365 Monthly.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,7 +314,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2VNLA63QB4;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ProTip365/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ProTip365;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -339,7 +346,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2VNLA63QB4;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ProTip365/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ProTip365;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

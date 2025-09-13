@@ -5,32 +5,16 @@ struct ShiftsCalendarView: View {
     @State private var selectedDate = Date()
     @State private var allShifts: [ShiftIncome] = []
     @State private var dailyShifts: [ShiftIncome] = []
-    @State private var editingShift: ShiftIncome? = nil
     @State private var showDeleteAlert = false
-    @State private var isAddingNew = false
-    
-    // Form fields
-    @State private var startTime = Date()
-    @State private var endTime = Date()
-    @State private var hours = ""
-    @State private var sales = ""
-    @State private var tips = ""
-    @State private var tipOut = ""
-    @State private var selectedEmployerId: UUID? = nil
-    @State private var employers: [Employer] = []
-    @State private var didntWork = false
-    @State private var didntWorkReason = ""
-    @State private var isSaving = false
+    @State private var showAddEntryView = false
+    @State private var showAddShiftView = false
+    @State private var selectedShiftForEditing: ShiftIncome? = nil
+    @State private var shiftToDelete: ShiftIncome? = nil
     
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
     @AppStorage("defaultEmployerId") private var defaultEmployerIdString: String?
-    @FocusState private var focusedTimePicker: TimePickerField?
-    
-    enum TimePickerField {
-        case start, end
-    }
     
     enum DidntWorkReason: String, CaseIterable {
         case sick = "sick"
@@ -77,11 +61,6 @@ struct ShiftsCalendarView: View {
         return selected < today
     }
     
-    // Check if current shift has data that prevents deletion
-    var hasShiftData: Bool {
-        guard let shift = editingShift else { return false }
-        return shift.hours > 0 || shift.sales > 0 || shift.tips > 0 || (shift.cash_out ?? 0) > 0
-    }
     
     var body: some View {
         NavigationStack {
@@ -95,7 +74,7 @@ struct ShiftsCalendarView: View {
                         }
                         
                         // Helpful explanation
-                        if dailyShifts.isEmpty && !isAddingNew {
+                        if dailyShifts.isEmpty {
                             VStack(spacing: 8) {
                                 Text("📅 Schedule your shifts")
                                     .font(.headline)
@@ -107,14 +86,12 @@ struct ShiftsCalendarView: View {
                                     .multilineTextAlignment(.leading)
                             }
                             .padding()
-                            .liquidGlassCard(material: .ultraThin)
+                            .liquidGlassCard()
                             .padding(.horizontal)
                         }
                         
-                        // Show form if editing/adding or no shifts
-                        if editingShift != nil || isAddingNew || dailyShifts.isEmpty {
-                            shiftFormView
-                        }
+                        // Quick Actions Section (same as Dashboard)
+                        quickActionsSection
                     }
                     .padding(.vertical)
                     .padding(.bottom, 100) // Extra space to avoid bottom tab bar
@@ -122,362 +99,42 @@ struct ShiftsCalendarView: View {
             }
             .navigationTitle("Shifts")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // Cancel (X) button - top left when editing
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if editingShift != nil || isAddingNew {
-                        Button(action: {
-                            HapticFeedback.selection()
-                            cancelEditing()
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                
-                // Save (checkmark) button - top right when editing  
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if editingShift != nil || isAddingNew || dailyShifts.isEmpty {
-                        Button(action: {
-                            HapticFeedback.medium()
-                            saveShift()
-                        }) {
-                            if isSaving {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .tint(Color(hex: "0288FF"))
-                            } else {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(Color(hex: "0288FF"))
-                            }
-                        }
-                        .disabled(!isFormValid || isSaving)
-                    }
-                }
-            }
-            .background(Color(UIColor.systemGroupedBackground))
-            .alert("Delete Shift", isPresented: $showDeleteAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Delete", role: .destructive) {
+            .background(Color(.systemGroupedBackground))
+            .alert(deleteShiftText, isPresented: $showDeleteAlert) {
+                Button(cancelText, role: .cancel) { }
+                Button(deleteText, role: .destructive) {
                     deleteShift()
                 }
             } message: {
-                Text("Are you sure you want to delete this shift?")
+                Text(confirmDeleteMessageText)
+            }
+            .sheet(isPresented: $showAddEntryView) {
+                AddEntryView(editingShift: selectedShiftForEditing, initialDate: selectedShiftForEditing == nil ? selectedDate : nil)
+                    .environmentObject(SupabaseManager.shared)
+                    .onDisappear {
+                        Task {
+                            await loadShifts()
+                            loadShiftsForDate(selectedDate)
+                        }
+                    }
+            }
+            .sheet(isPresented: $showAddShiftView) {
+                AddShiftView(initialDate: selectedDate)
+                    .onDisappear {
+                        Task {
+                            await loadShifts()
+                            loadShiftsForDate(selectedDate)
+                        }
+                    }
             }
         }
         .task {
+            print("📱 ShiftsCalendarView appeared - loading shifts...")
             await loadShifts()
-            await loadEmployers()
             loadShiftsForDate(selectedDate)
-            
-            // Initialize default employer after loading employers
-            if dailyShifts.isEmpty {
-                resetFormForNewEntry()
-            }
         }
-    }
-    
-    // MARK: - Shift Form View
-    var shiftFormView: some View {
-        VStack(spacing: 0) {
-            // Date Display
-            HStack {
-                Text(formatDateLong(selectedDate))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Spacer()
-                if editingShift != nil {
-                    Text("Editing")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.2))
-                        .foregroundColor(.blue)
-                        .cornerRadius(6)
-                } else if isAddingNew || dailyShifts.isEmpty {
-                    Text("New")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "0288FF").opacity(0.2))
-                        .foregroundColor(Color(hex: "0288FF"))
-                        .cornerRadius(6)
-                }
-            }
-            .padding()
-            
-            Divider()
-            
-            // Employer Selection
-            if useMultipleEmployers && !employers.isEmpty {
-                employerSelectionView
-                Divider()
-            }
-            
-            // Didn't Work Section (only for past dates, not today or future)
-            if isPastDate {
-                Divider()
-                didntWorkSection
-            }
-            
-            // Time Section
-            timeSelectionView
-            
-            // Earnings Section
-            if !isFutureDate && !didntWork {
-                Divider()
-                earningsFormView
-            }
-            
-            // Delete button
-            if editingShift != nil {
-                Divider()
-                
-                if hasShiftData {
-                    // Show message when shift has data
-                    VStack(spacing: 8) {
-                        Text(cannotDeleteText)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        Button(action: {}) {
-                            Text(deleteShiftText)
-                                .foregroundColor(.gray)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                        }
-                        .disabled(true)
-                        .background(Color(UIColor.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    }
-                } else {
-                    // Normal delete button when no data
-                    Button(action: {
-                        showDeleteAlert = true
-                    }) {
-                        Text(deleteShiftText)
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    }
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                }
-            }
-        }
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                .padding(.horizontal)
-    }
-    
-    // MARK: - Employer Selection View
-    var employerSelectionView: some View {
-        HStack {
-            Text(employerText)
-                .foregroundColor(.primary)
-            Spacer()
-            Picker("", selection: $selectedEmployerId) {
-                Text("None").tag(nil as UUID?)
-                ForEach(employers) { employer in
-                    Text(employer.name).tag(employer.id as UUID?)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(.blue)
-        }
-        .padding()
-    }
-    
-    // MARK: - Didn't Work Section
-    var didntWorkSection: some View {
-        VStack(spacing: 12) {
-            // Didn't Work Toggle
-            HStack {
-                Toggle(isOn: $didntWork) {
-                    Text(didntWorkText)
-                        .foregroundColor(.primary)
-                }
-                .onChange(of: didntWork) { _, newValue in
-                    HapticFeedback.selection()
-                    if newValue {
-                        // Clear time and earnings when didn't work is selected
-                        startTime = Date()
-                        endTime = Date()
-                        hours = ""
-                        sales = ""
-                        tips = ""
-                        tipOut = ""
-                    }
-                }
-            }
-            
-            // Reason Dropdown (only show if didn't work is selected)
-            if didntWork {
-                HStack {
-                    Text(reasonText)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Picker("", selection: $didntWorkReason) {
-                        ForEach(DidntWorkReason.allCases, id: \.self) { reason in
-                            Text(reason.localizedText(for: language)).tag(reason.rawValue)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .onChange(of: selectedEmployerId) { _, _ in
-                        HapticFeedback.selection()
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-    }
-    
-    // MARK: - Time Selection View
-    var timeSelectionView: some View {
-        Group {
-            // Start Time
-            HStack {
-                Text(startsText)
-                    .foregroundColor(.primary)
-                Spacer()
-                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
-                    .labelsHidden()
-                    .disabled(didntWork)
-                    .focused($focusedTimePicker, equals: .start)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(8)
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    .onChange(of: startTime) { _, _ in
-                        HapticFeedback.selection()
-                        calculateHours()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            focusedTimePicker = nil
-                        }
-                    }
-            }
-            .padding()
-            
-            Divider()
-            
-            // End Time
-            HStack {
-                Text(endsText)
-                    .foregroundColor(.primary)
-                Spacer()
-                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
-                    .labelsHidden()
-                    .disabled(didntWork)
-                    .focused($focusedTimePicker, equals: .end)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(8)
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    .onChange(of: endTime) { _, _ in
-                        HapticFeedback.selection()
-                        calculateHours()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            focusedTimePicker = nil
-                        }
-                    }
-            }
-            .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            
-            Divider()
-            
-            // Hours (calculated)
-            HStack {
-                Text(isFutureDate ? expectedHoursText : hoursText)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(hours.isEmpty ? "0.0" : hours)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        }
-    }
-    
-    // MARK: - Earnings Form View
-    var earningsFormView: some View {
-        Group {
-            // Sales
-            HStack {
-                Text("Sales")
-                    .foregroundColor(.primary)
-                Spacer()
-                TextField("$0.00", text: $sales)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
-                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    .onChange(of: sales) { _, newValue in
-                        sales = formatPositiveNumber(newValue)
-                    }
-            }
-            .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            
-            Divider()
-            
-            // Tips
-            HStack {
-                Text("Tips")
-                    .foregroundColor(.primary)
-                Spacer()
-                TextField("$0.00", text: $tips)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
-                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    .onChange(of: tips) { _, newValue in
-                        tips = formatPositiveNumber(newValue)
-                    }
-            }
-            .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            
-            Divider()
-            
-            // Tip Out
-            HStack {
-                Text("Tip Out")
-                    .foregroundColor(.primary)
-                Spacer()
-                TextField("$0.00", text: $tipOut)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 120)
-                    .textFieldStyle(WhiteBackgroundTextFieldStyle())
-                    .onChange(of: tipOut) { _, newValue in
-                        tipOut = formatPositiveNumber(newValue)
-                    }
-            }
-            .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onAppear {
+            print("📱 ShiftsCalendarView onAppear")
         }
     }
     
@@ -485,18 +142,16 @@ struct ShiftsCalendarView: View {
     var dailyShiftsView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(entriesForDayText)
-                    .font(.headline)
-                    .foregroundColor(.secondary)
+                Text(formatDateLong(selectedDate))
+                    .font(.subheadline)  // Made smaller
+                    .foregroundColor(.primary)
                 Spacer()
                 Text("\(dailyShifts.count) \(dailyShifts.count == 1 ? entryText : entriesText)")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding()
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .liquidGlassForm()
             
             Divider()
             
@@ -507,166 +162,177 @@ struct ShiftsCalendarView: View {
                     Divider()
                 }
             }
-            
-            // Add New Entry Button
-            Divider()
-            
-            Button(action: {
-                resetFormForNewEntry()
-                HapticFeedback.light()
-            }) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(Color(hex: "0288FF"))
-                    Text(addNewEntryText)
-                        .foregroundColor(Color(hex: "0288FF"))
-                    Spacer()
-                }
-                .padding()
-            }
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .liquidGlassCard()
                 .padding(.horizontal)
     }
     
     // MARK: - Shift Row View
     func shiftRowView(shift: ShiftIncome) -> some View {
-        Button(action: {
-            selectShiftForEditing(shift)
-            HapticFeedback.light()
-        }) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    // Time range if available
-                    if let startTimeStr = shift.start_time, let endTimeStr = shift.end_time {
-                        Text(formatTimeRange(startTimeStr, endTimeStr))
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                    } else {
-                        Text("\(shift.hours, specifier: "%.1f") hours")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    Spacer()
-                    
-                    // Check if this is a future shift (expected vs actual)
-                    let isFutureShift = isShiftInFuture(shift.shift_date)
-                    
-                    if isFutureShift {
-                        // Future shift - show expected hours only
-                        Text(expectedText)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.blue)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(6)
-                    } else {
-                        // Past/today shift - show actual earnings
-                        Text(formatCurrency(shift.total_income ?? 0))
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(hex: "0288FF"))
-                    }
+        let _ = print("📝 Displaying shift \(shift.id) with notes: \(shift.notes ?? "none")")
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                // Time range if available
+                if let startTimeStr = shift.start_time, let endTimeStr = shift.end_time {
+                    Text(formatTimeRange(startTimeStr, endTimeStr))
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                } else {
+                    Text("\(shift.hours, specifier: "%.1f") hours")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
                 }
                 
-                // Employer if enabled
-                if useMultipleEmployers, let employer = shift.employer_name {
-                    HStack {
-                        Image(systemName: "building.2")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                        Text(employer)
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                }
+                Spacer()
                 
-                // Details row - only show for actual shifts (past/today)
+                // Check if this is a future shift (expected vs actual)
                 let isFutureShift = isShiftInFuture(shift.shift_date)
                 
-                if !isFutureShift {
-                    HStack(spacing: 20) {
-                        VStack(alignment: .leading) {
-                            Text("Sales")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formatCurrency(shift.sales))
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                        
-                        VStack(alignment: .leading) {
-                            Text("Tips")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formatCurrency(shift.tips))
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                        
-                        if (shift.cash_out ?? 0) > 0 {
-                            VStack(alignment: .leading) {
-                                Text("Tip Out")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formatCurrency(shift.cash_out ?? 0))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                } else {
+                if isFutureShift {
                     // Future shift - show expected hours only
-                    HStack {
-                        Text(expectedHoursText)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("\(shift.hours, specifier: "%.1f")h")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.blue)
-                    }
-                }
-                
-                // Selection indicator
-                if editingShift?.id == shift.id {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                        Text("Currently editing")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                    .padding(.top, 4)
+                    Text(expectedText)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(6)
+                } else {
+                    // Past/today shift - show actual earnings
+                    Text(formatCurrency(shift.total_income ?? 0))
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
                 }
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(editingShift?.id == shift.id ? Color.blue.opacity(0.1) : Color(UIColor.secondarySystemGroupedBackground))
+            
+            // Employer if enabled - made bigger
+            if useMultipleEmployers, let employer = shift.employer_name {
+                HStack {
+                    Image(systemName: "building.2")
+                        .font(.subheadline)  // Bigger icon
+                        .foregroundColor(.blue)
+                    Text(employer)
+                        .font(.subheadline)  // Bigger text
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                    Spacer()
+                }
+            }
+
+            // Notes preview if available
+            if let notes = shift.notes, !notes.isEmpty {
+                HStack {
+                    Image(systemName: "note.text")
+                        .font(.subheadline)  // Made icon bigger
+                        .foregroundColor(.orange)
+                    Text(String(notes.prefix(20)) + (notes.count > 20 ? "..." : ""))
+                        .font(.subheadline)  // Made text bigger
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    Spacer()
+                }
+                .padding(.vertical, 2)
+            }
+
+            // Details row - only show for actual shifts (past/today)
+            let isFutureShift = isShiftInFuture(shift.shift_date)
+            
+            if !isFutureShift {
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading) {
+                        Text("Sales")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(formatCurrency(shift.sales))
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text("Tips")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(formatCurrency(shift.tips))
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    
+                    if (shift.cash_out ?? 0) > 0 {
+                        VStack(alignment: .leading) {
+                            Text("Tip Out")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(formatCurrency(shift.cash_out ?? 0))
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+            } else {
+                // Future shift - show expected hours only
+                HStack {
+                    Text(expectedHoursText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(shift.hours, specifier: "%.1f")h")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                    }
+                }
+            
+            // Action buttons - made even bigger
+            HStack(spacing: 16) {
+                Button(action: {
+                    selectedShiftForEditing = shift
+                    showAddEntryView = true
+                    HapticFeedback.light()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.title2)  // Even bigger
+                        Text("Edit")
+                            .font(.body)  // Bigger text
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(10)
+                }
+
+                Button(action: {
+                    shiftToDelete = shift
+                    showDeleteAlert = true
+                    HapticFeedback.light()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trash.circle.fill")
+                            .font(.title2)  // Even bigger
+                        Text("Delete")
+                            .font(.body)  // Bigger text
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                
+                Spacer()
+            }
         }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - Computed Properties
-    var isFormValid: Bool {
-        if didntWork {
-            return !didntWorkReason.isEmpty
-        }
-        let calculatedHours = endTime.timeIntervalSince(startTime) / 3600
-        return calculatedHours > 0
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(UIColor.secondarySystemGroupedBackground))
     }
     
     
@@ -766,114 +432,38 @@ struct ShiftsCalendarView: View {
         return filtered
     }
     
-    func calculateHours() {
-        let difference = endTime.timeIntervalSince(startTime) / 3600
-        if difference > 0 {
-            hours = String(format: "%.1f", difference)
-        } else {
-            hours = "0"
-        }
-    }
-    
     // MARK: - Load Shifts for Date
     func loadShiftsForDate(_ date: Date) {
         selectedDate = date
-        
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
-        
+
         dailyShifts = allShifts.filter { $0.shift_date == dateString }
-        
-        editingShift = nil
-        isAddingNew = false
-        
-        if dailyShifts.isEmpty {
-            resetFormForNewEntry()
-        } else {
-            resetFormFields()
-        }
-    }
-    
-    // MARK: - Select Shift for Editing
-    func selectShiftForEditing(_ shift: ShiftIncome) {
-        editingShift = shift
-        isAddingNew = false
-        hours = String(format: "%.1f", shift.hours)
-        
-        selectedEmployerId = shift.employer_id
-        
-        sales = shift.sales > 0 ? String(format: "%.2f", shift.sales) : ""
-        tips = shift.tips > 0 ? String(format: "%.2f", shift.tips) : ""
-        tipOut = (shift.cash_out ?? 0) > 0 ? String(format: "%.2f", shift.cash_out ?? 0) : ""
-        
-        let calendar = Calendar.current
-        
-        if let startTimeStr = shift.start_time, let endTimeStr = shift.end_time {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "HH:mm:ss"
-            
-            if let parsedStartTime = timeFormatter.date(from: startTimeStr),
-               let parsedEndTime = timeFormatter.date(from: endTimeStr) {
-                let startHour = calendar.component(.hour, from: parsedStartTime)
-                let startMinute = calendar.component(.minute, from: parsedStartTime)
-                let endHour = calendar.component(.hour, from: parsedEndTime)
-                let endMinute = calendar.component(.minute, from: parsedEndTime)
-                
-                startTime = calendar.date(bySettingHour: startHour, minute: startMinute, second: 0, of: selectedDate) ?? selectedDate
-                endTime = calendar.date(bySettingHour: endHour, minute: endMinute, second: 0, of: selectedDate) ?? selectedDate
-            } else {
-                startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
-                endTime = calendar.date(byAdding: .hour, value: Int(shift.hours), to: startTime) ?? selectedDate
-            }
-        } else {
-            startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
-            endTime = calendar.date(byAdding: .hour, value: Int(shift.hours), to: startTime) ?? selectedDate
-        }
-    }
-    
-    // MARK: - Reset Functions
-    func resetFormForNewEntry() {
-        editingShift = nil
-        isAddingNew = true
-        resetFormFields()
-    }
-    
-    func resetFormFields() {
-        hours = ""
-        sales = ""
-        tips = ""
-        tipOut = ""
-        // selectedEmployerId is now set by loadUserProfile() - don't reset it here
-        let calendar = Calendar.current
-        startTime = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: selectedDate) ?? selectedDate
-        endTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: selectedDate) ?? selectedDate
-        calculateHours()
-    }
-    
-    func cancelEditing() {
-        editingShift = nil
-        isAddingNew = false
-        if dailyShifts.isEmpty {
-            resetFormForNewEntry()
-        } else {
-            resetFormFields()
+        print("📝 Loaded \(dailyShifts.count) shifts for date \(dateString)")
+        for shift in dailyShifts {
+            print("  - Shift \(shift.id) has notes: \(shift.notes ?? "none")")
         }
     }
     
     // MARK: - Load Shifts
     func loadShifts() async {
+        print("🔄 ShiftsCalendarView - Starting to load shifts...")
         do {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            
+            print("🔄 ShiftsCalendarView - User ID: \(userId)")
+
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
-            
+
             // Load shifts for current month plus/minus 1 month for better coverage
             let calendar = Calendar.current
             let startDate = calendar.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
             let endDate = calendar.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
-            
+
+            print("🔄 ShiftsCalendarView - Loading shifts from \(dateFormatter.string(from: startDate)) to \(dateFormatter.string(from: endDate))")
+
             allShifts = try await SupabaseManager.shared.client
                 .from("v_shift_income")
                 .select()
@@ -882,153 +472,94 @@ struct ShiftsCalendarView: View {
                 .lte("shift_date", value: dateFormatter.string(from: endDate))
                 .execute()
                 .value
-            
+
+            print("🔄 ShiftsCalendarView - Loaded \(allShifts.count) shifts from database")
+
+            // Load notes for all shifts
+            await loadNotesForShifts()
+
             loadShiftsForDate(selectedDate)
         } catch {
-            print("Error loading shifts: \(error)")
+            print("❌ ShiftsCalendarView - Error loading shifts: \(error)")
         }
     }
-    
-    // MARK: - Load Employers
-    func loadEmployers() async {
+
+    // MARK: - Load Notes for Shifts
+    func loadNotesForShifts() async {
+        // Create a simple struct for notes
+        struct ShiftNote: Decodable {
+            let id: UUID
+            let notes: String?
+        }
+
         do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            employers = try await SupabaseManager.shared.client
-                .from("employers")
-                .select()
-                .eq("user_id", value: userId)
-                .execute()
-                .value
-                
-            // Load default employer from user profile
-            await loadUserProfile()
-        } catch {
-            print("Error loading employers: \(error)")
-        }
-    }
-    
-    // MARK: - Load User Profile
-    func loadUserProfile() async {
-        do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            
-            struct Profile: Decodable {
-                let default_employer_id: String?
-            }
-            
-            let profiles: [Profile] = try await SupabaseManager.shared.client
-                .from("users_profile")
-                .select("default_employer_id")
-                .eq("user_id", value: userId)
-                .execute()
-                .value
-                
-            if let userProfile = profiles.first,
-               let defaultEmployerIdString = userProfile.default_employer_id,
-               let defaultEmployerId = UUID(uuidString: defaultEmployerIdString) {
-                await MainActor.run {
-                    selectedEmployerId = defaultEmployerId
+            // Use shift_id instead of id since that's the actual shifts table ID
+            let shiftIds = allShifts.compactMap { $0.shift_id ?? $0.id }
+            print("📝 Loading notes for \(shiftIds.count) shifts")
+
+            if !shiftIds.isEmpty {
+                let notes: [ShiftNote] = try await SupabaseManager.shared.client
+                    .from("shifts")
+                    .select("id, notes")
+                    .in("id", values: shiftIds)
+                    .execute()
+                    .value
+
+                print("📝 Loaded \(notes.count) notes from database")
+                for note in notes {
+                    print("  - Note for ID \(note.id): \(note.notes ?? "nil")")
+                }
+
+                // Update shifts with notes
+                for i in 0..<allShifts.count {
+                    // Match using shift_id or id
+                    let shiftId = allShifts[i].shift_id ?? allShifts[i].id
+                    print("📝 Checking shift \(i) with ID \(shiftId)")
+                    if let note = notes.first(where: { $0.id == shiftId }) {
+                        print("📝 Found note for shift \(shiftId): \(note.notes ?? "nil")")
+                        // Create a new ShiftIncome with notes
+                        let updatedShift = allShifts[i]
+                        // Since ShiftIncome has notes field now, we can set it
+                        // But we need to create a new instance with all fields
+                        allShifts[i] = ShiftIncome(
+                            income_id: updatedShift.income_id,
+                            shift_id: updatedShift.shift_id,
+                            user_id: updatedShift.user_id,
+                            employer_id: updatedShift.employer_id,
+                            employer_name: updatedShift.employer_name,
+                            shift_date: updatedShift.shift_date,
+                            expected_hours: updatedShift.expected_hours,
+                            lunch_break_minutes: updatedShift.lunch_break_minutes,
+                            net_expected_hours: updatedShift.net_expected_hours,
+                            hours: updatedShift.hours,
+                            hourly_rate: updatedShift.hourly_rate,
+                            sales: updatedShift.sales,
+                            tips: updatedShift.tips,
+                            cash_out: updatedShift.cash_out,
+                            other: updatedShift.other,
+                            base_income: updatedShift.base_income,
+                            net_tips: updatedShift.net_tips,
+                            total_income: updatedShift.total_income,
+                            tip_percentage: updatedShift.tip_percentage,
+                            start_time: updatedShift.start_time,
+                            end_time: updatedShift.end_time,
+                            shift_status: updatedShift.shift_status,
+                            has_earnings: updatedShift.has_earnings,
+                            shift_created_at: updatedShift.shift_created_at,
+                            earnings_created_at: updatedShift.earnings_created_at,
+                            notes: note.notes
+                        )
+                    }
                 }
             }
         } catch {
-            print("Error loading user profile: \(error)")
-        }
-    }
-    
-    // MARK: - Save Shift
-    func saveShift() {
-        Task {
-            await MainActor.run {
-                isSaving = true
-            }
-            
-            do {
-                let userId = try await SupabaseManager.shared.client.auth.session.user.id
-                
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                
-                let timeFormatter = DateFormatter()
-                timeFormatter.dateFormat = "HH:mm:ss"
-                let startTimeString = timeFormatter.string(from: startTime)
-                let endTimeString = timeFormatter.string(from: endTime)
-                
-                var hourlyRate = defaultHourlyRate
-                if let employerId = selectedEmployerId,
-                   let employer = employers.first(where: { $0.id == employerId }) {
-                    hourlyRate = employer.hourly_rate
-                }
-                
-                struct NewShift: Encodable {
-                    let user_id: UUID
-                    let shift_date: String
-                    let hours: Double
-                    let sales: Double
-                    let tips: Double
-                    let cash_out: Double?
-                    let hourly_rate: Double
-                    let employer_id: UUID?
-                    let start_time: String?
-                    let end_time: String?
-                    let notes: String?
-                }
-                
-                // Calculate hours from start/end time
-                let calculatedHours = didntWork ? 0 : endTime.timeIntervalSince(startTime) / 3600
-                
-                let salesValue = isFutureDate || didntWork ? 0 : (Double(sales) ?? 0)
-                let tipsValue = isFutureDate || didntWork ? 0 : (Double(tips) ?? 0)
-                let tipOutValue = isFutureDate || didntWork ? nil : Double(tipOut)
-                
-                let newShift = NewShift(
-                    user_id: userId,
-                    shift_date: dateFormatter.string(from: selectedDate),
-                    hours: calculatedHours,
-                    sales: salesValue,
-                    tips: tipsValue,
-                    cash_out: tipOutValue,
-                    hourly_rate: hourlyRate,
-                    employer_id: selectedEmployerId,
-                    start_time: didntWork ? nil : startTimeString,
-                    end_time: didntWork ? nil : endTimeString,
-                    notes: didntWork ? didntWorkReason : nil
-                )
-                
-                if let editingShift = editingShift {
-                    try await SupabaseManager.shared.client
-                        .from("shifts")
-                        .update(newShift)
-                        .eq("id", value: editingShift.id)
-                        .execute()
-                } else {
-                    try await SupabaseManager.shared.client
-                        .from("shifts")
-                        .insert(newShift)
-                        .execute()
-                }
-                
-                await loadShifts()
-                
-                await MainActor.run {
-                    editingShift = nil
-                    isAddingNew = false
-                    isSaving = false
-                    HapticFeedback.success()
-                }
-                
-            } catch {
-                await MainActor.run {
-                    isSaving = false
-                }
-                print("Error saving shift: \(error)")
-                HapticFeedback.error()
-            }
+            print("Error loading notes: \(error)")
         }
     }
     
     // MARK: - Delete Shift
     func deleteShift() {
-        guard let shift = editingShift else { return }
+        guard let shift = shiftToDelete else { return }
         
         Task {
             do {
@@ -1040,13 +571,68 @@ struct ShiftsCalendarView: View {
                 
                 await loadShifts()
                 
-                editingShift = nil
-                isAddingNew = false
+                await MainActor.run {
+                    shiftToDelete = nil
+                    HapticFeedback.success()
+                }
                 
             } catch {
                 print("Error deleting shift: \(error)")
+                HapticFeedback.error()
             }
         }
+    }
+    
+    // MARK: - Quick Actions Section (same as Dashboard)
+    private var quickActionsSection: some View {
+        HStack(spacing: 12) {
+            // Add Entry Button (Past/Today) - iOS 26 Liquid Glass Style
+            Button(action: {
+                HapticFeedback.light()
+                showAddEntryView = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.blue)
+                    Text("Add Entry")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(.quaternary, lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Add Shift Button (Future) - iOS 26 Liquid Glass Style
+            Button(action: {
+                HapticFeedback.light()
+                showAddShiftView = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.title2)
+                        .foregroundStyle(.purple)
+                    Text("Add Shift")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(.quaternary, lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal)
     }
     
     // MARK: - Localization
@@ -1159,6 +745,30 @@ struct ShiftsCalendarView: View {
         case "fr": return "Raison"
         case "es": return "Razón"
         default: return "Reason"
+        }
+    }
+
+    var cancelText: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
+
+    var deleteText: String {
+        switch language {
+        case "fr": return "Supprimer"
+        case "es": return "Eliminar"
+        default: return "Delete"
+        }
+    }
+
+    var confirmDeleteMessageText: String {
+        switch language {
+        case "fr": return "Êtes-vous sûr de vouloir supprimer ce quart?"
+        case "es": return "¿Está seguro de que desea eliminar este turno?"
+        default: return "Are you sure you want to delete this shift?"
         }
     }
 }

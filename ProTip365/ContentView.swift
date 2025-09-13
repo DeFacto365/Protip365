@@ -26,6 +26,7 @@ struct ContentView: View {
             }
         }
         .task {
+            print("🚀 ContentView task started - checking authentication...")
             await checkAuth()
             if biometricAuth.biometricEnabled && !biometricAuth.isUnlocked {
                 biometricAuth.authenticate()
@@ -42,9 +43,6 @@ struct ContentView: View {
                         NavigationLink(destination: DashboardView()) {
                             Label(dashboardTab, systemImage: "chart.bar")
                         }
-                        NavigationLink(destination: ShiftsCalendarView()) {
-                            Label(addShiftTab, systemImage: "plus.circle.fill")
-                        }
                         
                         // Only show Employers if enabled
                         if useMultipleEmployers {
@@ -56,7 +54,7 @@ struct ContentView: View {
                         NavigationLink(destination: TipCalculatorView()) {
                             Label(calculatorTab, systemImage: "percent")
                         }
-                        NavigationLink(destination: SettingsView()) {
+                        NavigationLink(destination: SettingsViewWrapper()) {
                             Label(settingsTab, systemImage: "gear")
                         }
                     }
@@ -66,54 +64,39 @@ struct ContentView: View {
                     DashboardView()
                 }
             } else {
-                // iPhone Layout - Keep tab bar
-                TabView {
-                    DashboardView()
-                        .tabItem {
-                            Label(dashboardTab, systemImage: "chart.bar")
-                        }
-                    
-                    ShiftsCalendarView()
-                        .tabItem {
-                            Label(addShiftTab, systemImage: "calendar")
-                        }
-                    
-                    // Only show Employers tab if enabled
-                    if useMultipleEmployers {
-                        EmployersView()
-                            .tabItem {
-                                Label(employersTab, systemImage: "building.2")
-                            }
-                    }
-                    
-                    TipCalculatorView()
-                        .tabItem {
-                            Label(calculatorTab, systemImage: "percent")
-                        }
-                    
-                    SettingsView()
-                        .tabItem {
-                            Label(settingsTab, systemImage: "gear")
-                        }
-                }
+                // iPhone Layout - Use Liquid Glass Navigation
+                iOS26LiquidGlassMainView()
             }
         }
+        .environmentObject(subscriptionManager)
+        .environmentObject(SupabaseManager.shared)
     }
     
     func checkAuth() async {
+        print("🔐 Checking existing authentication session...")
+
         do {
-            _ = try await SupabaseManager.shared.client.auth.session
+            let session = try await SupabaseManager.shared.client.auth.session
+            print("✅ Existing session found: \(session.user.id)")
             await MainActor.run {
                 isAuthenticated = true
             }
         } catch {
+            print("❌ No existing session found: \(error.localizedDescription)")
             await MainActor.run {
                 isAuthenticated = false
             }
         }
-        
+
         // Listen for auth state changes
+        print("👂 Listening for auth state changes...")
         for await state in SupabaseManager.shared.client.auth.authStateChanges {
+            print("🔄 Auth state changed: \(state.event)")
+            if let session = state.session {
+                print("   Session user: \(session.user.id)")
+            } else {
+                print("   No session")
+            }
             await MainActor.run {
                 isAuthenticated = state.session != nil
             }
@@ -129,13 +112,6 @@ struct ContentView: View {
         }
     }
     
-    var addShiftTab: String {
-        switch language {
-        case "fr": return "Quarts"
-        case "es": return "Turnos"
-        default: return "Shifts"
-        }
-    }
     
     var employersTab: String {
         switch language {
@@ -159,5 +135,14 @@ struct ContentView: View {
         case "es": return "Ajustes"
         default: return "Settings"
         }
+    }
+}
+
+// Wrapper for SettingsView on iPad that doesn't need selectedTab
+struct SettingsViewWrapper: View {
+    @State private var dummySelectedTab = "settings"
+
+    var body: some View {
+        SettingsView(selectedTab: $dummySelectedTab)
     }
 }

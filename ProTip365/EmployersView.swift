@@ -24,55 +24,57 @@ struct EmployersView: View {
                 
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Add Employer Button
-                        Button(action: { showAddEmployer = true }) {
-                            HStack {
+                        // Add Employer Button - iOS 26 Liquid Glass Style (same as Calendar)
+                        Button(action: { 
+                            HapticFeedback.light()
+                            showAddEmployer = true 
+                        }) {
+                            HStack(spacing: 8) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.title2)
+                                    .foregroundStyle(.blue)
                                 Text(addEmployerButton)
                                     .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.blue, .blue.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                            .frame(height: 50)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(.quaternary, lineWidth: 0.5)
                             )
-                            .foregroundColor(.white)
-                            .cornerRadius(16)
-                            .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .padding(.horizontal)
                         .padding(.top)
                         
                         if employers.isEmpty && !isLoading {
-                            // Empty State
-                            VStack(spacing: 16) {
-                                Image(systemName: "building.2.crop.circle")
-                                    .font(.system(size: 60))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.blue, .purple],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
+                            // Empty State - iOS 26 Style
+                            VStack(spacing: 20) {
+                                Image(systemName: "building.2.crop.circle.fill")
+                                    .font(.system(size: 64))
+                                    .foregroundStyle(.blue.gradient)
+                                    .symbolRenderingMode(.hierarchical)
                                 
-                                Text(noEmployersText)
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                
-                                Text(noEmployersMessage)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
+                                VStack(spacing: 8) {
+                                    Text(noEmployersText)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    
+                                    Text(noEmployersMessage)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .multilineTextAlignment(.center)
+                                }
                             }
                             .padding(40)
                             .frame(maxWidth: .infinity)
-                            .liquidGlassCard()
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(.quaternary, lineWidth: 0.5)
+                            )
                             .padding(.horizontal)
                             .padding(.top, 40)
                         } else {
@@ -331,12 +333,13 @@ struct EmployerCard: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                HStack(spacing: 4) {
-                    Image(systemName: "dollarsign.circle")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    Text("\(employer.hourly_rate, specifier: "%.2f")/hr")
+                HStack(spacing: 6) {
+                    Image(systemName: "dollarsign.circle.fill")
                         .font(.subheadline)
+                        .foregroundStyle(.green)
+                    Text("$\(employer.hourly_rate, specifier: "%.2f")/hr")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                         .foregroundColor(.secondary)
                 }
             }
@@ -344,27 +347,31 @@ struct EmployerCard: View {
             Spacer()
             
             HStack(spacing: 12) {
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .font(.body)
-                        .foregroundColor(.blue)
-                        .padding(8)
-                        .background(Color.blue.opacity(0.1))
-                        .clipShape(Circle())
+                Button(action: {
+                    HapticFeedback.light()
+                    onEdit()
+                }) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.hierarchical)
                 }
                 
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.body)
-                        .foregroundColor(.red)
-                        .padding(8)
-                        .background(Color.red.opacity(0.1))
-                        .clipShape(Circle())
+                Button(action: {
+                    HapticFeedback.light()
+                    onDelete()
+                }) {
+                    Image(systemName: "trash.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.red)
+                        .symbolRenderingMode(.hierarchical)
                 }
             }
         }
         .padding()
-                        .liquidGlassCard()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 }
 
@@ -376,66 +383,126 @@ struct AddEmployerSheet: View {
     @State private var isSaving = false
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
+    @Environment(\.dismiss) private var dismiss
     
     enum Field {
         case name, rate
     }
     
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField(employerNamePlaceholder, text: $name)
-                        .focused($focusedField, equals: .name)
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                focusedField = .name
-                            }
-                        }
-                } header: {
-                    Text(employerNameSection)
-                }
-                
-                Section {
-                    HStack {
-                        Text("$")
-                        TextField("15.00", text: $rate)
-                            .keyboardType(.decimalPad)
-                            .focused($focusedField, equals: .rate)
-                        Text("/hr")
-                    }
-                } header: {
-                    Text(hourlyRateSection)
-                }
-            }
-            .navigationTitle(addEmployerTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(cancelButton) {
+        ZStack {
+            // iOS 26 Gray Background
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // iOS 26 Style Header
+                HStack {
+                    // Cancel Button with iOS 26 style
+                    Button(action: {
                         onCancel()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                            .frame(width: 32, height: 32)
+                            .background(Color(.systemGray5))
+                            .clipShape(Circle())
                     }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(saveButton) {
+                    
+                    Spacer()
+                    
+                    Text(addEmployerTitle)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    // Save Button with iOS 26 style
+                    Button(action: {
                         Task {
                             isSaving = true
                             await onSave()
                             isSaving = false
                         }
+                    }) {
+                        if isSaving {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .frame(width: 32, height: 32)
+                        } else {
+                            Image(systemName: "checkmark")
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                                .frame(width: 32, height: 32)
+                        }
                     }
+                    .background(Color(.systemGray5))
+                    .clipShape(Circle())
                     .disabled(name.isEmpty || rate.isEmpty || isSaving)
                 }
-            }
-            .overlay {
-                if isSaving {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .scaleEffect(1.2)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color(.systemGroupedBackground))
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Employer Info Card - iOS 26 Style
+                        VStack(spacing: 0) {
+                            // Name Row
+                            HStack {
+                                Text(employerNameSection)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                TextField(employerNamePlaceholder, text: $name)
+                                    .multilineTextAlignment(.trailing)
+                                    .focused($focusedField, equals: .name)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            
+                            Divider()
+                                .padding(.horizontal, 16)
+                            
+                            // Rate Row
+                            HStack {
+                                Text(hourlyRateSection)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                HStack {
+                                    Text("$")
+                                        .foregroundColor(.secondary)
+                                    TextField("15.00", text: $rate)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .focused($focusedField, equals: .rate)
+                                        .frame(width: 80)
+                                    Text("/hr")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
                 }
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                focusedField = .name
             }
         }
     }
@@ -490,7 +557,7 @@ struct AddEmployerSheet: View {
     }
 }
 
-// Edit Employer Sheet - NEW
+// Edit Employer Sheet - iOS 26 Style
 struct EditEmployerSheet: View {
     @Binding var name: String
     @Binding var rate: String
@@ -499,66 +566,126 @@ struct EditEmployerSheet: View {
     @State private var isSaving = false
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
+    @Environment(\.dismiss) private var dismiss
     
     enum Field {
         case name, rate
     }
     
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField(employerNamePlaceholder, text: $name)
-                        .focused($focusedField, equals: .name)
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                focusedField = .name
-                            }
-                        }
-                } header: {
-                    Text(employerNameSection)
-                }
-                
-                Section {
-                    HStack {
-                        Text("$")
-                        TextField("15.00", text: $rate)
-                            .keyboardType(.decimalPad)
-                            .focused($focusedField, equals: .rate)
-                        Text("/hr")
-                    }
-                } header: {
-                    Text(hourlyRateSection)
-                }
-            }
-            .navigationTitle(editEmployerTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(cancelButton) {
+        ZStack {
+            // iOS 26 Gray Background
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // iOS 26 Style Header
+                HStack {
+                    // Cancel Button with iOS 26 style
+                    Button(action: {
                         onCancel()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                            .frame(width: 32, height: 32)
+                            .background(Color(.systemGray5))
+                            .clipShape(Circle())
                     }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(saveButton) {
+                    
+                    Spacer()
+                    
+                    Text(editEmployerTitle)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    // Save Button with iOS 26 style
+                    Button(action: {
                         Task {
                             isSaving = true
                             await onSave()
                             isSaving = false
                         }
+                    }) {
+                        if isSaving {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .frame(width: 32, height: 32)
+                        } else {
+                            Image(systemName: "checkmark")
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                                .frame(width: 32, height: 32)
+                        }
                     }
+                    .background(Color(.systemGray5))
+                    .clipShape(Circle())
                     .disabled(name.isEmpty || rate.isEmpty || isSaving)
                 }
-            }
-            .overlay {
-                if isSaving {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .scaleEffect(1.2)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color(.systemGroupedBackground))
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Employer Info Card - iOS 26 Style
+                        VStack(spacing: 0) {
+                            // Name Row
+                            HStack {
+                                Text(employerNameSection)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                TextField(employerNamePlaceholder, text: $name)
+                                    .multilineTextAlignment(.trailing)
+                                    .focused($focusedField, equals: .name)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            
+                            Divider()
+                                .padding(.horizontal, 16)
+                            
+                            // Rate Row
+                            HStack {
+                                Text(hourlyRateSection)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                HStack {
+                                    Text("$")
+                                        .foregroundColor(.secondary)
+                                    TextField("15.00", text: $rate)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .focused($focusedField, equals: .rate)
+                                        .frame(width: 80)
+                                    Text("/hr")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
                 }
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                focusedField = .name
             }
         }
     }

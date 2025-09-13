@@ -1,40 +1,137 @@
 import SwiftUI
 
-// MARK: - Liquid Glass Card Styling (Following Apple HIG)
-extension View {
-    /// Primary Liquid Glass surface with consistent depth and blur
-    func liquidGlassCard() -> some View {
-        self
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(.white.opacity(0.15), lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+// MARK: - Glass Effect Types
+enum GlassEffectIntensity {
+    case regular
+    case prominent
+    case subtle
+}
+
+enum GlassEffectTransition {
+    case identity
+    case opacity
+    case scale
+}
+
+// MARK: - Glass Effect Container
+struct GlassEffectContainer<Content: View>: View {
+    let spacing: CGFloat
+    let content: Content
+    
+    init(spacing: CGFloat = 16, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
     }
     
-    /// Secondary Liquid Glass surface for buttons and interactive elements
+    var body: some View {
+        VStack(spacing: spacing) {
+            content
+        }
+    }
+}
+
+// MARK: - Background Extension Effect
+extension View {
+    /// Creates an immersive background that extends beyond safe areas
+    func backgroundExtensionEffect() -> some View {
+        self
+            .background(
+                LinearGradient(
+                    colors: [.blue.opacity(0.1), .purple.opacity(0.05)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            )
+    }
+}
+
+// MARK: - Glass Effect Modifier with Availability Check
+struct GlassEffectModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(.ultraThinMaterial)
+            .clipShape(Circle())
+    }
+}
+
+// MARK: - Glass Effect Modifier for Rounded Rectangle
+struct GlassEffectRoundedModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+extension View {
+    /// Primary glass surface using native glassEffect (Apple's exact pattern)
+    func liquidGlassCard() -> some View {
+        self
+            .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+    }
+    
+    /// Secondary glass surface for buttons using native glassEffect
+    /// Use .buttonStyle(.glass) instead of this modifier for Apple's native implementation
+    @available(*, deprecated, message: "Use .buttonStyle(.glass) instead for Apple's native implementation")
     func liquidGlassButton() -> some View {
         self
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(.white.opacity(0.12), lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+            .clipShape(RoundedRectangle(cornerRadius: Constants.buttonCornerRadius, style: .continuous))
     }
     
-    /// Tertiary Liquid Glass surface for form elements
+    /// Tertiary glass surface for form elements using native glassEffect (Apple's exact pattern)
     func liquidGlassForm() -> some View {
         self
+            .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.formCornerRadius))
+    }
+    
+    /// Enhanced glass surface with custom intensity
+    func liquidGlassCard(intensity: GlassEffectIntensity = .regular) -> some View {
+        self
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(.white.opacity(0.1), lineWidth: 0.5)
-            )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+    
+    /// Glass surface for circular elements (icons, buttons)
+    func liquidGlassCircle(intensity: GlassEffectIntensity = .regular) -> some View {
+        self
+            .background(.ultraThinMaterial)
+            .clipShape(Circle())
+    }
+    
+    /// Glass surface for pill-shaped elements
+    func liquidGlassPill(intensity: GlassEffectIntensity = .regular) -> some View {
+        self
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+    }
+    
+    /// Glass surface with custom corner radius
+    func liquidGlassCustom(cornerRadius: CGFloat, intensity: GlassEffectIntensity = .regular) -> some View {
+        self
+            .background(.ultraThinMaterial)
+    }
+    
+    /// Glass effect with smooth transition
+    func liquidGlassWithTransition(intensity: GlassEffectIntensity = .regular) -> some View {
+        self
+            .background(.ultraThinMaterial)
+    }
+    
+    /// Glass effect with custom transition
+    func liquidGlassWithCustomTransition(intensity: GlassEffectIntensity = .regular, transition: GlassEffectTransition = .identity) -> some View {
+        self
+            .background(.ultraThinMaterial)
+    }
+    
+    /// Interactive glass effect with press animation
+    func liquidGlassInteractive(intensity: GlassEffectIntensity = .regular) -> some View {
+        self
+            .background(.ultraThinMaterial)
+            .scaleEffect(1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: UUID())
     }
     
     /// Form row background with proper Liquid Glass layering
@@ -44,6 +141,59 @@ extension View {
                 Color(.secondarySystemGroupedBackground)
                     .overlay(.ultraThinMaterial.opacity(0.3))
             )
+    }
+    
+    /// Example: Multiple cards with GlassEffectContainer for optimal performance
+    func multipleCardsExample() -> some View {
+        GlassEffectContainer(spacing: 16) {
+            VStack(spacing: 16) {
+                // Multiple cards that will be optimized by GlassEffectContainer
+                Text("Card 1")
+                    .liquidGlassCard()
+                Text("Card 2")
+                    .liquidGlassCard()
+                Text("Card 3")
+                    .liquidGlassCard()
+            }
+        }
+    }
+    
+    /// Example: Form elements with GlassEffectContainer
+    func formElementsExample() -> some View {
+        GlassEffectContainer(spacing: 12) {
+            VStack(spacing: 12) {
+                TextField("Input 1", text: .constant(""))
+                    .liquidGlassForm()
+                TextField("Input 2", text: .constant(""))
+                    .liquidGlassForm()
+                TextField("Input 3", text: .constant(""))
+                    .liquidGlassForm()
+            }
+        }
+    }
+    
+    /// Example: Button grid with GlassButtonStyle (Recommended)
+    func buttonGridExample() -> some View {
+        GlassEffectContainer(spacing: 8) {
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Button("1") { }
+                        .buttonStyle(.borderedProminent)
+                    Button("2") { }
+                        .buttonStyle(.borderedProminent)
+                    Button("3") { }
+                        .buttonStyle(.borderedProminent)
+                }
+                HStack(spacing: 8) {
+                    Button("4") { }
+                        .buttonStyle(.borderedProminent)
+                    Button("5") { }
+                        .buttonStyle(.borderedProminent)
+                    Button("6") { }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+        }
     }
     
     /// Legacy glassCard for backward compatibility (deprecated)
@@ -87,7 +237,7 @@ enum HapticFeedback {
     }
 }
 
-// MARK: - Loading Overlay with Liquid Glass
+// MARK: - Loading Overlay with Advanced Liquid Glass
 struct LoadingOverlay: View {
     @Binding var isLoading: Bool
     var message: String = "Loading..."
@@ -95,20 +245,25 @@ struct LoadingOverlay: View {
     var body: some View {
         if isLoading {
             ZStack {
-                Color.black.opacity(0.2)
+                // Background with glass effect
+                Color.black.opacity(0.3)
                     .ignoresSafeArea()
+                    .background(.ultraThinMaterial)
                 
                 VStack(spacing: 16) {
                     ProgressView()
                         .scaleEffect(1.5)
                         .tint(.white)
+                        .background(.ultraThinMaterial)
                     
                     Text(message)
                         .font(.caption)
                         .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
                 }
                 .padding(24)
-                .liquidGlassCard()
+                .background(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
         }
     }
@@ -126,17 +281,26 @@ struct SuccessToast: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
                         .font(.title3)
+                        .background(.ultraThinMaterial)
                     
                     Text(message)
                         .font(.subheadline)
                         .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
                     
                     Spacer()
                 }
-                .padding()
-                .liquidGlassCard()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial)
+                .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.horizontal)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .scale.combined(with: .opacity)
+                ))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: show)
                 .onAppear {
                     HapticFeedback.success()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -199,7 +363,12 @@ struct SecondaryButtonStyle: ButtonStyle {
             .foregroundColor(.primary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .liquidGlassButton()
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(.quaternary, lineWidth: 0.5)
+            )
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }

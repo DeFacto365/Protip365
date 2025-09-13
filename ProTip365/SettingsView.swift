@@ -2,6 +2,7 @@ import SwiftUI
 import Supabase
 
 struct SettingsView: View {
+    @Binding var selectedTab: String
     @State private var userEmail = ""
     @State private var defaultHourlyRate = ""
     @State private var targetDaily = ""
@@ -17,6 +18,8 @@ struct SettingsView: View {
     @State private var useMultipleEmployers = false
     @State private var defaultEmployerId: UUID? = nil
     @State private var employers: [Employer] = []
+    @State private var showEmployerPicker = false
+    @State private var showWeekStartPicker = false
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
     @State private var isDeletingAccount = false
@@ -46,7 +49,7 @@ struct SettingsView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(action: {
-                    dismiss()
+                    selectedTab = "dashboard"
                 }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 16, weight: .medium))
@@ -107,362 +110,429 @@ struct SettingsView: View {
         }
     }
     
-    private var mainScrollView: some View {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // App Logo Card - Compact
-                    HStack(spacing: 16) {
-                        // Logo with Liquid Glass
-                        Image("Logo")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 40, height: 40)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .liquidGlassCard(material: .regular, shape: .roundedRectangle(cornerRadius: 8))
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            // App Name
-                            HStack(spacing: 0) {
-                                Text("ProTip")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                                
-                                Text("365")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                            }
-                            
-                            Text(userEmail)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    // Language Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label(languageSection, systemImage: "globe")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        Picker(languageLabel, selection: $language) {
-                            Text("English").tag("en")
-                            Text("Français").tag("fr")
-                            Text("Español").tag("es")
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
+    private var appLogoCard: some View {
+        HStack(spacing: 16) {
+            // Logo with Liquid Glass
+            Image("Logo2")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .liquidGlassCard()
+            
+            VStack(alignment: .leading, spacing: 4) {
+                // App Name
+                HStack(spacing: 0) {
+                    Text("ProTip")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                     
-                    // Work Defaults Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Label(defaultsSection, systemImage: "briefcase.fill")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        HStack {
-                            Label(hourlyRateLabel, systemImage: "dollarsign.circle")
-                                .foregroundColor(.primary)
-                            Spacer()
-                            HStack {
-                                Text("$")
-                                    .foregroundColor(.secondary)
-                                TextField("15.00", text: $defaultHourlyRate, onEditingChanged: { editing in
-                                    if editing && (defaultHourlyRate == "15.00" || defaultHourlyRate == "0.00") {
-                                        defaultHourlyRate = ""
-                                    }
-                                    HapticFeedback.selection()
-                                })
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                            }
-                            .frame(width: 100)
-                            .padding(8)
-                            .background(Color(UIColor.secondarySystemFill))
-                            .cornerRadius(8)
-                        }
-                        
-                        Toggle(isOn: $useMultipleEmployers) {
-                            Label(useMultipleEmployersLabel, systemImage: "building.2.fill")
-                        }
-                        .onChange(of: useMultipleEmployers) { _, newValue in
-                            useMultipleEmployersStorage = newValue
-                        }
-                        
-                        if useMultipleEmployers && !employers.isEmpty {
-                            HStack {
-                                Label(defaultEmployerLabel, systemImage: "star.fill")
-                                Spacer()
-                                Picker("", selection: $defaultEmployerId) {
-                                    Text(noneLabel).tag(nil as UUID?)
-                                    ForEach(employers) { employer in
-                                        Text(employer.name).tag(employer.id as UUID?)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .liquidGlassForm(material: .ultraThin)
-                                .padding(8)
-                                .onChange(of: defaultEmployerId) { _, _ in
-                                    HapticFeedback.selection()
-                                }
-                            }
-                        }
-                        
-                        HStack {
-                            Label(weekStartLabel, systemImage: "calendar")
-                            Spacer()
-                            Picker("", selection: $weekStartDay) {
-                                ForEach(0..<7) { index in
-                                    Text(localizedWeekDay(index)).tag(index)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .liquidGlassForm(material: .ultraThin)
-                            .padding(8)
-                            .onChange(of: weekStartDay) { _, _ in
-                                HapticFeedback.selection()
-                            }
-                        }
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    
-                    // Targets Explanation
-                    VStack(spacing: 8) {
-                        Text("🎯 Set your goals")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        Text("Set daily, weekly, and monthly targets. Your dashboard will show progress like '2.0/8h' for hours worked vs expected.")
-                            .font(.caption)
-                            .foregroundColor(.primary)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .padding()
-                    .liquidGlassCard(material: .ultraThin)
-                    .padding(.horizontal)
-                    
-                    // Tip Targets Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Label(tipTargetsSection, systemImage: "banknote.fill")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        targetRow(label: dailyTargetLabel,
-                                  icon: "calendar.day.timeline.left",
-                                  value: $targetDaily,
-                                  placeholder: "100.00",
-                                  color: .primary)
-                        
-                        targetRow(label: weeklyTargetLabel,
-                                  icon: "calendar.badge.clock",
-                                  value: $targetWeekly,
-                                  placeholder: "500.00",
-                                  color: .primary)
-                        
-                        targetRow(label: monthlyTargetLabel,
-                                  icon: "calendar",
-                                  value: $targetMonthly,
-                                  placeholder: "2000.00",
-                                  color: .primary)
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    
-                    // Sales Targets Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Label(salesTargetsSection, systemImage: "cart.fill")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        targetRow(label: dailySalesTargetLabel,
-                                  icon: "chart.line.uptrend.xyaxis",
-                                  value: $targetSalesDaily,
-                                  placeholder: "500.00",
-                                  color: .primary)
-                        
-                        targetRow(label: weeklySalesTargetLabel,
-                                  icon: "chart.bar.fill",
-                                  value: $targetSalesWeekly,
-                                  placeholder: "3500.00",
-                                  color: .primary)
-                        
-                        targetRow(label: monthlySalesTargetLabel,
-                                  icon: "chart.pie.fill",
-                                  value: $targetSalesMonthly,
-                                  placeholder: "14000.00",
-                                  color: .primary)
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    
-                    // Hours Targets Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Label(hoursTargetsSection, systemImage: "clock.fill")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        targetRow(label: dailyHoursTargetLabel,
-                                  icon: "timer",
-                                  value: $targetHoursDaily,
-                                  placeholder: "8",
-                                  color: .primary,
-                                  isHours: true)
-                        
-                        targetRow(label: weeklyHoursTargetLabel,
-                                  icon: "timer.circle.fill",
-                                  value: $targetHoursWeekly,
-                                  placeholder: "40",
-                                  color: .primary,
-                                  isHours: true)
-                        
-                        targetRow(label: monthlyHoursTargetLabel,
-                                  icon: "hourglass",
-                                  value: $targetHoursMonthly,
-                                  placeholder: "160",
-                                  color: .primary,
-                                  isHours: true)
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    
-                    // All Action Buttons in One Card
-                    VStack(spacing: 0) {
-                        // Export Data
-                        Button(action: {
-                            showingExportOptions = true
-                        }) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.up.fill")
-                                    .foregroundStyle(Color(hex: "0288FF"))
-                                VStack(alignment: .leading) {
-                                    Text(exportDataButton)
-                                        .foregroundStyle(.primary)
-                                    Text(exportDataDescription)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding()
-                        
-                        Rectangle()
-                            .fill(.white.opacity(0.2))
-                            .frame(height: 1)
-                            .padding(.horizontal)
-                        
-                        // Support
-                        HStack {
-                            Image(systemName: "envelope.fill")
-                                .foregroundStyle(Color(hex: "0288FF"))
-                            VStack(alignment: .leading) {
-                                Text(supportButton)
-                                    .foregroundStyle(.primary)
-                                Text("support@protip365.com")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding()
-                        
-                        Rectangle()
-                            .fill(.white.opacity(0.2))
-                            .frame(height: 0.5)
-                            .padding(.horizontal)
-                        
-                        // Suggest Ideas
-                        Button(action: {
-                            HapticFeedback.selection()
-                            showSuggestIdeas = true
-                        }) {
-                            HStack {
-                                Image(systemName: "lightbulb.fill")
-                                    .foregroundStyle(.orange)
-                                Text(suggestIdeasButton)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
-                            .padding()
-                        }
-                        
-                        Rectangle()
-                            .fill(.white.opacity(0.2))
-                            .frame(height: 0.5)
-                            .padding(.horizontal)
-                        
-                        // Sign Out
-                        Button(action: {
-                            HapticFeedback.medium()
-                            showSignOutAlert = true
-                        }) {
-                            HStack {
-                                Text(signOutButton)
-                                    .foregroundStyle(.red)
-                                Spacer()
-                            }
-                            .padding()
-                        }
-                        
-                        Rectangle()
-                            .fill(.white.opacity(0.2))
-                            .frame(height: 0.5)
-                            .padding(.horizontal)
-                        
-                        // Delete Account
-                        Button(action: {
-                            HapticFeedback.medium()
-                            showDeleteAccountAlert = true
-                        }) {
-                            HStack {
-                                Text(deleteAccountButton)
-                                    .foregroundStyle(.red)
-                                Spacer()
-                            }
-                            .padding()
-                        }
-                    }
-                    .padding()
-                    .liquidGlassCard()
-                    .padding(.horizontal)
-                    
-                    Spacer()
-                        .frame(height: 30)
+                    Text("365")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
                 }
-                .padding(.vertical)
-                .frame(maxWidth: sizeClass == .regular ? 600 : .infinity)
+                
+                Text(userEmail)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
             }
-            .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [Color(.systemGroupedBackground), Color(.systemGroupedBackground).opacity(0.95)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .background(.ultraThinMaterial)
-            )
-            .navigationTitle(settingsTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var languageSectionView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(languageSection, systemImage: "globe")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Picker(languageLabel, selection: $language) {
+                Text("English").tag("en")
+                Text("Français").tag("fr")
+                Text("Español").tag("es")
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var workDefaultsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(defaultsSection, systemImage: "briefcase.fill")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            HStack {
+                Label(hourlyRateLabel, systemImage: "dollarsign.circle")
+                    .foregroundColor(.primary)
+                Spacer()
+                HStack {
+                    Text("$")
+                        .foregroundColor(.secondary)
+                    TextField("15.00", text: $defaultHourlyRate, onEditingChanged: { editing in
+                        if editing && (defaultHourlyRate == "15.00" || defaultHourlyRate == "0.00") {
+                            defaultHourlyRate = ""
+                        }
+                        HapticFeedback.selection()
+                    })
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                }
+                .frame(width: 100)
+                .padding(8)
+                .liquidGlassForm()
+            }
+            
+            Toggle(isOn: $useMultipleEmployers) {
+                Label(useMultipleEmployersLabel, systemImage: "building.2.fill")
+            }
+            .onChange(of: useMultipleEmployers) { _, newValue in
+                useMultipleEmployersStorage = newValue
+            }
+            
+            if useMultipleEmployers && !employers.isEmpty {
+                VStack(spacing: 0) {
+                    HStack {
+                        Label(defaultEmployerLabel, systemImage: "star.fill")
+                        Spacer()
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showEmployerPicker.toggle()
+                                showWeekStartPicker = false
+                            }
+                        }) {
+                            Text(employers.first(where: { $0.id == defaultEmployerId })?.name ?? noneLabel)
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color(.systemGray6))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+
+                    if showEmployerPicker {
+                        Picker("", selection: $defaultEmployerId) {
+                            Text(noneLabel).tag(nil as UUID?)
+                            ForEach(employers) { employer in
+                                Text(employer.name).tag(employer.id as UUID?)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(height: 120)
+                        .padding(.top, 8)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .onChange(of: defaultEmployerId) { _, _ in
+                            HapticFeedback.selection()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showEmployerPicker = false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            VStack(spacing: 0) {
+                HStack {
+                    Label(weekStartLabel, systemImage: "calendar")
+                    Spacer()
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showWeekStartPicker.toggle()
+                            showEmployerPicker = false
+                        }
+                    }) {
+                        Text(localizedWeekDay(weekStartDay))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+
+                if showWeekStartPicker {
+                    Picker("", selection: $weekStartDay) {
+                        ForEach(0..<7) { index in
+                            Text(localizedWeekDay(index)).tag(index)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(height: 120)
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .onChange(of: weekStartDay) { _, _ in
+                        HapticFeedback.selection()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showWeekStartPicker = false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var targetsExplanationSection: some View {
+        VStack(spacing: 8) {
+            Text("🎯 Set your goals")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Text("Set daily, weekly, and monthly targets. Your dashboard will show progress like '2.0/8h' for hours worked vs expected.")
+                .font(.caption)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var tipTargetsSectionView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(tipTargetsSection, systemImage: "banknote.fill")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            targetRow(label: dailyTargetLabel,
+                      icon: "calendar.day.timeline.left",
+                      value: $targetDaily,
+                      placeholder: "100.00",
+                      color: .primary)
+            
+            targetRow(label: weeklyTargetLabel,
+                      icon: "calendar.badge.clock",
+                      value: $targetWeekly,
+                      placeholder: "500.00",
+                      color: .primary)
+            
+            targetRow(label: monthlyTargetLabel,
+                      icon: "calendar",
+                      value: $targetMonthly,
+                      placeholder: "2000.00",
+                      color: .primary)
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var salesTargetsSectionView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(salesTargetsSection, systemImage: "cart.fill")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            targetRow(label: dailySalesTargetLabel,
+                      icon: "chart.line.uptrend.xyaxis",
+                      value: $targetSalesDaily,
+                      placeholder: "500.00",
+                      color: .primary)
+            
+            targetRow(label: weeklySalesTargetLabel,
+                      icon: "chart.bar.fill",
+                      value: $targetSalesWeekly,
+                      placeholder: "3500.00",
+                      color: .primary)
+            
+            targetRow(label: monthlySalesTargetLabel,
+                      icon: "chart.pie.fill",
+                      value: $targetSalesMonthly,
+                      placeholder: "14000.00",
+                      color: .primary)
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var hoursTargetsSectionView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(hoursTargetsSection, systemImage: "clock.fill")
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            targetRow(label: dailyHoursTargetLabel,
+                      icon: "timer",
+                      value: $targetHoursDaily,
+                      placeholder: "8",
+                      color: .primary,
+                      isHours: true)
+            
+            targetRow(label: weeklyHoursTargetLabel,
+                      icon: "timer.circle.fill",
+                      value: $targetHoursWeekly,
+                      placeholder: "40",
+                      color: .primary,
+                      isHours: true)
+            
+            targetRow(label: monthlyHoursTargetLabel,
+                      icon: "hourglass",
+                      value: $targetHoursMonthly,
+                      placeholder: "160",
+                      color: .primary,
+                      isHours: true)
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var actionButtonsSection: some View {
+        VStack(spacing: 0) {
+            // Export Data
+            Button(action: {
+                showingExportOptions = true
+            }) {
+                HStack {
+                    Image(systemName: "square.and.arrow.up.fill")
+                        .foregroundStyle(.blue)
+                    VStack(alignment: .leading) {
+                        Text(exportDataButton)
+                            .foregroundStyle(.primary)
+                        Text(exportDataDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding()
+            
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 1)
+                .padding(.horizontal)
+            
+            // Support
+            HStack {
+                Image(systemName: "envelope.fill")
+                    .foregroundStyle(.blue)
+                VStack(alignment: .leading) {
+                    Text(supportButton)
+                        .foregroundStyle(.primary)
+                    Text("support@protip365.com")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding()
+            
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
+            
+            // Suggest Ideas
+            Button(action: {
+                HapticFeedback.selection()
+                showSuggestIdeas = true
+            }) {
+                HStack {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(.orange)
+                    Text(suggestIdeasButton)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                .padding()
+            }
+            
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
+            
+            // Sign Out
+            Button(action: {
+                HapticFeedback.medium()
+                showSignOutAlert = true
+            }) {
+                HStack {
+                    Text(signOutButton)
+                        .foregroundStyle(.red)
+                    Spacer()
+                }
+                .padding()
+            }
+            
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
+            
+            // Delete Account
+            Button(action: {
+                HapticFeedback.medium()
+                showDeleteAccountAlert = true
+            }) {
+                HStack {
+                    Text(deleteAccountButton)
+                        .foregroundStyle(.red)
+                    Spacer()
+                }
+                .padding()
+            }
+        }
+        .padding()
+        .liquidGlassCard()
+        .padding(.horizontal)
+    }
+    
+    private var settingsContent: some View {
+        GlassEffectContainer(spacing: 20) {
+            VStack(spacing: 20) {
+                appLogoCard
+                languageSectionView
+                workDefaultsSection
+                targetsExplanationSection
+                tipTargetsSectionView
+                salesTargetsSectionView
+                hoursTargetsSectionView
+                
+                actionButtonsSection
+                
+                Spacer()
+                    .frame(height: 30)
+            }
+        }
+        .padding(.vertical)
+        .frame(maxWidth: sizeClass == .regular ? 600 : .infinity)
+    }
+    
+    private var mainScrollView: some View {
+        ScrollView {
+            settingsContent
+                .padding(.bottom, 90) // Add padding for tab bar
+        }
+        .frame(maxWidth: .infinity)
+        .navigationTitle(settingsTitle)
+        .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: {
@@ -490,7 +560,7 @@ struct SettingsView: View {
                                 Image(systemName: "checkmark")
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(Color(hex: "0288FF"))
+                                    .foregroundColor(.blue)
                             }
                         }
                         .disabled(isSaving)
@@ -558,7 +628,7 @@ struct SettingsView: View {
                                     Spacer()
                                 }
                             }
-                            .buttonStyle(PrimaryButtonStyle(material: .regular, tintColor: .blue))
+                            .buttonStyle(PrimaryButtonStyle())
                             .disabled(suggestionText.isEmpty || isSendingSuggestion)
                         }
                     }
@@ -625,13 +695,7 @@ struct SettingsView: View {
             .frame(width: 100)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .foregroundColor(.primary)
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(.systemGray4), lineWidth: 1)
-            )
+            .liquidGlassForm()
             .onTapGesture {
                 HapticFeedback.selection()
             }
@@ -790,9 +854,14 @@ struct SettingsView: View {
                 await MainActor.run {
                     isSaving = false
                     saveButtonText = savedText
-                    
+
                     let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                     impactFeedback.impactOccurred()
+
+                    // Navigate back to dashboard after successful save
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        selectedTab = "dashboard"
+                    }
                 }
                 
             } catch {
@@ -1266,7 +1335,7 @@ struct SettingsView: View {
                             Spacer()
                         }
                     }
-                    .buttonStyle(PrimaryButtonStyle(material: .regular, tintColor: .blue))
+                    .buttonStyle(PrimaryButtonStyle())
                     .disabled(suggestionText.isEmpty || isSendingSuggestion)
                 }
             }

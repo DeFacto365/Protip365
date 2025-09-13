@@ -9,20 +9,19 @@ struct LockScreenView: View {
             Spacer()
             
             // App Icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(LinearGradient(
-                        colors: [Color.blue, Color.purple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    .frame(width: 100, height: 100)
-                    .shadow(radius: 10)
-                
-                Text("%")
-                    .font(.system(size: 60, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-            }
+            Image(systemName: "percent")
+                .font(.system(size: 60, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 100, height: 100)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(LinearGradient(
+                            colors: [Color.blue, Color.purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                )
+                .shadow(radius: 10)
             
             Text("ProTip365")
                 .font(.largeTitle)

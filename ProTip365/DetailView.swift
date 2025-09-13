@@ -17,7 +17,12 @@ struct DetailView: View {
     }
     
     var totalSalary: Double {
-        shifts.reduce(0) { $0 + ($1.hours * ($1.hourly_rate ?? 15.0)) }
+        shifts.reduce(0) { total, shift in
+            if let baseIncome = shift.base_income {
+                return total + baseIncome
+            }
+            return total + (shift.hours * (shift.hourly_rate ?? 15.0))
+        }
     }
     
     var totalIncome: Double {
@@ -58,7 +63,8 @@ struct DetailView: View {
                                         Text(salaryText)
                                             .font(.caption)
                                             .foregroundColor(.secondary)
-                                        Text(formatCurrency(shift.hours * (shift.hourly_rate ?? 15.0)))
+                                        let salary = shift.base_income ?? (shift.hours * (shift.hourly_rate ?? 15.0))
+                                        Text(formatCurrency(salary))
                                             .font(.subheadline)
                                             .fontWeight(.medium)
                                             .foregroundColor(.primary)

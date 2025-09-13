@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Glass Stat Card Component
+// MARK: - Enhanced Glass Stat Card Component
 struct GlassStatCard: View {
     let title: String
     let value: String
@@ -15,6 +15,8 @@ struct GlassStatCard: View {
                     .font(.title3)
                     .foregroundStyle(color)
                     .symbolRenderingMode(.hierarchical)
+                    .modifier(GlassEffectModifier())
+                    .frame(width: 32, height: 32)
                 
                 Spacer()
             }
@@ -44,20 +46,8 @@ struct GlassStatCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [color.opacity(0.3), color.opacity(0.1)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+        .shadow(color: color.opacity(0.2), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -100,13 +90,17 @@ struct EmptyStateCard: View {
                         endPoint: .bottomTrailing
                     )
                 )
+                .modifier(GlassEffectModifier())
+                .frame(width: 64, height: 64)
             
             Text(message)
                 .font(.headline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding(32)
         .frame(maxWidth: .infinity)
-                        .liquidGlassCard()
+        .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+        .shadow(color: .blue.opacity(0.1), radius: 12, x: 0, y: 6)
     }
 }

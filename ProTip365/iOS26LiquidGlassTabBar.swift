@@ -39,65 +39,82 @@ struct iOS26LiquidGlassTabBar: View {
     let tabItems: [TabItem]
     @AppStorage("language") private var language = "en"
     
-    // Custom background to avoid SwiftUI material issues
-    private var backgroundCapsule: some View {
-        Capsule()
-            .fill(Color.white.opacity(0.6))  // 60% white fill - more opaque
-            .overlay(
-                Capsule()
-                    .stroke(Color.white.opacity(0.8), lineWidth: 1.0)  // 80% stroke - more visible border
-            )
-    }
-    
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(tabItems, id: \.id) { item in
-                Button(action: {
-                    // Haptic feedback
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                    
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        selectedTab = item.id
+        VStack(spacing: 0) {
+            // Top separator line
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(height: 0.5)
+
+            HStack(spacing: 8) {
+                ForEach(tabItems, id: \.id) { item in
+                    Button(action: {
+                        // Haptic feedback
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            selectedTab = item.id
+                        }
+                    }) {
+                        VStack(spacing: 2) {
+                            // Individual circular glass buttons with depth
+                            ZStack {
+                                // No background for active state - clean iOS 26 look
+
+                                Image(systemName: selectedTab == item.id ? item.activeIcon : item.icon)
+                                    .font(.system(size: 18, weight: selectedTab == item.id ? .semibold : .medium))
+                                    .foregroundStyle(
+                                        selectedTab == item.id ?
+                                        .blue :
+                                        Color.primary
+                                    )
+                                    .frame(width: 32, height: 32)
+                                    .scaleEffect(selectedTab == item.id ? 1.1 : 1.0)
+                                    .symbolEffect(.bounce, value: selectedTab == item.id)
+                            }
+
+                            // Labels with proper depth
+                            Text(localizedLabel(for: item))
+                                .font(.system(size: 9, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
+                                .foregroundStyle(
+                                    selectedTab == item.id ?
+                                    .blue :
+                                    Color.primary
+                                )
+                        }
+                        .frame(minWidth: 44)
                     }
-                }) {
-                    VStack(spacing: 2) {
-                        // Individual circular glass buttons
-                        Image(systemName: selectedTab == item.id ? item.activeIcon : item.icon)
-                            .font(.system(size: 18, weight: selectedTab == item.id ? .semibold : .medium))
-                            .foregroundStyle(
-                                selectedTab == item.id ? 
-                                Color(hex: "0288FF") : // Same blue as Add/Shift button
-                                Color.primary  // 100% opacity for icons
-                            )
-                            .frame(width: 32, height: 32)
-                            .scaleEffect(selectedTab == item.id ? 1.1 : 1.0)
-                            .symbolEffect(.bounce, value: selectedTab == item.id)
-                        
-                        // Labels with 100% opacity
-                        Text(localizedLabel(for: item))
-                            .font(.system(size: 9, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
-                            .foregroundStyle(
-                                selectedTab == item.id ? 
-                                Color(hex: "0288FF") : // Same blue as Add/Shift button
-                                Color.primary  // 100% opacity for text
-                            )
-                    }
-                    .frame(minWidth: 44) // iOS minimum touch target
+                    .buttonStyle(PlainButtonStyle())
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)
+                    .accessibilityLabel(localizedLabel(for: item))
+                    .accessibilityAddTraits(selectedTab == item.id ? [.isSelected] : [])
                 }
-                .buttonStyle(PlainButtonStyle())
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)
-                .accessibilityLabel(localizedLabel(for: item))
-                .accessibilityAddTraits(selectedTab == item.id ? [.isSelected] : [])
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .padding(.bottom, safeAreaInsets.bottom > 0 ? -12 : -8)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(backgroundCapsule)  // Custom translucent background
-        .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .padding(.horizontal, 20)
-        .padding(.bottom, safeAreaInsets.bottom > 0 ? -12 : -8)
+        .background(
+            // Blur background with material effect
+            ZStack {
+                // Background blur
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+
+                // Subtle gradient overlay
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.1),
+                        Color.white.opacity(0.05)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: -2)
     }
     
     // Safe area calculation
@@ -169,7 +186,6 @@ struct iOS26LiquidGlassMainView: View {
     private var tabItems: [TabItem] {
         var items = [
             TabItem(id: "dashboard", icon: "chart.bar", label: "Dashboard", activeIcon: "chart.bar.fill"),
-            TabItem(id: "shifts", icon: "calendar", label: "Shifts", activeIcon: "calendar.circle.fill"),
             TabItem(id: "calendar", icon: "calendar.badge.clock", label: "Calendar", activeIcon: "calendar.badge.clock")
         ]
         
@@ -188,25 +204,11 @@ struct iOS26LiquidGlassMainView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Background that shows through translucent controls
-            LinearGradient(
-                colors: [
-                    Color(UIColor.systemBackground),
-                    Color(UIColor.systemBackground).opacity(0.8),
-                    Color.blue.opacity(0.1) // App's accent color
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
             // Content based on selected tab - no ScrollView wrapper needed as views handle their own scrolling
             Group {
                 switch selectedTab {
                 case "dashboard":
                     DashboardView()
-                case "shifts":
-                    ShiftsCalendarView()
                 case "calendar":
                     CalendarShiftsView()
                 case "employers":
@@ -218,18 +220,20 @@ struct iOS26LiquidGlassMainView: View {
                 case "calculator":
                     TipCalculatorView()
                 case "settings":
-                    SettingsView()
+                    SettingsView(selectedTab: $selectedTab)
                 default:
                     DashboardView()
                 }
             }
+            .zIndex(0) // Background content layer
             
-            // Floating translucent tab bar
+            // Floating translucent tab bar with proper depth
             iOS26LiquidGlassTabBar(
                 selectedTab: $selectedTab,
                 scrollOffset: $scrollOffset,
                 tabItems: tabItems
             )
+            .zIndex(1) // Floating tab bar layer
         }
     }
 }

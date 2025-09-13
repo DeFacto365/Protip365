@@ -8,15 +8,19 @@ struct SubscriptionView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            // Header
+            // Header with glass effects
             VStack(spacing: 20) {
                 Image(systemName: "crown.fill")
                     .font(.system(size: 80))
                     .foregroundColor(.yellow)
+                    .modifier(GlassEffectModifier())
+                    .frame(width: 100, height: 100)
                 
                 Text("ProTip365 Premium")
                     .font(.largeTitle)
                     .bold()
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: 8))
+                    .padding(.horizontal, 8)
             }
             .padding(.top, 40)
             
@@ -178,9 +182,17 @@ struct FeatureRow: View {
                 .frame(width: 30)
                 .foregroundColor(.blue)
                 .font(.title3)
+                .modifier(GlassEffectModifier())
+                .frame(width: 40, height: 40)
+            
             Text(text)
                 .font(.body)
+            
             Spacer()
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .modifier(GlassEffectRoundedModifier(cornerRadius: 12))
+        .shadow(color: .blue.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
