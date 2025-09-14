@@ -6,6 +6,7 @@ struct TipCalculatorView: View {
     @State private var numberOfPeople = 1
     @AppStorage("language") private var language = "en"
     @FocusState private var isTextFieldFocused: Bool
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var tipAmount: Double {
         let bill = Double(billAmount) ?? 0
@@ -254,7 +255,7 @@ struct TipCalculatorView: View {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(Color(.systemGray5), lineWidth: 1)
                     )
-                    .padding(.horizontal)
+                    .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 16)
 
                     Spacer(minLength: 0)
                 }

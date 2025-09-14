@@ -15,6 +15,7 @@ struct AuthView: View {
     @State private var showWelcomeSignUp = false
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     enum Field {
         case email, password
@@ -82,8 +83,12 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color.white)
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(.systemGray5), lineWidth: 1)
+                            )
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .textContentType(.emailAddress)
@@ -104,8 +109,12 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color.white)
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(.systemGray5), lineWidth: 1)
+                            )
                             .textContentType(isSignUp ? .newPassword : .password)
                             .focused($focusedField, equals: .password)
                             .submitLabel(.done)
@@ -130,7 +139,8 @@ struct AuthView: View {
                         .padding(.top, -8)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 16)
+                .frame(maxWidth: horizontalSizeClass == .regular ? 500 : .infinity)
                 
                 // Action buttons
                 VStack(spacing: 16) {
@@ -171,8 +181,9 @@ struct AuthView: View {
                             .foregroundColor(.blue)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 16)
                 .padding(.top, 20)
+                .frame(maxWidth: horizontalSizeClass == .regular ? 500 : .infinity)
                 
                 Spacer()
                 Spacer()
@@ -218,8 +229,12 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color.white)
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(.systemGray5), lineWidth: 1)
+                            )
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .textContentType(.emailAddress)

@@ -4,6 +4,7 @@ import UIKit
 
 struct AddEntryView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject var supabaseManager: SupabaseManager
     
     // MARK: - Parameters
@@ -332,8 +333,10 @@ struct AddEntryView: View {
                         // Summary Card - iOS 26 Style
                         summaryCard
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, horizontalSizeClass == .regular ? 40 : 8)
                     .padding(.top, 10)
+                    .frame(maxWidth: horizontalSizeClass == .regular ? 900 : .infinity)
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -352,6 +355,16 @@ struct AddEntryView: View {
         } message: {
             Text(errorMessage)
         }
+        .presentationDetents(horizontalSizeClass == .regular ? [.large] : [.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(20)
+        .interactiveDismissDisabled(hasUnsavedChanges())
+    }
+
+    // Check if there are unsaved changes
+    private func hasUnsavedChanges() -> Bool {
+        // Only disable dismiss if user has entered data
+        return !sales.isEmpty || !tips.isEmpty || !tipOut.isEmpty || !other.isEmpty || calculatedHours > 0
     }
     
     // MARK: - iOS 26 Style Header
@@ -364,7 +377,7 @@ struct AddEntryView: View {
                 Image(systemName: "xmark")
                     .font(.title2)
                     .fontWeight(.medium)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .frame(width: 32, height: 32)
                     .background(Color(.systemGray5))
                     .clipShape(Circle())
@@ -389,13 +402,13 @@ struct AddEntryView: View {
                 } else {
                     Image(systemName: "checkmark")
                         .font(.title2)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
                         .frame(width: 32, height: 32)
+                        .background(Color.blue)
+                        .clipShape(Circle())
                 }
             }
-            .background(Color(.systemGray5))
-            .clipShape(Circle())
             .disabled(isLoading)
         }
         .padding(.horizontal, 10)
@@ -449,6 +462,12 @@ struct AddEntryView: View {
                     .padding(.horizontal, 8)
                     .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .onChange(of: selectedEmployer) { _, _ in
+                        // Just close the picker when employer is selected
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showEmployerPicker = false
+                        }
+                    }
                 }
                 
                 Divider()

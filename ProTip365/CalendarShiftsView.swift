@@ -10,6 +10,8 @@ struct CalendarShiftsView: View {
     @State private var showDeleteAlert = false
     @State private var targetSalesDaily: Double = 0
     @State private var targetTipsDaily: Double = 0
+    @State private var tipTargetPercentage: Double = 0
+    @State private var averageDeductionPercentage: Double = 30
     @State private var showExistingShiftAlert = false
     @State private var showNewEntryView = false
     @State private var existingShiftsForSelectedDate: [ShiftIncome] = []
@@ -38,7 +40,7 @@ struct CalendarShiftsView: View {
                         language: language
                     )
                     .frame(height: 340)
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color(.systemBackground))  // Changed to white background
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
 
@@ -62,7 +64,7 @@ struct CalendarShiftsView: View {
                 }
                 .padding(.top, 20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color(.systemGroupedBackground))  // Changed to gray background
             .navigationTitle(calendarTitle)
             .navigationBarTitleDisplayMode(.inline)
             .task {
@@ -153,6 +155,8 @@ struct CalendarShiftsView: View {
                     shift: shift,
                     targetSalesDaily: targetSalesDaily,
                     targetTipsDaily: targetTipsDaily,
+                    tipTargetPercentage: tipTargetPercentage,
+                    averageDeductionPercentage: averageDeductionPercentage,
                     onEdit: {
                         handleEditShift(shift)
                     },
@@ -161,11 +165,11 @@ struct CalendarShiftsView: View {
                         showDeleteAlert = true
                     }
                 )
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 4)
             }
         }
         .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
+        .background(Color(.systemBackground))  // Changed to white background
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
     }
@@ -226,41 +230,35 @@ struct CalendarShiftsView: View {
                         showNewEntryView = true
                     }
                 }) {
-                    HStack(spacing: 8) {
+                    HStack {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.blue)
+                            .font(.body)
                         Text(addEntryText)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
+                            .font(.body)
+                            .fontWeight(.medium)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(.quaternary, lineWidth: 0.5)
-                    )
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
             } else {
                 // For future dates: Show "Add Shift" button (for expected/planned shifts)
                 NavigationLink(destination: AddShiftView(initialDate: selectedDate)) {
-                    HStack(spacing: 8) {
+                    HStack {
                         Image(systemName: "calendar.badge.plus")
-                            .font(.title2)
-                            .foregroundStyle(.purple)
+                            .font(.body)
                         Text(addShiftText)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
+                            .font(.body)
+                            .fontWeight(.medium)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(.quaternary, lineWidth: 0.5)
-                    )
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.purple)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -320,25 +318,28 @@ struct CalendarShiftsView: View {
             struct ProfileTargets: Decodable {
                 let target_sales_daily: Double?
                 let tip_target_percentage: Double?
+                let average_deduction_percentage: Double?
             }
 
             let profile: ProfileTargets = try await SupabaseManager.shared.client
                 .from("users_profile")
-                .select("target_sales_daily, tip_target_percentage")
+                .select("target_sales_daily, tip_target_percentage, average_deduction_percentage")
                 .eq("user_id", value: userId)
                 .single()
                 .execute()
                 .value
 
             targetSalesDaily = profile.target_sales_daily ?? 0
+            tipTargetPercentage = profile.tip_target_percentage ?? 15.0 // Default to 15% if not set
+            averageDeductionPercentage = profile.average_deduction_percentage ?? 30 // Default to 30% if not set
             // Calculate daily tip target based on percentage if available
-            if let tipPercentage = profile.tip_target_percentage, tipPercentage > 0, targetSalesDaily > 0 {
-                targetTipsDaily = targetSalesDaily * (tipPercentage / 100.0)
+            if tipTargetPercentage > 0 && targetSalesDaily > 0 {
+                targetTipsDaily = targetSalesDaily * (tipTargetPercentage / 100.0)
             } else {
                 targetTipsDaily = 0
             }
 
-            print("📊 Loaded targets - Sales: \(targetSalesDaily), Tips: \(targetTipsDaily)")
+            print("📊 Loaded targets - Sales: \(targetSalesDaily), Tips %: \(tipTargetPercentage), Tips $: \(targetTipsDaily)")
         } catch {
             print("Error loading user targets: \(error)")
         }
@@ -709,6 +710,8 @@ struct ShiftRowView: View {
     let shift: ShiftIncome
     let targetSalesDaily: Double
     let targetTipsDaily: Double
+    let tipTargetPercentage: Double
+    let averageDeductionPercentage: Double
     let onEdit: () -> Void
     let onDelete: () -> Void
     @AppStorage("language") private var language = "en"
@@ -793,109 +796,133 @@ struct ShiftRowView: View {
                 }
 
                 Spacer()
+
+                // Budget progress indicators (only show if targets are set and we have earnings)
+                if shift.has_earnings && (targetSalesDaily > 0 || targetTipsDaily > 0) {
+                    HStack(spacing: 12) {
+                        // Sales progress
+                        if targetSalesDaily > 0 {
+                            SalesProgressIndicator(
+                                actual: shift.sales,
+                                target: targetSalesDaily
+                            )
+                        }
+
+                        // Tips percentage indicator (based on sales)
+                        if shift.sales > 0 {
+                            TipPercentageIndicator(
+                                tips: shift.tips,
+                                sales: shift.sales,
+                                targetPercentage: tipTargetPercentage
+                            )
+                        }
+                    }
+                }
             }
 
-            // Financial Breakdown section - shown below employer/hours
+            // Financial Breakdown section - Better two-line layout
             if shift.has_earnings {
-                    VStack(alignment: .leading, spacing: 6) {
-                        // Sales
+                VStack(spacing: 12) {
+                    // First row: Sales and Salary info
+                    HStack(spacing: 16) {
+                        // Sales (if any)
                         if shift.sales > 0 {
-                            HStack {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(salesText)
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Spacer()
                                 Text(formatCurrency(shift.sales))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                             }
-                            .frame(width: 120)
-
-                            Divider()
-                                .padding(.vertical, 1)
                         }
 
-                        // Salary
+                        // Salary section
                         if let baseIncome = shift.base_income, baseIncome > 0 {
-                            HStack {
-                                Text(salaryText)
-                                    .font(.caption)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(grossSalaryText)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Spacer()
                                 Text(formatCurrency(baseIncome))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                             }
-                            .frame(width: 120)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(netSalaryText)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                let netSalary = baseIncome * (1 - averageDeductionPercentage / 100)
+                                Text(formatCurrency(netSalary))
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.green)
+                            }
                         }
 
+                        Spacer()
+                    }
+
+                    // Second row: Tips, Other, Tip Out and Total
+                    HStack(spacing: 16) {
                         // Tips
                         if shift.tips > 0 {
-                            HStack {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(tipsText)
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Spacer()
                                 Text(formatCurrency(shift.tips))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                             }
-                            .frame(width: 120)
                         }
 
                         // Other
                         if let other = shift.other, other > 0 {
-                            HStack {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(otherText)
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Spacer()
                                 Text(formatCurrency(other))
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                             }
-                            .frame(width: 120)
                         }
 
-                        // Tip Out (negative value)
+                        // Tip Out
                         if let tipOut = shift.cash_out, tipOut > 0 {
-                            HStack {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(tipOutText)
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Spacer()
                                 Text("-\(formatCurrency(tipOut))")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.red)
                             }
-                            .frame(width: 120)
                         }
 
-                        // Total
-                        Divider()
-                            .frame(width: 120)
+                        Spacer()
 
-                        HStack {
+                        // Total (always on the right)
+                        VStack(alignment: .trailing, spacing: 2) {
                             Text(totalText)
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                            Spacer()
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                             Text(formatCurrency(shift.total_income ?? 0))
-                                .font(.subheadline)
+                                .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                         }
-                        .frame(width: 120)
                     }
-                    .padding(12)
-                    .background(Color(.tertiarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .padding(12)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
                 // Show expected label for future shifts or missed work
                 HStack {
@@ -944,11 +971,12 @@ struct ShiftRowView: View {
                             .font(.system(size: 14))
                         Text(editText)
                             .font(.caption)
+                            .fontWeight(.medium)
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
-                    .background(Color.blue.opacity(0.1))
+                    .background(Color.blue)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
 
@@ -961,11 +989,12 @@ struct ShiftRowView: View {
                             .font(.system(size: 14))
                         Text(deleteText)
                             .font(.caption)
+                            .fontWeight(.medium)
                     }
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
-                    .background(Color.red.opacity(0.1))
+                    .background(Color.red)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -973,10 +1002,14 @@ struct ShiftRowView: View {
             .padding(.bottom, 8)
             .padding(.top, 4)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 6)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(.systemGray5), lineWidth: 0.5)
+        )
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
     
@@ -1011,6 +1044,30 @@ struct ShiftRowView: View {
         case "fr": return "Salaire"
         case "es": return "Salario"
         default: return "Salary"
+        }
+    }
+
+    private var grossSalaryText: String {
+        switch language {
+        case "fr": return "Salaire brut"
+        case "es": return "Salario bruto"
+        default: return "Gross Salary"
+        }
+    }
+
+    private var netSalaryText: String {
+        switch language {
+        case "fr": return "Salaire net"
+        case "es": return "Salario neto"
+        default: return "Net Salary"
+        }
+    }
+
+    private var estNetSalaryText: String {
+        switch language {
+        case "fr": return "Salaire net est."
+        case "es": return "Salario neto est."
+        default: return "Est. Net Salary"
         }
     }
 
@@ -1198,6 +1255,147 @@ struct CustomCalendarView: View {
     
     private func nextMonth() {
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
+    }
+}
+
+// MARK: - Sales Progress Indicator
+struct SalesProgressIndicator: View {
+    let actual: Double
+    let target: Double
+    @AppStorage("language") private var language = "en"
+
+    private var percentage: Double {
+        guard target > 0 else { return 0 }
+        return (actual / target) * 100
+    }
+
+    private var displayValue: String {
+        "\(Int(percentage))"
+    }
+
+    private var progressColor: Color {
+        if percentage >= 100 {
+            return .green
+        } else if percentage >= 75 {
+            return .blue
+        } else if percentage >= 50 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
+    private var label: String {
+        switch language {
+        case "fr": return "Ventes"
+        case "es": return "Ventas"
+        default: return "Sales"
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 9))
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+
+            ZStack {
+                Circle()
+                    .stroke(progressColor.opacity(0.2), lineWidth: 3)
+                    .frame(width: 36, height: 36)
+
+                Circle()
+                    .trim(from: 0, to: min(percentage / 100, 1.0))
+                    .stroke(progressColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 36, height: 36)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.3), value: percentage)
+
+                VStack(spacing: 0) {
+                    Text(displayValue)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Text("%")
+                        .font(.system(size: 7, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            Text("$\(Int(target))")
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - Tip Percentage Indicator
+struct TipPercentageIndicator: View {
+    let tips: Double
+    let sales: Double
+    let targetPercentage: Double
+    @AppStorage("language") private var language = "en"
+
+    private var actualPercentage: Double {
+        guard sales > 0 else { return 0 }
+        return (tips / sales) * 100
+    }
+
+    private var displayValue: String {
+        String(format: "%.1f", actualPercentage)
+    }
+
+    private var progressColor: Color {
+        if actualPercentage >= targetPercentage {
+            return .green
+        } else if actualPercentage >= targetPercentage * 0.8 { // Within 80% of target
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
+    private var label: String {
+        switch language {
+        case "fr": return "Pourb. %"
+        case "es": return "Prop. %"
+        default: return "Tip %"
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 9))
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+
+            ZStack {
+                Circle()
+                    .stroke(progressColor.opacity(0.2), lineWidth: 3)
+                    .frame(width: 36, height: 36)
+
+                Circle()
+                    .trim(from: 0, to: min(actualPercentage / max(targetPercentage, 1), 1.0))
+                    .stroke(progressColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 36, height: 36)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.3), value: actualPercentage)
+
+                VStack(spacing: 0) {
+                    Text(displayValue)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    Text("%")
+                        .font(.system(size: 7, weight: .medium))
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            Text("/ \(Int(targetPercentage))%")
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

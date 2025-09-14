@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Binding var selectedTab: String
     @State private var userEmail = ""
     @State private var defaultHourlyRate = ""
+    @State private var averageDeductionPercentage = ""
     @State private var tipTargetPercentage = ""
     @State private var targetTipDaily = ""
     @State private var targetTipWeekly = ""
@@ -50,6 +51,7 @@ struct SettingsView: View {
 
     struct OriginalSettings {
         let defaultHourlyRate: String
+        let averageDeductionPercentage: String
         let tipTargetPercentage: String
         let targetTipDaily: String
         let targetTipWeekly: String
@@ -92,17 +94,17 @@ struct SettingsView: View {
                         Text("ProTip")
                             .font(.headline)
                             .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
 
                         Text("365")
                             .font(.headline)
                             .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                     }
 
                     Text(userEmail)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -114,12 +116,14 @@ struct SettingsView: View {
                 showOnboarding = true
             }) {
                 HStack {
-                    Image(systemName: "questionmark.circle.fill")
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
                     Text(howToUseText)
                         .foregroundStyle(.primary)
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                        .font(.body)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .foregroundStyle(.secondary)
@@ -133,9 +137,17 @@ struct SettingsView: View {
 
             // Language Section
             VStack(alignment: .leading, spacing: 12) {
-                Label(languageSection, systemImage: "globe")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                HStack(spacing: 12) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(languageSection)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
 
                 Picker(languageLabel, selection: $language) {
                     Text("English").tag("en")
@@ -155,17 +167,32 @@ struct SettingsView: View {
     
     private var workDefaultsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(defaultsSection, systemImage: "briefcase.fill")
-                .font(.headline)
-                .foregroundColor(.primary)
+            HStack(spacing: 12) {
+                Image(systemName: "briefcase.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.blue)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(defaultsSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
             
             HStack {
-                Label(hourlyRateLabel, systemImage: "dollarsign.circle")
-                    .foregroundColor(.primary)
+                HStack(spacing: 12) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(hourlyRateLabel)
+                        .foregroundStyle(.primary)
+                }
                 Spacer()
                 HStack {
                     Text("$")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     TextField("15.00", text: $defaultHourlyRate, onEditingChanged: { editing in
                         if editing && (defaultHourlyRate == "15.00" || defaultHourlyRate == "0.00") {
                             defaultHourlyRate = ""
@@ -174,13 +201,70 @@ struct SettingsView: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                 }
                 .frame(width: 100)
                 .padding(8)
                 .liquidGlassForm()
             }
-            
+
+            HStack {
+                HStack(spacing: 12) {
+                    Image(systemName: "percent")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.orange)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(averageDeductionLabel)
+                        .foregroundStyle(.primary)
+                }
+                Spacer()
+                HStack {
+                    TextField("30", text: $averageDeductionPercentage, onEditingChanged: { editing in
+                        if editing && (averageDeductionPercentage == "30" || averageDeductionPercentage == "0") {
+                            averageDeductionPercentage = ""
+                        }
+                        HapticFeedback.selection()
+                    })
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(.blue)
+                    .onChange(of: averageDeductionPercentage) { _, newValue in
+                        // Validate input to ensure it's between 0 and 100
+                        if let value = Double(newValue), value > 100 {
+                            averageDeductionPercentage = "100"
+                        }
+                    }
+                    Text("%")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 100)
+                .padding(8)
+                .liquidGlassForm()
+            }
+
+            // Explanation text for average deduction
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Text(averageDeductionNoteTitle)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.orange)
+                    Spacer()
+                }
+                Text(averageDeductionNoteMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(12)
+            .background(Color.orange.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
             LiquidGlassToggle(
                 useMultipleEmployersLabel,
                 icon: "building.2.fill",
@@ -206,16 +290,16 @@ struct SettingsView: View {
                     HStack {
                         Image(systemName: "info.circle")
                             .font(.caption)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.blue)
                         Text(variableScheduleEnabledTitle)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.blue)
                         Spacer()
                     }
                     Text(variableScheduleEnabledMessage)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .multilineTextAlignment(.leading)
                 }
@@ -228,7 +312,15 @@ struct SettingsView: View {
             if useMultipleEmployers && !employers.isEmpty {
                 VStack(spacing: 0) {
                     HStack {
-                        Label(defaultEmployerLabel, systemImage: "star.fill")
+                        HStack(spacing: 12) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(.blue)
+                                .symbolRenderingMode(.monochrome)
+                                .frame(width: 28, height: 28)
+                            Text(defaultEmployerLabel)
+                                .foregroundStyle(.primary)
+                        }
                         Spacer()
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -238,7 +330,7 @@ struct SettingsView: View {
                         }) {
                             Text(employers.first(where: { $0.id == defaultEmployerId })?.name ?? noneLabel)
                                 .font(.body)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                                 .background(Color(.secondarySystemGroupedBackground))
@@ -271,7 +363,15 @@ struct SettingsView: View {
             
             VStack(spacing: 0) {
                 HStack {
-                    Label(weekStartLabel, systemImage: "calendar")
+                    HStack(spacing: 12) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.blue)
+                            .symbolRenderingMode(.monochrome)
+                            .frame(width: 28, height: 28)
+                        Text(weekStartLabel)
+                            .foregroundStyle(.primary)
+                    }
                     Spacer()
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -281,7 +381,7 @@ struct SettingsView: View {
                     }) {
                         Text(localizedWeekDay(weekStartDay))
                             .font(.body)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(Color(.secondarySystemGroupedBackground))
@@ -321,11 +421,11 @@ struct SettingsView: View {
         VStack(spacing: 8) {
             Text(setYourGoalsTitle)
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
 
             Text(setYourGoalsDescription)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
         }
         .padding()
@@ -337,13 +437,29 @@ struct SettingsView: View {
     
     private var tipTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(tipTargetsSection, systemImage: "banknote.fill")
-                .font(.headline)
-                .foregroundColor(.primary)
+            HStack(spacing: 12) {
+                Image(systemName: "banknote.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.blue)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(tipTargetsSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
 
             HStack {
-                Label(tipPercentageTargetLabel, systemImage: "percent")
-                    .foregroundColor(.primary)
+                HStack(spacing: 12) {
+                    Image(systemName: "percent")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(tipPercentageTargetLabel)
+                        .foregroundStyle(.primary)
+                }
+                    .foregroundStyle(.primary)
                 Spacer()
                 HStack {
                     TextField("15", text: $tipTargetPercentage, onEditingChanged: { editing in
@@ -354,9 +470,9 @@ struct SettingsView: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                     Text("%")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(width: 100)
                 .padding(8)
@@ -369,15 +485,15 @@ struct SettingsView: View {
                 HStack {
                     Image(systemName: "info.circle")
                         .font(.caption)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                     Text(tipPercentageNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                 }
                 Text(tipPercentageNoteMessage)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
@@ -393,9 +509,17 @@ struct SettingsView: View {
     
     private var salesTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(salesTargetsSection, systemImage: "cart.fill")
-                .font(.headline)
-                .foregroundColor(.primary)
+            HStack(spacing: 12) {
+                Image(systemName: "cart.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.blue)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(salesTargetsSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
 
             targetRow(label: dailySalesTargetLabel,
                       icon: "chart.line.uptrend.xyaxis",
@@ -423,15 +547,15 @@ struct SettingsView: View {
                 HStack {
                     Image(systemName: "info.circle")
                         .font(.caption)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                     Text(variableScheduleNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                 }
                 Text(variableScheduleNoteMessage)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
@@ -447,9 +571,17 @@ struct SettingsView: View {
     
     private var hoursTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(hoursTargetsSection, systemImage: "clock.fill")
-                .font(.headline)
-                .foregroundColor(.primary)
+            HStack(spacing: 12) {
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.blue)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(hoursTargetsSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
 
             targetRow(label: dailyHoursTargetLabel,
                       icon: "timer",
@@ -480,15 +612,15 @@ struct SettingsView: View {
                 HStack {
                     Image(systemName: "info.circle")
                         .font(.caption)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                     Text(variableScheduleNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                 }
                 Text(variableScheduleHoursNoteMessage)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
@@ -510,7 +642,10 @@ struct SettingsView: View {
             }) {
                 HStack {
                     Image(systemName: "square.and.arrow.up.fill")
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
                     VStack(alignment: .leading) {
                         Text(exportDataButton)
                             .foregroundStyle(.primary)
@@ -535,7 +670,10 @@ struct SettingsView: View {
             // Support
             HStack {
                 Image(systemName: "envelope.fill")
+                    .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(.blue)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
                 VStack(alignment: .leading) {
                     Text(supportButton)
                         .foregroundStyle(.primary)
@@ -559,7 +697,10 @@ struct SettingsView: View {
             }) {
                 HStack {
                     Image(systemName: "lightbulb.fill")
-                        .foregroundStyle(.orange)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
                     Text(suggestIdeasButton)
                         .foregroundStyle(.primary)
                     Spacer()
@@ -595,19 +736,27 @@ struct SettingsView: View {
             
             // Cancel Subscription Section
             VStack(alignment: .leading, spacing: 12) {
-                Label(cancelSubscriptionTitle, systemImage: "creditcard.fill")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                HStack(spacing: 12) {
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(cancelSubscriptionTitle)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(cancelSubscriptionInstructions)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(cancelSubscriptionWarning)
                         .font(.caption)
-                        .foregroundColor(.orange)
+                        .foregroundStyle(.orange)
                         .fontWeight(.medium)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -624,7 +773,7 @@ struct SettingsView: View {
                         Spacer()
                         Image(systemName: "arrow.up.right")
                     }
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                     .padding(.vertical, 8)
                 }
             }
@@ -662,7 +811,7 @@ struct SettingsView: View {
             HStack {
                 Text(securityTitle)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.horizontal)
@@ -672,8 +821,16 @@ struct SettingsView: View {
             // Security Type Selection with Dropdown
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Label(securityOptionsLabel, systemImage: "lock.shield")
-                        .foregroundColor(.primary)
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.blue)
+                            .symbolRenderingMode(.monochrome)
+                            .frame(width: 28, height: 28)
+                        Text(securityOptionsLabel)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                    }
                     Spacer()
 
                     Menu {
@@ -701,7 +858,15 @@ struct SettingsView: View {
                                 HapticFeedback.selection()
                             }
                         }) {
-                            Label(noSecurityText, systemImage: "lock.open")
+                            HStack(spacing: 12) {
+                                Image(systemName: "lock.open")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.secondary)
+                                    .symbolRenderingMode(.monochrome)
+                                    .frame(width: 24, height: 24)
+                                Text(noSecurityText)
+                                    .foregroundStyle(.primary)
+                            }
                         }
 
                         Button(action: {
@@ -709,7 +874,15 @@ struct SettingsView: View {
                             securityManager.setSecurityType(.biometric)
                             HapticFeedback.selection()
                         }) {
-                            Label(faceIDText, systemImage: "faceid")
+                            HStack(spacing: 12) {
+                                Image(systemName: "faceid")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.secondary)
+                                    .symbolRenderingMode(.monochrome)
+                                    .frame(width: 24, height: 24)
+                                Text(faceIDText)
+                                    .foregroundStyle(.primary)
+                            }
                         }
 
                         Button(action: {
@@ -722,15 +895,23 @@ struct SettingsView: View {
                             }
                             HapticFeedback.selection()
                         }) {
-                            Label(pinCodeText, systemImage: "number.square")
+                            HStack(spacing: 12) {
+                                Image(systemName: "number.square.fill")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.secondary)
+                                    .symbolRenderingMode(.monochrome)
+                                    .frame(width: 24, height: 24)
+                                Text(pinCodeText)
+                                    .foregroundStyle(.primary)
+                            }
                         }
                     } label: {
                         HStack {
                             Text(currentSecurityText)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
@@ -744,7 +925,7 @@ struct SettingsView: View {
             // Security Description
             Text(securityDescriptionText)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding()
                 .multilineTextAlignment(.center)
         }
@@ -804,9 +985,8 @@ struct SettingsView: View {
             Spacer()
                 .frame(height: 30)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, sizeClass == .regular ? 32 : 16)
         .padding(.vertical)
-        .frame(maxWidth: sizeClass == .regular ? 600 : .infinity)
     }
     
     private var mainScrollView: some View {
@@ -829,7 +1009,7 @@ struct SettingsView: View {
                         Image(systemName: "xmark")
                             .font(.title2)
                             .fontWeight(.medium)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .frame(width: 32, height: 32)
                             .background(Color(.systemGray5))
                             .clipShape(Circle())
@@ -858,7 +1038,7 @@ struct SettingsView: View {
                             Image(systemName: "checkmark")
                                 .font(.title2)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                                 .frame(width: 32, height: 32)
                                 .background(hasUnsavedChanges ? Color.blue : Color.gray)
                                 .clipShape(Circle())
@@ -936,13 +1116,13 @@ struct SettingsView: View {
                                     } else {
                                         Text(sendSuggestionButton)
                                             .fontWeight(.semibold)
-                                            .foregroundColor(.black)
+                                            .foregroundStyle(.primary)
                                     }
                                     Spacer()
                                 }
                                 .frame(minHeight: 44)
                                 .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color.gray : Color.blue)
-                                .foregroundColor(.black)
+                                .foregroundStyle(.primary)
                                 .cornerRadius(8)
                             }
                             .listRowBackground(Color.clear)
@@ -959,7 +1139,7 @@ struct SettingsView: View {
                                 suggestionEmail = ""
                             }) {
                                 Image(systemName: "xmark")
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                             }
                         }
                     }
@@ -1025,7 +1205,7 @@ struct SettingsView: View {
             })
             .keyboardType(.decimalPad)
             .multilineTextAlignment(.trailing)
-            .foregroundColor(.blue)
+            .foregroundStyle(.blue)
             .frame(width: 100)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -1085,6 +1265,8 @@ struct SettingsView: View {
             
             struct Profile: Decodable {
                 let default_hourly_rate: Double
+                let average_deduction_percentage: Double?
+                let tip_target_percentage: Double?
                 let target_tip_daily: Double?
                 let target_tip_weekly: Double?
                 let target_tip_monthly: Double?
@@ -1110,6 +1292,8 @@ struct SettingsView: View {
             if let userProfile = profiles.first {
 
                 defaultHourlyRate = userProfile.default_hourly_rate > 0 ? String(format: "%.2f", userProfile.default_hourly_rate) : ""
+                averageDeductionPercentage = (userProfile.average_deduction_percentage ?? 30) > 0 ? String(format: "%.0f", userProfile.average_deduction_percentage ?? 30) : ""
+                tipTargetPercentage = (userProfile.tip_target_percentage ?? 0) > 0 ? String(format: "%.0f", userProfile.tip_target_percentage ?? 0) : ""
                 targetTipDaily = (userProfile.target_tip_daily ?? 0) > 0 ? String(format: "%.2f", userProfile.target_tip_daily ?? 0) : ""
                 targetTipWeekly = (userProfile.target_tip_weekly ?? 0) > 0 ? String(format: "%.2f", userProfile.target_tip_weekly ?? 0) : ""
                 targetTipMonthly = (userProfile.target_tip_monthly ?? 0) > 0 ? String(format: "%.2f", userProfile.target_tip_monthly ?? 0) : ""
@@ -1143,6 +1327,7 @@ struct SettingsView: View {
                 
                 struct ProfileUpdate: Encodable {
                     let default_hourly_rate: Double
+                    let average_deduction_percentage: Double
                     let tip_target_percentage: Double
                     let target_sales_daily: Double
                     let target_sales_weekly: Double
@@ -1156,9 +1341,10 @@ struct SettingsView: View {
                     let use_multiple_employers: Bool
                     let default_employer_id: String?
                 }
-                
+
                 let updates = ProfileUpdate(
                     default_hourly_rate: Double(defaultHourlyRate) ?? 15.00,
+                    average_deduction_percentage: min(100, max(0, Double(averageDeductionPercentage) ?? 30)),
                     tip_target_percentage: Double(tipTargetPercentage) ?? 0,
                     target_sales_daily: Double(targetSalesDaily) ?? 0,
                     target_sales_weekly: hasVariableSchedule ? 0 : (Double(targetSalesWeekly) ?? 0),
@@ -1387,8 +1573,8 @@ struct SettingsView: View {
                             showThankYouMessage = true
                             HapticFeedback.success()
 
-                            // Auto-close the form after 1 second
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            // Auto-close the form after showing the message for 2 seconds
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 showSuggestIdeas = false
                                 showThankYouMessage = false
                                 suggestionText = ""
@@ -1487,9 +1673,9 @@ struct SettingsView: View {
 
     var noSecurityText: String {
         switch language {
-        case "fr": return "Aucune sécurité"
-        case "es": return "Sin seguridad"
-        default: return "No Security"
+        case "fr": return "Aucune"
+        case "es": return "Ninguna"
+        default: return "None"
         }
     }
 
@@ -1578,6 +1764,30 @@ struct SettingsView: View {
         case "fr": return "Taux horaire"
         case "es": return "Tarifa por hora"
         default: return "Hourly Rate"
+        }
+    }
+
+    var averageDeductionLabel: String {
+        switch language {
+        case "fr": return "Déductions moyennes %"
+        case "es": return "Deducciones promedio %"
+        default: return "Average deductions %"
+        }
+    }
+
+    var averageDeductionNoteTitle: String {
+        switch language {
+        case "fr": return "À propos des déductions"
+        case "es": return "Acerca de las deducciones"
+        default: return "About deductions"
+        }
+    }
+
+    var averageDeductionNoteMessage: String {
+        switch language {
+        case "fr": return "Il s'agit de la déduction moyenne attendue sur votre salaire brut (impôts sur le revenu, cotisations sociales, etc.). Nous utiliserons ce pourcentage pour estimer votre salaire net, bien que le montant réel proviendra de votre bulletin de paie."
+        case "es": return "Este es el porcentaje de deducción promedio esperado de su salario bruto (impuestos sobre la renta, seguridad social, etc.). Usaremos esto para estimar su salario neto, aunque el monto real vendrá de su nómina."
+        default: return "This is the expected average deduction on your gross salary (income taxes, social security, etc.). We'll use this to estimate your net salary, though the actual amount will come from your payroll."
         }
     }
     
@@ -1936,8 +2146,8 @@ struct SettingsView: View {
                     Spacer()
 
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.green)
+                        .font(.largeTitle)
+                        .foregroundStyle(.green)
 
                     Text(thankYouTitle)
                         .font(.title2)
@@ -1945,7 +2155,7 @@ struct SettingsView: View {
 
                     Text(thankYouMessage)
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
 
@@ -1973,7 +2183,7 @@ struct SettingsView: View {
                             Image(systemName: "xmark")
                                 .font(.title2)
                                 .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                                 .frame(width: 32, height: 32)
                                 .background(Color(.systemGray5))
                                 .clipShape(Circle())
@@ -2000,7 +2210,7 @@ struct SettingsView: View {
                                 Image(systemName: "checkmark")
                                     .font(.title2)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.black)
+                                    .foregroundStyle(.primary)
                                     .frame(width: 32, height: 32)
                                     .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color.gray : Color.blue)
                                     .clipShape(Circle())
@@ -2017,18 +2227,18 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 16) {
                                 Label(yourSuggestionHeader, systemImage: "lightbulb.fill")
                                     .font(.headline)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
 
                                 Text(suggestionFooter)
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
 
                                 // Email field first
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(suggestionEmailPlaceholder)
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
 
                                     TextField(suggestionEmailPlaceholder, text: $suggestionEmail)
                                         .textFieldStyle(.plain)
@@ -2045,7 +2255,7 @@ struct SettingsView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(yourSuggestionHeader)
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
 
                                     TextEditor(text: $suggestionText)
                                         .font(.body)
@@ -2126,6 +2336,7 @@ struct SettingsView: View {
         guard let original = originalValues else { return false }
 
         return original.defaultHourlyRate != defaultHourlyRate ||
+               original.averageDeductionPercentage != averageDeductionPercentage ||
                original.tipTargetPercentage != tipTargetPercentage ||
                original.targetTipDaily != targetTipDaily ||
                original.targetTipWeekly != targetTipWeekly ||
@@ -2145,6 +2356,7 @@ struct SettingsView: View {
     private func storeOriginalValues() {
         originalValues = OriginalSettings(
             defaultHourlyRate: defaultHourlyRate,
+            averageDeductionPercentage: averageDeductionPercentage,
             tipTargetPercentage: tipTargetPercentage,
             targetTipDaily: targetTipDaily,
             targetTipWeekly: targetTipWeekly,

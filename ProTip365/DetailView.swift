@@ -6,7 +6,9 @@ struct DetailView: View {
     let periodText: String
     var onEditShift: (ShiftIncome) -> Void
     @Environment(\.dismiss) var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage("language") private var language = "en"
+    @AppStorage("averageDeductionPercentage") private var averageDeductionPercentage: Double = 30.0
     @AppStorage("targetTipDaily") private var targetTipDaily: Double = 0
     @AppStorage("targetTipWeekly") private var targetTipWeekly: Double = 0
     @AppStorage("targetTipMonthly") private var targetTipMonthly: Double = 0
@@ -42,9 +44,10 @@ struct DetailView: View {
         shifts.reduce(0) { $0 + ($1.cash_out ?? 0) }
     }
 
-    // Income = Salary + Tips + Other - Tip Out
+    // Income = Net Salary + Tips + Other - Tip Out
     var totalIncome: Double {
-        totalSalary + totalTips + totalOther - totalTipOut
+        let netSalary = totalSalary * (1 - averageDeductionPercentage / 100)
+        return netSalary + totalTips + totalOther - totalTipOut
     }
 
     var totalHours: Double {
@@ -112,25 +115,146 @@ struct DetailView: View {
                         if shifts.isEmpty {
                             EmptyStateView()
                         } else {
-                            // Summary Card - iOS 26 Liquid Glass Style
-                            summaryCard
+                            if horizontalSizeClass == .regular && detailType == "total" {
+                                // iPad Total Summary: Full-screen enhanced layout
+                                VStack(spacing: 32) {
+                                    // Top row: Cards spread across full width
+                                    HStack(alignment: .top, spacing: 24) {
+                                        summaryCard
+                                            .frame(maxWidth: .infinity)
 
-                            // Individual Shifts
-                            shiftsSection
+                                        // Additional statistics for iPad
+                                        additionalStatsCard
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .padding(.horizontal, 20)
+
+                                    // Shifts section below with grid layout for iPad
+                                    shiftsSection
+                                }
+                            } else if horizontalSizeClass == .regular {
+                                // iPad other views: Side-by-side layout
+                                HStack(alignment: .top, spacing: 20) {
+                                    // Summary on the left
+                                    summaryCard
+                                        .frame(maxWidth: 400)
+
+                                    // Shifts on the right
+                                    VStack(alignment: .leading) {
+                                        shiftsSection
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                            } else {
+                                // iPhone: Vertical layout
+                                summaryCard
+                                shiftsSection
+                            }
                         }
                     }
-                    .padding()
+                    .padding(horizontalSizeClass == .regular ? 32 : 20)
+                    .frame(maxWidth: horizontalSizeClass == .regular ? .infinity : .infinity)
                 }
             }
             .navigationTitle("\(periodText) \(detailTitle)")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(horizontalSizeClass == .regular ? .large : .inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(doneText) {
-                        dismiss()
+                ToolbarItem(placement: horizontalSizeClass == .regular ? .navigationBarLeading : .navigationBarTrailing) {
+                    Button(action: { dismiss() }) {
+                        if horizontalSizeClass == .regular {
+                            Label(doneText, systemImage: "xmark.circle.fill")
+                                .font(.title2)
+                        } else {
+                            Text(doneText)
+                        }
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var additionalStatsCard: some View {
+        VStack(spacing: 16) {
+            // Averages Section
+            VStack(spacing: 12) {
+                Text("AVERAGES & TRENDS")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Average per shift
+                HStack {
+                    Label("Avg per Shift", systemImage: "chart.line.uptrend.xyaxis")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(formatCurrency(shifts.isEmpty ? 0 : totalIncome / Double(shifts.count)))
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.blue)
+                }
+
+                // Average hourly rate
+                HStack {
+                    Label("Avg Hourly", systemImage: "clock.badge")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(formatCurrency(totalHours > 0 ? totalIncome / totalHours : 0) + "/hr")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.green)
+                }
+
+                // Average tip percentage
+                HStack {
+                    Label("Avg Tip %", systemImage: "percent")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(String(format: "%.1f%%", tipPercentage))
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.purple)
+                }
+
+                Divider()
+
+                // Best day
+                if let bestShift = shifts.max(by: { ($0.total_income ?? 0) < ($1.total_income ?? 0) }) {
+                    HStack {
+                        Label("Best Day", systemImage: "star.fill")
+                            .font(.body)
+                            .foregroundColor(.orange)
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(formatCurrency(bestShift.total_income ?? 0))
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.orange)
+                            Text(formatDate(bestShift.shift_date))
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                // Shift count
+                HStack {
+                    Label("Total Shifts", systemImage: "calendar")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text("\(shifts.count)")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                }
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 
@@ -145,9 +269,9 @@ struct DetailView: View {
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Salary
+                // Gross Salary
                 HStack {
-                    Label(salaryText, systemImage: "dollarsign.circle.fill")
+                    Label(grossSalaryText, systemImage: "dollarsign.circle")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
@@ -155,11 +279,27 @@ struct DetailView: View {
                         Text(formatCurrency(totalSalary))
                             .font(.body)
                             .fontWeight(.semibold)
-                        if targetIncome > 0 && totalSalary > 0 {
-                            Text("\(targetText): \(formatCurrency(targetIncome * 0.6))") // Assuming 60% is salary
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
+                        Text("\(hoursText): \(String(format: "%.1f", totalHours))")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                // Net Salary (after deductions)
+                HStack {
+                    Label(netSalaryText, systemImage: "dollarsign.bank.building")
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        let netSalary = totalSalary * (1 - averageDeductionPercentage / 100)
+                        Text(formatCurrency(netSalary))
+                            .font(.body)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.green)
+                        Text("-\(Int(averageDeductionPercentage))% deductions")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
                 }
 
@@ -184,7 +324,7 @@ struct DetailView: View {
                 // Other
                 if totalOther > 0 {
                     HStack {
-                        Label(otherText, systemImage: "plus.circle.fill")
+                        Label(otherText, systemImage: "square.and.pencil")
                             .font(.body)
                             .foregroundColor(.primary)
                         Spacer()
@@ -197,7 +337,7 @@ struct DetailView: View {
                 // Tip Out (negative)
                 if totalTipOut > 0 {
                     HStack {
-                        Label(tipOutText, systemImage: "minus.circle.fill")
+                        Label(tipOutText, systemImage: "minus.circle")
                             .font(.body)
                             .foregroundColor(.red)
                         Spacer()
@@ -243,7 +383,7 @@ struct DetailView: View {
 
                 // Total Hours
                 HStack {
-                    Label(totalHoursText, systemImage: "clock.fill")
+                    Label(totalHoursText, systemImage: "clock.badge")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
@@ -300,12 +440,26 @@ struct DetailView: View {
     @ViewBuilder
     private var shiftsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(shiftDetailsText)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.secondary)
+            HStack {
+                Text(shiftDetailsText)
+                    .font(horizontalSizeClass == .regular ? .headline : .caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("\(shifts.count) \(shifts.count == 1 ? "shift" : "shifts")")
+                    .font(horizontalSizeClass == .regular ? .headline : .caption)
+                    .foregroundColor(.secondary)
+            }
 
+            // Single column layout for all devices - no grid needed
             ForEach(shifts.sorted { $0.shift_date > $1.shift_date }, id: \.id) { shift in
+                shiftCard(for: shift)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func shiftCard(for shift: ShiftIncome) -> some View {
                 Button(action: {
                     onEditShift(shift)
                     HapticFeedback.light()
@@ -329,60 +483,177 @@ struct DetailView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        // Shift Stats Grid
-                        HStack(spacing: 20) {
-                            // Hours
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(hoursText)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(String(format: "%.1f", shift.hours))
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
+                        // Shift Stats Grid - Responsive based on device
+                        if horizontalSizeClass == .regular {
+                            // iPad: More detailed grid with proper spacing
+                            HStack(alignment: .top, spacing: 0) {
+                                // Hours
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(hoursText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(String(format: "%.1f", shift.hours))
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                }
+                                .frame(minWidth: 60)
 
-                            // Salary
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(salaryText)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                let salary = shift.base_income ?? (shift.hours * (shift.hourly_rate ?? 15.0))
-                                Text(formatCurrency(salary))
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
+                                Spacer()
 
-                            // Tips
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(tipsText)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formatCurrency(shift.tips))
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
+                                // Sales
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(salesText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formatCurrency(shift.sales))
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                }
+                                .frame(minWidth: 100)
 
-                            // Total
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(totalText)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formatCurrency(shift.total_income ?? 0))
-                                    .font(.subheadline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.green)
-                            }
+                                Spacer()
 
-                            Spacer()
+                                // Gross & Net Salary
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(grossSalaryText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    let salary = shift.base_income ?? (shift.hours * (shift.hourly_rate ?? 15.0))
+                                    Text(formatCurrency(salary))
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                }
+                                .frame(minWidth: 100)
+
+                                Spacer()
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(netSalaryText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    let salary = shift.base_income ?? (shift.hours * (shift.hourly_rate ?? 15.0))
+                                    let netSalary = salary * (1 - averageDeductionPercentage / 100)
+                                    Text(formatCurrency(netSalary))
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.green)
+                                }
+                                .frame(minWidth: 100)
+
+                                Spacer()
+
+                                // Tips with percentage
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(tipsText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(formatCurrency(shift.tips))
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                        if shift.sales > 0 {
+                                            Text("(\(String(format: "%.1f", (shift.tips / shift.sales) * 100))%)")
+                                                .font(.caption)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.green)
+                                        }
+                                    }
+                                }
+                                .frame(minWidth: 100)
+
+                                Spacer()
+
+                                // Other
+                                if let other = shift.other, other > 0 {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(otherText)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text(formatCurrency(other))
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                    }
+                                    .frame(minWidth: 80)
+
+                                    Spacer()
+                                }
+
+                                // Total
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(totalText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formatCurrency(shift.total_income ?? 0))
+                                        .font(.body)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.green)
+                                }
+                                .frame(minWidth: 100)
+                            }
+                        } else {
+                            // iPhone: Compact grid
+                            HStack(spacing: 20) {
+                                // Hours
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(hoursText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(String(format: "%.1f", shift.hours))
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                }
+
+                                // Net Salary (show net on iPhone for space)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(netSalaryText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    let salary = shift.base_income ?? (shift.hours * (shift.hourly_rate ?? 15.0))
+                                    let netSalary = salary * (1 - averageDeductionPercentage / 100)
+                                    Text(formatCurrency(netSalary))
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.green)
+                                }
+
+                                // Tips with percentage
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(tipsText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(formatCurrency(shift.tips))
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        if shift.sales > 0 {
+                                            Text("(\(String(format: "%.1f", (shift.tips / shift.sales) * 100))%)")
+                                                .font(.caption2)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.green)
+                                        }
+                                    }
+                                }
+
+                                // Total
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(totalText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formatCurrency(shift.total_income ?? 0))
+                                        .font(.subheadline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.green)
+                                }
+
+                                Spacer()
+                            }
                         }
                     }
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(PlainButtonStyle())
-            }
-        }
     }
 
     @ViewBuilder
@@ -511,6 +782,22 @@ struct DetailView: View {
         case "fr": return "Salaire"
         case "es": return "Salario"
         default: return "Salary"
+        }
+    }
+
+    var grossSalaryText: String {
+        switch language {
+        case "fr": return "Salaire brut"
+        case "es": return "Salario bruto"
+        default: return "Gross Salary"
+        }
+    }
+
+    var netSalaryText: String {
+        switch language {
+        case "fr": return "Salaire net"
+        case "es": return "Salario neto"
+        default: return "Net Salary"
         }
     }
 

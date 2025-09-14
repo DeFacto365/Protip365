@@ -75,15 +75,33 @@ struct SubscriptionView: View {
             .padding(.horizontal, 30)
             .disabled(isLoading)
             
-            // Restore Button
+            // Restore Button - More prominent for Sandbox testing
             Button(action: {
                 Task {
+                    isLoading = true
                     await subscriptionManager.restorePurchases()
+                    isLoading = false
+
+                    // If subscription restored, dismiss view
+                    if subscriptionManager.isSubscribed {
+                        // View will auto-dismiss based on subscription status
+                        HapticFeedback.success()
+                    }
                 }
             }) {
-                Text(restoreButton)
-                    .foregroundColor(.blue)
+                HStack {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .font(.body)
+                    Text(restoreButton)
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(.blue)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
             }
+            .disabled(isLoading)
             
             // Terms
             Text(termsText)

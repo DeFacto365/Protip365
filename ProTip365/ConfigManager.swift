@@ -46,41 +46,48 @@ class ConfigManager {
     }
 
     func printConfigurationStatus() {
-        print("🔧 Configuration Status:")
-        print("   Supabase URL: \(supabaseURL)")
-        print("   Anon Key: \(supabaseAnonKey.prefix(10))...\(supabaseAnonKey.suffix(10))")
-        print("   Key Length: \(supabaseAnonKey.count) characters")
-        print("   Key Format: \(supabaseAnonKey.hasPrefix("sb_") ? "Publishable" : supabaseAnonKey.hasPrefix("eyJ") ? "JWT" : "Unknown")")
+        #if DEBUG
+        print("🔧 Configuration Status: OK")
         print("   Environment: \(isUsingProductionConfig ? "Production" : "Development")")
-        print("   Info.plist Values:")
-        print("     SUPABASE_URL: \(Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String ?? "Not found")")
-        print("     SUPABASE_ANON_KEY: \((Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String)?.prefix(10) ?? "Not found")...")
+        #endif
     }
 
     func validateConfiguration() -> Bool {
+        #if DEBUG
         print("🔍 Validating Configuration...")
+        #endif
 
         guard !supabaseURL.isEmpty else {
-            print("❌ ERROR: Supabase URL is empty!")
+            #if DEBUG
+            print("❌ ERROR: Configuration issue detected")
+            #endif
             return false
         }
 
         guard !supabaseAnonKey.isEmpty else {
-            print("❌ ERROR: Supabase Anon Key is empty!")
+            #if DEBUG
+            print("❌ ERROR: Configuration issue detected")
+            #endif
             return false
         }
 
         guard supabaseURL.hasPrefix("https://") else {
-            print("❌ ERROR: Supabase URL must start with https://")
+            #if DEBUG
+            print("❌ ERROR: Configuration issue detected")
+            #endif
             return false
         }
 
         guard supabaseAnonKey.count > 20 else {
-            print("❌ ERROR: Supabase Anon Key seems too short!")
+            #if DEBUG
+            print("❌ ERROR: Configuration issue detected")
+            #endif
             return false
         }
 
+        #if DEBUG
         print("✅ Configuration validation passed")
+        #endif
         return true
     }
 }

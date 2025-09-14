@@ -7,7 +7,9 @@ class SupabaseManager: ObservableObject {
     let client: SupabaseClient = {
         let config = ConfigManager.shared
 
+        #if DEBUG
         print("🚀 Initializing SupabaseManager...")
+        #endif
         config.printConfigurationStatus()
 
         // Validate configuration before creating client
@@ -16,18 +18,17 @@ class SupabaseManager: ObservableObject {
         }
 
         guard let url = URL(string: config.supabaseURL) else {
-            fatalError("❌ Invalid Supabase URL format: \(config.supabaseURL)")
+            fatalError("❌ Invalid Supabase URL format")
         }
-
-        print("✅ Creating SupabaseClient with URL: \(url)")
-        print("✅ API Key format: \(config.supabaseAnonKey.hasPrefix("sb_") ? "Publishable" : "JWT")")
 
         let client = SupabaseClient(
             supabaseURL: url,
             supabaseKey: config.supabaseAnonKey
         )
 
+        #if DEBUG
         print("✅ SupabaseClient initialized successfully")
+        #endif
         return client
     }()
     

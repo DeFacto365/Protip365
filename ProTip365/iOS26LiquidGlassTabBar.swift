@@ -49,7 +49,7 @@ struct iOS26LiquidGlassTabBar: View {
                     .frame(height: 0.5)
             }
 
-            HStack(spacing: isLargeDevice ? 24 : 8) {
+            HStack(spacing: isLargeDevice ? 20 : 4) {
                 ForEach(tabItems, id: \.id) { item in
                     Button(action: {
                         // Haptic feedback
@@ -66,7 +66,8 @@ struct iOS26LiquidGlassTabBar: View {
                                 // No background for active state - clean iOS 26 look
 
                                 Image(systemName: selectedTab == item.id ? item.activeIcon : item.icon)
-                                    .font(.system(size: isLargeDevice ? 24 : 20, weight: selectedTab == item.id ? .semibold : .medium))
+                                    .font(.system(size: isLargeDevice ? 24 : 20, weight: selectedTab == item.id ? .semibold : .regular))
+                                    .symbolRenderingMode(.monochrome)
                                     .foregroundStyle(
                                         selectedTab == item.id ?
                                         .blue :
@@ -79,14 +80,14 @@ struct iOS26LiquidGlassTabBar: View {
 
                             // Labels with proper depth
                             Text(localizedLabel(for: item))
-                                .font(.system(size: isLargeDevice ? 12 : 10, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
+                                .font(.system(size: isLargeDevice ? 11 : 9, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
                                 .foregroundStyle(
                                     selectedTab == item.id ?
                                     .blue :
                                     Color.primary
                                 )
                         }
-                        .frame(minWidth: isLargeDevice ? 60 : 44, minHeight: isLargeDevice ? 60 : 50)
+                        .frame(minWidth: isLargeDevice ? 60 : 40, minHeight: isLargeDevice ? 60 : 50)
                         .frame(maxWidth: .infinity) // Fill available horizontal space
                         .multilineTextAlignment(.center)
                         .contentShape(Rectangle())
@@ -97,7 +98,7 @@ struct iOS26LiquidGlassTabBar: View {
                     .accessibilityAddTraits(selectedTab == item.id ? [.isSelected] : [])
                 }
             }
-            .padding(.horizontal, isLargeDevice ? 24 : 16)
+            .padding(.horizontal, isLargeDevice ? 20 : 12)
             .padding(.vertical, isLargeDevice ? 16 : 12)
             .padding(.bottom, safeAreaInsets.bottom > 0 ? (isLargeDevice ? -8 : -12) : -8)
         }
@@ -198,19 +199,19 @@ struct iOS26LiquidGlassMainView: View {
     private var tabItems: [TabItem] {
         var items = [
             TabItem(id: "dashboard", icon: "chart.bar", label: "Dashboard", activeIcon: "chart.bar.fill"),
-            TabItem(id: "calendar", icon: "calendar.badge", label: "Calendar", activeIcon: "calendar.badge")
+            TabItem(id: "calendar", icon: "calendar", label: "Calendar", activeIcon: "calendar")
         ]
-        
+
         // Only add employers if enabled
         if useMultipleEmployers {
             items.append(TabItem(id: "employers", icon: "building.2", label: "Employers", activeIcon: "building.2.fill"))
         }
-        
+
         items.append(contentsOf: [
             TabItem(id: "calculator", icon: "percent", label: "Calculator", activeIcon: "percent"),
             TabItem(id: "settings", icon: "gear", label: "Settings", activeIcon: "gear.circle.fill")
         ])
-        
+
         return items
     }
     

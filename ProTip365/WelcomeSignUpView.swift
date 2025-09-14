@@ -20,6 +20,7 @@ struct WelcomeSignUpView: View {
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
     @Environment(\.dismiss) var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     enum Field {
         case email, password, confirmPassword, userName
@@ -125,8 +126,9 @@ struct WelcomeSignUpView: View {
                                 }
                                 .disabled(!isStepValid || isLoading)
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 16)
                             .padding(.vertical, 20)
+                            .frame(maxWidth: horizontalSizeClass == .regular ? 500 : .infinity)
                         }
                     }
                 }
@@ -168,8 +170,12 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(emailError.isEmpty ? Color.clear : Color.red, lineWidth: 1)
@@ -237,8 +243,12 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
                     .textContentType(.newPassword)
                     .focused($focusedField, equals: .password)
                     .onChange(of: password) { _, _ in
@@ -255,8 +265,12 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(passwordError.isEmpty ? Color.clear : Color.red, lineWidth: 1)
@@ -321,8 +335,12 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
                     .textContentType(.name)
                     .focused($focusedField, equals: .userName)
             }

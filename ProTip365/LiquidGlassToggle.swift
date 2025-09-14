@@ -110,19 +110,10 @@ struct LiquidGlassToggle: View {
             HStack(spacing: 12) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 20))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
-                        .background(
-                            Circle()
-                                .fill(Color.accentColor.opacity(0.1))
-                        )
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

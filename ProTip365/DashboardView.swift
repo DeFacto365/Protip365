@@ -16,6 +16,7 @@ struct DashboardView: View {
     @State private var showingDetail = false
     @State private var detailViewData: DetailViewData? = nil
     @State private var editingShift: ShiftIncome? = nil
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     struct DetailViewData: Identifiable {
         let id = UUID()
@@ -24,11 +25,12 @@ struct DashboardView: View {
         let period: String
     }
     @State private var userTargets = UserTargets()
-    
+    @AppStorage("averageDeductionPercentage") private var averageDeductionPercentage: Double = 30.0
+
     // New managers for Phase 1 & 2 features
     @StateObject private var exportManager = ExportManager()
     @StateObject private var achievementManager = AchievementManager()
-    @StateObject private var alertManager = AlertManager()
+    @EnvironmentObject var alertManager: AlertManager
     @Namespace private var namespace
     @State private var showingExportOptions = false
     @State private var showingShareSheet = false
@@ -61,10 +63,15 @@ struct DashboardView: View {
         var tips: Double = 0
         var tipOut: Double = 0
         var other: Double = 0
-        var income: Double = 0  // This is salary (hours × rate)
+        var income: Double = 0  // This is GROSS salary (hours × rate)
         var tipPercentage: Double = 0
-        var totalRevenue: Double = 0  // salary + tips + other - tipout
+        var totalRevenue: Double = 0  // NET salary + tips + other - tipout
         var shifts: [ShiftIncome] = []
+
+        // Calculate net salary after deductions
+        func netIncome(deductionPercentage: Double) -> Double {
+            return income * (1 - deductionPercentage / 100)
+        }
     }
     
     struct UserTargets {
@@ -96,20 +103,32 @@ struct DashboardView: View {
                         // Stats Cards (Main Content Layer)
                         statsCardsSection
                             .onAppear {
+                                #if DEBUG
                                 print("🎯 Stats Cards Section Appeared")
-                                print("  - Selected Period: \(selectedPeriod)")
-                                print("  - Is Year View: \(selectedPeriod == 3)")
-                                print("  - Stats Preloaded: \(statsPreloaded)")
-                                print("  - Current Stats Income: \(currentStats.income)")
-                                print("  - Current Stats Tips: \(currentStats.tips)")
+                                #endif
                             }
                     }
-                    .padding(.horizontal, Constants.leadingContentInset)
-                    .padding(.bottom, Constants.tabBarHeight + Constants.safeAreaPadding)
+                    .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 12)  // Reduced from 26 to 12 for iPhone
+                    .padding(.bottom, horizontalSizeClass == .regular ? 20 : (Constants.tabBarHeight + 15))  // Reduced bottom padding
+                    .frame(maxWidth: .infinity)
                 }
                 .refreshable {
-                    await preloadAllStats()
+                    // Force fresh data load on pull-to-refresh
+                    await MainActor.run {
+                        // Reset preloaded flag to ensure fresh fetch
+                        statsPreloaded = false
+                    }
+
+                    // Fetch fresh data from Supabase
+                    await preloadAllStats(forceRefresh: true)
                     await loadTargets()
+
+                    // Check for achievements after refresh
+                    await MainActor.run {
+                        achievementManager.checkForAchievements(shifts: currentStats.shifts, currentStats: currentStats, targets: userTargets)
+                        alertManager.checkForMissingShifts(shifts: currentStats.shifts, targets: userTargets)
+                        alertManager.checkForTargetAchievements(currentStats: currentStats, targets: userTargets, period: selectedPeriod)
+                    }
                 }
                 
                 // Loading indicator overlay (show during initial load)
@@ -147,7 +166,18 @@ struct DashboardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
             }
-            .sheet(item: $detailViewData) { data in
+            .fullScreenCover(item: horizontalSizeClass == .regular ? $detailViewData : .constant(nil)) { data in
+                DetailView(
+                    shifts: data.shifts.sorted { $0.shift_date > $1.shift_date },
+                    detailType: data.type,
+                    periodText: data.period,
+                    onEditShift: { shift in
+                        editingShift = shift
+                        detailViewData = nil
+                    }
+                )
+            }
+            .sheet(item: horizontalSizeClass != .regular ? $detailViewData : .constant(nil)) { data in
                 DetailView(
                     shifts: data.shifts.sorted { $0.shift_date > $1.shift_date },
                     detailType: data.type,
@@ -182,12 +212,14 @@ struct DashboardView: View {
                 if !initialLoadStarted && !statsPreloaded {
                     initialLoadStarted = true
                     Task {
-                        let startTime = Date()
-                        print("📊 Dashboard - Fallback load triggered at \(startTime)")
                         await preloadAllStats()
                         await loadTargets()
-                        let loadTime = Date().timeIntervalSince(startTime)
-                        print("📊 Dashboard - Fallback load completed in \(String(format: "%.2f", loadTime)) seconds")
+                    }
+                } else if statsPreloaded {
+                    // If we already have data but view is appearing again,
+                    // do a background refresh to catch any changes from other devices
+                    Task {
+                        await preloadAllStats(forceRefresh: true)
                     }
                 }
             }
@@ -214,7 +246,12 @@ struct DashboardView: View {
             .sheet(isPresented: $achievementManager.showAchievement) {
                 AchievementView(achievement: achievementManager.currentAchievement!)
             }
-            .sheet(item: $editingShift) { shift in
+            .sheet(item: $editingShift, onDismiss: {
+                // Reload data after editing
+                Task {
+                    await preloadAllStats()
+                }
+            }) { shift in
                 AddEntryView(editingShift: shift)
                     .environmentObject(SupabaseManager.shared)
             }
@@ -250,29 +287,32 @@ struct DashboardView: View {
     
     func formatIncomeWithTarget() -> String {
         let income = formatCurrency(currentStats.income)
-        let target: Double
-        switch selectedPeriod {
-        case 1: target = userTargets.weeklyIncome
-        case 2: target = userTargets.monthlyIncome
-        case 3: target = userTargets.monthlyIncome * 12 // Yearly target = monthly * 12
-        default: target = userTargets.dailyIncome
+        // Only show target for Today tab (selectedPeriod == 0)
+        if selectedPeriod == 0 {
+            let target = userTargets.dailyIncome
+            let result = target > 0 ? "\(income)/\(formatCurrency(target))" : income
+            print("💰 Format Income: Period=\(selectedPeriod), Income=\(income), Target=\(target), Result=\(result)")
+            return result
+        } else {
+            // For Week, Month, Year - just show income without target
+            print("💰 Format Income: Period=\(selectedPeriod), Income=\(income), No target for non-daily periods")
+            return income
         }
-        let result = target > 0 ? "\(income)/\(formatCurrency(target))" : income
-        print("💰 Format Income: Period=\(selectedPeriod), Income=\(income), Target=\(target), Result=\(result)")
-        return result
     }
     
     func formatTipsWithTarget() -> String {
         let tips = formatCurrency(currentStats.tips)
-        let percentageStr = currentStats.sales > 0 ? " (\(String(format: "%.1f", currentStats.tipPercentage))%)" : ""
+        // Make percentage more prominent with bullet separator
+        let percentageStr = currentStats.sales > 0 ? " • \(String(format: "%.1f", currentStats.tipPercentage))%" : ""
 
-        if userTargets.tipTargetPercentage > 0 && currentStats.sales > 0 {
+        // Only show target for Today tab (selectedPeriod == 0)
+        if selectedPeriod == 0 && userTargets.tipTargetPercentage > 0 && currentStats.sales > 0 {
             let targetAmount = currentStats.sales * (userTargets.tipTargetPercentage / 100.0)
             let result = "\(tips)/\(formatCurrency(targetAmount))\(percentageStr)"
             print("💵 Format Tips: Period=\(selectedPeriod), Tips=\(tips), Sales=\(currentStats.sales), Target%=\(userTargets.tipTargetPercentage), TargetAmount=\(targetAmount), Percentage=\(currentStats.tipPercentage), Result=\(result)")
             return result
         } else {
-            print("💵 Format Tips: Period=\(selectedPeriod), Tips=\(tips), Percentage=\(currentStats.tipPercentage), No target or sales")
+            print("💵 Format Tips: Period=\(selectedPeriod), Tips=\(tips), Percentage=\(currentStats.tipPercentage), No target or only showing for Today")
             return tips + percentageStr
         }
     }
@@ -282,7 +322,32 @@ struct DashboardView: View {
     }
     
     func formatHoursWithTarget() -> String {
-        return String(format: "%.1fh", currentStats.hours)
+        let hoursStr = String(format: "%.1fh", currentStats.hours)
+        let target = getHoursTarget()
+        if target > 0 {
+            let percentage = (currentStats.hours / target) * 100
+            return "\(hoursStr) (\(Int(percentage))%)"
+        }
+        return hoursStr
+    }
+
+    private func getHoursTarget() -> Double {
+        switch selectedPeriod {
+        case 0: return userTargets.dailyHours
+        case 1: return userTargets.weeklyHours
+        case 2:
+            // For month view, use monthly target or calculate from 4 weeks if in 4-week mode
+            if monthViewType == 1 && userTargets.weeklyHours > 0 {
+                return userTargets.weeklyHours * 4
+            }
+            return userTargets.monthlyHours
+        case 3:
+            // For year view, calculate based on months elapsed
+            let calendar = Calendar.current
+            let currentMonth = calendar.component(.month, from: Date())
+            return userTargets.monthlyHours * Double(currentMonth)
+        default: return 0
+        }
     }
     
     func formatDateShort(_ date: Date) -> String {
@@ -292,6 +357,37 @@ struct DashboardView: View {
         return formatter.string(from: date)
     }
     
+    private func getSalesTarget() -> Double {
+        switch selectedPeriod {
+        case 0: return userTargets.dailySales
+        case 1: return userTargets.weeklySales
+        case 2:
+            // For month view, use monthly target or calculate from 4 weeks if in 4-week mode
+            if monthViewType == 1 && userTargets.weeklySales > 0 {
+                return userTargets.weeklySales * 4
+            }
+            return userTargets.monthlySales
+        case 3:
+            // For year view, calculate based on months elapsed
+            let calendar = Calendar.current
+            let currentMonth = calendar.component(.month, from: Date())
+            return userTargets.monthlySales * Double(currentMonth)
+        default: return 0
+        }
+    }
+
+    private func getProgressColor(percentage: Double) -> Color {
+        if percentage >= 100 {
+            return .green
+        } else if percentage >= 75 {
+            return .purple
+        } else if percentage >= 50 {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+
     func formatCurrency(_ amount: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -339,6 +435,7 @@ struct DashboardView: View {
             
             struct Profile: Decodable {
                 let default_hourly_rate: Double
+                let average_deduction_percentage: Double?
                 let tip_target_percentage: Double?
                 let target_sales_daily: Double?
                 let target_sales_weekly: Double?
@@ -347,16 +444,17 @@ struct DashboardView: View {
                 let target_hours_weekly: Double?
                 let target_hours_monthly: Double?
             }
-            
+
             let profiles: [Profile] = try await SupabaseManager.shared.client
                 .from("users_profile")
                 .select()
                 .eq("user_id", value: userId)
                 .execute()
                 .value
-            
+
             if let profile = profiles.first {
                 defaultHourlyRate = profile.default_hourly_rate
+                averageDeductionPercentage = profile.average_deduction_percentage ?? 30.0
                 userTargets.tipTargetPercentage = profile.tip_target_percentage ?? 0
                 userTargets.dailySales = profile.target_sales_daily ?? 0
                 userTargets.weeklySales = profile.target_sales_weekly ?? 0
@@ -375,7 +473,7 @@ struct DashboardView: View {
         }
     }
     
-    func preloadAllStats() async {
+    func preloadAllStats(forceRefresh: Bool = false) async {
         await MainActor.run {
             isLoading = true
         }
@@ -383,7 +481,9 @@ struct DashboardView: View {
             Task { @MainActor in
                 isLoading = false
                 statsPreloaded = true
-                print("📊 Dashboard - Stats preloaded successfully")
+                if forceRefresh {
+                    HapticFeedback.success()
+                }
             }
         }
         
@@ -408,12 +508,17 @@ struct DashboardView: View {
             dateFormatter.dateFormat = "yyyy-MM-dd"
             
             // Load Today's data
+            // Add a small delay on force refresh to ensure data is synced
+            if forceRefresh {
+                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
+            }
+
             let todayQuery = SupabaseManager.shared.client
                 .from("v_shift_income")
                 .select()
                 .eq("user_id", value: userId.uuidString)
                 .eq("shift_date", value: dateFormatter.string(from: today))
-            
+
             let todayShifts: [ShiftIncome] = try await todayQuery.execute().value
             var todayStatsTemp = Stats()
             todayStatsTemp.shifts = todayShifts
@@ -502,8 +607,9 @@ struct DashboardView: View {
                     stats.other += (shift.other ?? 0)
                 }
 
-                // Calculate total revenue: salary + tips + other - tip out
-                stats.totalRevenue = stats.income + stats.tips + stats.other - stats.tipOut
+                // Calculate total revenue: NET salary + tips + other - tip out
+                let netSalary = stats.income * (1 - averageDeductionPercentage / 100)
+                stats.totalRevenue = netSalary + stats.tips + stats.other - stats.tipOut
 
                 if stats.sales > 0 && !stats.sales.isNaN && !stats.tips.isNaN {
                     stats.tipPercentage = (stats.tips / stats.sales) * 100
@@ -516,36 +622,30 @@ struct DashboardView: View {
             
             // Update all stats
             await MainActor.run {
+                // Clear existing data if force refresh
+                if forceRefresh {
+                    todayStats = Stats()
+                    weekStats = Stats()
+                    monthStats = Stats()
+                    yearStats = Stats()
+                    fourWeeksStats = Stats()
+                }
+
+                // Calculate and update with fresh data
                 todayStats = calculateStats(for: todayShifts)
                 weekStats = calculateStats(for: weekShifts)
                 monthStats = calculateStats(for: monthShifts)
                 yearStats = calculateStats(for: yearShifts)
                 fourWeeksStats = calculateStats(for: fourWeeksShifts)
 
-                // Debug logging
-                print("📊 Dashboard - Today Stats:")
-                print("  Hours: \(todayStats.hours)")
-                print("  Income (Salary): \(todayStats.income)")
-                print("  Tips: \(todayStats.tips)")
-                print("  Other: \(todayStats.other)")
-                print("  Tip Out: \(todayStats.tipOut)")
-                print("  Total Revenue: \(todayStats.totalRevenue)")
-                print("  Shifts count: \(todayStats.shifts.count)")
-
-                print("📊 Dashboard - Year Stats:")
-                print("  Total Revenue: \(yearStats.totalRevenue)")
-                print("  Shifts count: \(yearStats.shifts.count)")
-
-                print("📊 Dashboard - 4 Weeks Stats:")
-                print("  Total Revenue: \(fourWeeksStats.totalRevenue)")
-                print("  Shifts count: \(fourWeeksStats.shifts.count)")
-
-                if let firstShift = todayStats.shifts.first {
-                    print("📊 First shift details:")
-                    print("  Hours: \(firstShift.hours)")
-                    print("  Base Income: \(firstShift.base_income ?? 0)")
-                    print("  Hourly Rate: \(firstShift.hourly_rate ?? 0)")
-                    print("  Has Earnings: \(firstShift.has_earnings)")
+                // Log refresh status
+                if forceRefresh {
+                    #if DEBUG
+                    print("📊 Dashboard - Data refreshed successfully")
+                    print("  Today: \(todayStats.shifts.count) shifts")
+                    print("  Week: \(weekStats.shifts.count) shifts")
+                    print("  Month: \(monthStats.shifts.count) shifts")
+                    #endif
                 }
             }
             
@@ -569,6 +669,7 @@ struct DashboardView: View {
             .padding()
             .liquidGlassCard()
             .padding(.horizontal)
+            .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
             .onChange(of: selectedPeriod) { _, _ in
                 HapticFeedback.selection()
             }
@@ -619,7 +720,9 @@ struct DashboardView: View {
                 // Use compact horizontal cards for all views
                 unifiedCompactCards
                     .onAppear {
+                        #if DEBUG
                         print("📊 Unified Cards Rendered (Period: \(selectedPeriod))")
+                        #endif
                     }
             }
             .padding(.horizontal)
@@ -627,21 +730,218 @@ struct DashboardView: View {
     }
 
     private var regularViewCards: some View {
-        let _ = print("📆 Building Regular View Cards for Period: \(selectedPeriod)")
         let incomeValue = formatIncomeWithTarget()
         let tipsValue = formatTipsWithTarget()
-        let _ = print("  Regular Cards - Income: \(incomeValue)")
-        let _ = print("  Regular Cards - Tips: \(tipsValue)")
 
         return Group {
-            // First Row: Total Salary and Tips (with percentage)
-            HStack(spacing: 16) {
+            // Sales Card at the top (full width)
+            VStack(spacing: 4) {
+                ZStack(alignment: .bottom) {
                     GlassStatCard(
-                        title: totalSalaryText,
-                        value: incomeValue,
+                        title: salesText,
+                        value: formatCurrency(currentStats.sales),
+                        icon: "cart.fill",
+                        color: .purple,
+                        subtitle: getSalesTarget() > 0
+                            ? "\(Int((currentStats.sales / getSalesTarget()) * 100))% of target"
+                            : nil
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .frame(maxWidth: horizontalSizeClass == .regular ? 800 : .infinity)
+                    .onTapGesture {
+                        let filtered = currentStats.shifts.filter { $0.sales > 0 }
+                        detailViewData = DetailViewData(
+                            type: "sales",
+                            shifts: filtered,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+
+                    // Add progress indicator for all tabs with targets
+                    if getSalesTarget() > 0 {
+                        VStack(spacing: 4) {
+                            let target = getSalesTarget()
+                            let percentage = (currentStats.sales / target) * 100
+
+                            // Progress bar
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    // Background
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.purple.opacity(0.2))
+                                        .frame(height: 8)
+
+                                    // Progress
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(getProgressColor(percentage: percentage))
+                                        .frame(width: min(geometry.size.width * (percentage / 100), geometry.size.width), height: 8)
+                                        .animation(.easeInOut(duration: 0.3), value: currentStats.sales)
+                                }
+                            }
+                            .frame(height: 8)
+
+                            // Target text with percentage
+                            HStack {
+                                Text("\(Int(percentage))% of target")
+                                    .font(.caption2)
+                                    .foregroundStyle(getProgressColor(percentage: percentage))
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Text("Target: \(formatCurrency(target))")
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                    }
+                }
+
+                // Gray separator line like tip-out
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 1)
+                    .frame(maxWidth: horizontalSizeClass == .regular ? 800 : .infinity)
+                    .padding(.horizontal, 16)
+            }
+
+            // Adaptive layout for iPad vs iPhone
+            if horizontalSizeClass == .regular {
+                // iPad: 3-column layout
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ], spacing: 16) {
+                    // Row 1: Salary, Hours, Tips
+                    GlassStatCard(
+                        title: expectedNetSalaryText,
+                        value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                         icon: "dollarsign.bank.building",
                         color: .blue,
-                        subtitle: basePayFromHoursText
+                        subtitle: "\(totalGrossSalaryText): \(incomeValue)"
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        let filteredShifts = currentStats.shifts.filter { shift in
+                            let hasIncome: Bool
+                            if let baseIncome = shift.base_income {
+                                hasIncome = baseIncome > 0
+                            } else {
+                                hasIncome = (shift.hours * (shift.hourly_rate ?? defaultHourlyRate)) > 0
+                            }
+                            return hasIncome
+                        }
+                        detailViewData = DetailViewData(
+                            type: "income",
+                            shifts: filteredShifts,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+
+                    GlassStatCard(
+                        title: hoursWorkedText,
+                        value: formatHoursWithTarget(),
+                        icon: "clock.badge",
+                        color: .teal,
+                        subtitle: getHoursTarget() > 0
+                            ? "\(Int((currentStats.hours / getHoursTarget()) * 100))% of target"
+                            : actualVsExpectedHoursText
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        let filtered = currentStats.shifts.filter { $0.hours > 0 }
+                        detailViewData = DetailViewData(
+                            type: "hours",
+                            shifts: filtered,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+
+                    // Tips card with percentage badge
+                    ZStack(alignment: .topTrailing) {
+                        GlassStatCard(
+                            title: tipsText,
+                            value: tipsValue,
+                            icon: "banknote.fill",
+                            color: .green,
+                            subtitle: currentStats.tipPercentage > 0 ? String(format: "%.1f%% of sales", currentStats.tipPercentage) : customerTipsReceivedText
+                        )
+                        .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                        .onTapGesture {
+                            let filtered = currentStats.shifts.filter { $0.tips > 0 }
+                            detailViewData = DetailViewData(
+                                type: "tips",
+                                shifts: filtered,
+                                period: periodText
+                            )
+                            HapticFeedback.light()
+                        }
+
+                        // Percentage badge
+                        if currentStats.tipPercentage > 0 {
+                            Text(String(format: "%.0f%%", currentStats.tipPercentage))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.purple)
+                                .cornerRadius(8)
+                                .offset(x: -8, y: 8)
+                        }
+                    }
+
+                    // Row 2: Other and Total Revenue
+                    GlassStatCard(
+                        title: otherText,
+                        value: formatCurrency(currentStats.other),
+                        icon: "square.and.pencil",
+                        color: .blue,
+                        subtitle: otherAmountReceivedText
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        let filtered = currentStats.shifts.filter { ($0.other ?? 0) > 0 }
+                        detailViewData = DetailViewData(
+                            type: "other",
+                            shifts: filtered,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+
+                    GlassStatCard(
+                        title: totalRevenueText,
+                        value: formatCurrency(currentStats.totalRevenue),
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: .blue,
+                        subtitle: salaryPlusTipsFormulaText
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        let filtered = currentStats.shifts.filter { ($0.total_income ?? 0) > 0 }
+                        detailViewData = DetailViewData(
+                            type: "total",
+                            shifts: filtered,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+                }
+            } else {
+                // iPhone: 2-column layout
+                HStack(spacing: 16) {
+                    GlassStatCard(
+                        title: expectedNetSalaryText,
+                        value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
+                        icon: "dollarsign.bank.building",
+                        color: .blue,
+                        subtitle: "\(totalGrossSalaryText): \(incomeValue)"
                     )
                     .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
                     .onTapGesture {
@@ -673,15 +973,38 @@ struct DashboardView: View {
                         print("  DetailViewData created with \(filteredShifts.count) shifts")
                         HapticFeedback.light()
                     }
-                    
+
+                    GlassStatCard(
+                        title: hoursWorkedText,
+                        value: formatHoursWithTarget(),
+                        icon: "clock.badge",
+                        color: .teal,
+                        subtitle: getHoursTarget() > 0
+                            ? "\(Int((currentStats.hours / getHoursTarget()) * 100))% of target"
+                            : actualVsExpectedHoursText
+                    )
+                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                    .onTapGesture {
+                        let filtered = currentStats.shifts.filter { $0.hours > 0 }
+                        detailViewData = DetailViewData(
+                            type: "hours",
+                            shifts: filtered,
+                            period: periodText
+                        )
+                        HapticFeedback.light()
+                    }
+                }
+
+                // Second Row: Tips (with percentage badge and sales info)
+                HStack(spacing: 16) {
                     // Tips card with percentage badge
                     ZStack(alignment: .topTrailing) {
                         GlassStatCard(
                             title: tipsText,
                             value: tipsValue,
                             icon: "banknote.fill",
-                            color: .blue,
-                            subtitle: customerTipsReceivedText
+                            color: .green,
+                            subtitle: currentStats.tipPercentage > 0 ? String(format: "%.1f%% of sales", currentStats.tipPercentage) : customerTipsReceivedText
                         )
                         .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
                         .onTapGesture {
@@ -693,7 +1016,7 @@ struct DashboardView: View {
                             )
                             HapticFeedback.light()
                         }
-                        
+
                         // Percentage badge
                         if currentStats.tipPercentage > 0 {
                             Text(String(format: "%.0f%%", currentStats.tipPercentage))
@@ -707,10 +1030,7 @@ struct DashboardView: View {
                                 .offset(x: -8, y: 8)
                         }
                     }
-                }
-                
-                // Second Row: Other and Total Revenue
-                HStack(spacing: 16) {
+
                     GlassStatCard(
                         title: otherText,
                         value: formatCurrency(currentStats.other),
@@ -728,64 +1048,27 @@ struct DashboardView: View {
                         )
                         HapticFeedback.light()
                     }
-                    
-                    GlassStatCard(
-                        title: totalRevenueText,
-                        value: formatCurrency(currentStats.totalRevenue),
-                        icon: "chart.line.uptrend.xyaxis",
-                        color: .blue,
-                        subtitle: salaryPlusTipsFormulaText
-                    )
-                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
-                    .onTapGesture {
-                        let filtered = currentStats.shifts.filter { ($0.total_income ?? 0) > 0 }
-                        detailViewData = DetailViewData(
-                            type: "total",
-                            shifts: filtered,
-                            period: periodText
-                        )
-                        HapticFeedback.light()
-                    }
                 }
-                
-                // Third Row: Hours and Sales
-                HStack(spacing: 16) {
-                    GlassStatCard(
-                        title: hoursWorkedText,
-                        value: formatHoursWithTarget(),
-                        icon: "clock.badge",
-                        color: .teal,
-                        subtitle: actualVsExpectedHoursText
+
+                // Third Row: Total Revenue (alone, full width)
+                GlassStatCard(
+                    title: totalRevenueText,
+                    value: formatCurrency(currentStats.totalRevenue),
+                    icon: "chart.line.uptrend.xyaxis",
+                    color: .blue,
+                    subtitle: salaryPlusTipsFormulaText
+                )
+                .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
+                .onTapGesture {
+                    let filtered = currentStats.shifts.filter { ($0.total_income ?? 0) > 0 }
+                    detailViewData = DetailViewData(
+                        type: "total",
+                        shifts: filtered,
+                        period: periodText
                     )
-                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
-                    .onTapGesture {
-                        let filtered = currentStats.shifts.filter { $0.hours > 0 }
-                        detailViewData = DetailViewData(
-                            type: "hours",
-                            shifts: filtered,
-                            period: periodText
-                        )
-                        HapticFeedback.light()
-                    }
-                    
-                    GlassStatCard(
-                        title: salesText,
-                        value: formatSalesWithTarget(),
-                        icon: "dollarsign.circle",
-                        color: .indigo,
-                        subtitle: totalSalesServedText
-                    )
-                    .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
-                    .onTapGesture {
-                        let filtered = currentStats.shifts.filter { $0.sales > 0 }
-                        detailViewData = DetailViewData(
-                            type: "sales",
-                            shifts: filtered,
-                            period: periodText
-                        )
-                        HapticFeedback.light()
-                    }
+                    HapticFeedback.light()
                 }
+            } // End of iPhone layout else block
                 
                 // Show hint for clickable cards
                 if !currentStats.shifts.isEmpty {
@@ -799,21 +1082,53 @@ struct DashboardView: View {
 
     private var unifiedCompactCards: some View {
         VStack(spacing: 12) {
+            // Sales at the top
+            VStack(spacing: 4) {
+                CompactGlassStatCard(
+                    title: salesText,
+                    value: formatCurrency(currentStats.sales),
+                    icon: "cart.fill",
+                    color: .purple,
+                    subtitle: getSalesTarget() > 0
+                        ? "\(Int((currentStats.sales / getSalesTarget()) * 100))% of target"
+                        : nil
+                )
+
+                // Gray separator line
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 1)
+                    .padding(.horizontal, 16)
+            }
+
             // Income Cards
             CompactGlassStatCard(
-                title: totalSalaryText,
-                value: formatCurrency(currentStats.income),
+                title: expectedNetSalaryText,
+                value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                 icon: "dollarsign.circle.fill",
                 color: .blue,
-                subtitle: nil
+                subtitle: "\(totalGrossSalaryText): \(formatCurrency(currentStats.income))"
+            )
+
+            // Hours below salary
+            CompactGlassStatCard(
+                title: hoursWorkedText,
+                value: String(format: "%.1f hours", currentStats.hours),
+                icon: "clock.badge",
+                color: .blue,
+                subtitle: getHoursTarget() > 0
+                    ? "\(Int((currentStats.hours / getHoursTarget()) * 100))% of target"
+                    : nil
             )
 
             CompactGlassStatCard(
                 title: tipsText,
                 value: formatCurrency(currentStats.tips),
                 icon: "banknote.fill",
-                color: .blue,
-                subtitle: nil
+                color: .green,
+                subtitle: currentStats.tipPercentage > 0
+                    ? String(format: "%.1f%% of sales • Target: %.0f%%", currentStats.tipPercentage, userTargets.tipTargetPercentage)
+                    : nil
             )
 
             if currentStats.other > 0 {
@@ -868,27 +1183,12 @@ struct DashboardView: View {
                 Text(formatCurrency(currentStats.totalRevenue))
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(.green)
+                    .foregroundStyle(.primary)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
-            // Performance Metrics
-            CompactGlassStatCard(
-                title: hoursWorkedText,
-                value: String(format: "%.1f hours", currentStats.hours),
-                icon: "clock.badge",
-                color: .blue,
-                subtitle: nil
-            )
-
-            CompactGlassStatCard(
-                title: salesText,
-                value: formatCurrency(currentStats.sales),
-                icon: "dollarsign.circle",
-                color: .blue,
-                subtitle: nil
-            )
+            // Performance Metrics section removed - sales already shown in tips subtitle
 
             // Show Details Button
             if !currentStats.shifts.isEmpty {
@@ -919,20 +1219,45 @@ struct DashboardView: View {
     }
 
     private var yearViewCards: some View {
-        let _ = print("📅 Building Year View Cards")
         let incomeValue = formatIncomeWithTarget()
         let tipsValue = formatTipsWithTarget()
-        let _ = print("  Income Value: \(incomeValue)")
-        let _ = print("  Tips Value: \(tipsValue)")
 
         return VStack(spacing: 12) {
+            // Sales at the top
+            VStack(spacing: 4) {
+                CompactGlassStatCard(
+                    title: salesText,
+                    value: formatCurrency(currentStats.sales),
+                    icon: "cart.fill",
+                    color: .purple,
+                    subtitle: getSalesTarget() > 0
+                        ? "\(Int((currentStats.sales / getSalesTarget()) * 100))% of target"
+                        : nil
+                )
+                .onTapGesture {
+                    let filtered = currentStats.shifts.filter { $0.sales > 0 }
+                    detailViewData = DetailViewData(
+                        type: "sales",
+                        shifts: filtered,
+                        period: periodText
+                    )
+                    HapticFeedback.light()
+                }
+
+                // Gray separator line
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 1)
+                    .padding(.horizontal, 16)
+            }
+
             // Total Salary
             CompactGlassStatCard(
-                title: totalSalaryText,
-                value: incomeValue,
+                title: expectedNetSalaryText,
+                value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                 icon: "dollarsign.circle.fill",
                 color: .blue,
-                subtitle: "Base pay from hours worked"
+                subtitle: "\(totalGrossSalaryText): \(incomeValue)"
             )
             .onTapGesture {
                 print("💰 Year Salary Card Tapped")
@@ -958,7 +1283,27 @@ struct DashboardView: View {
                 HapticFeedback.light()
             }
 
-            // Tips
+            // Hours Worked (moved below salary)
+            CompactGlassStatCard(
+                title: hoursWorkedText,
+                value: formatHoursWithTarget(),
+                icon: "clock.badge",
+                color: .purple,
+                subtitle: getHoursTarget() > 0
+                    ? "\(Int((currentStats.hours / getHoursTarget()) * 100))% of target"
+                    : totalHoursCompletedText
+            )
+            .onTapGesture {
+                let filtered = currentStats.shifts.filter { $0.hours > 0 }
+                detailViewData = DetailViewData(
+                    type: "hours",
+                    shifts: filtered,
+                    period: periodText
+                )
+                HapticFeedback.light()
+            }
+
+            // Tips with sales info in subtitle
             CompactGlassStatCard(
                 title: tipsText,
                 value: tipsValue,
@@ -1006,42 +1351,6 @@ struct DashboardView: View {
                 let filtered = currentStats.shifts.filter { ($0.total_income ?? 0) > 0 }
                 detailViewData = DetailViewData(
                     type: "total",
-                    shifts: filtered,
-                    period: periodText
-                )
-                HapticFeedback.light()
-            }
-
-            // Hours Worked
-            CompactGlassStatCard(
-                title: hoursWorkedText,
-                value: formatHoursWithTarget(),
-                icon: "clock.badge",
-                color: .purple,
-                subtitle: totalHoursCompletedText
-            )
-            .onTapGesture {
-                let filtered = currentStats.shifts.filter { $0.hours > 0 }
-                detailViewData = DetailViewData(
-                    type: "hours",
-                    shifts: filtered,
-                    period: periodText
-                )
-                HapticFeedback.light()
-            }
-
-            // Sales
-            CompactGlassStatCard(
-                title: salesText,
-                value: formatSalesWithTarget(),
-                icon: "dollarsign.circle",
-                color: .indigo,
-                subtitle: totalSalesServedText
-            )
-            .onTapGesture {
-                let filtered = currentStats.shifts.filter { $0.sales > 0 }
-                detailViewData = DetailViewData(
-                    type: "sales",
                     shifts: filtered,
                     period: periodText
                 )
@@ -1128,11 +1437,19 @@ struct DashboardView: View {
         }
     }
 
-    private var totalSalaryText: String {
+    private var totalGrossSalaryText: String {
         switch language {
-        case "fr": return "Salaire total"
-        case "es": return "Salario total"
-        default: return "Total Salary"
+        case "fr": return "Salaire brut prévu"
+        case "es": return "Salario bruto esperado"
+        default: return "Expected Gross Salary"
+        }
+    }
+
+    private var expectedNetSalaryText: String {
+        switch language {
+        case "fr": return "Salaire net"
+        case "es": return "Salario neto"
+        default: return "Net Salary"
         }
     }
 

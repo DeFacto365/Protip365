@@ -52,7 +52,7 @@ struct GlassStatCard: View {
                 Text(title)
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
 
@@ -99,7 +99,7 @@ struct GlassStatCard: View {
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -134,12 +134,12 @@ struct CompactGlassStatCard: View {
                 Text(title)
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
 
                 if let subtitle = subtitle, !subtitle.isEmpty {
                     Text(subtitle)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                 }
             }
