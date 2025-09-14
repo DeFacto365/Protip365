@@ -10,6 +10,9 @@ struct CalendarShiftsView: View {
     @State private var showDeleteAlert = false
     @State private var targetSalesDaily: Double = 0
     @State private var targetTipsDaily: Double = 0
+    @State private var showExistingShiftAlert = false
+    @State private var showNewEntryView = false
+    @State private var existingShiftsForSelectedDate: [ShiftIncome] = []
     @AppStorage("language") private var language = "en"
     
     // Calendar date range - show current month plus/minus 2 months
@@ -31,10 +34,12 @@ struct CalendarShiftsView: View {
                         shiftsForDate: shiftsForDate,
                         onDateTapped: { date in
                             selectedDate = date
-                        }
+                        },
+                        language: language
                     )
-                    .frame(height: 320)
-                    .liquidGlassCard()
+                    .frame(height: 340)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
 
                     // Color legend
@@ -55,7 +60,7 @@ struct CalendarShiftsView: View {
                     Color.clear
                         .frame(height: 20)
                 }
-                .padding(.top, 8)
+                .padding(.top, 20)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(calendarTitle)
@@ -100,6 +105,36 @@ struct CalendarShiftsView: View {
         } message: {
             Text(deleteConfirmationMessage)
         }
+        .alert("Existing Shift Found", isPresented: $showExistingShiftAlert) {
+            Button("Edit Existing Shift") {
+                // Edit the first existing shift
+                if let firstShift = existingShiftsForSelectedDate.first {
+                    shiftToEditAsEntry = firstShift
+                }
+            }
+            Button("Add New Shift") {
+                // Create a new shift for the same day
+                showNewEntryView = true
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            let shiftCount = existingShiftsForSelectedDate.count
+            let message = shiftCount == 1
+                ? "You have 1 shift on this date. Would you like to edit it or add another shift?"
+                : "You have \(shiftCount) shifts on this date. Would you like to edit the first one or add another shift?"
+            Text(message)
+        }
+        .sheet(isPresented: $showNewEntryView) {
+            NavigationStack {
+                AddEntryView(initialDate: selectedDate)
+                    .environmentObject(SupabaseManager.shared)
+                    .onDisappear {
+                        Task {
+                            await loadAllShifts()
+                        }
+                    }
+            }
+        }
     }
     
     // MARK: - Selected Date Shifts View
@@ -130,7 +165,7 @@ struct CalendarShiftsView: View {
             }
         }
         .padding(.vertical, 8)
-        .background(Color(.systemGroupedBackground))
+        .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
     }
@@ -143,7 +178,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.green)
                     .frame(width: 8, height: 8)
-                Text("Completed")
+                Text(completedText)
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -153,7 +188,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.cyan)
                     .frame(width: 8, height: 8)
-                Text("Scheduled")
+                Text(scheduledText)
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -163,7 +198,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.red)
                     .frame(width: 8, height: 8)
-                Text("Missed")
+                Text(missedText)
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -180,12 +215,22 @@ struct CalendarShiftsView: View {
             // Single button logic based on date
             if isPastDateOrToday {
                 // For past/today: Show "Add Entry" button (for actual data)
-                NavigationLink(destination: AddEntryView(initialDate: selectedDate)) {
+                Button(action: {
+                    // Check if there are existing shifts for this date
+                    existingShiftsForSelectedDate = shiftsForDate(selectedDate)
+                    if !existingShiftsForSelectedDate.isEmpty {
+                        // Show alert to ask user what they want to do
+                        showExistingShiftAlert = true
+                    } else {
+                        // No existing shifts, create new entry
+                        showNewEntryView = true
+                    }
+                }) {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
                             .foregroundStyle(.blue)
-                        Text("Add Entry")
+                        Text(addEntryText)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
                     }
@@ -205,7 +250,7 @@ struct CalendarShiftsView: View {
                         Image(systemName: "calendar.badge.plus")
                             .font(.title2)
                             .foregroundStyle(.purple)
-                        Text("Add Shift")
+                        Text(addShiftText)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
                     }
@@ -254,6 +299,17 @@ struct CalendarShiftsView: View {
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
+
+        // Set locale based on app language setting
+        switch language {
+        case "fr":
+            formatter.locale = Locale(identifier: "fr_FR")
+        case "es":
+            formatter.locale = Locale(identifier: "es_ES")
+        default:
+            formatter.locale = Locale(identifier: "en_US")
+        }
+
         return formatter.string(from: date)
     }
     
@@ -263,19 +319,24 @@ struct CalendarShiftsView: View {
 
             struct ProfileTargets: Decodable {
                 let target_sales_daily: Double?
-                let target_tip_daily: Double?
+                let tip_target_percentage: Double?
             }
 
             let profile: ProfileTargets = try await SupabaseManager.shared.client
                 .from("users_profile")
-                .select("target_sales_daily, target_tip_daily")
+                .select("target_sales_daily, tip_target_percentage")
                 .eq("user_id", value: userId)
                 .single()
                 .execute()
                 .value
 
             targetSalesDaily = profile.target_sales_daily ?? 0
-            targetTipsDaily = profile.target_tip_daily ?? 0
+            // Calculate daily tip target based on percentage if available
+            if let tipPercentage = profile.tip_target_percentage, tipPercentage > 0, targetSalesDaily > 0 {
+                targetTipsDaily = targetSalesDaily * (tipPercentage / 100.0)
+            } else {
+                targetTipsDaily = 0
+            }
 
             print("📊 Loaded targets - Sales: \(targetSalesDaily), Tips: \(targetTipsDaily)")
         } catch {
@@ -458,11 +519,43 @@ struct CalendarShiftsView: View {
         }
     }
 
-    private var cancelText: String {
+    private var completedText: String {
         switch language {
-        case "fr": return "Annuler"
-        case "es": return "Cancelar"
-        default: return "Cancel"
+        case "fr": return "Complété"
+        case "es": return "Completado"
+        default: return "Completed"
+        }
+    }
+
+    private var scheduledText: String {
+        switch language {
+        case "fr": return "Planifié"
+        case "es": return "Programado"
+        default: return "Scheduled"
+        }
+    }
+
+    private var addShiftText: String {
+        switch language {
+        case "fr": return "Ajouter quart"
+        case "es": return "Agregar turno"
+        default: return "Add Shift"
+        }
+    }
+
+    private var missedText: String {
+        switch language {
+        case "fr": return "Manqué"
+        case "es": return "Perdido"
+        default: return "Missed"
+        }
+    }
+
+    private var editText: String {
+        switch language {
+        case "fr": return "Modifier"
+        case "es": return "Editar"
+        default: return "Edit"
         }
     }
 
@@ -471,6 +564,62 @@ struct CalendarShiftsView: View {
         case "fr": return "Supprimer"
         case "es": return "Eliminar"
         default: return "Delete"
+        }
+    }
+
+    private var salesText: String {
+        switch language {
+        case "fr": return "Ventes"
+        case "es": return "Ventas"
+        default: return "Sales"
+        }
+    }
+
+    private var salaryText: String {
+        switch language {
+        case "fr": return "Salaire"
+        case "es": return "Salario"
+        default: return "Salary"
+        }
+    }
+
+    private var tipsText: String {
+        switch language {
+        case "fr": return "Pourboires"
+        case "es": return "Propinas"
+        default: return "Tips"
+        }
+    }
+
+    private var otherText: String {
+        switch language {
+        case "fr": return "Autre"
+        case "es": return "Otro"
+        default: return "Other"
+        }
+    }
+
+    private var tipOutText: String {
+        switch language {
+        case "fr": return "Partage"
+        case "es": return "Reparto"
+        default: return "Tip Out"
+        }
+    }
+
+    private var totalText: String {
+        switch language {
+        case "fr": return "TOTAL"
+        case "es": return "TOTAL"
+        default: return "TOTAL"
+        }
+    }
+
+    private var cancelText: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
         }
     }
 
@@ -562,13 +711,14 @@ struct ShiftRowView: View {
     let targetTipsDaily: Double
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @AppStorage("language") private var language = "en"
 
     var body: some View {
         let _ = print("🎯 ShiftRowView - Sales Target: \(targetSalesDaily), Tips Target: \(targetTipsDaily)")
-        return VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
-                // Left side - Employer and Hours
-                VStack(alignment: .leading, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 12) {
+            // Top section - Employer and Hours
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     // Employer name at the top (smaller to fit on one line)
                     if let employer = shift.employer_name {
                         Text(employer)
@@ -641,169 +791,147 @@ struct ShiftRowView: View {
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Right side - Financial Breakdown with 3 column alignment
-                if shift.has_earnings {
-                    VStack(spacing: 3) {
-                        // Sales with budget comparison
-                        if shift.sales > 0 || targetSalesDaily > 0 {
-                            HStack(spacing: 8) {
-                                Text("Sales")
+                Spacer()
+            }
+
+            // Financial Breakdown section - shown below employer/hours
+            if shift.has_earnings {
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Sales
+                        if shift.sales > 0 {
+                            HStack {
+                                Text(salesText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .frame(width: 45, alignment: .leading)
-
+                                Spacer()
                                 Text(formatCurrency(shift.sales))
                                     .font(.caption)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                    .frame(width: 55, alignment: .trailing)
-
-                                Text(targetSalesDaily > 0 ? "/\(Int(targetSalesDaily))" : "")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 35, alignment: .trailing)
                             }
+                            .frame(width: 120)
 
                             Divider()
                                 .padding(.vertical, 1)
                         }
 
-                        // Salary with expected calculation
+                        // Salary
                         if let baseIncome = shift.base_income, baseIncome > 0 {
-                            let expectedSalary = (shift.expected_hours ?? 0) * (shift.hourly_rate ?? 0)
-                            HStack(spacing: 8) {
-                                Text("Salary")
+                            HStack {
+                                Text(salaryText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .frame(width: 45, alignment: .leading)
-
+                                Spacer()
                                 Text(formatCurrency(baseIncome))
                                     .font(.caption)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                    .frame(width: 55, alignment: .trailing)
-
-                                Text(expectedSalary > 0 ? "/\(Int(expectedSalary))" : "")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 35, alignment: .trailing)
                             }
+                            .frame(width: 120)
                         }
 
-                        // Tips with budget comparison
-                        if shift.tips > 0 || targetTipsDaily > 0 {
-                            HStack(spacing: 8) {
-                                Text("Tips")
+                        // Tips
+                        if shift.tips > 0 {
+                            HStack {
+                                Text(tipsText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .frame(width: 45, alignment: .leading)
-
+                                Spacer()
                                 Text(formatCurrency(shift.tips))
                                     .font(.caption)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                    .frame(width: 55, alignment: .trailing)
-
-                                Text(targetTipsDaily > 0 ? "/\(Int(targetTipsDaily))" : "")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 35, alignment: .trailing)
                             }
+                            .frame(width: 120)
                         }
 
-                        // Other (no budget)
+                        // Other
                         if let other = shift.other, other > 0 {
-                            HStack(spacing: 8) {
-                                Text("Other")
+                            HStack {
+                                Text(otherText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .frame(width: 45, alignment: .leading)
-
+                                Spacer()
                                 Text(formatCurrency(other))
                                     .font(.caption)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                    .frame(width: 55, alignment: .trailing)
-
-                                Text("")  // Empty space for alignment
-                                    .frame(width: 35, alignment: .trailing)
                             }
+                            .frame(width: 120)
                         }
 
-                        // Tip Out (no budget, negative value)
+                        // Tip Out (negative value)
                         if let tipOut = shift.cash_out, tipOut > 0 {
-                            HStack(spacing: 8) {
-                                Text("Tip Out")
+                            HStack {
+                                Text(tipOutText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                    .frame(width: 45, alignment: .leading)
-
+                                Spacer()
                                 Text("-\(formatCurrency(tipOut))")
                                     .font(.caption)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.red)
-                                    .frame(width: 55, alignment: .trailing)
-
-                                Text("")  // Empty space for alignment
-                                    .frame(width: 35, alignment: .trailing)
                             }
+                            .frame(width: 120)
                         }
 
-                        // Total - spans two columns for more space
+                        // Total
                         Divider()
-                            .padding(.vertical, 1)
+                            .frame(width: 120)
 
-                        HStack(spacing: 8) {
-                            Text("TOTAL")
+                        HStack {
+                            Text(totalText)
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.secondary)
-                                .frame(width: 45, alignment: .leading)
-
-                            // Total spans both actual and budget columns
+                                .foregroundColor(.primary)
+                            Spacer()
                             Text(formatCurrency(shift.total_income ?? 0))
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
-                                .frame(width: 90, alignment: .trailing)  // 55 + 35 = 90
                         }
+                        .frame(width: 120)
                     }
-                    .padding(.leading, -5)  // Shift entire section slightly left
-                } else {
-                    // Show expected label for future shifts or missed work
-                    VStack(alignment: .trailing, spacing: 4) {
-                        // Check if this is a "didn't work" entry by checking the notes field for known reasons
-                        let didntWorkReasons = [
-                            "Sick", "Shift Cancelled", "Personal Day", "Holiday", "No-Show", "Other",
-                            "Malade", "Quart annulé", "Jour personnel", "Jour férié", "Absence", "Autre",
-                            "Enfermo", "Turno cancelado", "Día personal", "Día festivo", "Ausencia", "Otro"
-                        ]
+                    .padding(12)
+                    .background(Color(.tertiarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                // Show expected label for future shifts or missed work
+                HStack {
+                    Spacer()
+                    // Check if this is a "didn't work" entry by checking the notes field for known reasons
+                    let didntWorkReasons = [
+                        "Sick", "Shift Cancelled", "Personal Day", "Holiday", "No-Show", "Other",
+                        "Malade", "Quart annulé", "Jour personnel", "Jour férié", "Absence", "Autre",
+                        "Enfermo", "Turno cancelado", "Día personal", "Día festivo", "Ausencia", "Otro"
+                    ]
 
-                        let isDidntWork = shift.notes.map { didntWorkReasons.contains($0) } ?? false
+                    let isDidntWork = shift.notes.map { didntWorkReasons.contains($0) } ?? false
 
-                        if isDidntWork, let reason = shift.notes {
-                            // Show the reason code for "didn't work" entries
-                            Text(reason.uppercased())
-                                .font(.caption)
-                                .textCase(.uppercase)
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color.red.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        } else {
-                            // Show "SCHEDULED" for regular future shifts
-                            Text("SCHEDULED")
-                                .font(.caption)
-                                .textCase(.uppercase)
-                                .foregroundColor(.blue)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        }
+                    if isDidntWork, let reason = shift.notes {
+                        // Show the reason code for "didn't work" entries
+                        Text(reason.uppercased())
+                            .font(.caption)
+                            .textCase(.uppercase)
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.red.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    } else {
+                        // Show "SCHEDULED" for regular future shifts
+                        Text("SCHEDULED")
+                            .font(.caption)
+                            .textCase(.uppercase)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 12)
 
             // Action buttons at the bottom
             HStack(spacing: 12) {
@@ -814,7 +942,7 @@ struct ShiftRowView: View {
                     HStack {
                         Image(systemName: "pencil")
                             .font(.system(size: 14))
-                        Text("Edit")
+                        Text(editText)
                             .font(.caption)
                     }
                     .foregroundStyle(.blue)
@@ -831,7 +959,7 @@ struct ShiftRowView: View {
                     HStack {
                         Image(systemName: "trash")
                             .font(.system(size: 14))
-                        Text("Delete")
+                        Text(deleteText)
                             .font(.caption)
                     }
                     .foregroundStyle(.red)
@@ -845,6 +973,8 @@ struct ShiftRowView: View {
             .padding(.bottom, 8)
             .padding(.top, 4)
         }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
@@ -866,6 +996,71 @@ struct ShiftRowView: View {
     private func formatCurrency(_ amount: Double) -> String {
         return String(format: "$%.2f", amount)
     }
+
+    // Localized strings
+    private var salesText: String {
+        switch language {
+        case "fr": return "Ventes"
+        case "es": return "Ventas"
+        default: return "Sales"
+        }
+    }
+
+    private var salaryText: String {
+        switch language {
+        case "fr": return "Salaire"
+        case "es": return "Salario"
+        default: return "Salary"
+        }
+    }
+
+    private var tipsText: String {
+        switch language {
+        case "fr": return "Pourboires"
+        case "es": return "Propinas"
+        default: return "Tips"
+        }
+    }
+
+    private var otherText: String {
+        switch language {
+        case "fr": return "Autre"
+        case "es": return "Otro"
+        default: return "Other"
+        }
+    }
+
+    private var tipOutText: String {
+        switch language {
+        case "fr": return "Partage"
+        case "es": return "Reparto"
+        default: return "Tip Out"
+        }
+    }
+
+    private var totalText: String {
+        switch language {
+        case "fr": return "TOTAL"
+        case "es": return "TOTAL"
+        default: return "TOTAL"
+        }
+    }
+
+    private var editText: String {
+        switch language {
+        case "fr": return "Modifier"
+        case "es": return "Editar"
+        default: return "Edit"
+        }
+    }
+
+    private var deleteText: String {
+        switch language {
+        case "fr": return "Supprimer"
+        case "es": return "Eliminar"
+        default: return "Delete"
+        }
+    }
 }
 
 // MARK: - Custom Calendar View
@@ -873,6 +1068,7 @@ struct CustomCalendarView: View {
     @Binding var selectedDate: Date
     let shiftsForDate: (Date) -> [ShiftIncome]
     let onDateTapped: (Date) -> Void
+    let language: String
     
     @State private var currentMonth = Date()
     private let calendar = Calendar.current
@@ -906,7 +1102,7 @@ struct CustomCalendarView: View {
             
             // Day headers
             HStack(spacing: 0) {
-                ForEach(calendar.shortWeekdaySymbols, id: \.self) { day in
+                ForEach(localizedWeekdaySymbols, id: \.self) { day in
                     Text(day)
                         .font(.caption)
                         .fontWeight(.medium)
@@ -935,7 +1131,8 @@ struct CustomCalendarView: View {
             }
             .padding(.horizontal)
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.vertical, 16)
     }
     
     private var monthDates: [Date] {
@@ -964,9 +1161,37 @@ struct CustomCalendarView: View {
     private var monthYearText: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
+
+        // Set locale based on app language setting
+        switch language {
+        case "fr":
+            formatter.locale = Locale(identifier: "fr_FR")
+        case "es":
+            formatter.locale = Locale(identifier: "es_ES")
+        default:
+            formatter.locale = Locale(identifier: "en_US")
+        }
+
         return formatter.string(from: currentMonth)
     }
-    
+
+    private var localizedWeekdaySymbols: [String] {
+        let localizedCalendar = Calendar.current
+        var calendar = localizedCalendar
+
+        // Set locale based on app language setting
+        switch language {
+        case "fr":
+            calendar.locale = Locale(identifier: "fr_FR")
+        case "es":
+            calendar.locale = Locale(identifier: "es_ES")
+        default:
+            calendar.locale = Locale(identifier: "en_US")
+        }
+
+        return calendar.shortWeekdaySymbols
+    }
+
     private func previousMonth() {
         currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
     }

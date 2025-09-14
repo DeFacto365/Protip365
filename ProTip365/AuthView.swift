@@ -12,9 +12,10 @@ struct AuthView: View {
     @State private var showPasswordReset = false
     @State private var resetEmail = ""
     @State private var showResetSuccess = false
+    @State private var showWelcomeSignUp = false
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
-    
+
     enum Field {
         case email, password
     }
@@ -22,22 +23,8 @@ struct AuthView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Language selector and debug button at top
+                // Language selector at top
                 HStack {
-                    // Debug button for configuration
-                    Button(action: {
-                        print("🐛 Debug: Configuration Check")
-                        let config = ConfigManager.shared
-                        config.printConfigurationStatus()
-                        let isValid = config.validateConfiguration()
-                        print("🔍 Configuration valid: \(isValid)")
-                    }) {
-                        Image(systemName: "ladybug.fill")
-                            .font(.subheadline)
-                            .foregroundColor(.red)
-                    }
-                    .padding(.trailing, 8)
-
                     Spacer()
 
                     Menu {
@@ -53,7 +40,7 @@ struct AuthView: View {
                         .foregroundColor(.blue)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemGroupedBackground))
                         .cornerRadius(20)
                     }
                 }
@@ -64,11 +51,10 @@ struct AuthView: View {
                 // Logo and title
                 VStack(spacing: 16) {
                     // App Icon/Logo
-                    Image(systemName: "percent")
-                        .font(.system(size: 60, weight: .bold))
-                        .foregroundColor(.primary)
+                    Image("Logo2")
+                        .resizable()
+                        .scaledToFit()
                         .frame(width: 100, height: 100)
-                        .background(Color(.systemGray6))
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .shadow(radius: 10)
                     
@@ -96,7 +82,7 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .cornerRadius(12)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
@@ -118,7 +104,7 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .cornerRadius(12)
                             .textContentType(isSignUp ? .newPassword : .password)
                             .focused($focusedField, equals: .password)
@@ -169,9 +155,15 @@ struct AuthView: View {
                     .opacity(email.isEmpty || password.isEmpty ? 0.6 : 1.0)
                     
                     Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isSignUp.toggle()
-                            password = "" // Clear password when switching modes
+                        if isSignUp {
+                            // If we're in sign-up mode, go back to sign-in
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isSignUp = false
+                                password = "" // Clear password when switching modes
+                            }
+                        } else {
+                            // If we're in sign-in mode, show the welcome sign-up flow
+                            showWelcomeSignUp = true
                         }
                     }) {
                         Text(isSignUp ? switchToSignIn : switchToSignUp)
@@ -226,7 +218,7 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .cornerRadius(12)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
@@ -268,6 +260,9 @@ struct AuthView: View {
             }
         } message: {
             Text(resetSuccessMessage)
+        }
+        .fullScreenCover(isPresented: $showWelcomeSignUp) {
+            WelcomeSignUpView(isAuthenticated: $isAuthenticated)
         }
     }
     

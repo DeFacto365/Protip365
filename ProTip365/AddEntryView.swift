@@ -87,6 +87,158 @@ struct AddEntryView: View {
         default: return "Status"
         }
     }
+
+    private var okButtonText: String {
+        switch language {
+        case "fr": return "OK"
+        case "es": return "OK"
+        default: return "OK"
+        }
+    }
+
+    private var errorSavingEntryText: String {
+        switch language {
+        case "fr": return "Erreur lors de l'enregistrement"
+        case "es": return "Error al guardar"
+        default: return "Error Saving Entry"
+        }
+    }
+
+    private var editEntryText: String {
+        switch language {
+        case "fr": return "Modifier l'entrée"
+        case "es": return "Editar entrada"
+        default: return "Edit Entry"
+        }
+    }
+
+    private var newEntryText: String {
+        switch language {
+        case "fr": return "Nouvelle entrée"
+        case "es": return "Nueva entrada"
+        default: return "New Entry"
+        }
+    }
+
+    private var employerText: String {
+        switch language {
+        case "fr": return "Employeur"
+        case "es": return "Empleador"
+        default: return "Employer"
+        }
+    }
+
+    private var startsText: String {
+        switch language {
+        case "fr": return "Début"
+        case "es": return "Inicio"
+        default: return "Starts"
+        }
+    }
+
+    private var endsText: String {
+        switch language {
+        case "fr": return "Fin"
+        case "es": return "Fin"
+        default: return "Ends"
+        }
+    }
+
+    private var lunchBreakText: String {
+        switch language {
+        case "fr": return "Pause déjeuner"
+        case "es": return "Descanso para almorzar"
+        default: return "Lunch Break"
+        }
+    }
+
+    private var totalHoursText: String {
+        switch language {
+        case "fr": return "Heures totales"
+        case "es": return "Horas totales"
+        default: return "Total Hours"
+        }
+    }
+
+    private var salesText: String {
+        switch language {
+        case "fr": return "Ventes"
+        case "es": return "Ventas"
+        default: return "Sales"
+        }
+    }
+
+    private var tipsText: String {
+        switch language {
+        case "fr": return "Pourboires"
+        case "es": return "Propinas"
+        default: return "Tips"
+        }
+    }
+
+    private var tipOutText: String {
+        switch language {
+        case "fr": return "Partage de pourboires"
+        case "es": return "Propinas compartidas"
+        default: return "Tip Out"
+        }
+    }
+
+    private var otherText: String {
+        switch language {
+        case "fr": return "Autre"
+        case "es": return "Otro"
+        default: return "Other"
+        }
+    }
+
+    private var notesText: String {
+        switch language {
+        case "fr": return "Notes"
+        case "es": return "Notas"
+        default: return "Notes"
+        }
+    }
+
+    private var optionalNotesText: String {
+        switch language {
+        case "fr": return "Notes optionnelles"
+        case "es": return "Notas opcionales"
+        default: return "Optional notes"
+        }
+    }
+
+    private var summaryText: String {
+        switch language {
+        case "fr": return "Résumé"
+        case "es": return "Resumen"
+        default: return "Summary"
+        }
+    }
+
+    private var grossPayText: String {
+        switch language {
+        case "fr": return "Salaire brut"
+        case "es": return "Pago bruto"
+        default: return "Gross Pay"
+        }
+    }
+
+    private var totalEarningsText: String {
+        switch language {
+        case "fr": return "Gains totaux"
+        case "es": return "Ganancias totales"
+        default: return "Total Earnings"
+        }
+    }
+
+    private var hoursUnit: String {
+        switch language {
+        case "fr": return "hrs"
+        case "es": return "hrs"
+        default: return "hours"
+        }
+    }
     
     private var calculatedHours: Double {
         // Return 0 hours if didn't work
@@ -180,8 +332,8 @@ struct AddEntryView: View {
                         // Summary Card - iOS 26 Style
                         summaryCard
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 10)
                 }
             }
         }
@@ -195,8 +347,8 @@ struct AddEntryView: View {
                 }
             }
         }
-        .alert("Error Saving Entry", isPresented: $showErrorAlert) {
-            Button("OK") { }
+        .alert(errorSavingEntryText, isPresented: $showErrorAlert) {
+            Button(okButtonText) { }
         } message: {
             Text(errorMessage)
         }
@@ -220,7 +372,7 @@ struct AddEntryView: View {
             
             Spacer()
             
-            Text(editingShift != nil ? "Edit Entry" : "New Entry")
+            Text(editingShift != nil ? editEntryText : newEntryText)
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -246,8 +398,8 @@ struct AddEntryView: View {
             .clipShape(Circle())
             .disabled(isLoading)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .background(Color(.systemGroupedBackground))
     }
     
@@ -257,7 +409,7 @@ struct AddEntryView: View {
             // Employer Row (if enabled)
             if useMultipleEmployers {
                 HStack {
-                    Text("Employer")
+                    Text(employerText)
                         .font(.body)
                         .foregroundColor(.primary)
                     
@@ -276,14 +428,14 @@ struct AddEntryView: View {
                         Text(selectedEmployer?.name ?? "Select Employer")
                             .font(.body)
                             .foregroundColor(.primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
                 
                 // Inline Employer Picker
                 if showEmployerPicker {
@@ -294,13 +446,13 @@ struct AddEntryView: View {
                         }
                     }
                     .pickerStyle(.wheel)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
                 
                 Divider()
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 8)
             }
 
             // Didn't Work Toggle
@@ -311,9 +463,7 @@ struct AddEntryView: View {
 
                 Spacer()
 
-                Toggle("", isOn: $didntWork)
-                    .labelsHidden()
-                    .onChange(of: didntWork) { _, newValue in
+                CompactLiquidGlassToggle(isOn: $didntWork) { newValue in
                         if !newValue {
                             missedReason = ""
                             showReasonPicker = false
@@ -354,12 +504,12 @@ struct AddEntryView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 6)
 
                 // Inline Reason Picker
                 if showReasonPicker {
@@ -370,8 +520,8 @@ struct AddEntryView: View {
                         }
                     }
                     .pickerStyle(.wheel)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .onChange(of: missedReason) { _, _ in
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -381,14 +531,14 @@ struct AddEntryView: View {
                 }
 
                 Divider()
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 8)
             }
 
             // Only show time fields if didn't work is false
             if !didntWork {
             // Starts Row (Date and Time on same line - like AddShiftView)
             HStack {
-                Text("Starts")
+                Text(startsText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -401,9 +551,9 @@ struct AddEntryView: View {
                         Text(dateFormatter.string(from: selectedDate))
                             .font(.body)
                             .foregroundColor(.secondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6).opacity(0.5))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     } else {
                         // Allow date selection for new entries
@@ -421,9 +571,9 @@ struct AddEntryView: View {
                             Text(dateFormatter.string(from: selectedDate))
                                 .font(.body)
                                 .foregroundColor(.primary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color(.systemGray6))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(Color(.secondarySystemGroupedBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -442,9 +592,9 @@ struct AddEntryView: View {
                         Text(timeFormatter.string(from: startTime))
                             .font(.body)
                             .foregroundColor(.primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -456,8 +606,8 @@ struct AddEntryView: View {
             if showDatePicker {
                 DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
             
@@ -465,8 +615,8 @@ struct AddEntryView: View {
             if showStartTimePicker {
                 DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .onChange(of: startTime) { _, newValue in
                         // Check if we need to adjust end date for overnight shifts
@@ -497,11 +647,11 @@ struct AddEntryView: View {
             }
             
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
             
             // Ends Row (Date and Time on same line - like AddShiftView)
             HStack {
-                Text("Ends")
+                Text(endsText)
                     .font(.body)
                     .foregroundColor(.primary)
 
@@ -514,9 +664,9 @@ struct AddEntryView: View {
                         Text(dateFormatter.string(from: selectedEndDate))
                             .font(.body)
                             .foregroundColor(.secondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6).opacity(0.5))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     } else {
                         // Allow end date selection for new entries
@@ -534,9 +684,9 @@ struct AddEntryView: View {
                             Text(dateFormatter.string(from: selectedEndDate))
                                 .font(.body)
                                 .foregroundColor(.primary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color(.systemGray6))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(Color(.secondarySystemGroupedBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -555,9 +705,9 @@ struct AddEntryView: View {
                         Text(timeFormatter.string(from: endTime))
                             .font(.body)
                             .foregroundColor(.primary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -569,8 +719,8 @@ struct AddEntryView: View {
             if showEndDatePicker {
                 DatePicker("Select End Date", selection: $selectedEndDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .onChange(of: selectedEndDate) { _, _ in
                         // Close the date picker when a date is selected
@@ -584,8 +734,8 @@ struct AddEntryView: View {
             if showEndTimePicker {
                 DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 6)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .onChange(of: endTime) { _, newValue in
                         // Check if we need to adjust end date for overnight shifts
@@ -609,11 +759,11 @@ struct AddEntryView: View {
             }
             
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
             
             // Lunch Break Row
             HStack {
-                Text("Lunch Break")
+                Text(lunchBreakText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -634,7 +784,7 @@ struct AddEntryView: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -649,13 +799,13 @@ struct AddEntryView: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 6)
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
             
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
             
             } // End of if !didntWork
 
@@ -685,13 +835,13 @@ struct AddEntryView: View {
                         }
                     }
                 } else {
-                    Text("Total Hours")
+                    Text(totalHoursText)
                         .font(.body)
                         .foregroundColor(.primary)
 
                     Spacer()
 
-                    Text(String(format: "%.1f hours", calculatedHours))
+                    Text(String(format: "%.1f %@", calculatedHours, hoursUnit))
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(.blue)
@@ -709,7 +859,7 @@ struct AddEntryView: View {
         VStack(spacing: 0) {
             // Sales Row
             HStack {
-                Text("Sales")
+                Text(salesText)
                     .font(.body)
                     .foregroundColor(.primary)
 
@@ -724,18 +874,18 @@ struct AddEntryView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
 
             // Tips Row
             HStack {
-                Text("Tips")
+                Text(tipsText)
                     .font(.body)
                     .foregroundColor(.primary)
 
@@ -750,18 +900,18 @@ struct AddEntryView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
 
             // Tip Out Row
             HStack {
-                Text("Tip Out")
+                Text(tipOutText)
                     .font(.body)
                     .foregroundColor(.primary)
 
@@ -776,18 +926,18 @@ struct AddEntryView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
 
             // Other Row
             HStack {
-                Text("Other")
+                Text(otherText)
                     .font(.body)
                     .foregroundColor(.primary)
 
@@ -802,28 +952,28 @@ struct AddEntryView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
             Divider()
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
 
             // Comments Row
             HStack(alignment: .top) {
-                Text("Notes")
+                Text(notesText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
                 Spacer()
                 
-                TextField("Optional notes", text: $comments, axis: .vertical)
+                TextField(optionalNotesText, text: $comments, axis: .vertical)
                     .lineLimit(3...6)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
+                    .background(Color(.secondarySystemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(minWidth: 200)
             }
@@ -838,7 +988,7 @@ struct AddEntryView: View {
     private var summaryCard: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Summary")
+                Text(summaryText)
                     .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
@@ -875,7 +1025,7 @@ struct AddEntryView: View {
             // Sales at the top (stats only)
             if !didntWork {
                 HStack {
-                    Text("Sales")
+                    Text(salesText)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -890,7 +1040,7 @@ struct AddEntryView: View {
             // Income components
             // Gross Pay (Base Pay)
             HStack {
-                Text("Gross Pay")
+                Text(grossPayText)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -901,7 +1051,7 @@ struct AddEntryView: View {
 
             // Tips
             HStack {
-                Text("Tips")
+                Text(tipsText)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -913,7 +1063,7 @@ struct AddEntryView: View {
             // Other
             if Double(other) ?? 0 > 0 {
                 HStack {
-                    Text("Other")
+                    Text(otherText)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -926,7 +1076,7 @@ struct AddEntryView: View {
             // Tip Out (negative)
             if Double(tipOut) ?? 0 > 0 {
                 HStack {
-                    Text("Tip Out")
+                    Text(tipOutText)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -941,7 +1091,7 @@ struct AddEntryView: View {
 
             // Total Earnings at the bottom
             HStack {
-                Text("Total Earnings")
+                Text(totalEarningsText)
                     .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
@@ -984,6 +1134,7 @@ struct AddEntryView: View {
                 .from("employers")
                 .select()
                 .eq("user_id", value: userId)
+                .eq("active", value: true)  // Only load active employers
                 .execute()
                 .value
 
@@ -1133,22 +1284,6 @@ struct AddEntryView: View {
                 // 1. Find or create expected shift in 'shifts' table
                 // 2. Create/update actual earnings in 'shift_income' table
 
-                // First, check if there's an expected shift for this date
-                struct ShiftCheck: Decodable {
-                    let id: UUID
-                    let expected_hours: Double?
-                    let employer_id: UUID?
-                    let hourly_rate: Double
-                }
-
-                let existingShifts: [ShiftCheck] = try await supabaseManager.client
-                    .from("shifts")
-                    .select("id, expected_hours, employer_id, hourly_rate")
-                    .eq("user_id", value: userId)
-                    .eq("shift_date", value: shiftDate)
-                    .execute()
-                    .value
-
                 let shiftId: UUID
 
                 // If we're editing an existing shift, use its shift_id directly
@@ -1166,16 +1301,8 @@ struct AddEntryView: View {
                         .eq("id", value: shiftId)
                         .execute()
                 } else {
-                    // For new entries, determine if we're using an existing shift or need to create one
-                    if let existingShift = existingShifts.first(where: {
-                        selectedEmployer == nil || $0.employer_id == selectedEmployer?.id
-                    }) {
-                        // Use existing expected shift
-                        shiftId = existingShift.id
-                    } else if let existingShift = existingShifts.first {
-                        // Use any existing shift for this date
-                        shiftId = existingShift.id
-                    } else {
+                    // For new entries, ALWAYS create a new shift (don't reuse existing ones)
+                    // This allows multiple shifts per day
                     // Create new shift record (this happens when entering actual data without pre-planning)
                     struct ShiftInsert: Encodable {
                         let user_id: UUID
@@ -1218,26 +1345,33 @@ struct AddEntryView: View {
                         throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to create shift"])
                     }
 
-                        shiftId = newShiftId
-                    }
+                    shiftId = newShiftId
                 }
 
                 // Now handle the actual earnings data in shift_income table (only if worked)
                 // Skip income record if didn't work
                 if !didntWork {
-                // Check if income record already exists for this shift
-                struct IncomeCheck: Decodable {
-                    let id: UUID
+                // Check if we already have an income record (when editing)
+                let incomeId: UUID?
+                if let editingShift = editingShift, let existingIncomeId = editingShift.income_id {
+                    // We're editing an existing entry that already has income data
+                    incomeId = existingIncomeId
+                } else {
+                    // Check if income record already exists for this shift
+                    struct IncomeCheck: Decodable {
+                        let id: UUID
+                    }
+
+                    let incomeResults: [IncomeCheck] = try await supabaseManager.client
+                        .from("shift_income")
+                        .select("id")
+                        .eq("shift_id", value: shiftId)
+                        .execute()
+                        .value
+                    incomeId = incomeResults.first?.id
                 }
 
-                let incomeResults: [IncomeCheck] = try await supabaseManager.client
-                    .from("shift_income")
-                    .select("id")
-                    .eq("shift_id", value: shiftId)
-                    .execute()
-                    .value
-
-                if let incomeId = incomeResults.first?.id {
+                if let incomeId = incomeId {
                     // Update existing income record
                     struct IncomeUpdate: Encodable {
                         let actual_hours: Double

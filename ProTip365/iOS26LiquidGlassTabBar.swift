@@ -38,15 +38,18 @@ struct iOS26LiquidGlassTabBar: View {
     @Binding var scrollOffset: CGFloat
     let tabItems: [TabItem]
     @AppStorage("language") private var language = "en"
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
-            // Top separator line
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .frame(height: 0.5)
+            // Top separator line - only in light mode
+            if colorScheme == .light {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.2))
+                    .frame(height: 0.5)
+            }
 
-            HStack(spacing: 8) {
+            HStack(spacing: isLargeDevice ? 24 : 8) {
                 ForEach(tabItems, id: \.id) { item in
                     Button(action: {
                         // Haptic feedback
@@ -63,27 +66,30 @@ struct iOS26LiquidGlassTabBar: View {
                                 // No background for active state - clean iOS 26 look
 
                                 Image(systemName: selectedTab == item.id ? item.activeIcon : item.icon)
-                                    .font(.system(size: 18, weight: selectedTab == item.id ? .semibold : .medium))
+                                    .font(.system(size: isLargeDevice ? 24 : 20, weight: selectedTab == item.id ? .semibold : .medium))
                                     .foregroundStyle(
                                         selectedTab == item.id ?
                                         .blue :
                                         Color.primary
                                     )
-                                    .frame(width: 32, height: 32)
-                                    .scaleEffect(selectedTab == item.id ? 1.1 : 1.0)
+                                    .frame(width: isLargeDevice ? 40 : 32, height: isLargeDevice ? 40 : 32)
+                                    .scaleEffect(selectedTab == item.id ? 1.15 : 1.0)
                                     .symbolEffect(.bounce, value: selectedTab == item.id)
                             }
 
                             // Labels with proper depth
                             Text(localizedLabel(for: item))
-                                .font(.system(size: 9, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
+                                .font(.system(size: isLargeDevice ? 12 : 10, weight: selectedTab == item.id ? .semibold : .medium, design: .rounded))
                                 .foregroundStyle(
                                     selectedTab == item.id ?
                                     .blue :
                                     Color.primary
                                 )
                         }
-                        .frame(minWidth: 44)
+                        .frame(minWidth: isLargeDevice ? 60 : 44, minHeight: isLargeDevice ? 60 : 50)
+                        .frame(maxWidth: .infinity) // Fill available horizontal space
+                        .multilineTextAlignment(.center)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(PlainButtonStyle())
                     .animation(.spring(response: 0.4, dampingFraction: 0.8), value: selectedTab)
@@ -91,32 +97,38 @@ struct iOS26LiquidGlassTabBar: View {
                     .accessibilityAddTraits(selectedTab == item.id ? [.isSelected] : [])
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 20)
-            .padding(.bottom, safeAreaInsets.bottom > 0 ? -12 : -8)
+            .padding(.horizontal, isLargeDevice ? 24 : 16)
+            .padding(.vertical, isLargeDevice ? 16 : 12)
+            .padding(.bottom, safeAreaInsets.bottom > 0 ? (isLargeDevice ? -8 : -12) : -8)
         }
         .background(
-            // Blur background with material effect
-            ZStack {
-                // Background blur
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-
-                // Subtle gradient overlay
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.1),
-                        Color.white.opacity(0.05)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+            Group {
+                if colorScheme == .dark {
+                    // Completely transparent in dark mode - no background
+                    Color.clear
+                } else {
+                    // Match page background in light mode
+                    Color(.systemGroupedBackground)
+                }
             }
+            .ignoresSafeArea(.all)
         )
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: -2)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .shadow(color: colorScheme == .dark ? Color.clear : Color.black.opacity(0.1), radius: colorScheme == .dark ? 0 : 8, x: 0, y: colorScheme == .dark ? 0 : -2)
     }
     
+    // Device size detection - only Pro Max models get large sizing
+    private var isLargeDevice: Bool {
+        let screenHeight = UIScreen.main.bounds.height
+        let screenWidth = UIScreen.main.bounds.width
+
+        // Only iPhone Pro Max models (not regular Pro models)
+        // iPhone 14 Pro Max, 15 Pro Max, 16 Pro Max: 932 height
+        // iPhone 12 Pro Max, 13 Pro Max: 926 height
+        return screenHeight >= 926 && max(screenWidth, screenHeight) >= 932
+    }
+
     // Safe area calculation
     private var safeAreaInsets: EdgeInsets {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -186,7 +198,7 @@ struct iOS26LiquidGlassMainView: View {
     private var tabItems: [TabItem] {
         var items = [
             TabItem(id: "dashboard", icon: "chart.bar", label: "Dashboard", activeIcon: "chart.bar.fill"),
-            TabItem(id: "calendar", icon: "calendar.badge.clock", label: "Calendar", activeIcon: "calendar.badge.clock")
+            TabItem(id: "calendar", icon: "calendar.badge", label: "Calendar", activeIcon: "calendar.badge")
         ]
         
         // Only add employers if enabled
@@ -203,37 +215,51 @@ struct iOS26LiquidGlassMainView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content based on selected tab - no ScrollView wrapper needed as views handle their own scrolling
-            Group {
-                switch selectedTab {
-                case "dashboard":
-                    DashboardView()
-                case "calendar":
-                    CalendarShiftsView()
-                case "employers":
-                    if useMultipleEmployers {
-                        EmployersView()
-                    } else {
-                        DashboardView()
+        ZStack {
+            // Full screen background that extends to all edges
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea(.all)
+                .zIndex(-1)
+
+            GeometryReader { geometry in
+                ZStack(alignment: .bottom) {
+                    // Content based on selected tab - no ScrollView wrapper needed as views handle their own scrolling
+                    Group {
+                        switch selectedTab {
+                        case "dashboard":
+                            DashboardView()
+                        case "calendar":
+                            CalendarShiftsView()
+                        case "employers":
+                            if useMultipleEmployers {
+                                EmployersView()
+                            } else {
+                                DashboardView()
+                            }
+                        case "calculator":
+                            TipCalculatorView()
+                        case "settings":
+                            SettingsView(selectedTab: $selectedTab)
+                        default:
+                            DashboardView()
+                        }
                     }
-                case "calculator":
-                    TipCalculatorView()
-                case "settings":
-                    SettingsView(selectedTab: $selectedTab)
-                default:
-                    DashboardView()
+                    .frame(maxWidth: geometry.size.width)
+                    .clipped() // Prevent content from extending beyond bounds
+                    .zIndex(0) // Background content layer
+
+                    // Floating translucent tab bar with proper depth
+                    iOS26LiquidGlassTabBar(
+                        selectedTab: $selectedTab,
+                        scrollOffset: $scrollOffset,
+                        tabItems: tabItems
+                    )
+                    .frame(maxWidth: geometry.size.width)
+                    .zIndex(1) // Floating tab bar layer
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .zIndex(0) // Background content layer
-            
-            // Floating translucent tab bar with proper depth
-            iOS26LiquidGlassTabBar(
-                selectedTab: $selectedTab,
-                scrollOffset: $scrollOffset,
-                tabItems: tabItems
-            )
-            .zIndex(1) // Floating tab bar layer
         }
+        .clipped() // Ensure nothing extends beyond screen bounds
     }
 }

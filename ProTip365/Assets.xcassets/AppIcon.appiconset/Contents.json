@@ -1,31 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Logo2.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "Logo2.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
-      "filename" : "Logo2.png",
+      "filename" : "ProTip365Icon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

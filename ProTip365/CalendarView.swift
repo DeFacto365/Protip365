@@ -81,7 +81,7 @@ struct CalendarView: View {
                     }
                 }
                 .padding()
-                .background(.regularMaterial)
+                .background(Color(.systemBackground))
                 .cornerRadius(16)
                 .padding(.horizontal)
             }
@@ -96,22 +96,16 @@ struct CalendarView: View {
                 }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)
+                            .font(.body)
                         Text("Add Entry")
-                            .fontWeight(.semibold)
+                            .font(.body)
+                            .fontWeight(.medium)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .blue.opacity(0.8)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
                     .foregroundColor(.white)
-                    .cornerRadius(16)
-                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
                 // Add Shift Button

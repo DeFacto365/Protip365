@@ -7,9 +7,36 @@ struct GlassStatCard: View {
     let icon: String
     let color: Color
     let subtitle: String?
-    
+    let budget: String? = nil // Optional budget value
+    @AppStorage("language") private var language = "en"
+
+    init(title: String, value: String, icon: String, color: Color, subtitle: String? = nil, budget: String? = nil) {
+        self.title = title
+        self.value = value
+        self.icon = icon
+        self.color = color
+        self.subtitle = subtitle
+    }
+
+    private var actualText: String {
+        switch language {
+        case "fr": return "Actuel:"
+        case "es": return "Real:"
+        default: return "Actual:"
+        }
+    }
+
+    private var budgetText: String {
+        switch language {
+        case "fr": return "Budget:"
+        case "es": return "Presupuesto:"
+        default: return "Budget:"
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let _ = print("🎯 GlassStatCard: \(title) = \(value), has slash: \(value.contains("/"))")
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
                     .font(.title3)
@@ -17,10 +44,10 @@ struct GlassStatCard: View {
                     .symbolRenderingMode(.hierarchical)
                     .modifier(GlassEffectModifier())
                     .frame(width: 32, height: 32)
-                
+
                 Spacer()
             }
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
@@ -28,13 +55,47 @@ struct GlassStatCard: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
-                
-                Text(value)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-                
+
+                // Check if value contains "/" (indicating value/budget format)
+                if value.contains("/") {
+                    let components = value.split(separator: "/", maxSplits: 1)
+                    if components.count == 2 {
+                        // Two-row format for value and budget
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Text(actualText)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 45, alignment: .leading)
+                                Text(String(components[0]))
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.primary)
+                            }
+                            HStack(spacing: 8) {
+                                Text(budgetText)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 45, alignment: .leading)
+                                Text(String(components[1]))
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        Text(value)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                    }
+                } else {
+                    Text(value)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                }
+
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.caption2)
@@ -48,6 +109,54 @@ struct GlassStatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
         .shadow(color: color.opacity(0.2), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - Compact Glass Stat Card (for Year View)
+struct CompactGlassStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    let subtitle: String?
+
+    var body: some View {
+        let _ = print("📊 Compact Card: \(title) = \(value)")
+        return HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+                .symbolRenderingMode(.hierarchical)
+                .modifier(GlassEffectModifier())
+                .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+
+                if let subtitle = subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Text(value)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(.primary)
+                .minimumScaleFactor(0.6)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 }
 

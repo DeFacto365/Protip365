@@ -1,0 +1,315 @@
+import Foundation
+import SwiftUI
+// import UserNotifications // TODO: Re-enable after fixing compilation
+
+class AlertManager: ObservableObject {
+    @Published var alerts: [AppAlert] = []
+    @Published var showAlert = false
+    @Published var currentAlert: AppAlert?
+    @Published var hasUnreadAlerts = false
+
+    private var language: String {
+        UserDefaults.standard.string(forKey: "language") ?? "en"
+    }
+
+    init() {
+        // requestNotificationPermission() // TODO: Re-enable after fixing compilation
+        loadPersistedAlerts()
+    }
+    
+    func checkForMissingShifts(shifts: [ShiftIncome], targets: DashboardView.UserTargets) {
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        
+        // Check for missing shift from yesterday
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let yesterdayString = dateFormatter.string(from: yesterday)
+        
+        let yesterdayShifts = shifts.filter { $0.shift_date == yesterdayString }
+        
+        if yesterdayShifts.isEmpty {
+            let alert = AppAlert(
+                type: .missingShift,
+                title: localizedString(key: "missingShiftTitle"),
+                message: localizedString(key: "missingShiftMessage"),
+                action: localizedString(key: "enterData"),
+                date: yesterday
+            )
+            addAlert(alert)
+            // scheduleNotification(for: alert) // TODO: Re-enable after fixing compilation
+        }
+        
+        // Check for missing data in recent shifts
+        checkForIncompleteShifts(shifts: shifts)
+    }
+    
+    func checkForTargetAchievements(currentStats: DashboardView.Stats, targets: DashboardView.UserTargets, period: Int) {
+        let periodName = period == 0 ? "daily" : period == 1 ? "weekly" : "monthly"
+        
+        // Check tip targets - now based on percentage of sales
+        if targets.tipTargetPercentage > 0 && currentStats.sales > 0 {
+            let tipTarget = currentStats.sales * (targets.tipTargetPercentage / 100.0)
+            if currentStats.tips >= tipTarget {
+                let message = "\(localizedString(key: "tipTargetAchievedMessage")) \(formatCurrency(tipTarget)) (\(String(format: "%.1f", targets.tipTargetPercentage))%)"
+                let alert = AppAlert(
+                    type: .targetAchieved,
+                    title: localizedString(key: "tipTargetAchievedTitle"),
+                    message: message,
+                    action: localizedString(key: "viewDetails"),
+                    date: Date()
+                )
+            addAlert(alert)
+        }
+        
+        // Check sales targets
+        let salesTarget = period == 0 ? targets.dailySales : period == 1 ? targets.weeklySales : targets.monthlySales
+        if salesTarget > 0 && currentStats.sales >= salesTarget {
+            let message = "\(localizedString(key: "salesTargetAchievedMessage")) \(formatCurrency(salesTarget))!"
+            let alert = AppAlert(
+                type: .targetAchieved,
+                title: localizedString(key: "salesTargetAchievedTitle"),
+                message: message,
+                action: localizedString(key: "viewDetails"),
+                date: Date()
+            )
+            addAlert(alert)
+        }
+        
+        // Check hours targets
+        let hoursTarget = period == 0 ? targets.dailyHours : period == 1 ? targets.weeklyHours : targets.monthlyHours
+        if hoursTarget > 0 && currentStats.hours >= hoursTarget {
+            let message = "\(localizedString(key: "hoursTargetAchievedMessage")) \(String(format: "%.1f", hoursTarget))h!"
+            let alert = AppAlert(
+                type: .targetAchieved,
+                title: localizedString(key: "hoursTargetAchievedTitle"),
+                message: message,
+                action: localizedString(key: "viewDetails"),
+                date: Date()
+            )
+            addAlert(alert)
+        }
+        
+        // Check for personal bests
+        checkForPersonalBests(currentStats: currentStats, period: period)
+    }
+    
+    private func checkForIncompleteShifts(shifts: [ShiftIncome]) {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Check last 3 days for incomplete shifts
+        for dayOffset in 1...3 {
+            guard let checkDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let dateString = dateFormatter.string(from: checkDate)
+            
+            let dayShifts = shifts.filter { $0.shift_date == dateString }
+            
+            for shift in dayShifts {
+                if shift.hours == 0 && shift.sales == 0 && shift.tips == 0 {
+                    let message = "\(localizedString(key: "incompleteShiftMessage")) \(formatDate(shift.shift_date))"
+                    let alert = AppAlert(
+                        type: .incompleteShift,
+                        title: localizedString(key: "incompleteShiftTitle"),
+                        message: message,
+                        action: localizedString(key: "completeShift"),
+                        date: checkDate
+                    )
+                    addAlert(alert)
+                }
+            }
+        }
+    }
+    
+    private func checkForPersonalBests(currentStats: DashboardView.Stats, period: Int) {
+        // This would need to be enhanced with historical data storage
+        // For now, we'll just check for high performance indicators
+        
+        if currentStats.tipPercentage > 20 {
+            let message = "\(localizedString(key: "excellentTipMessage")) \(String(format: "%.1f", currentStats.tipPercentage))%!"
+            let alert = AppAlert(
+                type: .personalBest,
+                title: localizedString(key: "excellentTipTitle"),
+                message: message,
+                action: localizedString(key: "celebrate"),
+                date: Date()
+            )
+            addAlert(alert)
+        }
+        
+        if currentStats.hours > 0 && (currentStats.totalRevenue / currentStats.hours) > 25 {
+            let hourlyRate = currentStats.totalRevenue / currentStats.hours
+            let message = "\(localizedString(key: "highHourlyMessage")) $\(String(format: "%.2f", hourlyRate))/h!"
+            let alert = AppAlert(
+                type: .personalBest,
+                title: localizedString(key: "highHourlyTitle"),
+                message: message,
+                action: localizedString(key: "keepItUp"),
+                date: Date()
+            )
+            addAlert(alert)
+        }
+    }
+    
+    private func addAlert(_ alert: AppAlert) {
+        // Don't add duplicate alerts
+        if !alerts.contains(where: { $0.title == alert.title && $0.date == alert.date }) {
+            alerts.append(alert)
+            currentAlert = alert
+            showAlert = true
+            updateUnreadStatus()
+        }
+    }
+    
+    private func formatCurrency(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale.current
+        return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
+    }
+    
+    private func formatDate(_ dateString: String) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let date = dateFormatter.date(from: dateString) else { return dateString }
+        
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "MMM d"
+        return displayFormatter.string(from: date)
+    }
+    
+    func clearAlert(_ alert: AppAlert) {
+        alerts.removeAll { $0.id == alert.id }
+        updateUnreadStatus()
+    }
+    
+    func clearAllAlerts() {
+        alerts.removeAll()
+        hasUnreadAlerts = false
+        savePersistedAlerts()
+    }
+
+    // MARK: - Notification Methods
+    // TODO: Re-enable iOS notifications later
+
+    // MARK: - Persistence Methods
+    private func loadPersistedAlerts() {
+        // Load alerts from UserDefaults if needed
+        updateUnreadStatus()
+    }
+
+    private func savePersistedAlerts() {
+        // Save alerts to UserDefaults if needed
+        updateUnreadStatus()
+    }
+
+    private func updateUnreadStatus() {
+        hasUnreadAlerts = !alerts.isEmpty
+    }
+
+    // MARK: - Localization Methods
+    private func localizedString(key: String) -> String {
+        switch language {
+        case "fr": return localizedStringFR(key: key)
+        case "es": return localizedStringES(key: key)
+        default: return localizedStringEN(key: key)
+        }
+    }
+
+    private func localizedStringEN(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Missing Shift Data"
+        case "missingShiftMessage": return "You had a shift yesterday but no data was entered. Don't forget to record your earnings!"
+        case "enterData": return "Enter Data"
+        case "incompleteShiftTitle": return "Incomplete Shift Data"
+        case "incompleteShiftMessage": return "Your shift appears to be missing earnings data."
+        case "completeShift": return "Complete Shift"
+        case "tipTargetAchievedTitle": return "🎉 Tip Target Achieved!"
+        case "tipTargetAchievedMessage": return "You've hit your tip target!"
+        case "salesTargetAchievedTitle": return "🔥 Sales Target Crushed!"
+        case "salesTargetAchievedMessage": return "You've exceeded your sales target!"
+        case "hoursTargetAchievedTitle": return "💪 Hours Goal Met!"
+        case "hoursTargetAchievedMessage": return "You've reached your hours target!"
+        case "viewDetails": return "View Details"
+        case "excellentTipTitle": return "⭐ Excellent Tip Performance!"
+        case "excellentTipMessage": return "Your tip rate is outstanding!"
+        case "highHourlyTitle": return "🚀 High Hourly Rate!"
+        case "highHourlyMessage": return "You're earning great money per hour!"
+        case "celebrate": return "Celebrate"
+        case "keepItUp": return "Keep It Up"
+        default: return key
+        }
+    }
+
+    private func localizedStringFR(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Données de quart manquantes"
+        case "missingShiftMessage": return "Vous aviez un quart hier mais aucune donnée n'a été saisie. N'oubliez pas d'enregistrer vos gains!"
+        case "enterData": return "Saisir les données"
+        case "incompleteShiftTitle": return "Données de quart incomplètes"
+        case "incompleteShiftMessage": return "Votre quart semble manquer de données de gains."
+        case "completeShift": return "Terminer le quart"
+        case "tipTargetAchievedTitle": return "🎉 Objectif de pourboire atteint!"
+        case "tipTargetAchievedMessage": return "Vous avez atteint votre objectif de pourboire!"
+        case "salesTargetAchievedTitle": return "🔥 Objectif de ventes dépassé!"
+        case "salesTargetAchievedMessage": return "Vous avez dépassé votre objectif de ventes!"
+        case "hoursTargetAchievedTitle": return "💪 Objectif d'heures atteint!"
+        case "hoursTargetAchievedMessage": return "Vous avez atteint votre objectif d'heures!"
+        case "viewDetails": return "Voir les détails"
+        case "excellentTipTitle": return "⭐ Excellente performance de pourboires!"
+        case "excellentTipMessage": return "Votre taux de pourboire est exceptionnel!"
+        case "highHourlyTitle": return "🚀 Taux horaire élevé!"
+        case "highHourlyMessage": return "Vous gagnez beaucoup d'argent par heure!"
+        case "celebrate": return "Célébrer"
+        case "keepItUp": return "Continuez comme ça"
+        default: return key
+        }
+    }
+
+    private func localizedStringES(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Datos de turno faltantes"
+        case "missingShiftMessage": return "Tuviste un turno ayer pero no se ingresaron datos. ¡No olvides registrar tus ganancias!"
+        case "enterData": return "Ingresar datos"
+        case "incompleteShiftTitle": return "Datos de turno incompletos"
+        case "incompleteShiftMessage": return "Tu turno parece estar faltando datos de ganancias."
+        case "completeShift": return "Completar turno"
+        case "tipTargetAchievedTitle": return "🎉 ¡Objetivo de propinas alcanzado!"
+        case "tipTargetAchievedMessage": return "¡Has alcanzado tu objetivo de propinas!"
+        case "salesTargetAchievedTitle": return "🔥 ¡Objetivo de ventas superado!"
+        case "salesTargetAchievedMessage": return "¡Has superado tu objetivo de ventas!"
+        case "hoursTargetAchievedTitle": return "💪 ¡Meta de horas alcanzada!"
+        case "hoursTargetAchievedMessage": return "¡Has alcanzado tu objetivo de horas!"
+        case "viewDetails": return "Ver detalles"
+        case "excellentTipTitle": return "⭐ ¡Excelente rendimiento de propinas!"
+        case "excellentTipMessage": return "¡Tu tasa de propinas es excepcional!"
+        case "highHourlyTitle": return "🚀 ¡Tarifa por hora alta!"
+        case "highHourlyMessage": return "¡Estás ganando mucho dinero por hora!"
+        case "celebrate": return "Celebrar"
+        case "keepItUp": return "Sigue así"
+        default: return key
+        }
+    }
+}
+
+struct AppAlert: Identifiable {
+    let id = UUID()
+    let type: AlertType
+    let title: String
+    let message: String
+    let action: String
+    let date: Date
+    
+    enum AlertType {
+        case missingShift
+        case incompleteShift
+        case targetAchieved
+        case personalBest
+        case reminder
+    }
+}

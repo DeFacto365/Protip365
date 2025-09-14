@@ -6,6 +6,7 @@ struct DetailedEntriesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showAddEntryView = false
     @State private var selectedShiftForEditing: ShiftIncome? = nil
+    @AppStorage("language") private var language = "en"
     
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -38,6 +39,119 @@ struct DetailedEntriesView: View {
     private var totalHours: Double {
         entries.reduce(0.0) { $0 + $1.hours }
     }
+
+    // MARK: - Translation Properties
+    private var doneText: String {
+        switch language {
+        case "fr": return "Terminé"
+        case "es": return "Hecho"
+        default: return "Done"
+        }
+    }
+
+    private var weekText: String {
+        switch language {
+        case "fr": return "Semaine"
+        case "es": return "Semana"
+        default: return "Week"
+        }
+    }
+
+    private var dayText: String {
+        switch language {
+        case "fr": return "Jour"
+        case "es": return "Día"
+        default: return "Day"
+        }
+    }
+
+    private var tipsText: String {
+        switch language {
+        case "fr": return "Pourboires"
+        case "es": return "Propinas"
+        default: return "Tips"
+        }
+    }
+
+    private var hoursText: String {
+        switch language {
+        case "fr": return "heures"
+        case "es": return "horas"
+        default: return "hours"
+        }
+    }
+
+    private var salaryText: String {
+        switch language {
+        case "fr": return "Salaire"
+        case "es": return "Salario"
+        default: return "Salary"
+        }
+    }
+
+    private var salesText: String {
+        switch language {
+        case "fr": return "Ventes"
+        case "es": return "Ventas"
+        default: return "Sales"
+        }
+    }
+
+    private var totalText: String {
+        switch language {
+        case "fr": return "Total"
+        case "es": return "Total"
+        default: return "Total"
+        }
+    }
+
+    private var totalsText: String {
+        switch language {
+        case "fr": return "TOTAUX"
+        case "es": return "TOTALES"
+        default: return "TOTALS"
+        }
+    }
+
+    private var totalSalaryText: String {
+        switch language {
+        case "fr": return "Salaire total"
+        case "es": return "Salario total"
+        default: return "Total Salary"
+        }
+    }
+
+    private var totalSalesText: String {
+        switch language {
+        case "fr": return "Ventes totales"
+        case "es": return "Ventas totales"
+        default: return "Total Sales"
+        }
+    }
+
+    private var totalTipsText: String {
+        switch language {
+        case "fr": return "Pourboires totaux"
+        case "es": return "Propinas totales"
+        default: return "Total Tips"
+        }
+    }
+
+    private var totalIncomeText: String {
+        switch language {
+        case "fr": return "Revenu total"
+        case "es": return "Ingresos totales"
+        default: return "Total Income"
+        }
+    }
+
+    private var totalHoursText: String {
+        switch language {
+        case "fr": return "Heures totales"
+        case "es": return "Horas totales"
+        default: return "Total Hours"
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -62,11 +176,11 @@ struct DetailedEntriesView: View {
                 }
                 .padding()
             }
-            .navigationTitle("\(entries.count > 1 ? "Week" : "Day") - Tips")
+            .navigationTitle("\(entries.count > 1 ? weekText : dayText) - \(tipsText)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button(doneText) {
                         dismiss()
                     }
                     .foregroundColor(.blue)
@@ -90,7 +204,7 @@ struct DetailedEntriesView: View {
                 HStack {
                     Image(systemName: "clock")
                         .foregroundColor(.gray)
-                    Text("\(String(format: "%.1f", entry.hours)) hours • \(timeFormatter.string(from: date))")
+                    Text("\(String(format: "%.1f", entry.hours)) \(hoursText) • \(timeFormatter.string(from: date))")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -98,10 +212,10 @@ struct DetailedEntriesView: View {
                 // Financial breakdown
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Salary: $\(String(format: "%.2f", entry.base_income ?? 0))")
-                        Text("Sales: $\(String(format: "%.2f", entry.sales))")
-                        Text("Tips: $\(String(format: "%.2f", entry.tips))")
-                        Text("Total: $\(String(format: "%.2f", entry.total_income ?? 0))")
+                        Text("\(salaryText): $\(String(format: "%.2f", entry.base_income ?? 0))")
+                        Text("\(salesText): $\(String(format: "%.2f", entry.sales))")
+                        Text("\(tipsText): $\(String(format: "%.2f", entry.tips))")
+                        Text("\(totalText): $\(String(format: "%.2f", entry.total_income ?? 0))")
                             .fontWeight(.semibold)
                             .foregroundColor(.blue)
                     }
@@ -124,19 +238,19 @@ struct DetailedEntriesView: View {
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundColor(.blue)
-                Text("TOTALS")
+                Text(totalsText)
                     .font(.headline)
                     .fontWeight(.bold)
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("Total Salary: $\(String(format: "%.2f", totalSalary))")
-                Text("Total Sales: $\(String(format: "%.2f", totalSales))")
-                Text("Total Tips: $\(String(format: "%.2f", totalTips))")
-                Text("Total Income: $\(String(format: "%.2f", totalIncome))")
+                Text("\(totalSalaryText): $\(String(format: "%.2f", totalSalary))")
+                Text("\(totalSalesText): $\(String(format: "%.2f", totalSales))")
+                Text("\(totalTipsText): $\(String(format: "%.2f", totalTips))")
+                Text("\(totalIncomeText): $\(String(format: "%.2f", totalIncome))")
                     .fontWeight(.semibold)
                     .foregroundColor(.blue)
-                Text("Total Hours: \(String(format: "%.1f", totalHours))")
+                Text("\(totalHoursText): \(String(format: "%.1f", totalHours))")
             }
         }
         .padding()

@@ -32,6 +32,7 @@ struct AddShiftView: View {
     @State private var showLunchBreakPicker = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @AppStorage("language") private var language = "en"
     
     // MARK: - Computed Properties
     private var lunchBreakOptions = ["None", "15 min", "30 min", "45 min", "60 min"]
@@ -65,6 +66,135 @@ struct AddShiftView: View {
         default: return 0
         }
     }
+
+    // MARK: - Translation Properties
+    private var loadingText: String {
+        switch language {
+        case "fr": return "Chargement..."
+        case "es": return "Cargando..."
+        default: return "Loading..."
+        }
+    }
+
+    private var errorSavingShiftText: String {
+        switch language {
+        case "fr": return "Erreur lors de l'enregistrement"
+        case "es": return "Error al guardar"
+        default: return "Error Saving Shift"
+        }
+    }
+
+    private var okButtonText: String {
+        switch language {
+        case "fr": return "OK"
+        case "es": return "OK"
+        default: return "OK"
+        }
+    }
+
+    private var editShiftText: String {
+        switch language {
+        case "fr": return "Modifier le quart"
+        case "es": return "Editar turno"
+        default: return "Edit Shift"
+        }
+    }
+
+    private var newShiftText: String {
+        switch language {
+        case "fr": return "Nouveau quart"
+        case "es": return "Nuevo turno"
+        default: return "New Shift"
+        }
+    }
+
+    private var employerText: String {
+        switch language {
+        case "fr": return "Employeur"
+        case "es": return "Empleador"
+        default: return "Employer"
+        }
+    }
+
+    private var selectEmployerText: String {
+        switch language {
+        case "fr": return "Sélectionner un employeur"
+        case "es": return "Seleccionar empleador"
+        default: return "Select Employer"
+        }
+    }
+
+    private var startsText: String {
+        switch language {
+        case "fr": return "Début"
+        case "es": return "Inicio"
+        default: return "Starts"
+        }
+    }
+
+    private var endsText: String {
+        switch language {
+        case "fr": return "Fin"
+        case "es": return "Fin"
+        default: return "Ends"
+        }
+    }
+
+    private var lunchBreakText: String {
+        switch language {
+        case "fr": return "Pause déjeuner"
+        case "es": return "Descanso para almorzar"
+        default: return "Lunch Break"
+        }
+    }
+
+    private var selectLunchBreakText: String {
+        switch language {
+        case "fr": return "Sélectionner la pause déjeuner"
+        case "es": return "Seleccionar descanso"
+        default: return "Select Lunch Break"
+        }
+    }
+
+    private var shiftExpectedHoursText: String {
+        switch language {
+        case "fr": return "Heures prévues du quart"
+        case "es": return "Horas esperadas del turno"
+        default: return "Shift Expected Hours"
+        }
+    }
+
+    private var hoursText: String {
+        switch language {
+        case "fr": return "heures"
+        case "es": return "horas"
+        default: return "hours"
+        }
+    }
+
+    private var commentsText: String {
+        switch language {
+        case "fr": return "Commentaires"
+        case "es": return "Comentarios"
+        default: return "Comments"
+        }
+    }
+
+    private var addNotesText: String {
+        switch language {
+        case "fr": return "Ajouter des notes..."
+        case "es": return "Agregar notas..."
+        default: return "Add notes..."
+        }
+    }
+
+    private var selectDateText: String {
+        switch language {
+        case "fr": return "Sélectionner la date"
+        case "es": return "Seleccionar fecha"
+        default: return "Select Date"
+        }
+    }
     
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -91,7 +221,7 @@ struct AddShiftView: View {
                     ProgressView()
                         .scaleEffect(1.5)
                         .padding()
-                    Text("Loading...")
+                    Text(loadingText)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -116,8 +246,8 @@ struct AddShiftView: View {
                 await initializeView()
             }
         }
-        .alert("Error Saving Shift", isPresented: $showErrorAlert) {
-            Button("OK") { }
+        .alert(errorSavingShiftText, isPresented: $showErrorAlert) {
+            Button(okButtonText) { }
         } message: {
             Text(errorMessage)
         }
@@ -141,7 +271,7 @@ struct AddShiftView: View {
             
             Spacer()
             
-            Text(editingShift != nil ? "Edit Shift" : "New Shift")
+            Text(editingShift != nil ? editShiftText : newShiftText)
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -177,7 +307,7 @@ struct AddShiftView: View {
         VStack(spacing: 0) {
             // Employer Row (moved to top)
             HStack {
-                Text("Employer")
+                Text(employerText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -194,12 +324,12 @@ struct AddShiftView: View {
                         showLunchBreakPicker = false
                     }
                 }) {
-                    Text(selectedEmployer?.name ?? "Select Employer")
+                    Text(selectedEmployer?.name ?? selectEmployerText)
                         .font(.body)
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -208,7 +338,7 @@ struct AddShiftView: View {
             
             // Inline Employer Picker
             if showEmployerPicker {
-                Picker("Select Employer", selection: $selectedEmployer) {
+                Picker(selectEmployerText, selection: $selectedEmployer) {
                     ForEach(employers, id: \.id) { employer in
                         Text(employer.name)
                             .tag(employer as Employer?)
@@ -234,7 +364,7 @@ struct AddShiftView: View {
             
             // Starts Row
             HStack {
-                Text("Starts")
+                Text(startsText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -258,7 +388,7 @@ struct AddShiftView: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     
@@ -279,7 +409,7 @@ struct AddShiftView: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -289,7 +419,7 @@ struct AddShiftView: View {
             
             // Inline Date Picker
             if showStartDatePicker {
-                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                DatePicker(selectDateText, selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
@@ -311,7 +441,7 @@ struct AddShiftView: View {
             
             // Ends Row
             HStack {
-                Text("Ends")
+                Text(endsText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -335,7 +465,7 @@ struct AddShiftView: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     
@@ -356,7 +486,7 @@ struct AddShiftView: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -375,7 +505,7 @@ struct AddShiftView: View {
             
             // Inline End Date Picker
             if showEndDatePicker {
-                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                DatePicker(selectDateText, selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
@@ -388,7 +518,7 @@ struct AddShiftView: View {
             
             // Lunch Break Row
             HStack {
-                Text("Lunch Break")
+                Text(lunchBreakText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
@@ -410,7 +540,7 @@ struct AddShiftView: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
+                        .background(Color(.secondarySystemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -419,7 +549,7 @@ struct AddShiftView: View {
             
             // Inline Lunch Break Picker
             if showLunchBreakPicker {
-                Picker("Select Lunch Break", selection: $selectedLunchBreak) {
+                Picker(selectLunchBreakText, selection: $selectedLunchBreak) {
                     ForEach(lunchBreakOptions, id: \.self) { option in
                         Text(option).tag(option)
                     }
@@ -444,14 +574,14 @@ struct AddShiftView: View {
             
             // Shift Expected Hours Row - BOLD
             HStack {
-                Text("Shift Expected Hours")
+                Text(shiftExpectedHoursText)
                     .font(.body)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
                 Spacer()
                 
-                Text(String(format: "%.1f hours", expectedHours))
+                Text(String(format: "%.1f \(hoursText)", expectedHours))
                     .font(.body)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
@@ -465,11 +595,11 @@ struct AddShiftView: View {
             
             // Comments Row
             VStack(alignment: .leading, spacing: 8) {
-                Text("Comments")
+                Text(commentsText)
                     .font(.body)
                     .foregroundColor(.primary)
                 
-                TextField("Add notes...", text: $comments, axis: .vertical)
+                TextField(addNotesText, text: $comments, axis: .vertical)
                     .font(.body)
                     .textFieldStyle(.plain)
                     .lineLimit(2...2)

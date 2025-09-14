@@ -5,6 +5,32 @@ Inspired by Apple's Landmarks sample app Liquid Glass implementation
 
 import SwiftUI
 
+// MARK: - Dark Mode Adaptive Colors
+extension Color {
+    /// Card background that adapts to dark/light mode
+    /// Light mode: white, Dark mode: dark gray
+    static var adaptiveCardBackground: Color {
+        Color(.systemBackground)
+    }
+
+    /// Secondary background for nested elements
+    /// Light mode: light gray, Dark mode: darker gray
+    static var adaptiveSecondaryBackground: Color {
+        Color(.secondarySystemBackground)
+    }
+
+    /// Tertiary background for additional layering
+    static var adaptiveTertiaryBackground: Color {
+        Color(.tertiarySystemBackground)
+    }
+
+    /// Group background (main app background)
+    /// Light mode: very light gray, Dark mode: black
+    static var adaptiveGroupedBackground: Color {
+        Color(.systemGroupedBackground)
+    }
+}
+
 /// Constant values that the app defines for consistent Liquid Glass implementation.
 struct Constants {
     // MARK: - App-wide constants

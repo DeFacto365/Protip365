@@ -5,14 +5,56 @@ class SubscriptionManager: ObservableObject {
     @Published var isSubscribed = false
     @Published var isInTrialPeriod = false
     @Published var products: [Product] = []
-    
+
     private let productId = "com.protip365.monthly"
-    
+    private var transactionListener: Task<Void, Error>?
+
     init() {
+        // Start listening for transaction updates immediately
+        transactionListener = listenForTransactionUpdates()
+
         Task {
             await loadProducts()
             await checkSubscriptionStatus()
         }
+    }
+
+    deinit {
+        transactionListener?.cancel()
+    }
+
+    private func listenForTransactionUpdates() -> Task<Void, Error> {
+        return Task.detached {
+            // Listen for transaction updates
+            for await result in StoreKit.Transaction.updates {
+                do {
+                    let transaction = try self.checkVerified(result)
+                    await self.updateSubscriptionStatus(for: transaction)
+                    await transaction.finish()
+                } catch {
+                    print("Transaction verification failed: \(error)")
+                }
+            }
+        }
+    }
+
+    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+        switch result {
+        case .unverified:
+            throw StoreError.failedVerification
+        case .verified(let safe):
+            return safe
+        }
+    }
+
+    private func updateSubscriptionStatus(for transaction: StoreKit.Transaction) async {
+        if transaction.productID == productId {
+            await checkSubscriptionStatus()
+        }
+    }
+
+    enum StoreError: Error {
+        case failedVerification
     }
     
     func loadProducts() async {
@@ -52,7 +94,7 @@ class SubscriptionManager: ObservableObject {
     }
     
     func checkSubscriptionStatus() async {
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             guard case .verified(let transaction) = result else { continue }
             
             if transaction.productID == productId {

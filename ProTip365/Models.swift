@@ -77,9 +77,7 @@ struct UserProfile: Codable {
     let user_id: UUID
     let default_hourly_rate: Double
     let week_start: Int
-    let target_tip_daily: Double
-    let target_tip_weekly: Double
-    let target_tip_monthly: Double
+    let tip_target_percentage: Double?
     let name: String?  // Changed from user_name to name
     let default_employer_id: UUID?
 }

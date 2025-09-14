@@ -5,170 +5,132 @@ class AlertManager: ObservableObject {
     @Published var alerts: [AppAlert] = []
     @Published var showAlert = false
     @Published var currentAlert: AppAlert?
-    
+    @Published var hasUnreadAlerts = false
+
+    private var language: String {
+        UserDefaults.standard.string(forKey: "language") ?? "en"
+    }
+
+    init() {
+        loadPersistedAlerts()
+    }
+
     func checkForMissingShifts(shifts: [ShiftIncome], targets: DashboardView.UserTargets) {
         let calendar = Calendar.current
         let today = Date()
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
-        
-        // Check for missing shift from yesterday
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let yesterdayString = dateFormatter.string(from: yesterday)
-        
+
         let yesterdayShifts = shifts.filter { $0.shift_date == yesterdayString }
-        
+
         if yesterdayShifts.isEmpty {
-            // Check if there was an expected shift (you could add logic here based on user's typical schedule)
             let alert = AppAlert(
                 type: .missingShift,
-                title: "Missing Shift Data",
-                message: "You had a shift yesterday but no data was entered. Don't forget to record your earnings!",
-                action: "Enter Data",
+                title: localizedString(key: "missingShiftTitle"),
+                message: localizedString(key: "missingShiftMessage"),
+                action: localizedString(key: "enterData"),
                 date: yesterday
             )
             addAlert(alert)
         }
-        
-        // Check for missing data in recent shifts
-        checkForIncompleteShifts(shifts: shifts)
     }
-    
+
     func checkForTargetAchievements(currentStats: DashboardView.Stats, targets: DashboardView.UserTargets, period: Int) {
-        let periodName = period == 0 ? "daily" : period == 1 ? "weekly" : "monthly"
-        
-        // Check tip targets
-        let tipTarget = period == 0 ? targets.dailyTips : period == 1 ? targets.weeklyTips : targets.monthlyTips
-        if tipTarget > 0 && currentStats.tips >= tipTarget {
-            let alert = AppAlert(
-                type: .targetAchieved,
-                title: "🎉 Tip Target Achieved!",
-                message: "You've hit your \(periodName) tip target of \(formatCurrency(tipTarget))!",
-                action: "View Details",
-                date: Date()
-            )
-            addAlert(alert)
-        }
-        
-        // Check sales targets
-        let salesTarget = period == 0 ? targets.dailySales : period == 1 ? targets.weeklySales : targets.monthlySales
-        if salesTarget > 0 && currentStats.sales >= salesTarget {
-            let alert = AppAlert(
-                type: .targetAchieved,
-                title: "🔥 Sales Target Crushed!",
-                message: "You've exceeded your \(periodName) sales target of \(formatCurrency(salesTarget))!",
-                action: "View Details",
-                date: Date()
-            )
-            addAlert(alert)
-        }
-        
-        // Check hours targets
-        let hoursTarget = period == 0 ? targets.dailyHours : period == 1 ? targets.weeklyHours : targets.monthlyHours
-        if hoursTarget > 0 && currentStats.hours >= hoursTarget {
-            let alert = AppAlert(
-                type: .targetAchieved,
-                title: "💪 Hours Goal Met!",
-                message: "You've reached your \(periodName) hours target of \(String(format: "%.1f", hoursTarget))h!",
-                action: "View Details",
-                date: Date()
-            )
-            addAlert(alert)
-        }
-        
-        // Check for personal bests
-        checkForPersonalBests(currentStats: currentStats, period: period)
-    }
-    
-    private func checkForIncompleteShifts(shifts: [ShiftIncome]) {
-        let calendar = Calendar.current
-        let today = Date()
-        
-        // Check last 3 days for incomplete shifts
-        for dayOffset in 1...3 {
-            guard let checkDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
-            
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            let dateString = dateFormatter.string(from: checkDate)
-            
-            let dayShifts = shifts.filter { $0.shift_date == dateString }
-            
-            for shift in dayShifts {
-                if shift.hours == 0 && shift.sales == 0 && shift.tips == 0 {
-                    let alert = AppAlert(
-                        type: .incompleteShift,
-                        title: "Incomplete Shift Data",
-                        message: "Your shift on \(formatDate(shift.shift_date)) appears to be missing earnings data.",
-                        action: "Complete Shift",
-                        date: checkDate
-                    )
-                    addAlert(alert)
-                }
+        if targets.tipTargetPercentage > 0 && currentStats.sales > 0 {
+            let tipTarget = currentStats.sales * (targets.tipTargetPercentage / 100.0)
+            if currentStats.tips >= tipTarget {
+                let message = "\(localizedString(key: "tipTargetAchievedMessage")) \(formatCurrency(tipTarget))"
+                let alert = AppAlert(
+                    type: .targetAchieved,
+                    title: localizedString(key: "tipTargetAchievedTitle"),
+                    message: message,
+                    action: localizedString(key: "viewDetails"),
+                    date: Date()
+                )
+                addAlert(alert)
             }
         }
     }
-    
-    private func checkForPersonalBests(currentStats: DashboardView.Stats, period: Int) {
-        // This would need to be enhanced with historical data storage
-        // For now, we'll just check for high performance indicators
-        
-        if currentStats.tipPercentage > 20 {
-            let alert = AppAlert(
-                type: .personalBest,
-                title: "⭐ Excellent Tip Performance!",
-                message: "Your \(String(format: "%.1f", currentStats.tipPercentage))% tip rate is outstanding!",
-                action: "Celebrate",
-                date: Date()
-            )
-            addAlert(alert)
-        }
-        
-        if currentStats.hours > 0 && (currentStats.totalRevenue / currentStats.hours) > 25 {
-            let alert = AppAlert(
-                type: .personalBest,
-                title: "🚀 High Hourly Rate!",
-                message: "You're earning $\(String(format: "%.2f", currentStats.totalRevenue / currentStats.hours))/hour!",
-                action: "Keep It Up",
-                date: Date()
-            )
-            addAlert(alert)
-        }
+
+    func clearAlert(_ alert: AppAlert) {
+        alerts.removeAll { $0.id == alert.id }
+        updateUnreadStatus()
     }
-    
+
+    func clearAllAlerts() {
+        alerts.removeAll()
+        hasUnreadAlerts = false
+    }
+
     private func addAlert(_ alert: AppAlert) {
-        // Don't add duplicate alerts
         if !alerts.contains(where: { $0.title == alert.title && $0.date == alert.date }) {
             alerts.append(alert)
             currentAlert = alert
             showAlert = true
+            updateUnreadStatus()
         }
     }
-    
+
+    private func loadPersistedAlerts() {
+        updateUnreadStatus()
+    }
+
+    private func updateUnreadStatus() {
+        hasUnreadAlerts = !alerts.isEmpty
+    }
+
     private func formatCurrency(_ amount: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.locale = Locale.current
         return formatter.string(from: NSNumber(value: amount)) ?? "$0.00"
     }
-    
-    private func formatDate(_ dateString: String) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        
-        guard let date = dateFormatter.date(from: dateString) else { return dateString }
-        
-        let displayFormatter = DateFormatter()
-        displayFormatter.dateFormat = "MMM d"
-        return displayFormatter.string(from: date)
+
+    private func localizedString(key: String) -> String {
+        switch language {
+        case "fr": return localizedStringFR(key: key)
+        case "es": return localizedStringES(key: key)
+        default: return localizedStringEN(key: key)
+        }
     }
-    
-    func clearAlert(_ alert: AppAlert) {
-        alerts.removeAll { $0.id == alert.id }
+
+    private func localizedStringEN(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Missing Shift Data"
+        case "missingShiftMessage": return "You had a shift yesterday but no data was entered."
+        case "enterData": return "Enter Data"
+        case "tipTargetAchievedTitle": return "🎉 Tip Target Achieved!"
+        case "tipTargetAchievedMessage": return "You've hit your tip target!"
+        case "viewDetails": return "View Details"
+        default: return key
+        }
     }
-    
-    func clearAllAlerts() {
-        alerts.removeAll()
+
+    private func localizedStringFR(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Données manquantes"
+        case "missingShiftMessage": return "Vous aviez un quart hier."
+        case "enterData": return "Saisir"
+        case "tipTargetAchievedTitle": return "🎉 Objectif atteint!"
+        case "tipTargetAchievedMessage": return "Objectif de pourboire atteint!"
+        case "viewDetails": return "Détails"
+        default: return key
+        }
+    }
+
+    private func localizedStringES(key: String) -> String {
+        switch key {
+        case "missingShiftTitle": return "Datos faltantes"
+        case "missingShiftMessage": return "Tuviste un turno ayer."
+        case "enterData": return "Ingresar"
+        case "tipTargetAchievedTitle": return "🎉 ¡Objetivo alcanzado!"
+        case "tipTargetAchievedMessage": return "¡Objetivo de propinas alcanzado!"
+        case "viewDetails": return "Detalles"
+        default: return key
+        }
     }
 }
 
@@ -179,7 +141,7 @@ struct AppAlert: Identifiable {
     let message: String
     let action: String
     let date: Date
-    
+
     enum AlertType {
         case missingShift
         case incompleteShift

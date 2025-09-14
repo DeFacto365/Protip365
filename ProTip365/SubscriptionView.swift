@@ -5,6 +5,7 @@ struct SubscriptionView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
     @AppStorage("language") private var language = "en"
     @State private var isLoading = false
+    @State private var showOnboarding = false
     
     var body: some View {
         VStack(spacing: 30) {
@@ -49,7 +50,13 @@ struct SubscriptionView: View {
                 isLoading = true
                 Task {
                     await subscriptionManager.purchase()
-                    isLoading = false
+                    await MainActor.run {
+                        isLoading = false
+                        // Show onboarding after successful subscription
+                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                            showOnboarding = true
+                        }
+                    }
                 }
             }) {
                 if isLoading {
@@ -88,6 +95,9 @@ struct SubscriptionView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
+        }
     }
     
     // Localization

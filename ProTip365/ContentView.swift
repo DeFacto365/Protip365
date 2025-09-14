@@ -3,33 +3,62 @@ import Supabase
 
 struct ContentView: View {
     @State private var isAuthenticated = false
-    @StateObject private var biometricAuth = BiometricAuthManager()
+    @StateObject private var securityManager = SecurityManager()
     @StateObject private var subscriptionManager = SubscriptionManager()
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false // Added to check setting
     @Environment(\.horizontalSizeClass) var sizeClass
-    
+    @Environment(\.scenePhase) var scenePhase
+
     var body: some View {
-        Group {
-            // Check biometric lock first
-            if biometricAuth.biometricEnabled && !biometricAuth.isUnlocked {
-                LockScreenView(biometricAuth: biometricAuth)
-            } else if isAuthenticated {
-                // Check subscription status
-              //  if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
-                    mainAppView
-                //} else {
-                  //  SubscriptionView(subscriptionManager: subscriptionManager)
-                //}
-            } else {
-                AuthView(isAuthenticated: $isAuthenticated)
+        ZStack {
+            // Full screen background that extends to all edges
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea(.all)
+
+            Group {
+                // Check security lock first
+                if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+                    EnhancedLockScreenView(securityManager: securityManager)
+                } else if isAuthenticated {
+                    // Check subscription status
+                    if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                        mainAppView
+                    } else {
+                        SubscriptionView(subscriptionManager: subscriptionManager)
+                    }
+                } else {
+                    AuthView(isAuthenticated: $isAuthenticated)
+                }
             }
         }
         .task {
-            print("🚀 ContentView task started - checking authentication...")
             await checkAuth()
-            if biometricAuth.biometricEnabled && !biometricAuth.isUnlocked {
-                biometricAuth.authenticate()
+            if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+                securityManager.authenticate()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                // If security is enabled and app is locked, trigger authentication
+                if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+                    securityManager.authenticate()
+                }
+            case .inactive:
+                // Lock the app when it becomes inactive
+                if securityManager.currentSecurityType != .none {
+                    securityManager.isUnlocked = false
+                    securityManager.showPINEntry = false
+                }
+            case .background:
+                // Also lock when entering background
+                if securityManager.currentSecurityType != .none {
+                    securityManager.isUnlocked = false
+                    securityManager.showPINEntry = false
+                }
+            @unknown default:
+                break
             }
         }
     }
@@ -73,30 +102,19 @@ struct ContentView: View {
     }
     
     func checkAuth() async {
-        print("🔐 Checking existing authentication session...")
-
         do {
-            let session = try await SupabaseManager.shared.client.auth.session
-            print("✅ Existing session found: \(session.user.id)")
+            _ = try await SupabaseManager.shared.client.auth.session
             await MainActor.run {
                 isAuthenticated = true
             }
         } catch {
-            print("❌ No existing session found: \(error.localizedDescription)")
             await MainActor.run {
                 isAuthenticated = false
             }
         }
 
         // Listen for auth state changes
-        print("👂 Listening for auth state changes...")
         for await state in SupabaseManager.shared.client.auth.authStateChanges {
-            print("🔄 Auth state changed: \(state.event)")
-            if let session = state.session {
-                print("   Session user: \(session.user.id)")
-            } else {
-                print("   No session")
-            }
             await MainActor.run {
                 isAuthenticated = state.session != nil
             }

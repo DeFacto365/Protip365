@@ -4,7 +4,24 @@ struct AchievementView: View {
     let achievement: Achievement
     @Environment(\.dismiss) var dismiss
     @State private var showConfetti = false
-    
+    @AppStorage("language") private var language = "en"
+
+    private var achievementUnlockedText: String {
+        switch language {
+        case "fr": return "🎉 Succès débloqué! 🎉"
+        case "es": return "🎉 ¡Logro desbloqueado! 🎉"
+        default: return "🎉 Achievement Unlocked! 🎉"
+        }
+    }
+
+    private var continueText: String {
+        switch language {
+        case "fr": return "Continuer"
+        case "es": return "Continuar"
+        default: return "Continue"
+        }
+    }
+
     var body: some View {
         ZStack {
             // Background with glass effect
@@ -32,38 +49,38 @@ struct AchievementView: View {
                 
                 // Achievement Text with glass effects
                 VStack(spacing: 12) {
-                    Text("🎉 Achievement Unlocked! 🎉")
+                    Text(achievementUnlockedText)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .modifier(GlassEffectRoundedModifier(cornerRadius: 8))
                         .padding(.horizontal, 8)
-                    
+
                     Text(achievement.title)
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(achievement.type.color)
                         .multilineTextAlignment(.center)
-                    
+
                     Text(achievement.description)
                         .font(.body)
                         .foregroundColor(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    
+
                     Text(achievement.message)
                         .font(.headline)
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
-                
+
                 // Continue Button
                 Button(action: {
                     dismiss()
                 }) {
-                    Text("Continue")
+                    Text(continueText)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)

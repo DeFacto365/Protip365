@@ -90,11 +90,15 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6751758587",
-          "introductoryOffer" : null,
+          "introductoryOffer" : {
+            "internalID" : "6751758588",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
           "localizations" : [
 
           ],
-          "productID" : "protip365_Monthly",
+          "productID" : "com.protip365.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "MonthlyProtip365",
           "subscriptionGroupID" : "21769428",

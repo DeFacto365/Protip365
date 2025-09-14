@@ -5,6 +5,7 @@ struct TipCalculatorView: View {
     @State private var tipPercentage = 15.0
     @State private var numberOfPeople = 1
     @AppStorage("language") private var language = "en"
+    @FocusState private var isTextFieldFocused: Bool
 
     var tipAmount: Double {
         let bill = Double(billAmount) ?? 0
@@ -55,6 +56,7 @@ struct TipCalculatorView: View {
                                     .font(.system(size: 20, weight: .medium, design: .rounded))
                                     .foregroundStyle(.primary)
                                     .keyboardType(.decimalPad)
+                                    .focused($isTextFieldFocused)
                                     .onChange(of: billAmount) { _, newValue in
                                         // Limit to 2 decimal places
                                         if let dotIndex = newValue.firstIndex(of: ".") {
@@ -67,7 +69,7 @@ struct TipCalculatorView: View {
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
-                            .background(Color(.systemGray6))
+                            .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                             .padding(.horizontal, 16)
                             .padding(.bottom, 12)
@@ -259,6 +261,10 @@ struct TipCalculatorView: View {
             }
             .navigationTitle(calculatorTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside the text field
+                isTextFieldFocused = false
+            }
         }
     }
 

@@ -31,21 +31,11 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		85120BAC2E6390B400994CC6 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 85946DE72E625D8C0018C7F9 /* Sources */;
-			membershipExceptions = (
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		85946DED2E625D8C0018C7F9 /* ProTip365 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				857BD2942E7462150083E719 /* Exceptions for "ProTip365" folder in "ProTip365" target */,
-				85120BAC2E6390B400994CC6 /* Exceptions for "ProTip365" folder in "Compile Sources" phase from "ProTip365" target */,
 			);
 			path = ProTip365;
 			sourceTree = "<group>";
@@ -147,6 +137,8 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
+				es,
 			);
 			mainGroup = 85946DE22E625D8C0018C7F9;
 			minimizedProjectReferenceProxies = 1;

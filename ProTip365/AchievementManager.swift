@@ -7,22 +7,62 @@ enum AchievementType: String, Codable, CaseIterable {
     case consistencyKing = "consistency_king"
     case tipTargetCrusher = "tip_target_crusher"
     case highEarner = "high_earner"
-    
-    var title: String {
+
+    func title(language: String) -> String {
         switch self {
-        case .tipMaster: return "Tip Master"
-        case .consistencyKing: return "Consistency King"
-        case .tipTargetCrusher: return "Target Crusher"
-        case .highEarner: return "High Earner"
+        case .tipMaster:
+            switch language {
+            case "fr": return "Maître des pourboires"
+            case "es": return "Maestro de propinas"
+            default: return "Tip Master"
+            }
+        case .consistencyKing:
+            switch language {
+            case "fr": return "Roi de la constance"
+            case "es": return "Rey de la constancia"
+            default: return "Consistency King"
+            }
+        case .tipTargetCrusher:
+            switch language {
+            case "fr": return "Destructeur d'objectifs"
+            case "es": return "Destructor de objetivos"
+            default: return "Target Crusher"
+            }
+        case .highEarner:
+            switch language {
+            case "fr": return "Gros salaire"
+            case "es": return "Alto ingreso"
+            default: return "High Earner"
+            }
         }
     }
-    
-    var description: String {
+
+    func description(language: String) -> String {
         switch self {
-        case .tipMaster: return "Achieve 20%+ tip average"
-        case .consistencyKing: return "Enter data for 7 consecutive days"
-        case .tipTargetCrusher: return "Exceed tip target by 50%"
-        case .highEarner: return "Earn $30+/hour average"
+        case .tipMaster:
+            switch language {
+            case "fr": return "Atteindre 20%+ de moyenne de pourboires"
+            case "es": return "Lograr un promedio de propinas del 20%+"
+            default: return "Achieve 20%+ tip average"
+            }
+        case .consistencyKing:
+            switch language {
+            case "fr": return "Entrer des données pendant 7 jours consécutifs"
+            case "es": return "Ingresar datos durante 7 días consecutivos"
+            default: return "Enter data for 7 consecutive days"
+            }
+        case .tipTargetCrusher:
+            switch language {
+            case "fr": return "Dépasser l'objectif de pourboires de 50%"
+            case "es": return "Superar el objetivo de propinas en un 50%"
+            default: return "Exceed tip target by 50%"
+            }
+        case .highEarner:
+            switch language {
+            case "fr": return "Gagner 30$/heure en moyenne"
+            case "es": return "Ganar $30+/hora en promedio"
+            default: return "Earn $30+/hour average"
+            }
         }
     }
     
@@ -57,6 +97,10 @@ class AchievementManager: ObservableObject {
     @Published var currentStreaks: [StreakType: Int] = [:]
     @Published var showAchievement = false
     @Published var currentAchievement: Achievement?
+
+    private var language: String {
+        UserDefaults.standard.string(forKey: "language") ?? "en"
+    }
     
     init() {
         loadAchievements()
@@ -72,12 +116,25 @@ class AchievementManager: ObservableObject {
     private func checkTipAchievements(currentStats: DashboardView.Stats, targets: DashboardView.UserTargets) {
         // Tip Master Achievement
         if currentStats.tipPercentage >= 20 {
-            unlockAchievement(.tipMaster, message: "Achieved 20%+ tip average!")
+            let message = switch language {
+            case "fr": "20%+ de moyenne de pourboires atteinte!"
+            case "es": "¡Promedio de propinas del 20%+ alcanzado!"
+            default: "Achieved 20%+ tip average!"
+            }
+            unlockAchievement(.tipMaster, message: message)
         }
-        
-        // Tip Target Crusher
-        if targets.dailyTips > 0 && currentStats.tips >= targets.dailyTips * 1.5 {
-            unlockAchievement(.tipTargetCrusher, message: "Exceeded daily tip target by 50%!")
+
+        // Tip Target Crusher - now based on percentage of sales
+        if targets.tipTargetPercentage > 0 && currentStats.sales > 0 {
+            let targetTipAmount = currentStats.sales * (targets.tipTargetPercentage / 100.0)
+            if currentStats.tips >= targetTipAmount * 1.5 {
+                let message = switch language {
+                case "fr": "Objectif de pourboires dépassé de 50%!"
+                case "es": "¡Objetivo de propinas superado en un 50%!"
+                default: "Exceeded tip target by 50%!"
+                }
+                unlockAchievement(.tipTargetCrusher, message: message)
+            }
         }
     }
     
@@ -103,7 +160,12 @@ class AchievementManager: ObservableObject {
         }
         
         if entryStreak >= 7 {
-            unlockAchievement(.consistencyKing, message: "7-day entry streak achieved!")
+            let message = switch language {
+            case "fr": "Série de 7 jours atteinte!"
+            case "es": "¡Racha de 7 días alcanzada!"
+            default: "7-day entry streak achieved!"
+            }
+            unlockAchievement(.consistencyKing, message: message)
         }
         
         // Update current streak
@@ -115,7 +177,12 @@ class AchievementManager: ObservableObject {
         if currentStats.hours > 0 {
             let hourlyRate = currentStats.totalRevenue / currentStats.hours
             if hourlyRate >= 30 {
-                unlockAchievement(.highEarner, message: "Achieved $30+/hour average!")
+                let message = switch language {
+                case "fr": "Moyenne de 30$/heure atteinte!"
+                case "es": "¡Promedio de $30+/hora alcanzado!"
+                default: "Achieved $30+/hour average!"
+                }
+                unlockAchievement(.highEarner, message: message)
             }
         }
         
@@ -132,8 +199,8 @@ class AchievementManager: ObservableObject {
     private func unlockAchievement(_ type: AchievementType, message: String) {
         let achievement = Achievement(
             type: type,
-            title: type.title,
-            description: type.description,
+            title: type.title(language: language),
+            description: type.description(language: language),
             message: message,
             dateUnlocked: Date(),
             isUnlocked: true
