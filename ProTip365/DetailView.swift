@@ -193,7 +193,7 @@ struct DetailView: View {
                     Text(formatCurrency(shifts.isEmpty ? 0 : totalIncome / Double(shifts.count)))
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                 }
 
                 // Average hourly rate
@@ -205,7 +205,7 @@ struct DetailView: View {
                     Text(formatCurrency(totalHours > 0 ? totalIncome / totalHours : 0) + "/hr")
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                 }
 
                 // Average tip percentage
@@ -227,13 +227,13 @@ struct DetailView: View {
                     HStack {
                         Label("Best Day", systemImage: "star.fill")
                             .font(.body)
-                            .foregroundColor(.orange)
+                            .foregroundStyle(.orange)
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(formatCurrency(bestShift.total_income ?? 0))
                                 .font(.body)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.orange)
+                                .foregroundStyle(.orange)
                             Text(formatDate(bestShift.shift_date))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
@@ -296,7 +296,7 @@ struct DetailView: View {
                         Text(formatCurrency(netSalary))
                             .font(.body)
                             .fontWeight(.semibold)
-                            .foregroundColor(.green)
+                            .foregroundStyle(.green)
                         Text("-\(Int(averageDeductionPercentage))% deductions")
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -339,12 +339,12 @@ struct DetailView: View {
                     HStack {
                         Label(tipOutText, systemImage: "minus.circle")
                             .font(.body)
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                         Spacer()
                         Text("-\(formatCurrency(totalTipOut))")
                             .font(.body)
                             .fontWeight(.semibold)
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                     }
                 }
 
@@ -360,7 +360,7 @@ struct DetailView: View {
                         Text(formatCurrency(totalIncome))
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(.green)
+                            .foregroundStyle(.green)
                         if targetIncome > 0 {
                             Text("\(targetText): \(formatCurrency(targetIncome))")
                                 .font(.caption2)
@@ -474,7 +474,7 @@ struct DetailView: View {
                                 if let employer = shift.employer_name {
                                     Text(employer)
                                         .font(.caption)
-                                        .foregroundColor(.blue)
+                                        .foregroundStyle(.tint)
                                 }
                             }
                             Spacer()
@@ -536,7 +536,7 @@ struct DetailView: View {
                                     Text(formatCurrency(netSalary))
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.green)
                                 }
                                 .frame(minWidth: 100)
 
@@ -555,7 +555,7 @@ struct DetailView: View {
                                             Text("(\(String(format: "%.1f", (shift.tips / shift.sales) * 100))%)")
                                                 .font(.caption)
                                                 .fontWeight(.medium)
-                                                .foregroundColor(.green)
+                                                .foregroundStyle(.green)
                                         }
                                     }
                                 }
@@ -586,7 +586,7 @@ struct DetailView: View {
                                     Text(formatCurrency(shift.total_income ?? 0))
                                         .font(.body)
                                         .fontWeight(.bold)
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.green)
                                 }
                                 .frame(minWidth: 100)
                             }
@@ -613,7 +613,7 @@ struct DetailView: View {
                                     Text(formatCurrency(netSalary))
                                         .font(.subheadline)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.green)
                                 }
 
                                 // Tips with percentage
@@ -629,7 +629,7 @@ struct DetailView: View {
                                             Text("(\(String(format: "%.1f", (shift.tips / shift.sales) * 100))%)")
                                                 .font(.caption2)
                                                 .fontWeight(.medium)
-                                                .foregroundColor(.green)
+                                                .foregroundStyle(.green)
                                         }
                                     }
                                 }
@@ -642,7 +642,7 @@ struct DetailView: View {
                                     Text(formatCurrency(shift.total_income ?? 0))
                                         .font(.subheadline)
                                         .fontWeight(.bold)
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.green)
                                 }
 
                                 Spacer()

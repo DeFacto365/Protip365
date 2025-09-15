@@ -841,7 +841,7 @@ struct AddEntryView: View {
                         Text(didntWorkText.uppercased())
                             .font(.caption)
                             .fontWeight(.semibold)
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(Color.red.opacity(0.1))
@@ -863,7 +863,7 @@ struct AddEntryView: View {
                     Text(String(format: "%.1f %@", calculatedHours, hoursUnit))
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                 }
             }
             .padding(.horizontal, 16)
@@ -886,7 +886,7 @@ struct AddEntryView: View {
 
                 HStack {
                     Text("$")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                     SelectableTextField(text: $sales, placeholder: "0.00", keyboardType: .decimalPad)
                         .frame(width: 100)
                         .foregroundColor(.primary)
@@ -912,7 +912,7 @@ struct AddEntryView: View {
 
                 HStack {
                     Text("$")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                     SelectableTextField(text: $tips, placeholder: "0.00", keyboardType: .decimalPad)
                         .frame(width: 100)
                         .foregroundColor(.primary)
@@ -938,7 +938,7 @@ struct AddEntryView: View {
 
                 HStack {
                     Text("$")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                     SelectableTextField(text: $tipOut, placeholder: "0.00", keyboardType: .decimalPad)
                         .frame(width: 100)
                         .foregroundColor(.primary)
@@ -964,7 +964,7 @@ struct AddEntryView: View {
 
                 HStack {
                     Text("$")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                     SelectableTextField(text: $other, placeholder: "0.00", keyboardType: .decimalPad)
                         .frame(width: 100)
                         .foregroundColor(.primary)
@@ -1017,7 +1017,7 @@ struct AddEntryView: View {
                     Text(didntWorkText.uppercased())
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(Color.red.opacity(0.1))
@@ -1035,7 +1035,7 @@ struct AddEntryView: View {
                     Text(missedReason)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
 
                 Divider()
@@ -1102,7 +1102,7 @@ struct AddEntryView: View {
                     Text(String(format: "-$%.2f", Double(tipOut) ?? 0))
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
             }
 

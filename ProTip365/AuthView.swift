@@ -38,7 +38,7 @@ struct AuthView: View {
                             Text(languageLabel)
                         }
                         .font(.subheadline)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Color(.secondarySystemGroupedBackground))
@@ -133,7 +133,7 @@ struct AuthView: View {
                             }) {
                                 Text(forgotPasswordText)
                                     .font(.caption)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.tint)
                             }
                         }
                         .padding(.top, -8)
@@ -178,7 +178,7 @@ struct AuthView: View {
                     }) {
                         Text(isSignUp ? switchToSignIn : switchToSignUp)
                             .font(.subheadline)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.tint)
                     }
                 }
                 .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 16)
@@ -204,7 +204,7 @@ struct AuthView: View {
                     // Icon
                     Image(systemName: "envelope.badge")
                         .font(.system(size: 50))
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                         .padding(.top, 40)
                     
                     // Title

@@ -80,6 +80,7 @@ struct CalendarShiftsView: View {
             let _ = print("🟡 CalendarShiftsView - Presenting AddEntryView with shift: \(shift.id)")
             AddEntryView(editingShift: shift)
                 .environmentObject(SupabaseManager.shared)
+                .presentationDetents([.large])
                 .onDisappear {
                     Task {
                         await loadAllShifts()
@@ -136,6 +137,7 @@ struct CalendarShiftsView: View {
                         }
                     }
             }
+            .presentationDetents([.large])
         }
     }
     
@@ -146,7 +148,7 @@ struct CalendarShiftsView: View {
             Text(formatDate(selectedDate))
                 .font(.caption)
                 .textCase(.uppercase)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
 
@@ -184,7 +186,7 @@ struct CalendarShiftsView: View {
                     .frame(width: 8, height: 8)
                 Text(completedText)
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             // Planned/Scheduled
@@ -194,7 +196,7 @@ struct CalendarShiftsView: View {
                     .frame(width: 8, height: 8)
                 Text(scheduledText)
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             // Missed
@@ -204,7 +206,7 @@ struct CalendarShiftsView: View {
                     .frame(width: 8, height: 8)
                 Text(missedText)
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -231,13 +233,13 @@ struct CalendarShiftsView: View {
                     }
                 }) {
                     HStack {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: IconNames.Actions.add)
                             .font(.body)
                         Text(addEntryText)
                             .font(.body)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
                     .background(Color.blue)
@@ -248,13 +250,13 @@ struct CalendarShiftsView: View {
                 // For future dates: Show "Add Shift" button (for expected/planned shifts)
                 NavigationLink(destination: AddShiftView(initialDate: selectedDate)) {
                     HStack {
-                        Image(systemName: "calendar.badge.plus")
+                        Image(systemName: IconNames.Actions.add)
                             .font(.body)
                         Text(addShiftText)
                             .font(.body)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
                     .background(Color.purple)
@@ -644,7 +646,7 @@ struct CalendarDateView: View {
             // Date number
             Text("\(Calendar.current.component(.day, from: date))")
                 .font(.system(size: 17, weight: isToday ? .bold : .medium))
-                .foregroundColor(isToday ? .white : .primary)
+                .foregroundStyle(isToday ? .white : .primary)
             
             // iOS 26 style colored dots for events
             if !shifts.isEmpty {
@@ -661,7 +663,7 @@ struct CalendarDateView: View {
                     if shifts.count > 3 {
                         Text("+\(shifts.count - 3)")
                             .font(.system(size: 8, weight: .bold))
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             } else {
@@ -727,7 +729,7 @@ struct ShiftRowView: View {
                         Text(employer)
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -739,16 +741,16 @@ struct ShiftRowView: View {
                             Text("\(shift.hours, specifier: "%.1f")")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
 
                             if let expectedHours = shift.expected_hours {
                                 Text("/ \(expectedHours, specifier: "%.1f") hrs")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             } else {
                                 Text("hrs")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                         } else {
                             // Check if "didn't work"
@@ -763,17 +765,17 @@ struct ShiftRowView: View {
                                 Text("0")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.red)
+                                    .foregroundStyle(.red)
                             } else if let expectedHours = shift.expected_hours {
                                 Text("\(expectedHours, specifier: "%.1f")")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.tint)
                             }
 
                             Text("hrs")
                                 .font(.subheadline)
-                                .foregroundColor(isDidntWork ? .red : .blue)
+                                .foregroundStyle(isDidntWork ? Color.red : Color.blue)
                         }
                     }
 
@@ -788,7 +790,7 @@ struct ShiftRowView: View {
                         if !didntWorkReasons.contains(notes) {
                             Text(notes)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .padding(.top, 2)
                         }
@@ -830,11 +832,11 @@ struct ShiftRowView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(salesText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(formatCurrency(shift.sales))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                             }
                         }
 
@@ -843,22 +845,22 @@ struct ShiftRowView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(grossSalaryText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(formatCurrency(baseIncome))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(netSalaryText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 let netSalary = baseIncome * (1 - averageDeductionPercentage / 100)
                                 Text(formatCurrency(netSalary))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.green)
+                                    .foregroundStyle(.green)
                             }
                         }
 
@@ -872,11 +874,11 @@ struct ShiftRowView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(tipsText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(formatCurrency(shift.tips))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                             }
                         }
 
@@ -885,11 +887,11 @@ struct ShiftRowView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(otherText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(formatCurrency(other))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                             }
                         }
 
@@ -898,11 +900,11 @@ struct ShiftRowView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(tipOutText)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text("-\(formatCurrency(tipOut))")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.red)
+                                    .foregroundStyle(.red)
                             }
                         }
 
@@ -912,11 +914,11 @@ struct ShiftRowView: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(totalText)
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             Text(formatCurrency(shift.total_income ?? 0))
                                 .font(.headline)
                                 .fontWeight(.bold)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -941,7 +943,7 @@ struct ShiftRowView: View {
                         Text(reason.uppercased())
                             .font(.caption)
                             .textCase(.uppercase)
-                            .foregroundColor(.red)
+                            .foregroundStyle(.red)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(Color.red.opacity(0.1))
@@ -951,7 +953,7 @@ struct ShiftRowView: View {
                         Text("SCHEDULED")
                             .font(.caption)
                             .textCase(.uppercase)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.tint)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(Color.blue.opacity(0.1))
@@ -967,7 +969,7 @@ struct ShiftRowView: View {
                     onEdit()
                 }) {
                     HStack {
-                        Image(systemName: "pencil")
+                        Image(systemName: IconNames.Actions.edit)
                             .font(.system(size: 14))
                         Text(editText)
                             .font(.caption)
@@ -985,7 +987,7 @@ struct ShiftRowView: View {
                     onDelete()
                 }) {
                     HStack {
-                        Image(systemName: "trash")
+                        Image(systemName: IconNames.Actions.delete)
                             .font(.system(size: 14))
                         Text(deleteText)
                             .font(.caption)
@@ -1135,9 +1137,9 @@ struct CustomCalendarView: View {
             // Month header with navigation
             HStack {
                 Button(action: previousMonth) {
-                    Image(systemName: "chevron.left")
+                    Image(systemName: IconNames.Form.back)
                         .font(.title2)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                 }
                 
                 Spacer()
@@ -1145,14 +1147,14 @@ struct CustomCalendarView: View {
                 Text(monthYearText)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                 
                 Spacer()
                 
                 Button(action: nextMonth) {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: IconNames.Form.next)
                         .font(.title2)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.tint)
                 }
             }
             .padding(.horizontal)
@@ -1163,7 +1165,7 @@ struct CustomCalendarView: View {
                     Text(day)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
             }

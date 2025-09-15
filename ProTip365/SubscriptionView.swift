@@ -95,7 +95,7 @@ struct SubscriptionView: View {
                     Text(restoreButton)
                         .fontWeight(.medium)
                 }
-                .foregroundColor(.blue)
+                .foregroundStyle(.tint)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background(Color.blue.opacity(0.1))
@@ -208,7 +208,7 @@ struct FeatureRow: View {
         HStack(spacing: 15) {
             Image(systemName: icon)
                 .frame(width: 30)
-                .foregroundColor(.blue)
+                .foregroundStyle(.tint)
                 .font(.title3)
                 .modifier(GlassEffectModifier())
                 .frame(width: 40, height: 40)

@@ -116,16 +116,16 @@ struct SettingsView: View {
                 showOnboarding = true
             }) {
                 HStack {
-                    Image(systemName: "questionmark.circle")
+                    Image(systemName: IconNames.Status.help)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(howToUseText)
                         .foregroundStyle(.primary)
                         .font(.body)
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: IconNames.Form.next)
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
@@ -138,9 +138,9 @@ struct SettingsView: View {
             // Language Section
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
-                    Image(systemName: "globe")
+                    Image(systemName: IconNames.Navigation.settings)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(languageSection)
@@ -168,9 +168,9 @@ struct SettingsView: View {
     private var workDefaultsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                Image(systemName: "briefcase.fill")
+                Image(systemName: IconNames.Navigation.employersFill)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 Text(defaultsSection)
@@ -181,9 +181,9 @@ struct SettingsView: View {
             
             HStack {
                 HStack(spacing: 12) {
-                    Image(systemName: "dollarsign.circle.fill")
+                    Image(systemName: IconNames.Financial.money)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(hourlyRateLabel)
@@ -201,7 +201,7 @@ struct SettingsView: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                 }
                 .frame(width: 100)
                 .padding(8)
@@ -210,9 +210,9 @@ struct SettingsView: View {
 
             HStack {
                 HStack(spacing: 12) {
-                    Image(systemName: "percent")
+                    Image(systemName: IconNames.Financial.percentage)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(averageDeductionLabel)
@@ -228,7 +228,7 @@ struct SettingsView: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .onChange(of: averageDeductionPercentage) { _, newValue in
                         // Validate input to ensure it's between 0 and 100
                         if let value = Double(newValue), value > 100 {
@@ -246,13 +246,13 @@ struct SettingsView: View {
             // Explanation text for average deduction
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Image(systemName: "info.circle")
+                    Image(systemName: IconNames.Status.info)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.tint)
                     Text(averageDeductionNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.tint)
                     Spacer()
                 }
                 Text(averageDeductionNoteMessage)
@@ -262,12 +262,12 @@ struct SettingsView: View {
                     .multilineTextAlignment(.leading)
             }
             .padding(12)
-            .background(Color.orange.opacity(0.1))
+            .background(Color.blue.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
             LiquidGlassToggle(
                 useMultipleEmployersLabel,
-                icon: "building.2.fill",
+                icon: IconNames.Navigation.employersFill,
                 description: useMultipleEmployersDescriptionText,
                 isOn: $useMultipleEmployers
             ) { newValue in
@@ -276,7 +276,7 @@ struct SettingsView: View {
 
             LiquidGlassToggle(
                 variableScheduleLabel,
-                icon: "calendar.badge.clock",
+                icon: IconNames.Form.calendar,
                 description: variableScheduleDescription,
                 isOn: $hasVariableSchedule
             ) { newValue in
@@ -288,13 +288,13 @@ struct SettingsView: View {
             if hasVariableSchedule {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Image(systemName: "info.circle")
+                        Image(systemName: IconNames.Status.info)
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                         Text(variableScheduleEnabledTitle)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                         Spacer()
                     }
                     Text(variableScheduleEnabledMessage)
@@ -313,9 +313,9 @@ struct SettingsView: View {
                 VStack(spacing: 0) {
                     HStack {
                         HStack(spacing: 12) {
-                            Image(systemName: "star.fill")
+                            Image(systemName: IconNames.Achievements.star)
                                 .font(.system(size: 20, weight: .medium))
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.tint)
                                 .symbolRenderingMode(.monochrome)
                                 .frame(width: 28, height: 28)
                             Text(defaultEmployerLabel)
@@ -364,9 +364,9 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        Image(systemName: "calendar")
+                        Image(systemName: IconNames.Form.calendar)
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                             .symbolRenderingMode(.monochrome)
                             .frame(width: 28, height: 28)
                         Text(weekStartLabel)
@@ -438,9 +438,9 @@ struct SettingsView: View {
     private var tipTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                Image(systemName: "banknote.fill")
+                Image(systemName: IconNames.Financial.tips)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 Text(tipTargetsSection)
@@ -451,9 +451,9 @@ struct SettingsView: View {
 
             HStack {
                 HStack(spacing: 12) {
-                    Image(systemName: "percent")
+                    Image(systemName: IconNames.Financial.percentage)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(tipPercentageTargetLabel)
@@ -470,7 +470,7 @@ struct SettingsView: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     Text("%")
                         .foregroundStyle(.secondary)
                 }
@@ -483,13 +483,13 @@ struct SettingsView: View {
             // Tip percentage explanation
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Image(systemName: "info.circle")
+                    Image(systemName: IconNames.Status.info)
                         .font(.caption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                     Text(tipPercentageNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                 }
                 Text(tipPercentageNoteMessage)
                     .font(.caption)
@@ -510,9 +510,9 @@ struct SettingsView: View {
     private var salesTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                Image(systemName: "cart.fill")
+                Image(systemName: IconNames.Financial.sales)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 Text(salesTargetsSection)
@@ -522,7 +522,7 @@ struct SettingsView: View {
             }
 
             targetRow(label: dailySalesTargetLabel,
-                      icon: "chart.line.uptrend.xyaxis",
+                      icon: IconNames.Financial.income,
                       value: $targetSalesDaily,
                       placeholder: "500.00",
                       color: .primary)
@@ -530,13 +530,13 @@ struct SettingsView: View {
             // Only show weekly and monthly if NOT variable schedule
             if !hasVariableSchedule {
                 targetRow(label: weeklySalesTargetLabel,
-                          icon: "chart.bar.fill",
+                          icon: IconNames.Financial.income,
                           value: $targetSalesWeekly,
                           placeholder: "3500.00",
                           color: .primary)
 
                 targetRow(label: monthlySalesTargetLabel,
-                          icon: "chart.pie.fill",
+                          icon: IconNames.Financial.income,
                           value: $targetSalesMonthly,
                           placeholder: "14000.00",
                           color: .primary)
@@ -545,13 +545,13 @@ struct SettingsView: View {
             // Variable schedule note
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Image(systemName: "info.circle")
+                    Image(systemName: IconNames.Status.info)
                         .font(.caption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                     Text(variableScheduleNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                 }
                 Text(variableScheduleNoteMessage)
                     .font(.caption)
@@ -572,9 +572,9 @@ struct SettingsView: View {
     private var hoursTargetsSectionView: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                Image(systemName: "clock.fill")
+                Image(systemName: IconNames.Financial.hours)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 Text(hoursTargetsSection)
@@ -584,7 +584,7 @@ struct SettingsView: View {
             }
 
             targetRow(label: dailyHoursTargetLabel,
-                      icon: "timer",
+                      icon: IconNames.Financial.hours,
                       value: $targetHoursDaily,
                       placeholder: "8",
                       color: .primary,
@@ -593,14 +593,14 @@ struct SettingsView: View {
             // Only show weekly and monthly if NOT variable schedule
             if !hasVariableSchedule {
                 targetRow(label: weeklyHoursTargetLabel,
-                          icon: "timer.circle.fill",
+                          icon: IconNames.Financial.hours,
                           value: $targetHoursWeekly,
                           placeholder: "40",
                           color: .primary,
                           isHours: true)
 
                 targetRow(label: monthlyHoursTargetLabel,
-                          icon: "hourglass",
+                          icon: IconNames.Financial.hours,
                           value: $targetHoursMonthly,
                           placeholder: "160",
                           color: .primary,
@@ -610,13 +610,13 @@ struct SettingsView: View {
             // Variable schedule note
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Image(systemName: "info.circle")
+                    Image(systemName: IconNames.Status.info)
                         .font(.caption)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                     Text(variableScheduleNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                 }
                 Text(variableScheduleHoursNoteMessage)
                     .font(.caption)
@@ -641,9 +641,9 @@ struct SettingsView: View {
                 showingExportOptions = true
             }) {
                 HStack {
-                    Image(systemName: "square.and.arrow.up.fill")
+                    Image(systemName: IconNames.Actions.export)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     VStack(alignment: .leading) {
@@ -654,7 +654,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: IconNames.Form.next)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -669,9 +669,9 @@ struct SettingsView: View {
             
             // Support
             HStack {
-                Image(systemName: "envelope.fill")
+                Image(systemName: IconNames.Communication.email)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 VStack(alignment: .leading) {
@@ -696,15 +696,15 @@ struct SettingsView: View {
                 showSuggestIdeas = true
             }) {
                 HStack {
-                    Image(systemName: "lightbulb.fill")
+                    Image(systemName: IconNames.Status.info)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(suggestIdeasButton)
                         .foregroundStyle(.primary)
                     Spacer()
-                    Image(systemName: "chevron.right")
+                    Image(systemName: IconNames.Form.next)
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
@@ -737,9 +737,9 @@ struct SettingsView: View {
             // Cancel Subscription Section
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
-                    Image(systemName: "creditcard.fill")
+                    Image(systemName: IconNames.Financial.money)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(cancelSubscriptionTitle)
@@ -756,7 +756,7 @@ struct SettingsView: View {
 
                     Text(cancelSubscriptionWarning)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.tint)
                         .fontWeight(.medium)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -768,12 +768,12 @@ struct SettingsView: View {
                     }
                 }) {
                     HStack {
-                        Image(systemName: "gear")
+                        Image(systemName: IconNames.Navigation.settings)
                         Text(goToAppleAccountText)
                         Spacer()
-                        Image(systemName: "arrow.up.right")
+                        Image(systemName: IconNames.Form.next)
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .padding(.vertical, 8)
                 }
             }
@@ -822,9 +822,9 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     HStack(spacing: 12) {
-                        Image(systemName: "lock.shield.fill")
+                        Image(systemName: IconNames.Security.shield)
                             .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.tint)
                             .symbolRenderingMode(.monochrome)
                             .frame(width: 28, height: 28)
                         Text(securityOptionsLabel)
@@ -859,7 +859,7 @@ struct SettingsView: View {
                             }
                         }) {
                             HStack(spacing: 12) {
-                                Image(systemName: "lock.open")
+                                Image(systemName: IconNames.Security.unlocked)
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.secondary)
                                     .symbolRenderingMode(.monochrome)
@@ -875,7 +875,7 @@ struct SettingsView: View {
                             HapticFeedback.selection()
                         }) {
                             HStack(spacing: 12) {
-                                Image(systemName: "faceid")
+                                Image(systemName: IconNames.Security.faceID)
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.secondary)
                                     .symbolRenderingMode(.monochrome)
@@ -896,7 +896,7 @@ struct SettingsView: View {
                             HapticFeedback.selection()
                         }) {
                             HStack(spacing: 12) {
-                                Image(systemName: "number.square.fill")
+                                Image(systemName: IconNames.Security.pin)
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.secondary)
                                     .symbolRenderingMode(.monochrome)
@@ -909,7 +909,7 @@ struct SettingsView: View {
                         HStack {
                             Text(currentSecurityText)
                                 .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
+                            Image(systemName: IconNames.Form.dropdown)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -989,65 +989,68 @@ struct SettingsView: View {
         .padding(.vertical)
     }
     
-    private var mainScrollView: some View {
+    private var settingsHeader: some View {
+        HStack {
+            // Cancel Button with iOS 26 style
+            Button(action: {
+                if hasUnsavedChanges {
+                    showUnsavedChangesAlert = true
+                } else {
+                    selectedTab = "dashboard"
+                }
+            }) {
+                Image(systemName: IconNames.Actions.close)
+                    .font(.title2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                    .frame(width: 32, height: 32)
+                    .background(Color(.systemGray5))
+                    .clipShape(Circle())
+            }
+
+            Spacer()
+
+            Text(settingsTitle)
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            Spacer()
+
+            // Save Button with iOS 26 style
+            Button(action: {
+                HapticFeedback.medium()
+                Task {
+                    await saveSettings()
+                }
+            }) {
+                if isSaving {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(width: 32, height: 32)
+                } else {
+                    Image(systemName: IconNames.Actions.save)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .frame(width: 32, height: 32)
+                        .background(hasUnsavedChanges ? Color.blue : Color(.systemGray4))
+                        .clipShape(Circle())
+                }
+            }
+            .disabled(isSaving)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+
+    private var mainContentView: some View {
         ZStack {
             // iOS 26 Gray Background
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // iOS 26 Style Header
-                HStack {
-                    // Cancel Button with iOS 26 style
-                    Button(action: {
-                        if hasUnsavedChanges {
-                            showUnsavedChangesAlert = true
-                        } else {
-                            selectedTab = "dashboard"
-                        }
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.primary)
-                            .frame(width: 32, height: 32)
-                            .background(Color(.systemGray5))
-                            .clipShape(Circle())
-                    }
-
-                    Spacer()
-
-                    Text(settingsTitle)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-
-                    Spacer()
-
-                    // Save Button with iOS 26 style
-                    Button(action: {
-                        HapticFeedback.medium()
-                        Task {
-                            await saveSettings()
-                        }
-                    }) {
-                        if isSaving {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .frame(width: 32, height: 32)
-                        } else {
-                            Image(systemName: "checkmark")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .frame(width: 32, height: 32)
-                                .background(hasUnsavedChanges ? Color.blue : Color.gray)
-                                .clipShape(Circle())
-                        }
-                    }
-                    .disabled(isSaving)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                settingsHeader
 
                 ScrollView {
                     settingsContent
@@ -1056,6 +1059,10 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private var mainScrollView: some View {
+        mainContentView
             .alert(signOutConfirmTitle, isPresented: $showSignOutAlert) {
                 Button(cancelButton, role: .cancel) { }
                 Button(signOutButton, role: .destructive) {
@@ -1121,7 +1128,7 @@ struct SettingsView: View {
                                     Spacer()
                                 }
                                 .frame(minHeight: 44)
-                                .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color.gray : Color.blue)
+                                .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color(.systemGray4) : Color.tint)
                                 .foregroundStyle(.primary)
                                 .cornerRadius(8)
                             }
@@ -1138,7 +1145,7 @@ struct SettingsView: View {
                                 suggestionText = ""
                                 suggestionEmail = ""
                             }) {
-                                Image(systemName: "xmark")
+                                Image(systemName: IconNames.Actions.close)
                                     .foregroundStyle(.primary)
                             }
                         }
@@ -1196,7 +1203,7 @@ struct SettingsView: View {
     func targetRow(label: String, icon: String, value: Binding<String>, placeholder: String, color: Color, isHours: Bool = false) -> some View {
         HStack {
             Label(label, systemImage: icon)
-                .foregroundColor(color)
+                .foregroundStyle(.tint)
             Spacer()
             TextField(placeholder, text: value, onEditingChanged: { editing in
                 if editing && (value.wrappedValue == "0" || value.wrappedValue == "0.00" || value.wrappedValue == "0.0" || value.wrappedValue == placeholder) {
@@ -1205,7 +1212,7 @@ struct SettingsView: View {
             })
             .keyboardType(.decimalPad)
             .multilineTextAlignment(.trailing)
-            .foregroundStyle(.blue)
+            .foregroundStyle(.tint)
             .frame(width: 100)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -2145,9 +2152,9 @@ struct SettingsView: View {
                 VStack(spacing: 20) {
                     Spacer()
 
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: IconNames.Status.success)
                         .font(.largeTitle)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.tint)
 
                     Text(thankYouTitle)
                         .font(.title2)
@@ -2180,7 +2187,7 @@ struct SettingsView: View {
                             suggestionText = ""
                             suggestionEmail = ""
                         }) {
-                            Image(systemName: "xmark")
+                            Image(systemName: IconNames.Actions.close)
                                 .font(.title2)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.primary)
@@ -2207,12 +2214,12 @@ struct SettingsView: View {
                                     .scaleEffect(0.8)
                                     .frame(width: 32, height: 32)
                             } else {
-                                Image(systemName: "checkmark")
+                                Image(systemName: IconNames.Actions.save)
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.primary)
                                     .frame(width: 32, height: 32)
-                                    .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color.gray : Color.blue)
+                                    .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color(.systemGray4) : Color.blue)
                                     .clipShape(Circle())
                             }
                         }
@@ -2225,7 +2232,7 @@ struct SettingsView: View {
                         VStack(spacing: 20) {
                             // Suggestion Card - iOS 26 Style
                             VStack(alignment: .leading, spacing: 16) {
-                                Label(yourSuggestionHeader, systemImage: "lightbulb.fill")
+                                Label(yourSuggestionHeader, systemImage: IconNames.Status.info)
                                     .font(.headline)
                                     .foregroundStyle(.primary)
 

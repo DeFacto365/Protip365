@@ -108,8 +108,8 @@ struct DashboardView: View {
                                 #endif
                             }
                     }
-                    .padding(.horizontal, horizontalSizeClass == .regular ? 32 : 12)  // Reduced from 26 to 12 for iPhone
-                    .padding(.bottom, horizontalSizeClass == .regular ? 20 : (Constants.tabBarHeight + 15))  // Reduced bottom padding
+                    .padding(.horizontal, horizontalSizeClass == .regular ? Spacing.xxxxl : Spacing.lg)  // Reduced from 26 to 12 for iPhone
+                    .padding(.bottom, horizontalSizeClass == .regular ? Spacing.xxl : (Constants.tabBarHeight + Spacing.xl))  // Reduced bottom padding
                     .frame(maxWidth: .infinity)
                 }
                 .refreshable {
@@ -134,7 +134,7 @@ struct DashboardView: View {
                 // Loading indicator overlay (show during initial load)
                 if (isLoading || !statsPreloaded) && initialLoadStarted {
                     ZStack {
-                        Color.black.opacity(0.3)
+                        Color.primary.opacity(0.3)
                             .ignoresSafeArea()
 
                         VStack(spacing: 16) {
@@ -143,9 +143,9 @@ struct DashboardView: View {
                                 .tint(.white)
                             Text(loadingStatsText)
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundStyle(.white)
                         }
-                        .padding(24)
+                        .padding(Spacing.xxxl)
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
                     }
                 }
@@ -683,9 +683,9 @@ struct DashboardView: View {
                     }) {
                         HStack {
                             Image(systemName: monthViewType == 0 ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(monthViewType == 0 ? .blue : .secondary)
+                                .foregroundStyle(monthViewType == 0 ? Color.blue : Color.secondary)
                             Text(calendarMonthText)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -698,9 +698,9 @@ struct DashboardView: View {
                     }) {
                         HStack {
                             Image(systemName: monthViewType == 1 ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(monthViewType == 1 ? .blue : .secondary)
+                                .foregroundStyle(monthViewType == 1 ? Color.blue : Color.secondary)
                             Text(fourWeeksPayText)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -730,10 +730,7 @@ struct DashboardView: View {
     }
 
     private var regularViewCards: some View {
-        let incomeValue = formatIncomeWithTarget()
-        let tipsValue = formatTipsWithTarget()
-
-        return Group {
+        Group {
             // Sales Card at the top (full width)
             VStack(spacing: 4) {
                 ZStack(alignment: .bottom) {
@@ -769,7 +766,7 @@ struct DashboardView: View {
                                 ZStack(alignment: .leading) {
                                     // Background
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.purple.opacity(0.2))
+                                        .fill(.tint.opacity(0.2))
                                         .frame(height: 8)
 
                                     // Progress
@@ -794,17 +791,17 @@ struct DashboardView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
+                        .padding(.horizontal, Spacing.xl)
+                        .padding(.bottom, Spacing.lg)
                     }
                 }
 
                 // Gray separator line like tip-out
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.secondary.opacity(0.3))
                     .frame(height: 1)
                     .frame(maxWidth: horizontalSizeClass == .regular ? 800 : .infinity)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Spacing.xl)
             }
 
             // Adaptive layout for iPad vs iPhone
@@ -821,7 +818,7 @@ struct DashboardView: View {
                         value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                         icon: "dollarsign.bank.building",
                         color: .blue,
-                        subtitle: "\(totalGrossSalaryText): \(incomeValue)"
+                        subtitle: "\(totalGrossSalaryText): \(formatIncomeWithTarget())"
                     )
                     .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
                     .onTapGesture {
@@ -866,7 +863,7 @@ struct DashboardView: View {
                     ZStack(alignment: .topTrailing) {
                         GlassStatCard(
                             title: tipsText,
-                            value: tipsValue,
+                            value: formatTipsWithTarget(),
                             icon: "banknote.fill",
                             color: .green,
                             subtitle: currentStats.tipPercentage > 0 ? String(format: "%.1f%% of sales", currentStats.tipPercentage) : customerTipsReceivedText
@@ -887,10 +884,10 @@ struct DashboardView: View {
                             Text(String(format: "%.0f%%", currentStats.tipPercentage))
                                 .font(.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.purple)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Spacing.sm + 2)
+                                .padding(.vertical, Spacing.xs)
+                                .background(.tint)
                                 .cornerRadius(8)
                                 .offset(x: -8, y: 8)
                         }
@@ -941,7 +938,7 @@ struct DashboardView: View {
                         value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                         icon: "dollarsign.bank.building",
                         color: .blue,
-                        subtitle: "\(totalGrossSalaryText): \(incomeValue)"
+                        subtitle: "\(totalGrossSalaryText): \(formatIncomeWithTarget())"
                     )
                     .modifier(GlassEffectRoundedModifier(cornerRadius: Constants.cornerRadius))
                     .onTapGesture {
@@ -1001,7 +998,7 @@ struct DashboardView: View {
                     ZStack(alignment: .topTrailing) {
                         GlassStatCard(
                             title: tipsText,
-                            value: tipsValue,
+                            value: formatTipsWithTarget(),
                             icon: "banknote.fill",
                             color: .green,
                             subtitle: currentStats.tipPercentage > 0 ? String(format: "%.1f%% of sales", currentStats.tipPercentage) : customerTipsReceivedText
@@ -1022,10 +1019,10 @@ struct DashboardView: View {
                             Text(String(format: "%.0f%%", currentStats.tipPercentage))
                                 .font(.caption)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.purple)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Spacing.sm + 2)
+                                .padding(.vertical, Spacing.xs)
+                                .background(.tint)
                                 .cornerRadius(8)
                                 .offset(x: -8, y: 8)
                         }
@@ -1074,7 +1071,7 @@ struct DashboardView: View {
                 if !currentStats.shifts.isEmpty {
                     Text(tapCardForDetailsText)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .padding(.top, 4)
                 }
             }
@@ -1096,9 +1093,9 @@ struct DashboardView: View {
 
                 // Gray separator line
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.secondary.opacity(0.3))
                     .frame(height: 1)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Spacing.xl)
             }
 
             // Income Cards
@@ -1146,26 +1143,26 @@ struct DashboardView: View {
                 Text(subtotalText)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Text(formatCurrency(currentStats.income + currentStats.tips + currentStats.other))
                     .font(.body)
                     .fontWeight(.bold)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.md)
 
             // Tip Out (negative)
             if currentStats.tipOut > 0 {
                 HStack {
                     Label(tipOutText, systemImage: "minus.circle")
                         .font(.body)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                     Spacer()
                     Text("-\(formatCurrency(currentStats.tipOut))")
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -1178,15 +1175,15 @@ struct DashboardView: View {
                 Text(totalIncomeText)
                     .font(.body)
                     .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Text(formatCurrency(currentStats.totalRevenue))
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.md)
 
             // Performance Metrics section removed - sales already shown in tips subtitle
 
@@ -1207,10 +1204,10 @@ struct DashboardView: View {
                             .font(.body)
                             .fontWeight(.medium)
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, Spacing.xxxl)
+                    .padding(.vertical, Spacing.lg)
+                    .background(.tint)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.top, 8)
@@ -1219,10 +1216,7 @@ struct DashboardView: View {
     }
 
     private var yearViewCards: some View {
-        let incomeValue = formatIncomeWithTarget()
-        let tipsValue = formatTipsWithTarget()
-
-        return VStack(spacing: 12) {
+        VStack(spacing: 12) {
             // Sales at the top
             VStack(spacing: 4) {
                 CompactGlassStatCard(
@@ -1246,9 +1240,9 @@ struct DashboardView: View {
 
                 // Gray separator line
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.secondary.opacity(0.3))
                     .frame(height: 1)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Spacing.xl)
             }
 
             // Total Salary
@@ -1257,7 +1251,7 @@ struct DashboardView: View {
                 value: formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
                 icon: "dollarsign.circle.fill",
                 color: .blue,
-                subtitle: "\(totalGrossSalaryText): \(incomeValue)"
+                subtitle: "\(totalGrossSalaryText): \(formatIncomeWithTarget())"
             )
             .onTapGesture {
                 print("💰 Year Salary Card Tapped")
@@ -1306,7 +1300,7 @@ struct DashboardView: View {
             // Tips with sales info in subtitle
             CompactGlassStatCard(
                 title: tipsText,
-                value: tipsValue,
+                value: formatTipsWithTarget(),
                 icon: "banknote.fill",
                 color: .blue,
                 subtitle: currentStats.tipPercentage > 0 ? String(format: "%.0f%% of sales", currentStats.tipPercentage) : customerTipsReceivedText
@@ -1361,7 +1355,7 @@ struct DashboardView: View {
             if !currentStats.shifts.isEmpty {
                 Text("Tap a card to view details")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.top, 4)
             }
         }

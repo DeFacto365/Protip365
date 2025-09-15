@@ -411,55 +411,111 @@ struct Animations {
 // MARK: - Icon Names
 
 struct IconNames {
-    // MARK: - Navigation Icons
-    static let dashboard = "chart.bar"
-    static let employers = "building.2"
-    static let calculator = "percent"
-    static let settings = "gear"
-    static let calendar = "calendar"
+    // MARK: - Navigation (Tab Bar & Sidebar)
+    struct Navigation {
+        static let dashboard = "chart.bar"
+        static let dashboardFill = "chart.bar.fill"
+        static let calendar = "calendar"
+        static let calendarFill = "calendar.circle.fill"
+        static let employers = "building.2"
+        static let employersFill = "building.2.fill"
+        static let calculator = "percent"
+        static let calculatorFill = "percent.circle.fill"
+        static let settings = "gear"
+        static let settingsFill = "gear.badge.fill"
+    }
 
-    // MARK: - Action Icons
-    static let add = "plus"
-    static let edit = "pencil"
-    static let delete = "trash"
-    static let share = "square.and.arrow.up"
-    static let export = "arrow.up.doc"
-    static let save = "checkmark"
-    static let cancel = "xmark"
+    // MARK: - Actions
+    struct Actions {
+        static let add = "plus.circle.fill"
+        static let edit = "pencil.circle.fill"
+        static let delete = "trash.circle.fill"
+        static let save = "checkmark.circle.fill"
+        static let cancel = "xmark.circle.fill"
+        static let share = "square.and.arrow.up"
+        static let export = "square.and.arrow.up.fill"
+        static let refresh = "arrow.clockwise"
+        static let more = "ellipsis.circle.fill"
+        static let close = "xmark.circle.fill"
+    }
 
-    // MARK: - Status Icons
-    static let success = "checkmark.circle.fill"
-    static let error = "xmark.circle.fill"
-    static let warning = "exclamationmark.triangle.fill"
-    static let info = "info.circle.fill"
-    static let loading = "hourglass"
+    // MARK: - Financial
+    struct Financial {
+        static let money = "dollarsign.circle.fill"
+        static let tips = "banknote.fill"
+        static let sales = "cart.fill"
+        static let salary = "building.columns.fill"
+        static let hours = "clock.fill"
+        static let percentage = "percent"
+        static let income = "chart.line.uptrend.xyaxis"
+        static let expense = "minus.circle.fill"
+    }
 
-    // MARK: - Data Icons
-    static let money = "dollarsign.circle"
-    static let tips = "banknote.fill"
-    static let hours = "clock.badge"
-    static let sales = "dollarsign.circle"
-    static let income = "dollarsign.bank.building"
+    // MARK: - Status
+    struct Status {
+        static let success = "checkmark.circle.fill"
+        static let error = "xmark.circle.fill"
+        static let warning = "exclamationmark.triangle.fill"
+        static let info = "info.circle.fill"
+        static let help = "questionmark.circle.fill"
+        static let pending = "clock.arrow.circlepath"
+        static let complete = "checkmark.seal.fill"
+    }
 
-    // MARK: - Security Icons
-    static let lock = "lock.fill"
-    static let unlock = "lock.open"
-    static let faceID = "faceid"
-    static let touchID = "touchid"
-    static let pin = "key"
+    // MARK: - Form Controls
+    struct Form {
+        static let dropdown = "chevron.up.chevron.down"
+        static let expand = "chevron.down"
+        static let collapse = "chevron.up"
+        static let next = "chevron.right"
+        static let back = "chevron.left"
+        static let increment = "plus.circle.fill"
+        static let decrement = "minus.circle.fill"
+        static let calendar = "calendar"
+        static let time = "clock"
+    }
 
-    // MARK: - Achievement Icons
-    static let star = "star.fill"
-    static let crown = "crown.fill"
-    static let target = "target"
-    static let trophy = "trophy.fill"
+    // MARK: - Security
+    struct Security {
+        static let locked = "lock.fill"
+        static let unlocked = "lock.open.fill"
+        static let faceID = "faceid"
+        static let touchID = "touchid"
+        static let pin = "number.square.fill"
+        static let shield = "lock.shield.fill"
+        static let key = "key.fill"
+    }
 
-    // MARK: - Communication Icons
-    static let notification = "bell"
-    static let notificationBadge = "bell.fill"
-    static let email = "envelope"
-    static let support = "questionmark.circle"
-    static let idea = "lightbulb"
+    // MARK: - Communication
+    struct Communication {
+        static let email = "envelope.fill"
+        static let notification = "bell.fill"
+        static let notificationBadge = "bell.badge.fill"
+        static let notificationOff = "bell.slash.fill"
+        static let support = "questionmark.circle.fill"
+        static let feedback = "lightbulb.fill"
+        static let link = "arrow.up.forward"
+    }
+
+    // MARK: - Achievements
+    struct Achievements {
+        static let trophy = "trophy.fill"
+        static let star = "star.fill"
+        static let medal = "medal.fill"
+        static let crown = "crown.fill"
+        static let target = "target"
+        static let flame = "flame.fill"
+        static let badge = "rosette"
+    }
+
+    // MARK: - Data States
+    struct DataStates {
+        static let empty = "tray.fill"
+        static let error = "exclamationmark.icloud.fill"
+        static let loading = "arrow.clockwise.circle.fill"
+        static let offline = "wifi.slash"
+        static let sync = "arrow.triangle.2.circlepath"
+    }
 }
 
 // MARK: - Layout System

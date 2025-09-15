@@ -101,7 +101,7 @@ struct PINEntryView: View {
             if showError {
                 Text(errorText)
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .transition(.scale.combined(with: .opacity))
             }
 
@@ -128,7 +128,7 @@ struct PINEntryView: View {
                             Text(cancelText)
                                 .font(.body)
                                 .frame(width: 75, height: 75)
-                                .foregroundColor(.red)
+                                .foregroundStyle(.red)
                         }
                     } else {
                         Color.clear
@@ -144,7 +144,7 @@ struct PINEntryView: View {
                         Image(systemName: "delete.left")
                             .font(.title2)
                             .frame(width: 75, height: 75)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.tint)
                     }
                 }
             }

@@ -198,18 +198,18 @@ struct iOS26LiquidGlassMainView: View {
     // Tab items based on app configuration
     private var tabItems: [TabItem] {
         var items = [
-            TabItem(id: "dashboard", icon: "chart.bar", label: "Dashboard", activeIcon: "chart.bar.fill"),
-            TabItem(id: "calendar", icon: "calendar", label: "Calendar", activeIcon: "calendar")
+            TabItem(id: "dashboard", icon: IconNames.Navigation.dashboard, label: "Dashboard", activeIcon: IconNames.Navigation.dashboardFill),
+            TabItem(id: "calendar", icon: IconNames.Navigation.calendar, label: "Calendar", activeIcon: IconNames.Navigation.calendarFill)
         ]
 
         // Only add employers if enabled
         if useMultipleEmployers {
-            items.append(TabItem(id: "employers", icon: "building.2", label: "Employers", activeIcon: "building.2.fill"))
+            items.append(TabItem(id: "employers", icon: IconNames.Navigation.employers, label: "Employers", activeIcon: IconNames.Navigation.employersFill))
         }
 
         items.append(contentsOf: [
-            TabItem(id: "calculator", icon: "percent", label: "Calculator", activeIcon: "percent"),
-            TabItem(id: "settings", icon: "gear", label: "Settings", activeIcon: "gear.circle.fill")
+            TabItem(id: "calculator", icon: IconNames.Navigation.calculator, label: "Calculator", activeIcon: IconNames.Navigation.calculatorFill),
+            TabItem(id: "settings", icon: IconNames.Navigation.settings, label: "Settings", activeIcon: IconNames.Navigation.settingsFill)
         ])
 
         return items

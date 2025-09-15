@@ -39,7 +39,7 @@ struct GlassStatCard: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .font(Icons.statCardIcon)
                     .foregroundStyle(color)
                     .symbolRenderingMode(.hierarchical)
                     .modifier(GlassEffectModifier())
@@ -51,8 +51,7 @@ struct GlassStatCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
 
@@ -83,7 +82,8 @@ struct GlassStatCard: View {
                         }
                     } else {
                         Text(value)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.title3)
+                            .fontWeight(.bold)
                             .foregroundStyle(.primary)
                             .minimumScaleFactor(0.6)
                             .lineLimit(1)
@@ -124,7 +124,7 @@ struct CompactGlassStatCard: View {
         let _ = print("📊 Compact Card: \(title) = \(value)")
         return HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(Icons.statCardIcon)
                 .foregroundStyle(color)
                 .symbolRenderingMode(.hierarchical)
                 .modifier(GlassEffectModifier())
@@ -133,8 +133,7 @@ struct CompactGlassStatCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.secondary)
 
                 if let subtitle = subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -147,7 +146,8 @@ struct CompactGlassStatCard: View {
             Spacer()
 
             Text(value)
-                .font(.system(size: 18, weight: .bold))
+                .font(.title3)
+                .fontWeight(.bold)
                 .foregroundStyle(.primary)
                 .minimumScaleFactor(0.6)
         }
@@ -190,7 +190,7 @@ struct EmptyStateCard: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "calendar.badge.plus")
+            Image(systemName: IconNames.Actions.add)
                 .font(.system(size: 48))
                 .foregroundStyle(
                     LinearGradient(

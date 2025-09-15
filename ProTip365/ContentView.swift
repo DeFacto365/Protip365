@@ -138,25 +138,25 @@ struct ContentView: View {
                 NavigationSplitView {
                     List {
                         NavigationLink(destination: DashboardView()) {
-                            Label(dashboardTab, systemImage: "chart.bar")
+                            Label(dashboardTab, systemImage: IconNames.Navigation.dashboard)
                         }
 
                         NavigationLink(destination: CalendarShiftsView()) {
-                            Label(calendarTab, systemImage: "calendar")
+                            Label(calendarTab, systemImage: IconNames.Navigation.calendar)
                         }
 
                         // Only show Employers if enabled
                         if useMultipleEmployers {
                             NavigationLink(destination: EmployersView()) {
-                                Label(employersTab, systemImage: "building.2")
+                                Label(employersTab, systemImage: IconNames.Navigation.employers)
                             }
                         }
 
                         NavigationLink(destination: TipCalculatorView()) {
-                            Label(calculatorTab, systemImage: "percent")
+                            Label(calculatorTab, systemImage: IconNames.Navigation.calculator)
                         }
                         NavigationLink(destination: SettingsViewWrapper()) {
-                            Label(settingsTab, systemImage: "gear")
+                            Label(settingsTab, systemImage: IconNames.Navigation.settings)
                         }
                     }
                     .navigationTitle("ProTip365")

@@ -34,16 +34,16 @@ struct EmployersView: View {
                             showAddEmployer = true
                         }) {
                             HStack {
-                                Image(systemName: "plus.circle.fill")
+                                Image(systemName: IconNames.Actions.add)
                                     .font(.body)
                                 Text(addEmployerButton)
                                     .font(.body)
                                     .fontWeight(.medium)
                             }
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
-                            .background(Color.blue)
+                            .background(.tint)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(PlainButtonStyle())

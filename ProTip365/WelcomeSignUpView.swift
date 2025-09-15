@@ -93,7 +93,7 @@ struct WelcomeSignUpView: View {
                                             Image(systemName: "chevron.left")
                                             Text(backButtonText)
                                         }
-                                        .foregroundColor(.blue)
+                                        .foregroundStyle(.tint)
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 12)
                                         .background(Color(.systemGray6))
@@ -203,13 +203,13 @@ struct WelcomeSignUpView: View {
                 if !emailError.isEmpty {
                     Label(emailError, systemImage: "exclamationmark.circle.fill")
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
 
                 if emailIsValid && !emailAlreadyExists {
                     Label(emailAvailableText, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                 }
             }
 
@@ -217,7 +217,7 @@ struct WelcomeSignUpView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Label(emailRequirementsText, systemImage: "info.circle")
                     .font(.caption)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.tint)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(emailRequirement1Text)
@@ -284,13 +284,13 @@ struct WelcomeSignUpView: View {
                 if !passwordError.isEmpty {
                     Label(passwordError, systemImage: "exclamationmark.circle.fill")
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                 }
 
                 if !password.isEmpty && !confirmPassword.isEmpty && password == confirmPassword {
                     Label(passwordsMatchText, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                 }
             }
 
@@ -298,7 +298,7 @@ struct WelcomeSignUpView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Label(passwordRequirementsText, systemImage: "info.circle")
                     .font(.caption)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.tint)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -349,12 +349,12 @@ struct WelcomeSignUpView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label(accountSummaryText, systemImage: "checkmark.seal.fill")
                     .font(.headline)
-                    .foregroundColor(.green)
+                    .foregroundStyle(.green)
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "envelope.fill")
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.tint)
                             .frame(width: 20)
                         Text(email)
                             .font(.body)
@@ -362,7 +362,7 @@ struct WelcomeSignUpView: View {
 
                     HStack {
                         Image(systemName: "lock.fill")
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.tint)
                             .frame(width: 20)
                         Text(String(repeating: "•", count: password.count))
                             .font(.body)
@@ -371,7 +371,7 @@ struct WelcomeSignUpView: View {
                     if !userName.isEmpty {
                         HStack {
                             Image(systemName: "person.fill")
-                                .foregroundColor(.blue)
+                                .foregroundStyle(.tint)
                                 .frame(width: 20)
                             Text(userName)
                                 .font(.body)
