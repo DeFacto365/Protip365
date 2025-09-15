@@ -23,83 +23,108 @@ struct AccountSettingsSection: View {
     }
 
     var body: some View {
-        Section(localization.accountSection) {
-            VStack(spacing: Constants.formFieldSpacing) {
-                // Manage Subscription
-                Button(action: openSubscriptionSettings) {
-                    HStack {
-                        Image(systemName: "creditcard")
-                            .foregroundStyle(.blue)
-                            .frame(width: 24, height: 24)
-
-                        Text(localization.manageSubscription)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(Constants.formPadding)
+        VStack(spacing: 0) {
+            // Sign Out
+            Button(action: {
+                HapticFeedback.medium()
+                showSignOutAlert = true
+            }) {
+                HStack {
+                    Text(localization.signOut)
+                        .foregroundStyle(.red)
+                    Spacer()
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
+                .padding()
+            }
 
-                // Sign Out
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
+
+            // Cancel Subscription Section
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Image(systemName: IconNames.Financial.money)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.tint)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(localization.cancelSubscriptionTitle)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(localization.cancelSubscriptionInstructions)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(localization.cancelSubscriptionWarning)
+                        .font(.caption)
+                        .foregroundStyle(.tint)
+                        .fontWeight(.medium)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Button(action: {
-                    showSignOutAlert = true
+                    HapticFeedback.selection()
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
                 }) {
                     HStack {
-                        Image(systemName: "arrow.right.square")
-                            .foregroundStyle(.orange)
-                            .frame(width: 24, height: 24)
-
-                        Text(localization.signOut)
-                            .foregroundStyle(.primary)
-
+                        Image(systemName: IconNames.Navigation.settings)
+                        Text(localization.goToAppleAccountText)
                         Spacer()
+                        Image(systemName: IconNames.Form.next)
                     }
-                    .padding(Constants.formPadding)
+                    .foregroundStyle(.tint)
+                    .padding(.vertical, 8)
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
+            }
+            .padding()
 
-                // Delete Account
-                Button(action: {
-                    showDeleteAccountAlert = true
-                }) {
-                    HStack {
-                        Image(systemName: "trash")
-                            .foregroundStyle(.red)
-                            .frame(width: 24, height: 24)
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
 
-                        Text(localization.deleteAccount)
-                            .foregroundStyle(.red)
-
-                        Spacer()
-                    }
-                    .padding(Constants.formPadding)
+            // Delete Account
+            Button(action: {
+                HapticFeedback.medium()
+                showDeleteAccountAlert = true
+            }) {
+                HStack {
+                    Text(localization.deleteAccount)
+                        .foregroundStyle(.red)
+                    Spacer()
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
+                .padding()
             }
         }
-        .alert("Sign Out", isPresented: $showSignOutAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Sign Out", role: .destructive) {
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+        .padding(.horizontal)
+        .alert(localization.signOutConfirmTitle, isPresented: $showSignOutAlert) {
+            Button(localization.cancelButton, role: .cancel) { }
+            Button(localization.signOut, role: .destructive) {
                 signOut()
             }
         } message: {
-            Text("Are you sure you want to sign out?")
+            Text(localization.signOutConfirmMessage)
         }
-        .alert("Delete Account", isPresented: $showDeleteAccountAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
+        .alert(localization.deleteAccountConfirmTitle, isPresented: $showDeleteAccountAlert) {
+            Button(localization.cancelButton, role: .cancel) { }
+            Button(localization.deleteAccount, role: .destructive) {
                 deleteAccount()
             }
         } message: {
-            Text("This action cannot be undone. All your data will be permanently deleted.")
+            Text(localization.deleteAccountConfirmMessage)
         }
         .overlay {
             if isDeletingAccount {

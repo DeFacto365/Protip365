@@ -106,14 +106,14 @@ class AchievementManager: ObservableObject {
         loadAchievements()
     }
     
-    func checkForAchievements(shifts: [ShiftIncome], currentStats: DashboardView.Stats, targets: DashboardView.UserTargets) {
+    func checkForAchievements(shifts: [ShiftIncome], currentStats: DashboardMetrics.Stats, targets: DashboardMetrics.UserTargets) {
         checkTipAchievements(currentStats: currentStats, targets: targets)
         checkConsistencyAchievements(shifts: shifts)
         checkPerformanceAchievements(currentStats: currentStats)
         checkStreakAchievements(shifts: shifts)
     }
     
-    private func checkTipAchievements(currentStats: DashboardView.Stats, targets: DashboardView.UserTargets) {
+    private func checkTipAchievements(currentStats: DashboardMetrics.Stats, targets: DashboardMetrics.UserTargets) {
         // Tip Master Achievement
         if currentStats.tipPercentage >= 20 {
             let message = switch language {
@@ -172,7 +172,7 @@ class AchievementManager: ObservableObject {
         currentStreaks[.entryStreak] = entryStreak
     }
     
-    private func checkPerformanceAchievements(currentStats: DashboardView.Stats) {
+    private func checkPerformanceAchievements(currentStats: DashboardMetrics.Stats) {
         // High Hourly Rate
         if currentStats.hours > 0 {
             let hourlyRate = currentStats.totalRevenue / currentStats.hours

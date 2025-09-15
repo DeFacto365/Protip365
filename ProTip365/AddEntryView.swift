@@ -6,301 +6,22 @@ struct AddEntryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject var supabaseManager: SupabaseManager
-    
+
     // MARK: - Parameters
     let editingShift: ShiftIncome?
     let initialDate: Date?
 
-    // MARK: - State Variables
-    @State private var selectedDate = Date()
-    @State private var selectedEndDate = Date()  // Separate end date for shifts crossing midnight
-    @State private var selectedEmployer: Employer?
-    @State private var startTime = Date()
-    @State private var endTime = Date()
-    @State private var selectedLunchBreak = "None"
-    @State private var hoursWorked: Double = 0.0
-    @State private var sales: String = ""
-    @State private var tips: String = ""
-    @State private var tipOut: String = ""
-    @State private var other: String = ""
-    @State private var comments = ""
+    // MARK: - State
+    @State private var state = AddEntryState()
     @State private var employers: [Employer] = []
-    @State private var isLoading = false
-    @State private var showDatePicker = false
-    @State private var showEndDatePicker = false
-    @State private var showStartTimePicker = false
-    @State private var showEndTimePicker = false
-    @State private var showEmployerPicker = false
-    @State private var showLunchBreakPicker = false
-    @State private var showErrorAlert = false
-    @State private var errorMessage = ""
-    @State private var didntWork = false
-    @State private var missedReason = ""
-    @State private var showReasonPicker = false
-    
+
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @AppStorage("language") private var language = "en"
     
     // MARK: - Computed Properties
-    private var lunchBreakOptions = ["None", "15 min", "30 min", "45 min", "60 min"]
-
-    private var missedReasonOptions: [String] {
-        switch language {
-        case "fr":
-            return ["Malade", "Quart annulé", "Urgence personnelle", "Absent", "Météo", "Autre"]
-        case "es":
-            return ["Enfermo", "Turno cancelado", "Emergencia personal", "No presentado", "Clima", "Otro"]
-        default:
-            return ["Sick", "Shift Cancelled", "Personal Emergency", "No Show", "Weather", "Other"]
-        }
-    }
-
-    // MARK: - Translation Properties
-    private var didntWorkText: String {
-        switch language {
-        case "fr": return "N'a pas travaillé"
-        case "es": return "No trabajó"
-        default: return "Didn't Work"
-        }
-    }
-
-    private var reasonText: String {
-        switch language {
-        case "fr": return "Raison"
-        case "es": return "Razón"
-        default: return "Reason"
-        }
-    }
-
-    private var selectReasonText: String {
-        switch language {
-        case "fr": return "Sélectionner raison"
-        case "es": return "Seleccionar razón"
-        default: return "Select Reason"
-        }
-    }
-
-    private var statusText: String {
-        switch language {
-        case "fr": return "Statut"
-        case "es": return "Estado"
-        default: return "Status"
-        }
-    }
-
-    private var okButtonText: String {
-        switch language {
-        case "fr": return "OK"
-        case "es": return "OK"
-        default: return "OK"
-        }
-    }
-
-    private var errorSavingEntryText: String {
-        switch language {
-        case "fr": return "Erreur lors de l'enregistrement"
-        case "es": return "Error al guardar"
-        default: return "Error Saving Entry"
-        }
-    }
-
-    private var editEntryText: String {
-        switch language {
-        case "fr": return "Modifier l'entrée"
-        case "es": return "Editar entrada"
-        default: return "Edit Entry"
-        }
-    }
-
-    private var newEntryText: String {
-        switch language {
-        case "fr": return "Nouvelle entrée"
-        case "es": return "Nueva entrada"
-        default: return "New Entry"
-        }
-    }
-
-    private var employerText: String {
-        switch language {
-        case "fr": return "Employeur"
-        case "es": return "Empleador"
-        default: return "Employer"
-        }
-    }
-
-    private var startsText: String {
-        switch language {
-        case "fr": return "Début"
-        case "es": return "Inicio"
-        default: return "Starts"
-        }
-    }
-
-    private var endsText: String {
-        switch language {
-        case "fr": return "Fin"
-        case "es": return "Fin"
-        default: return "Ends"
-        }
-    }
-
-    private var lunchBreakText: String {
-        switch language {
-        case "fr": return "Pause déjeuner"
-        case "es": return "Descanso para almorzar"
-        default: return "Lunch Break"
-        }
-    }
-
-    private var totalHoursText: String {
-        switch language {
-        case "fr": return "Heures totales"
-        case "es": return "Horas totales"
-        default: return "Total Hours"
-        }
-    }
-
-    private var salesText: String {
-        switch language {
-        case "fr": return "Ventes"
-        case "es": return "Ventas"
-        default: return "Sales"
-        }
-    }
-
-    private var tipsText: String {
-        switch language {
-        case "fr": return "Pourboires"
-        case "es": return "Propinas"
-        default: return "Tips"
-        }
-    }
-
-    private var tipOutText: String {
-        switch language {
-        case "fr": return "Partage de pourboires"
-        case "es": return "Propinas compartidas"
-        default: return "Tip Out"
-        }
-    }
-
-    private var otherText: String {
-        switch language {
-        case "fr": return "Autre"
-        case "es": return "Otro"
-        default: return "Other"
-        }
-    }
-
-    private var notesText: String {
-        switch language {
-        case "fr": return "Notes"
-        case "es": return "Notas"
-        default: return "Notes"
-        }
-    }
-
-    private var optionalNotesText: String {
-        switch language {
-        case "fr": return "Notes optionnelles"
-        case "es": return "Notas opcionales"
-        default: return "Optional notes"
-        }
-    }
-
-    private var summaryText: String {
-        switch language {
-        case "fr": return "Résumé"
-        case "es": return "Resumen"
-        default: return "Summary"
-        }
-    }
-
-    private var grossPayText: String {
-        switch language {
-        case "fr": return "Salaire brut"
-        case "es": return "Pago bruto"
-        default: return "Gross Pay"
-        }
-    }
-
-    private var totalEarningsText: String {
-        switch language {
-        case "fr": return "Gains totaux"
-        case "es": return "Ganancias totales"
-        default: return "Total Earnings"
-        }
-    }
-
-    private var hoursUnit: String {
-        switch language {
-        case "fr": return "hrs"
-        case "es": return "hrs"
-        default: return "hours"
-        }
-    }
-    
-    private var calculatedHours: Double {
-        // Return 0 hours if didn't work
-        if didntWork {
-            return 0
-        }
-
-        let calendar = Calendar.current
-
-        // Combine date and time components for start
-        var startComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-        let startTimeComponents = calendar.dateComponents([.hour, .minute], from: startTime)
-        startComponents.hour = startTimeComponents.hour
-        startComponents.minute = startTimeComponents.minute
-
-        // Combine date and time components for end
-        var endComponents = calendar.dateComponents([.year, .month, .day], from: selectedEndDate)
-        let endTimeComponents = calendar.dateComponents([.hour, .minute], from: endTime)
-        endComponents.hour = endTimeComponents.hour
-        endComponents.minute = endTimeComponents.minute
-
-        let startDateTime = calendar.date(from: startComponents) ?? Date()
-        let endDateTime = calendar.date(from: endComponents) ?? Date()
-
-        let duration = endDateTime.timeIntervalSince(startDateTime)
-        let hoursWorked = duration / 3600
-
-        // Subtract lunch break
-        let netHours = hoursWorked - (Double(lunchBreakMinutes) / 60.0)
-        return max(0, netHours)
-    }
-    
-    private var lunchBreakMinutes: Int {
-        switch selectedLunchBreak {
-        case "15 min": return 15
-        case "30 min": return 30
-        case "45 min": return 45
-        case "60 min": return 60
-        default: return 0
-        }
-    }
-    
-    private var dateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter
-    }
-    
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
-    }
-    
-    private var totalEarnings: Double {
-        let tipsAmount = Double(tips) ?? 0
-        let tipOutAmount = Double(tipOut) ?? 0
-        let otherAmount = Double(other) ?? 0
-        let hourlyRate = selectedEmployer?.hourly_rate ?? defaultHourlyRate
-        let salary = calculatedHours * hourlyRate
-        return salary + tipsAmount + otherAmount - tipOutAmount
+    private var localizedStrings: AddEntryLocalizedStrings {
+        AddEntryLocalizedStrings(language: language)
     }
     
     // MARK: - Initializer
@@ -325,8 +46,13 @@ struct AddEntryView: View {
                         // Work Info Card - iOS 26 Style
                         workInfoCard
 
+                        // Time Picker Card - Only show if worked
+                        if !state.didntWork {
+                            timePickerCard
+                        }
+
                         // Earnings Card - iOS 26 Style (only show if worked)
-                        if !didntWork {
+                        if !state.didntWork {
                             earningsCard
                         }
 
@@ -350,22 +76,17 @@ struct AddEntryView: View {
                 }
             }
         }
-        .alert(errorSavingEntryText, isPresented: $showErrorAlert) {
-            Button(okButtonText) { }
+        .alert(localizedStrings.errorSavingEntryText, isPresented: $state.showErrorAlert) {
+            Button(localizedStrings.okButtonText) { }
         } message: {
-            Text(errorMessage)
+            Text(state.errorMessage)
         }
         .presentationDetents(horizontalSizeClass == .regular ? [.large] : [.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(20)
-        .interactiveDismissDisabled(hasUnsavedChanges())
+        .interactiveDismissDisabled(state.hasUnsavedChanges())
     }
 
-    // Check if there are unsaved changes
-    private func hasUnsavedChanges() -> Bool {
-        // Only disable dismiss if user has entered data
-        return !sales.isEmpty || !tips.isEmpty || !tipOut.isEmpty || !other.isEmpty || calculatedHours > 0
-    }
     
     // MARK: - iOS 26 Style Header
     private var headerView: some View {
@@ -385,7 +106,7 @@ struct AddEntryView: View {
             
             Spacer()
             
-            Text(editingShift != nil ? editEntryText : newEntryText)
+            Text(editingShift != nil ? localizedStrings.editEntryText : localizedStrings.newEntryText)
                 .font(.headline)
                 .fontWeight(.semibold)
             
@@ -395,7 +116,7 @@ struct AddEntryView: View {
             Button(action: {
                 saveEntry()
             }) {
-                if isLoading {
+                if state.isLoading {
                     ProgressView()
                         .scaleEffect(0.8)
                         .frame(width: 32, height: 32)
@@ -409,7 +130,7 @@ struct AddEntryView: View {
                         .clipShape(Circle())
                 }
             }
-            .disabled(isLoading)
+            .disabled(state.isLoading)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -418,732 +139,137 @@ struct AddEntryView: View {
     
     // MARK: - Work Info Card
     private var workInfoCard: some View {
-        VStack(spacing: 0) {
-            // Employer Row (if enabled)
-            if useMultipleEmployers {
-                HStack {
-                    Text(employerText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showEmployerPicker.toggle()
-                            // Close other pickers
-                            showDatePicker = false
-                            showStartTimePicker = false
-                            showEndTimePicker = false
-                            showLunchBreakPicker = false
-                        }
-                    }) {
-                        Text(selectedEmployer?.name ?? "Select Employer")
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                
-                // Inline Employer Picker
-                if showEmployerPicker {
-                    Picker("Select Employer", selection: $selectedEmployer) {
-                        ForEach(employers, id: \.id) { employer in
-                            Text(employer.name)
-                                .tag(employer as Employer?)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .onChange(of: selectedEmployer) { _, _ in
-                        // Just close the picker when employer is selected
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showEmployerPicker = false
-                        }
-                    }
-                }
-                
-                Divider()
-                    .padding(.horizontal, 8)
-            }
+        WorkInfoSection(
+            selectedEmployer: Binding(
+                get: { state.selectedEmployer },
+                set: { state.selectedEmployer = $0 }
+            ),
+            didntWork: $state.didntWork,
+            missedReason: $state.missedReason,
+            showEmployerPicker: $state.showEmployerPicker,
+            showReasonPicker: $state.showReasonPicker,
+            calculatedHours: .constant(state.calculatedHours),
+            employers: employers,
+            useMultipleEmployers: useMultipleEmployers,
+            missedReasonOptions: localizedStrings.missedReasonOptions,
+            employerText: localizedStrings.employerText,
+            didntWorkText: localizedStrings.didntWorkText,
+            reasonText: localizedStrings.reasonText,
+            selectReasonText: localizedStrings.selectReasonText,
+            statusText: localizedStrings.statusText,
+            totalHoursText: localizedStrings.totalHoursText,
+            hoursUnit: localizedStrings.hoursUnit,
+            closeOtherPickers: closeOtherPickers
+        )
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
 
-            // Didn't Work Toggle
-            HStack {
-                Text(didntWorkText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                CompactLiquidGlassToggle(isOn: $didntWork) { newValue in
-                        if !newValue {
-                            missedReason = ""
-                            showReasonPicker = false
-                        }
-                    }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            // Reason Picker (shown when Didn't Work is toggled)
-            if didntWork {
-                HStack {
-                    Text(reasonText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showReasonPicker.toggle()
-                            // Close other pickers
-                            showDatePicker = false
-                            showEndDatePicker = false
-                            showStartTimePicker = false
-                            showEndTimePicker = false
-                            showEmployerPicker = false
-                            showLunchBreakPicker = false
-                        }
-                    }) {
-                        HStack {
-                            Text(missedReason.isEmpty ? selectReasonText : missedReason)
-                                .font(.body)
-                                .foregroundColor(missedReason.isEmpty ? .secondary : .primary)
-                            Image(systemName: "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 6)
-
-                // Inline Reason Picker
-                if showReasonPicker {
-                    Picker(selectReasonText, selection: $missedReason) {
-                        Text(selectReasonText).tag("")
-                        ForEach(missedReasonOptions, id: \.self) { reason in
-                            Text(reason).tag(reason)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .onChange(of: missedReason) { _, _ in
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showReasonPicker = false
-                        }
-                    }
-                }
-
-                Divider()
-                    .padding(.horizontal, 8)
-            }
-
-            // Only show time fields if didn't work is false
-            if !didntWork {
-            // Starts Row (Date and Time on same line - like AddShiftView)
-            HStack {
-                Text(startsText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                HStack(spacing: 8) {
-                    // Date Button (disabled when editing)
-                    if editingShift != nil {
-                        // Show as non-clickable text when editing
-                        Text(dateFormatter.string(from: selectedDate))
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    } else {
-                        // Allow date selection for new entries
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showDatePicker.toggle()
-                                // Close other pickers
-                                showStartTimePicker = false
-                                showEndTimePicker = false
-                                showEmployerPicker = false
-                                showLunchBreakPicker = false
-                                showEndDatePicker = false
-                            }
-                        }) {
-                            Text(dateFormatter.string(from: selectedDate))
-                                .font(.body)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 4)
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    
-                    // Time Button
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showStartTimePicker.toggle()
-                            // Close other pickers
-                            showDatePicker = false
-                            showEndTimePicker = false
-                            showEmployerPicker = false
-                            showLunchBreakPicker = false
-                        }
-                    }) {
-                        Text(timeFormatter.string(from: startTime))
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            
-            // Inline Date Picker
-            if showDatePicker {
-                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-            
-            // Inline Start Time Picker
-            if showStartTimePicker {
-                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .onChange(of: startTime) { _, newValue in
-                        // Check if we need to adjust end date for overnight shifts
-                        let calendar = Calendar.current
-                        let startComponents = calendar.dateComponents([.hour, .minute], from: newValue)
-                        let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
-
-                        let startHour = startComponents.hour ?? 0
-                        let startMinute = startComponents.minute ?? 0
-                        let endHour = endComponents.hour ?? 0
-                        let endMinute = endComponents.minute ?? 0
-
-                        // If end time is before or equal to start time, assume it's next day
-                        if endHour < startHour || (endHour == startHour && endMinute <= startMinute) {
-                            // Only update if not already set to next day
-                            let daysDiff = calendar.dateComponents([.day], from: selectedDate, to: selectedEndDate).day ?? 0
-                            if daysDiff == 0 {
-                                selectedEndDate = calendar.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
-                            }
-                        } else {
-                            // If end time is after start time and dates are different, reset to same day
-                            let daysDiff = calendar.dateComponents([.day], from: selectedDate, to: selectedEndDate).day ?? 0
-                            if daysDiff > 0 {
-                                selectedEndDate = selectedDate
-                            }
-                        }
-                    }
-            }
-            
-            Divider()
-                .padding(.horizontal, 8)
-            
-            // Ends Row (Date and Time on same line - like AddShiftView)
-            HStack {
-                Text(endsText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                HStack(spacing: 8) {
-                    // End Date Button (can be different for overnight shifts, disabled when editing)
-                    if editingShift != nil {
-                        // Show as non-clickable text when editing
-                        Text(dateFormatter.string(from: selectedEndDate))
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    } else {
-                        // Allow end date selection for new entries
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showEndDatePicker.toggle()
-                                // Close other pickers
-                                showDatePicker = false
-                                showStartTimePicker = false
-                                showEndTimePicker = false
-                                showEmployerPicker = false
-                                showLunchBreakPicker = false
-                            }
-                        }) {
-                            Text(dateFormatter.string(from: selectedEndDate))
-                                .font(.body)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 4)
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    
-                    // Time Button
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showEndTimePicker.toggle()
-                            // Close other pickers
-                            showDatePicker = false
-                            showStartTimePicker = false
-                            showEmployerPicker = false
-                            showLunchBreakPicker = false
-                        }
-                    }) {
-                        Text(timeFormatter.string(from: endTime))
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            // Inline End Date Picker
-            if showEndDatePicker {
-                DatePicker("Select End Date", selection: $selectedEndDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .onChange(of: selectedEndDate) { _, _ in
-                        // Close the date picker when a date is selected
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showEndDatePicker = false
-                        }
-                    }
-            }
-
-            // Inline End Time Picker
-            if showEndTimePicker {
-                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.wheel)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .onChange(of: endTime) { _, newValue in
-                        // Check if we need to adjust end date for overnight shifts
-                        let calendar = Calendar.current
-                        let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
-                        let endComponents = calendar.dateComponents([.hour, .minute], from: newValue)
-
-                        let startHour = startComponents.hour ?? 0
-                        let startMinute = startComponents.minute ?? 0
-                        let endHour = endComponents.hour ?? 0
-                        let endMinute = endComponents.minute ?? 0
-
-                        // If end time is before or equal to start time, assume it's next day
-                        if endHour < startHour || (endHour == startHour && endMinute <= startMinute) {
-                            selectedEndDate = calendar.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
-                        } else {
-                            // If end time is after start time, use same day
-                            selectedEndDate = selectedDate
-                        }
-                    }
-            }
-            
-            Divider()
-                .padding(.horizontal, 8)
-            
-            // Lunch Break Row
-            HStack {
-                Text(lunchBreakText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showLunchBreakPicker.toggle()
-                        // Close other pickers
-                        showDatePicker = false
-                        showStartTimePicker = false
-                        showEndTimePicker = false
-                        showEmployerPicker = false
-                    }
-                }) {
-                    Text(selectedLunchBreak)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            
-            // Inline Lunch Break Picker
-            if showLunchBreakPicker {
-                Picker("Select Lunch Break", selection: $selectedLunchBreak) {
-                    ForEach(lunchBreakOptions, id: \.self) { option in
-                        Text(option).tag(option)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 6)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-            
-            Divider()
-                .padding(.horizontal, 8)
-            
-            } // End of if !didntWork
-
-            // Status Display - Show even when didn't work
-            HStack {
-                if didntWork {
-                    Text(statusText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    HStack(spacing: 8) {
-                        Text(didntWorkText.uppercased())
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color.red.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                        if !missedReason.isEmpty {
-                            Text("(\(missedReason))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } else {
-                    Text(totalHoursText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-
-                    Spacer()
-
-                    Text(String(format: "%.1f %@", calculatedHours, hoursUnit))
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.tint)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
+    // MARK: - Time Picker Card
+    private var timePickerCard: some View {
+        TimePickerSection(
+            selectedDate: $state.selectedDate,
+            selectedEndDate: $state.selectedEndDate,
+            startTime: $state.startTime,
+            endTime: $state.endTime,
+            selectedLunchBreak: $state.selectedLunchBreak,
+            showDatePicker: $state.showDatePicker,
+            showEndDatePicker: $state.showEndDatePicker,
+            showStartTimePicker: $state.showStartTimePicker,
+            showEndTimePicker: $state.showEndTimePicker,
+            showLunchBreakPicker: $state.showLunchBreakPicker,
+            editingShift: editingShift,
+            lunchBreakOptions: AddEntryConstants.lunchBreakOptions,
+            startsText: localizedStrings.startsText,
+            endsText: localizedStrings.endsText,
+            lunchBreakText: localizedStrings.lunchBreakText
+        )
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
     // MARK: - Earnings Card
     private var earningsCard: some View {
-        VStack(spacing: 0) {
-            // Sales Row
-            HStack {
-                Text(salesText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                HStack {
-                    Text("$")
-                        .foregroundStyle(.tint)
-                    SelectableTextField(text: $sales, placeholder: "0.00", keyboardType: .decimalPad)
-                        .frame(width: 100)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            Divider()
-                .padding(.horizontal, 8)
-
-            // Tips Row
-            HStack {
-                Text(tipsText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                HStack {
-                    Text("$")
-                        .foregroundStyle(.tint)
-                    SelectableTextField(text: $tips, placeholder: "0.00", keyboardType: .decimalPad)
-                        .frame(width: 100)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            Divider()
-                .padding(.horizontal, 8)
-
-            // Tip Out Row
-            HStack {
-                Text(tipOutText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                HStack {
-                    Text("$")
-                        .foregroundStyle(.tint)
-                    SelectableTextField(text: $tipOut, placeholder: "0.00", keyboardType: .decimalPad)
-                        .frame(width: 100)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            Divider()
-                .padding(.horizontal, 8)
-
-            // Other Row
-            HStack {
-                Text(otherText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                HStack {
-                    Text("$")
-                        .foregroundStyle(.tint)
-                    SelectableTextField(text: $other, placeholder: "0.00", keyboardType: .decimalPad)
-                        .frame(width: 100)
-                        .foregroundColor(.primary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            Divider()
-                .padding(.horizontal, 8)
-
-            // Comments Row
-            HStack(alignment: .top) {
-                Text(notesText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                TextField(optionalNotesText, text: $comments, axis: .vertical)
-                    .lineLimit(3...6)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .frame(minWidth: 200)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
+        EarningsSection(
+            sales: $state.sales,
+            tips: $state.tips,
+            tipOut: $state.tipOut,
+            other: $state.other,
+            comments: $state.comments,
+            salesText: localizedStrings.salesText,
+            tipsText: localizedStrings.tipsText,
+            tipOutText: localizedStrings.tipOutText,
+            otherText: localizedStrings.otherText,
+            notesText: localizedStrings.notesText,
+            optionalNotesText: localizedStrings.optionalNotesText
+        )
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
     // MARK: - Summary Card
     private var summaryCard: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text(summaryText)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-
-                // Show status badge if didn't work
-                if didntWork {
-                    Text(didntWorkText.uppercased())
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.red.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-            }
-
-            // Show reason if didn't work
-            if didntWork && !missedReason.isEmpty {
-                HStack {
-                    Text(reasonText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(missedReason)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.red)
-                }
-
-                Divider()
-            }
-
-            // Sales at the top (stats only)
-            if !didntWork {
-                HStack {
-                    Text(salesText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(String(format: "$%.2f", Double(sales) ?? 0))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                }
-
-                Divider()
-            }
-
-            // Income components
-            // Gross Pay (Base Pay)
-            HStack {
-                Text(grossPayText)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(String(format: "$%.2f", calculatedHours * (selectedEmployer?.hourly_rate ?? defaultHourlyRate)))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-
-            // Tips
-            HStack {
-                Text(tipsText)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(String(format: "$%.2f", Double(tips) ?? 0))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-
-            // Other
-            if Double(other) ?? 0 > 0 {
-                HStack {
-                    Text(otherText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(String(format: "$%.2f", Double(other) ?? 0))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                }
-            }
-
-            // Tip Out (negative)
-            if Double(tipOut) ?? 0 > 0 {
-                HStack {
-                    Text(tipOutText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(String(format: "-$%.2f", Double(tipOut) ?? 0))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.red)
-                }
-            }
-
-            Divider()
-
-            // Total Earnings at the bottom
-            HStack {
-                Text(totalEarningsText)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-                Text(String(format: "$%.2f", totalEarnings))
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-            }
-        }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        SummarySection(
+            didntWork: state.didntWork,
+            missedReason: state.missedReason,
+            sales: state.sales,
+            tips: state.tips,
+            tipOut: state.tipOut,
+            other: state.other,
+            calculatedHours: state.calculatedHours,
+            selectedEmployer: state.selectedEmployer,
+            defaultHourlyRate: defaultHourlyRate,
+            totalEarnings: computeTotalEarnings(),
+            summaryText: localizedStrings.summaryText,
+            didntWorkText: localizedStrings.didntWorkText,
+            reasonText: localizedStrings.reasonText,
+            salesText: localizedStrings.salesText,
+            grossPayText: localizedStrings.grossPayText,
+            tipsText: localizedStrings.tipsText,
+            otherText: localizedStrings.otherText,
+            tipOutText: localizedStrings.tipOutText,
+            totalEarningsText: localizedStrings.totalEarningsText
+        )
     }
     
     // MARK: - Helper Functions
+    private func closeOtherPickers() {
+        state.showDatePicker = false
+        state.showEndDatePicker = false
+        state.showStartTimePicker = false
+        state.showEndTimePicker = false
+        state.showLunchBreakPicker = false
+        state.showEmployerPicker = false
+        state.showReasonPicker = false
+    }
+
+    private func computeTotalEarnings() -> Double {
+        let tipsAmount = Double(state.tips) ?? 0
+        let tipOutAmount = Double(state.tipOut) ?? 0
+        let otherAmount = Double(state.other) ?? 0
+        let hourlyRate = state.selectedEmployer?.hourly_rate ?? defaultHourlyRate
+        let salary = state.calculatedHours * hourlyRate
+        return salary + tipsAmount + otherAmount - tipOutAmount
+    }
+
     private func setupDefaultTimes() {
         let calendar = Calendar.current
         // Use initialDate if provided, otherwise use today
         let baseDate = initialDate ?? Date()
-        selectedDate = baseDate
-        selectedEndDate = baseDate  // Default to same date
+        state.selectedDate = baseDate
+        state.selectedEndDate = baseDate  // Default to same date
 
         var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
 
         // Set default start time to 5:00 PM on the selected date
         components.hour = 17
         components.minute = 0
-        startTime = calendar.date(from: components) ?? baseDate
+        state.startTime = calendar.date(from: components) ?? baseDate
 
         // Set default end time to 10:00 PM on the selected date
         components.hour = 22
         components.minute = 0
-        endTime = calendar.date(from: components) ?? baseDate
+        state.endTime = calendar.date(from: components) ?? baseDate
     }
     
     private func loadEmployers() async {
@@ -1159,10 +285,10 @@ struct AddEntryView: View {
 
             // If editing, find and set the employer after loading
             if let shift = editingShift, let employerId = shift.employer_id {
-                selectedEmployer = employers.first { $0.id == employerId }
+                state.selectedEmployer = employers.first { $0.id == employerId }
             } else if editingShift == nil && !employers.isEmpty {
                 // For new entries, set the first employer as default
-                selectedEmployer = employers.first
+                state.selectedEmployer = employers.first
             }
         } catch {
             print("Error loading employers: \(error)")
@@ -1171,8 +297,8 @@ struct AddEntryView: View {
     
     private func populateFieldsForEditing(shift: ShiftIncome) {
         // Set the date
-        selectedDate = dateStringToDate(shift.shift_date) ?? Date()
-        selectedEndDate = selectedDate  // Default to same date initially
+        state.selectedDate = dateStringToDate(shift.shift_date) ?? Date()
+        state.selectedEndDate = state.selectedDate  // Default to same date initially
 
         // Parse times
         if let startTimeStr = shift.start_time,
@@ -1190,10 +316,10 @@ struct AddEntryView: View {
                 let components = calendar.dateComponents([.hour, .minute], from: parsedStartTime)
                 startHour = components.hour ?? 0
                 startMinute = components.minute ?? 0
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
                 dateComponents.hour = startHour
                 dateComponents.minute = startMinute
-                startTime = calendar.date(from: dateComponents) ?? Date()
+                state.startTime = calendar.date(from: dateComponents) ?? Date()
             }
 
             if let parsedEndTime = timeFormatter.date(from: endTimeStr) {
@@ -1205,13 +331,13 @@ struct AddEntryView: View {
                 // Check if shift crosses midnight (end time is before start time)
                 if endHour < startHour || (endHour == startHour && endMinute <= startMinute) {
                     // Shift crosses midnight, set end date to next day
-                    selectedEndDate = calendar.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
+                    state.selectedEndDate = calendar.date(byAdding: .day, value: 1, to: state.selectedDate) ?? state.selectedDate
                 }
 
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: selectedEndDate)
+                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedEndDate)
                 dateComponents.hour = endHour
                 dateComponents.minute = endMinute
-                endTime = calendar.date(from: dateComponents) ?? Date()
+                state.endTime = calendar.date(from: dateComponents) ?? Date()
             }
         } else {
             // If no times stored, use default times
@@ -1219,24 +345,13 @@ struct AddEntryView: View {
         }
 
         // Set the values from the shift
-        hoursWorked = shift.hours
-        sales = shift.sales > 0 ? String(format: "%.2f", shift.sales) : ""
-        tips = shift.tips > 0 ? String(format: "%.2f", shift.tips) : ""
-        tipOut = (shift.cash_out ?? 0) > 0 ? String(format: "%.2f", shift.cash_out ?? 0) : ""
-        other = (shift.other ?? 0) > 0 ? String(format: "%.2f", shift.other ?? 0) : ""
+        state.sales = shift.sales > 0 ? String(format: "%.2f", shift.sales) : ""
+        state.tips = shift.tips > 0 ? String(format: "%.2f", shift.tips) : ""
+        state.tipOut = (shift.cash_out ?? 0) > 0 ? String(format: "%.2f", shift.cash_out ?? 0) : ""
+        state.other = (shift.other ?? 0) > 0 ? String(format: "%.2f", shift.other ?? 0) : ""
 
         // Set lunch break from shift data
-        if let lunchMinutes = shift.lunch_break_minutes {
-            switch lunchMinutes {
-            case 15: selectedLunchBreak = "15 min"
-            case 30: selectedLunchBreak = "30 min"
-            case 45: selectedLunchBreak = "45 min"
-            case 60: selectedLunchBreak = "60 min"
-            default: selectedLunchBreak = "None"
-            }
-        } else {
-            selectedLunchBreak = "None"
-        }
+        state.selectedLunchBreak = AddEntryConstants.lunchBreakSelection(from: shift.lunch_break_minutes)
 
         // Load notes separately from shifts table
         Task {
@@ -1245,7 +360,7 @@ struct AddEntryView: View {
 
         // Find employer - this will be set after employers are loaded
         if let employerId = shift.employer_id {
-            selectedEmployer = employers.first { $0.id == employerId }
+            state.selectedEmployer = employers.first { $0.id == employerId }
         }
     }
 
@@ -1266,7 +381,7 @@ struct AddEntryView: View {
 
             if let notes = result.notes {
                 await MainActor.run {
-                    comments = notes
+                    state.comments = notes
                     print("📝 Loaded notes: \(notes)")
                 }
             } else {
@@ -1286,18 +401,18 @@ struct AddEntryView: View {
     private func saveEntry() {
         Task {
             do {
-                isLoading = true
+                state.isLoading = true
 
                 let userId = try await supabaseManager.client.auth.session.user.id
 
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
-                let shiftDate = dateFormatter.string(from: selectedDate)
+                let shiftDate = dateFormatter.string(from: state.selectedDate)
 
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "HH:mm:ss"
-                let startTimeStr = timeFormatter.string(from: startTime)
-                let endTimeStr = timeFormatter.string(from: endTime)
+                let startTimeStr = timeFormatter.string(from: state.startTime)
+                let endTimeStr = timeFormatter.string(from: state.endTime)
 
                 // NEW ARCHITECTURE:
                 // 1. Find or create expected shift in 'shifts' table
@@ -1339,12 +454,12 @@ struct AddEntryView: View {
                     let shiftData = ShiftInsert(
                         user_id: userId,
                         shift_date: shiftDate,
-                        expected_hours: calculatedHours, // Use actual as expected since not pre-planned
-                        hours: calculatedHours,  // Set the required hours field
+                        expected_hours: state.calculatedHours, // Use actual as expected since not pre-planned
+                        hours: state.calculatedHours,  // Set the required hours field
                         start_time: startTimeStr,
                         end_time: endTimeStr,
-                        hourly_rate: selectedEmployer?.hourly_rate ?? defaultHourlyRate,
-                        employer_id: selectedEmployer?.id,
+                        hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
+                        employer_id: state.selectedEmployer?.id,
                         status: "completed",
                         notes: nil // Notes go in shift_income
                     )
@@ -1369,7 +484,7 @@ struct AddEntryView: View {
 
                 // Now handle the actual earnings data in shift_income table (only if worked)
                 // Skip income record if didn't work
-                if !didntWork {
+                if !state.didntWork {
                 // Check if we already have an income record (when editing)
                 let incomeId: UUID?
                 if let editingShift = editingShift, let existingIncomeId = editingShift.income_id {
@@ -1405,14 +520,14 @@ struct AddEntryView: View {
                     }
 
                     let updateData = IncomeUpdate(
-                        actual_hours: calculatedHours,
-                        sales: Double(sales) ?? 0,
-                        tips: Double(tips) ?? 0,
-                        cash_out: Double(tipOut) ?? 0,
-                        other: Double(other) ?? 0,
+                        actual_hours: state.calculatedHours,
+                        sales: Double(state.sales) ?? 0,
+                        tips: Double(state.tips) ?? 0,
+                        cash_out: Double(state.tipOut) ?? 0,
+                        other: Double(state.other) ?? 0,
                         actual_start_time: startTimeStr,
                         actual_end_time: endTimeStr,
-                        notes: comments.isEmpty ? nil : comments,
+                        notes: state.comments.isEmpty ? nil : state.comments,
                         updated_at: ISO8601DateFormatter().string(from: Date())
                     )
 
@@ -1439,14 +554,14 @@ struct AddEntryView: View {
                     let incomeData = IncomeInsert(
                         shift_id: shiftId,
                         user_id: userId,
-                        actual_hours: calculatedHours,
-                        sales: Double(sales) ?? 0,
-                        tips: Double(tips) ?? 0,
-                        cash_out: Double(tipOut) ?? 0,
-                        other: Double(other) ?? 0,
+                        actual_hours: state.calculatedHours,
+                        sales: Double(state.sales) ?? 0,
+                        tips: Double(state.tips) ?? 0,
+                        cash_out: Double(state.tipOut) ?? 0,
+                        other: Double(state.other) ?? 0,
                         actual_start_time: startTimeStr,
                         actual_end_time: endTimeStr,
-                        notes: comments.isEmpty ? nil : comments
+                        notes: state.comments.isEmpty ? nil : state.comments
                     )
 
                     try await supabaseManager.client
@@ -1454,29 +569,18 @@ struct AddEntryView: View {
                         .insert(incomeData)
                         .execute()
                 }
-                } // End of if !didntWork
+                } // End of if !state.didntWork
 
                 // Update shift record with actual times and lunch break
-                struct ShiftUpdate: Encodable {
-                    let start_time: String
-                    let end_time: String
-                    let lunch_break_minutes: Int
-                    let expected_hours: Double
-                    let status: String
-                    let employer_id: UUID?
-                    let hourly_rate: Double
-                    let notes: String?
-                }
-
                 let shiftUpdate = ShiftUpdate(
                     start_time: startTimeStr,
                     end_time: endTimeStr,
-                    lunch_break_minutes: lunchBreakMinutes,
-                    expected_hours: calculatedHours, // Use actual hours as expected for completed shifts
-                    status: didntWork ? "missed" : "completed",
-                    employer_id: selectedEmployer?.id,
-                    hourly_rate: selectedEmployer?.hourly_rate ?? defaultHourlyRate,
-                    notes: didntWork ? missedReason : (comments.isEmpty ? nil : comments)
+                    lunch_break_minutes: AddEntryConstants.lunchBreakMinutes(from: state.selectedLunchBreak),
+                    expected_hours: state.calculatedHours, // Use actual hours as expected for completed shifts
+                    status: state.didntWork ? "missed" : "completed",
+                    employer_id: state.selectedEmployer?.id,
+                    hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
+                    notes: state.didntWork ? state.missedReason : (state.comments.isEmpty ? nil : state.comments)
                 )
 
                 try await supabaseManager.client
@@ -1491,9 +595,9 @@ struct AddEntryView: View {
                 }
             } catch {
                 await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
-                    showErrorAlert = true
+                    state.isLoading = false
+                    state.errorMessage = error.localizedDescription
+                    state.showErrorAlert = true
                     HapticFeedback.error()
                 }
             }
@@ -1501,53 +605,3 @@ struct AddEntryView: View {
     }
 }
 
-// Custom TextField that automatically selects all text when tapped
-struct SelectableTextField: UIViewRepresentable {
-    @Binding var text: String
-    let placeholder: String
-    let keyboardType: UIKeyboardType
-
-    func makeUIView(context: Context) -> UITextField {
-        let textField = UITextField()
-        textField.placeholder = placeholder
-        textField.keyboardType = keyboardType
-        textField.textAlignment = .right
-        textField.delegate = context.coordinator
-        textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldDidChange(_:)), for: .editingChanged)
-
-        // Set placeholder text color to blue
-        textField.attributedPlaceholder = NSAttributedString(
-            string: placeholder,
-            attributes: [NSAttributedString.Key.foregroundColor: UIColor.systemBlue]
-        )
-
-        return textField
-    }
-
-    func updateUIView(_ uiView: UITextField, context: Context) {
-        uiView.text = text
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    class Coordinator: NSObject, UITextFieldDelegate {
-        let parent: SelectableTextField
-
-        init(_ parent: SelectableTextField) {
-            self.parent = parent
-        }
-
-        @objc func textFieldDidChange(_ textField: UITextField) {
-            parent.text = textField.text ?? ""
-        }
-
-        func textFieldDidBeginEditing(_ textField: UITextField) {
-            // Select all text when the field begins editing
-            DispatchQueue.main.async {
-                textField.selectAll(nil)
-            }
-        }
-    }
-}

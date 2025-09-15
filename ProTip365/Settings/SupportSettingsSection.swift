@@ -6,6 +6,11 @@ struct SupportSettingsSection: View {
     @Binding var showingExportOptions: Bool
     @Binding var showOnboarding: Bool
     @Binding var shifts: [ShiftIncome]
+    @Binding var suggestionText: String
+    @Binding var suggestionEmail: String
+    @Binding var showThankYouMessage: Bool
+    @Binding var isSendingSuggestion: Bool
+    @Binding var userEmail: String
 
     let language: String
     private let localization: SettingsLocalization
@@ -15,91 +20,110 @@ struct SupportSettingsSection: View {
         showingExportOptions: Binding<Bool>,
         showOnboarding: Binding<Bool>,
         shifts: Binding<[ShiftIncome]>,
+        suggestionText: Binding<String>,
+        suggestionEmail: Binding<String>,
+        showThankYouMessage: Binding<Bool>,
+        isSendingSuggestion: Binding<Bool>,
+        userEmail: Binding<String>,
         language: String
     ) {
         self._showSuggestIdeas = showSuggestIdeas
         self._showingExportOptions = showingExportOptions
         self._showOnboarding = showOnboarding
         self._shifts = shifts
+        self._suggestionText = suggestionText
+        self._suggestionEmail = suggestionEmail
+        self._showThankYouMessage = showThankYouMessage
+        self._isSendingSuggestion = isSendingSuggestion
+        self._userEmail = userEmail
         self.language = language
         self.localization = SettingsLocalization(language: language)
     }
 
     var body: some View {
-        Section(localization.supportSection) {
-            VStack(spacing: Constants.formFieldSpacing) {
-                // Suggest Ideas
-                Button(action: {
-                    showSuggestIdeas = true
-                }) {
-                    HStack {
-                        Image(systemName: "lightbulb")
-                            .foregroundStyle(.yellow)
-                            .frame(width: 24, height: 24)
-
-                        Text(localization.suggestIdeas)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(Constants.formPadding)
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
-
-                // Export Data
-                Button(action: {
-                    showingExportOptions = true
-                }) {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundStyle(.blue)
-                            .frame(width: 24, height: 24)
-
+        VStack(spacing: 0) {
+            // Export Data
+            Button(action: {
+                showingExportOptions = true
+            }) {
+                HStack {
+                    Image(systemName: IconNames.Actions.export)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.tint)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    VStack(alignment: .leading) {
                         Text(localization.exportData)
                             .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
+                        Text(localization.exportDataDescription)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    .padding(Constants.formPadding)
+                    Spacer()
+                    Image(systemName: IconNames.Form.next)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
+            }
+            .buttonStyle(PlainButtonStyle())
+            .padding()
 
-                // App Tutorial
-                Button(action: {
-                    showOnboarding = true
-                }) {
-                    HStack {
-                        Image(systemName: "questionmark.circle")
-                            .foregroundStyle(.green)
-                            .frame(width: 24, height: 24)
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 1)
+                .padding(.horizontal)
 
-                        Text(localization.appTutorial)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(Constants.formPadding)
+            // Support
+            HStack {
+                Image(systemName: IconNames.Communication.email)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.tint)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading) {
+                    Text(localization.supportSection)
+                        .foregroundStyle(.primary)
+                    Text("support@protip365.com")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .liquidGlassForm()
+                Spacer()
+            }
+            .padding()
+
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(height: 0.5)
+                .padding(.horizontal)
+
+            // Suggest Ideas
+            Button(action: {
+                HapticFeedback.selection()
+                showSuggestIdeas = true
+            }) {
+                HStack {
+                    Image(systemName: IconNames.Status.info)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.tint)
+                        .symbolRenderingMode(.monochrome)
+                        .frame(width: 28, height: 28)
+                    Text(localization.suggestIdeas)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: IconNames.Form.next)
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                .padding()
             }
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+        .padding(.horizontal)
         .sheet(isPresented: $showSuggestIdeas) {
-            SuggestIdeasView(language: language)
+            suggestIdeasSheet
         }
         .sheet(isPresented: $showingExportOptions) {
             ExportOptionsView(
@@ -110,6 +134,221 @@ struct SupportSettingsSection: View {
         }
         .sheet(isPresented: $showOnboarding) {
             OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
+        }
+    }
+
+    // MARK: - Suggest Ideas Sheet
+
+    private var suggestIdeasSheet: some View {
+        ZStack {
+            // iOS 26 Gray Background
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+
+            if showThankYouMessage {
+                VStack(spacing: 20) {
+                    Spacer()
+
+                    Image(systemName: IconNames.Status.success)
+                        .font(.largeTitle)
+                        .foregroundStyle(.tint)
+
+                    Text(localization.thankYouTitle)
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text(localization.thankYouMessage)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    Spacer()
+                }
+                .padding()
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        showSuggestIdeas = false
+                        showThankYouMessage = false
+                        suggestionText = ""
+                        suggestionEmail = ""
+                    }
+                }
+            } else {
+                VStack(spacing: 0) {
+                    // iOS 26 Style Header
+                    HStack {
+                        // Cancel Button with iOS 26 style
+                        Button(action: {
+                            showSuggestIdeas = false
+                            suggestionText = ""
+                            suggestionEmail = ""
+                        }) {
+                            Image(systemName: IconNames.Actions.close)
+                                .font(.title2)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.primary)
+                                .frame(width: 32, height: 32)
+                                .background(Color(.systemGray5))
+                                .clipShape(Circle())
+                        }
+
+                        Spacer()
+
+                        Text(localization.suggestIdeas)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+
+                        Spacer()
+
+                        // Send Button with iOS 26 style
+                        Button(action: {
+                            HapticFeedback.medium()
+                            sendSuggestion()
+                        }) {
+                            if isSendingSuggestion {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .frame(width: 32, height: 32)
+                            } else {
+                                Image(systemName: IconNames.Actions.save)
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                    .frame(width: 32, height: 32)
+                                    .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color(.systemGray4) : Color.blue)
+                                    .clipShape(Circle())
+                            }
+                        }
+                        .disabled(suggestionText.isEmpty || suggestionEmail.isEmpty || isSendingSuggestion)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Suggestion Card - iOS 26 Style
+                            VStack(alignment: .leading, spacing: 16) {
+                                Label(localization.yourSuggestionHeader, systemImage: IconNames.Status.info)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+
+                                Text(localization.suggestionFooter)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                // Email field first
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(localization.suggestionEmailPlaceholder)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                    TextField(localization.suggestionEmailPlaceholder, text: $suggestionEmail)
+                                        .textFieldStyle(.plain)
+                                        .font(.body)
+                                        .padding()
+                                        .background(Color(.secondarySystemGroupedBackground))
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .keyboardType(.emailAddress)
+                                        .textInputAutocapitalization(.never)
+                                        .textContentType(.emailAddress)
+                                }
+
+                                // Suggestion text field second
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(localization.yourSuggestionHeader)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                    TextEditor(text: $suggestionText)
+                                        .font(.body)
+                                        .frame(minHeight: 120)
+                                        .padding(12)
+                                        .background(Color(.secondarySystemGroupedBackground))
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .scrollContentBackground(.hidden)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+
+                            Spacer()
+                                .frame(height: 30)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.top, 10)
+                    }
+                }
+                .onAppear {
+                    // Pre-populate email with user's email
+                    if suggestionEmail.isEmpty {
+                        suggestionEmail = userEmail
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Send Suggestion Function
+    private func sendSuggestion() {
+        guard !suggestionText.isEmpty else { return }
+
+        isSendingSuggestion = true
+
+        Task {
+            do {
+                let session = try await SupabaseManager.shared.client.auth.session
+
+                // Get Supabase URL from your SupabaseManager
+                let supabaseURL = "https://ztzpjsbfzcccvbacgskc.supabase.co" // Your actual Supabase URL
+                guard let url = URL(string: "\(supabaseURL)/functions/v1/send-suggestion") else {
+                    throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                }
+
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                let body = [
+                    "suggestion": suggestionText,
+                    "userEmail": suggestionEmail.isEmpty ? userEmail : suggestionEmail,
+                    "replyEmail": suggestionEmail
+                ]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        await MainActor.run {
+                            isSendingSuggestion = false
+                            showThankYouMessage = true
+                            HapticFeedback.success()
+
+                            // Auto-close the form after showing the message for 2 seconds
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                showSuggestIdeas = false
+                                showThankYouMessage = false
+                                suggestionText = ""
+                                suggestionEmail = ""
+                            }
+                        }
+                    } else {
+                        let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let errorMessage = errorData?["error"] as? String ?? "Unknown error"
+                        throw NSError(domain: "", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isSendingSuggestion = false
+                    // Handle error silently for now
+                }
+            }
         }
     }
 }

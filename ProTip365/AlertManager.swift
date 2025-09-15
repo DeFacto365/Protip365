@@ -15,7 +15,7 @@ class AlertManager: ObservableObject {
         loadPersistedAlerts()
     }
 
-    func checkForMissingShifts(shifts: [ShiftIncome], targets: DashboardView.UserTargets) {
+    func checkForMissingShifts(shifts: [ShiftIncome], targets: DashboardMetrics.UserTargets) {
         let calendar = Calendar.current
         let today = Date()
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
@@ -38,7 +38,7 @@ class AlertManager: ObservableObject {
         }
     }
 
-    func checkForTargetAchievements(currentStats: DashboardView.Stats, targets: DashboardView.UserTargets, period: Int) {
+    func checkForTargetAchievements(currentStats: DashboardMetrics.Stats, targets: DashboardMetrics.UserTargets, period: Int) {
         if targets.tipTargetPercentage > 0 && currentStats.sales > 0 {
             let tipTarget = currentStats.sales * (targets.tipTargetPercentage / 100.0)
             if currentStats.tips >= tipTarget {

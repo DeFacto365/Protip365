@@ -16,7 +16,12 @@ struct CalendarShiftsView: View {
     @State private var showNewEntryView = false
     @State private var existingShiftsForSelectedDate: [ShiftIncome] = []
     @AppStorage("language") private var language = "en"
-    
+
+    // Localization helper
+    private var localization: CalendarLocalization {
+        CalendarLocalization(language: language)
+    }
+
     // Calendar date range - show current month plus/minus 2 months
     private var calendarInterval: DateInterval {
         let calendar = Calendar.current
@@ -25,7 +30,7 @@ struct CalendarShiftsView: View {
         let endDate = calendar.date(byAdding: .month, value: 3, to: startOfMonth) ?? Date()
         return DateInterval(start: startDate, end: endDate)
     }
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -52,12 +57,12 @@ struct CalendarShiftsView: View {
                     // Action buttons directly under calendar
                     actionButtonsView
                         .padding(.horizontal)
-                    
+
                     // Selected date info (this will push buttons down when shown)
                     if !shiftsForDate(selectedDate).isEmpty {
                         selectedDateShiftsView
                     }
-                    
+
                     // Bottom padding for tab bar
                     Color.clear
                         .frame(height: 20)
@@ -65,7 +70,7 @@ struct CalendarShiftsView: View {
                 .padding(.top, 20)
             }
             .background(Color(.systemGroupedBackground))  // Changed to gray background
-            .navigationTitle(calendarTitle)
+            .navigationTitle(localization.calendarTitle)
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 await loadUserTargets()
@@ -96,9 +101,9 @@ struct CalendarShiftsView: View {
                     }
                 }
         }
-        .alert(deleteShiftTitle, isPresented: $showDeleteAlert) {
-            Button(cancelText, role: .cancel) { }
-            Button(deleteText, role: .destructive) {
+        .alert(localization.deleteShiftTitle, isPresented: $showDeleteAlert) {
+            Button(localization.cancelText, role: .cancel) { }
+            Button(localization.deleteText, role: .destructive) {
                 if let shift = shiftToDelete {
                     Task {
                         await deleteShift(shift)
@@ -106,7 +111,7 @@ struct CalendarShiftsView: View {
                 }
             }
         } message: {
-            Text(deleteConfirmationMessage)
+            Text(localization.deleteConfirmationMessage)
         }
         .alert("Existing Shift Found", isPresented: $showExistingShiftAlert) {
             Button("Edit Existing Shift") {
@@ -140,7 +145,7 @@ struct CalendarShiftsView: View {
             .presentationDetents([.large])
         }
     }
-    
+
     // MARK: - Selected Date Shifts View
     private var selectedDateShiftsView: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -175,7 +180,7 @@ struct CalendarShiftsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
     }
-    
+
     // MARK: - Calendar Legend
     private var calendarLegendView: some View {
         HStack(spacing: 16) {
@@ -184,7 +189,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.green)
                     .frame(width: 8, height: 8)
-                Text(completedText)
+                Text(localization.completedText)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
@@ -194,7 +199,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.cyan)
                     .frame(width: 8, height: 8)
-                Text(scheduledText)
+                Text(localization.scheduledText)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
@@ -204,7 +209,7 @@ struct CalendarShiftsView: View {
                 Circle()
                     .fill(Color.red)
                     .frame(width: 8, height: 8)
-                Text(missedText)
+                Text(localization.missedText)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
@@ -235,7 +240,7 @@ struct CalendarShiftsView: View {
                     HStack {
                         Image(systemName: IconNames.Actions.add)
                             .font(.body)
-                        Text(addEntryText)
+                        Text(localization.addEntryText)
                             .font(.body)
                             .fontWeight(.medium)
                     }
@@ -252,7 +257,7 @@ struct CalendarShiftsView: View {
                     HStack {
                         Image(systemName: IconNames.Actions.add)
                             .font(.body)
-                        Text(addShiftText)
+                        Text(localization.addShiftText)
                             .font(.body)
                             .fontWeight(.medium)
                     }
@@ -266,7 +271,7 @@ struct CalendarShiftsView: View {
             }
         }
     }
-    
+
     // MARK: - Helper Functions
     private func shiftsForDate(_ date: Date) -> [ShiftIncome] {
         let dateFormatter = DateFormatter()
@@ -274,28 +279,28 @@ struct CalendarShiftsView: View {
         let dateString = dateFormatter.string(from: date)
         return allShifts.filter { $0.shift_date == dateString }
     }
-    
+
     private var isPastDate: Bool {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let selected = calendar.startOfDay(for: selectedDate)
         return selected < today
     }
-    
+
     private var isPastDateOrToday: Bool {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let selected = calendar.startOfDay(for: selectedDate)
         return selected <= today
     }
-    
+
     private var isTodayOrFuture: Bool {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let selected = calendar.startOfDay(for: selectedDate)
         return selected >= today
     }
-    
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
@@ -312,7 +317,7 @@ struct CalendarShiftsView: View {
 
         return formatter.string(from: date)
     }
-    
+
     private func loadUserTargets() async {
         do {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
@@ -441,7 +446,7 @@ struct CalendarShiftsView: View {
             print("Error loading notes: \(error)")
         }
     }
-    
+
     private func handleEditShift(_ shift: ShiftIncome) {
         print("🟡 CalendarShiftsView - handleEditShift called")
         print("🟡 CalendarShiftsView - Shift ID: \(shift.id)")
@@ -469,17 +474,17 @@ struct CalendarShiftsView: View {
             shiftToEditAsShift = shift
         }
     }
-    
+
     private func deleteShift(_ shift: ShiftIncome) async {
         do {
             let shiftId = shift.id
-            
+
             try await SupabaseManager.shared.client
                 .from("shifts")
                 .delete()
                 .eq("id", value: shiftId)
                 .execute()
-            
+
             // Reload shifts after deletion
             await loadAllShifts()
             HapticFeedback.success()
@@ -488,916 +493,4 @@ struct CalendarShiftsView: View {
             HapticFeedback.error()
         }
     }
-    
-    // MARK: - Localization
-    private var calendarTitle: String {
-        switch language {
-        case "fr": return "Calendrier des quarts"
-        case "es": return "Calendario de turnos"
-        default: return "Shift Calendar"
-        }
-    }
-    
-    private var selectedDateTitle: String {
-        switch language {
-        case "fr": return "Quarts sélectionnés"
-        case "es": return "Turnos seleccionados"
-        default: return "Selected Date Shifts"
-        }
-    }
-    
-    private var addEntryText: String {
-        switch language {
-        case "fr": return "Ajouter entrée"
-        case "es": return "Agregar entrada"
-        default: return "Add Entry"
-        }
-    }
-
-    private var deleteShiftTitle: String {
-        switch language {
-        case "fr": return "Supprimer le quart"
-        case "es": return "Eliminar turno"
-        default: return "Delete Shift"
-        }
-    }
-
-    private var completedText: String {
-        switch language {
-        case "fr": return "Complété"
-        case "es": return "Completado"
-        default: return "Completed"
-        }
-    }
-
-    private var scheduledText: String {
-        switch language {
-        case "fr": return "Planifié"
-        case "es": return "Programado"
-        default: return "Scheduled"
-        }
-    }
-
-    private var addShiftText: String {
-        switch language {
-        case "fr": return "Ajouter quart"
-        case "es": return "Agregar turno"
-        default: return "Add Shift"
-        }
-    }
-
-    private var missedText: String {
-        switch language {
-        case "fr": return "Manqué"
-        case "es": return "Perdido"
-        default: return "Missed"
-        }
-    }
-
-    private var editText: String {
-        switch language {
-        case "fr": return "Modifier"
-        case "es": return "Editar"
-        default: return "Edit"
-        }
-    }
-
-    private var deleteText: String {
-        switch language {
-        case "fr": return "Supprimer"
-        case "es": return "Eliminar"
-        default: return "Delete"
-        }
-    }
-
-    private var salesText: String {
-        switch language {
-        case "fr": return "Ventes"
-        case "es": return "Ventas"
-        default: return "Sales"
-        }
-    }
-
-    private var salaryText: String {
-        switch language {
-        case "fr": return "Salaire"
-        case "es": return "Salario"
-        default: return "Salary"
-        }
-    }
-
-    private var tipsText: String {
-        switch language {
-        case "fr": return "Pourboires"
-        case "es": return "Propinas"
-        default: return "Tips"
-        }
-    }
-
-    private var otherText: String {
-        switch language {
-        case "fr": return "Autre"
-        case "es": return "Otro"
-        default: return "Other"
-        }
-    }
-
-    private var tipOutText: String {
-        switch language {
-        case "fr": return "Partage"
-        case "es": return "Reparto"
-        default: return "Tip Out"
-        }
-    }
-
-    private var totalText: String {
-        switch language {
-        case "fr": return "TOTAL"
-        case "es": return "TOTAL"
-        default: return "TOTAL"
-        }
-    }
-
-    private var cancelText: String {
-        switch language {
-        case "fr": return "Annuler"
-        case "es": return "Cancelar"
-        default: return "Cancel"
-        }
-    }
-
-    private var deleteConfirmationMessage: String {
-        switch language {
-        case "fr": return "Êtes-vous sûr de vouloir supprimer ce quart?"
-        case "es": return "¿Está seguro de que desea eliminar este turno?"
-        default: return "Are you sure you want to delete this shift?"
-        }
-    }
-
 }
-
-// MARK: - Calendar Date View (iOS 26 Style)
-struct CalendarDateView: View {
-    let date: Date
-    let shifts: [ShiftIncome]
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            // Date number
-            Text("\(Calendar.current.component(.day, from: date))")
-                .font(.system(size: 17, weight: isToday ? .bold : .medium))
-                .foregroundStyle(isToday ? .white : .primary)
-            
-            // iOS 26 style colored dots for events
-            if !shifts.isEmpty {
-                HStack(spacing: 2) {
-                    ForEach(Array(shifts.enumerated()), id: \.offset) { index, shift in
-                        if index < 3 { // Show max 3 dots
-                            Circle()
-                                .fill(colorForShift(shift, index: index))
-                                .frame(width: 6, height: 6)
-                        }
-                    }
-                    
-                    // Show "+N" if more than 3 shifts
-                    if shifts.count > 3 {
-                        Text("+\(shifts.count - 3)")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                // Empty space to maintain consistent height
-                Spacer()
-                    .frame(height: 6)
-            }
-        }
-        .frame(width: 44, height: 44)
-        .background(
-            Circle()
-                .fill(isToday ? Color(.systemGray4) : Color.clear)
-        )
-        .contentShape(Rectangle())
-    }
-    
-    private var isToday: Bool {
-        Calendar.current.isDate(date, inSameDayAs: Date())
-    }
-    
-    private func colorForShift(_ shift: ShiftIncome, index: Int) -> Color {
-        // Use different colors based on shift status and earnings
-        if shift.has_earnings {
-            // Completed shifts with earnings
-            if let total = shift.total_income, total > 0 {
-                return [Color.green, Color.blue, Color.purple][index % 3]
-            } else {
-                return Color.orange // Completed but no earnings
-            }
-        } else {
-            // Planned shifts (no earnings yet)
-            switch shift.shift_status {
-            case "planned":
-                return [Color.cyan, Color.mint, Color.indigo][index % 3]
-            case "missed":
-                return Color.red
-            default:
-                return [Color.gray, Color.secondary, Color.primary][index % 3]
-            }
-        }
-    }
-}
-
-// MARK: - Shift Row View
-struct ShiftRowView: View {
-    let shift: ShiftIncome
-    let targetSalesDaily: Double
-    let targetTipsDaily: Double
-    let tipTargetPercentage: Double
-    let averageDeductionPercentage: Double
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-    @AppStorage("language") private var language = "en"
-
-    var body: some View {
-        let _ = print("🎯 ShiftRowView - Sales Target: \(targetSalesDaily), Tips Target: \(targetTipsDaily)")
-        return VStack(alignment: .leading, spacing: 12) {
-            // Top section - Employer and Hours
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    // Employer name at the top (smaller to fit on one line)
-                    if let employer = shift.employer_name {
-                        Text(employer)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-
-                    // Hours display (actual/expected format)
-                    HStack(spacing: 4) {
-                        if shift.has_earnings {
-                            // Show actual hours / expected hours
-                            Text("\(shift.hours, specifier: "%.1f")")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.primary)
-
-                            if let expectedHours = shift.expected_hours {
-                                Text("/ \(expectedHours, specifier: "%.1f") hrs")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("hrs")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            // Check if "didn't work"
-                            let didntWorkReasons = [
-                                "Sick", "Shift Cancelled", "Personal Day", "Holiday", "No-Show", "Other",
-                                "Malade", "Quart annulé", "Jour personnel", "Jour férié", "Absence", "Autre",
-                                "Enfermo", "Turno cancelado", "Día personal", "Día festivo", "Ausencia", "Otro"
-                            ]
-                            let isDidntWork = shift.notes.map { didntWorkReasons.contains($0) } ?? false
-
-                            if isDidntWork {
-                                Text("0")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.red)
-                            } else if let expectedHours = shift.expected_hours {
-                                Text("\(expectedHours, specifier: "%.1f")")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.tint)
-                            }
-
-                            Text("hrs")
-                                .font(.subheadline)
-                                .foregroundStyle(isDidntWork ? Color.red : Color.blue)
-                        }
-                    }
-
-                    // Notes if available (but don't show if it's a "didn't work" reason)
-                    if let notes = shift.notes, !notes.isEmpty {
-                        let didntWorkReasons = [
-                            "Sick", "Shift Cancelled", "Personal Day", "Holiday", "No-Show", "Other",
-                            "Malade", "Quart annulé", "Jour personnel", "Jour férié", "Absence", "Autre",
-                            "Enfermo", "Turno cancelado", "Día personal", "Día festivo", "Ausencia", "Otro"
-                        ]
-
-                        if !didntWorkReasons.contains(notes) {
-                            Text(notes)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .padding(.top, 2)
-                        }
-                    }
-                }
-
-                Spacer()
-
-                // Budget progress indicators (only show if targets are set and we have earnings)
-                if shift.has_earnings && (targetSalesDaily > 0 || targetTipsDaily > 0) {
-                    HStack(spacing: 12) {
-                        // Sales progress
-                        if targetSalesDaily > 0 {
-                            SalesProgressIndicator(
-                                actual: shift.sales,
-                                target: targetSalesDaily
-                            )
-                        }
-
-                        // Tips percentage indicator (based on sales)
-                        if shift.sales > 0 {
-                            TipPercentageIndicator(
-                                tips: shift.tips,
-                                sales: shift.sales,
-                                targetPercentage: tipTargetPercentage
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Financial Breakdown section - Better two-line layout
-            if shift.has_earnings {
-                VStack(spacing: 12) {
-                    // First row: Sales and Salary info
-                    HStack(spacing: 16) {
-                        // Sales (if any)
-                        if shift.sales > 0 {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(salesText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text(formatCurrency(shift.sales))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                            }
-                        }
-
-                        // Salary section
-                        if let baseIncome = shift.base_income, baseIncome > 0 {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(grossSalaryText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text(formatCurrency(baseIncome))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(netSalaryText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                let netSalary = baseIncome * (1 - averageDeductionPercentage / 100)
-                                Text(formatCurrency(netSalary))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.green)
-                            }
-                        }
-
-                        Spacer()
-                    }
-
-                    // Second row: Tips, Other, Tip Out and Total
-                    HStack(spacing: 16) {
-                        // Tips
-                        if shift.tips > 0 {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(tipsText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text(formatCurrency(shift.tips))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                            }
-                        }
-
-                        // Other
-                        if let other = shift.other, other > 0 {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(otherText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text(formatCurrency(other))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                            }
-                        }
-
-                        // Tip Out
-                        if let tipOut = shift.cash_out, tipOut > 0 {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(tipOutText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                Text("-\(formatCurrency(tipOut))")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.red)
-                            }
-                        }
-
-                        Spacer()
-
-                        // Total (always on the right)
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(totalText)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(formatCurrency(shift.total_income ?? 0))
-                                .font(.headline)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(12)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            } else {
-                // Show expected label for future shifts or missed work
-                HStack {
-                    Spacer()
-                    // Check if this is a "didn't work" entry by checking the notes field for known reasons
-                    let didntWorkReasons = [
-                        "Sick", "Shift Cancelled", "Personal Day", "Holiday", "No-Show", "Other",
-                        "Malade", "Quart annulé", "Jour personnel", "Jour férié", "Absence", "Autre",
-                        "Enfermo", "Turno cancelado", "Día personal", "Día festivo", "Ausencia", "Otro"
-                    ]
-
-                    let isDidntWork = shift.notes.map { didntWorkReasons.contains($0) } ?? false
-
-                    if isDidntWork, let reason = shift.notes {
-                        // Show the reason code for "didn't work" entries
-                        Text(reason.uppercased())
-                            .font(.caption)
-                            .textCase(.uppercase)
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.red.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    } else {
-                        // Show "SCHEDULED" for regular future shifts
-                        Text("SCHEDULED")
-                            .font(.caption)
-                            .textCase(.uppercase)
-                            .foregroundStyle(.tint)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
-                }
-            }
-
-            // Action buttons at the bottom
-            HStack(spacing: 12) {
-                Button(action: {
-                    HapticFeedback.light()
-                    onEdit()
-                }) {
-                    HStack {
-                        Image(systemName: IconNames.Actions.edit)
-                            .font(.system(size: 14))
-                        Text(editText)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
-                    .background(Color.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-
-                Button(action: {
-                    HapticFeedback.light()
-                    onDelete()
-                }) {
-                    HStack {
-                        Image(systemName: IconNames.Actions.delete)
-                            .font(.system(size: 14))
-                        Text(deleteText)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
-                    .background(Color.red)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
-            .padding(.top, 4)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 6)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color(.systemGray5), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-    }
-    
-    private func formatTimeRange(_ startTime: String, _ endTime: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let displayFormatter = DateFormatter()
-        displayFormatter.timeStyle = .short
-        
-        if let start = formatter.date(from: startTime),
-           let end = formatter.date(from: endTime) {
-            return "\(displayFormatter.string(from: start)) - \(displayFormatter.string(from: end))"
-        }
-        return ""
-    }
-    
-    private func formatCurrency(_ amount: Double) -> String {
-        return String(format: "$%.2f", amount)
-    }
-
-    // Localized strings
-    private var salesText: String {
-        switch language {
-        case "fr": return "Ventes"
-        case "es": return "Ventas"
-        default: return "Sales"
-        }
-    }
-
-    private var salaryText: String {
-        switch language {
-        case "fr": return "Salaire"
-        case "es": return "Salario"
-        default: return "Salary"
-        }
-    }
-
-    private var grossSalaryText: String {
-        switch language {
-        case "fr": return "Salaire brut"
-        case "es": return "Salario bruto"
-        default: return "Gross Salary"
-        }
-    }
-
-    private var netSalaryText: String {
-        switch language {
-        case "fr": return "Salaire net"
-        case "es": return "Salario neto"
-        default: return "Net Salary"
-        }
-    }
-
-    private var estNetSalaryText: String {
-        switch language {
-        case "fr": return "Salaire net est."
-        case "es": return "Salario neto est."
-        default: return "Est. Net Salary"
-        }
-    }
-
-    private var tipsText: String {
-        switch language {
-        case "fr": return "Pourboires"
-        case "es": return "Propinas"
-        default: return "Tips"
-        }
-    }
-
-    private var otherText: String {
-        switch language {
-        case "fr": return "Autre"
-        case "es": return "Otro"
-        default: return "Other"
-        }
-    }
-
-    private var tipOutText: String {
-        switch language {
-        case "fr": return "Partage"
-        case "es": return "Reparto"
-        default: return "Tip Out"
-        }
-    }
-
-    private var totalText: String {
-        switch language {
-        case "fr": return "TOTAL"
-        case "es": return "TOTAL"
-        default: return "TOTAL"
-        }
-    }
-
-    private var editText: String {
-        switch language {
-        case "fr": return "Modifier"
-        case "es": return "Editar"
-        default: return "Edit"
-        }
-    }
-
-    private var deleteText: String {
-        switch language {
-        case "fr": return "Supprimer"
-        case "es": return "Eliminar"
-        default: return "Delete"
-        }
-    }
-}
-
-// MARK: - Custom Calendar View
-struct CustomCalendarView: View {
-    @Binding var selectedDate: Date
-    let shiftsForDate: (Date) -> [ShiftIncome]
-    let onDateTapped: (Date) -> Void
-    let language: String
-    
-    @State private var currentMonth = Date()
-    private let calendar = Calendar.current
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            // Month header with navigation
-            HStack {
-                Button(action: previousMonth) {
-                    Image(systemName: IconNames.Form.back)
-                        .font(.title2)
-                        .foregroundStyle(.tint)
-                }
-                
-                Spacer()
-                
-                Text(monthYearText)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                
-                Spacer()
-                
-                Button(action: nextMonth) {
-                    Image(systemName: IconNames.Form.next)
-                        .font(.title2)
-                        .foregroundStyle(.tint)
-                }
-            }
-            .padding(.horizontal)
-            
-            // Day headers
-            HStack(spacing: 0) {
-                ForEach(localizedWeekdaySymbols, id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            .padding(.horizontal, 4)
-            
-            // iOS 26 style calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 8) {
-                ForEach(monthDates, id: \.self) { date in
-                    CalendarDateView(date: date, shifts: shiftsForDate(date))
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedDate = date
-                            onDateTapped(date)
-                        }
-                        .opacity(calendar.isDate(date, equalTo: currentMonth, toGranularity: .month) ? 1.0 : 0.3)
-                        .overlay(
-                            // iOS 26 style selection indicator
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.blue, lineWidth: calendar.isDate(date, inSameDayAs: selectedDate) ? 2 : 0)
-                        )
-                }
-            }
-            .padding(.horizontal)
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 16)
-    }
-    
-    private var monthDates: [Date] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonth) else {
-            return []
-        }
-        
-        let firstOfMonth = monthInterval.start
-        let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
-        let daysFromPreviousMonth = (firstWeekday - 1)
-        
-        let startDate = calendar.date(byAdding: .day, value: -daysFromPreviousMonth, to: firstOfMonth) ?? firstOfMonth
-        
-        var dates: [Date] = []
-        var current = startDate
-        
-        // Generate 35 days (5 weeks) to fill the calendar grid
-        for _ in 0..<35 {
-            dates.append(current)
-            current = calendar.date(byAdding: .day, value: 1, to: current) ?? current
-        }
-
-        return dates
-    }
-    
-    private var monthYearText: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-
-        // Set locale based on app language setting
-        switch language {
-        case "fr":
-            formatter.locale = Locale(identifier: "fr_FR")
-        case "es":
-            formatter.locale = Locale(identifier: "es_ES")
-        default:
-            formatter.locale = Locale(identifier: "en_US")
-        }
-
-        return formatter.string(from: currentMonth)
-    }
-
-    private var localizedWeekdaySymbols: [String] {
-        let localizedCalendar = Calendar.current
-        var calendar = localizedCalendar
-
-        // Set locale based on app language setting
-        switch language {
-        case "fr":
-            calendar.locale = Locale(identifier: "fr_FR")
-        case "es":
-            calendar.locale = Locale(identifier: "es_ES")
-        default:
-            calendar.locale = Locale(identifier: "en_US")
-        }
-
-        return calendar.shortWeekdaySymbols
-    }
-
-    private func previousMonth() {
-        currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
-    }
-    
-    private func nextMonth() {
-        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
-    }
-}
-
-// MARK: - Sales Progress Indicator
-struct SalesProgressIndicator: View {
-    let actual: Double
-    let target: Double
-    @AppStorage("language") private var language = "en"
-
-    private var percentage: Double {
-        guard target > 0 else { return 0 }
-        return (actual / target) * 100
-    }
-
-    private var displayValue: String {
-        "\(Int(percentage))"
-    }
-
-    private var progressColor: Color {
-        if percentage >= 100 {
-            return .green
-        } else if percentage >= 75 {
-            return .blue
-        } else if percentage >= 50 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
-
-    private var label: String {
-        switch language {
-        case "fr": return "Ventes"
-        case "es": return "Ventas"
-        default: return "Sales"
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 9))
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-
-            ZStack {
-                Circle()
-                    .stroke(progressColor.opacity(0.2), lineWidth: 3)
-                    .frame(width: 36, height: 36)
-
-                Circle()
-                    .trim(from: 0, to: min(percentage / 100, 1.0))
-                    .stroke(progressColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.3), value: percentage)
-
-                VStack(spacing: 0) {
-                    Text(displayValue)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Text("%")
-                        .font(.system(size: 7, weight: .medium))
-                        .foregroundStyle(.primary)
-                }
-            }
-
-            Text("$\(Int(target))")
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - Tip Percentage Indicator
-struct TipPercentageIndicator: View {
-    let tips: Double
-    let sales: Double
-    let targetPercentage: Double
-    @AppStorage("language") private var language = "en"
-
-    private var actualPercentage: Double {
-        guard sales > 0 else { return 0 }
-        return (tips / sales) * 100
-    }
-
-    private var displayValue: String {
-        String(format: "%.1f", actualPercentage)
-    }
-
-    private var progressColor: Color {
-        if actualPercentage >= targetPercentage {
-            return .green
-        } else if actualPercentage >= targetPercentage * 0.8 { // Within 80% of target
-            return .orange
-        } else {
-            return .red
-        }
-    }
-
-    private var label: String {
-        switch language {
-        case "fr": return "Pourb. %"
-        case "es": return "Prop. %"
-        default: return "Tip %"
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 9))
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-
-            ZStack {
-                Circle()
-                    .stroke(progressColor.opacity(0.2), lineWidth: 3)
-                    .frame(width: 36, height: 36)
-
-                Circle()
-                    .trim(from: 0, to: min(actualPercentage / max(targetPercentage, 1), 1.0))
-                    .stroke(progressColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.3), value: actualPercentage)
-
-                VStack(spacing: 0) {
-                    Text(displayValue)
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Text("%")
-                        .font(.system(size: 7, weight: .medium))
-                        .foregroundStyle(.primary)
-                }
-            }
-
-            Text("/ \(Int(targetPercentage))%")
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
