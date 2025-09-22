@@ -1,0 +1,183 @@
+package com.protip365.app.presentation.analytics
+
+import android.os.Bundle
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.crashlytics.ktx.crashlytics
+import com.google.firebase.ktx.Firebase
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class AnalyticsManager @Inject constructor() {
+
+    private val analytics = Firebase.analytics
+    private val crashlytics = Firebase.crashlytics
+
+    init {
+        // Enable collection for all users (can be disabled for debug builds)
+        crashlytics.setCrashlyticsCollectionEnabled(true)
+    }
+
+    // User Properties
+    fun setUserId(userId: String) {
+        analytics.setUserId(userId)
+        crashlytics.setUserId(userId)
+    }
+
+    fun setUserProperty(name: String, value: String) {
+        analytics.setUserProperty(name, value)
+        crashlytics.setCustomKey(name, value)
+    }
+
+    fun setSubscriptionTier(tier: String) {
+        setUserProperty("subscription_tier", tier)
+    }
+
+    fun setPreferredLanguage(language: String) {
+        setUserProperty("preferred_language", language)
+    }
+
+    // Screen Tracking
+    fun logScreenView(screenName: String, screenClass: String? = null) {
+        analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
+            param(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
+            screenClass?.let {
+                param(FirebaseAnalytics.Param.SCREEN_CLASS, it)
+            }
+        }
+    }
+
+    // User Actions
+    fun logShiftAdded(employerId: String?, amount: Double) {
+        analytics.logEvent("shift_added") {
+            param("employer_id", employerId ?: "none")
+            param("amount", amount)
+        }
+    }
+
+    fun logEntryAdded(employerId: String?, amount: Double) {
+        analytics.logEvent("entry_added") {
+            param("employer_id", employerId ?: "none")
+            param("amount", amount)
+        }
+    }
+
+    fun logShiftDeleted() {
+        analytics.logEvent("shift_deleted") {}
+    }
+
+    fun logEntryDeleted() {
+        analytics.logEvent("entry_deleted") {}
+    }
+
+    // Achievement Events
+    fun logAchievementUnlocked(achievementType: String) {
+        analytics.logEvent("achievement_unlocked") {
+            param("achievement_type", achievementType)
+        }
+    }
+
+    // Target Events
+    fun logTargetSet(targetType: String, value: Double) {
+        analytics.logEvent("target_set") {
+            param("target_type", targetType)
+            param("target_value", value)
+        }
+    }
+
+    fun logTargetAchieved(targetType: String) {
+        analytics.logEvent("target_achieved") {
+            param("target_type", targetType)
+        }
+    }
+
+    // Export Events
+    fun logDataExported(format: String, recordCount: Int) {
+        analytics.logEvent("data_exported") {
+            param("export_format", format)
+            param("record_count", recordCount.toLong())
+        }
+    }
+
+    // Subscription Events
+    fun logSubscriptionPurchased(productId: String, price: Double) {
+        analytics.logEvent(FirebaseAnalytics.Event.PURCHASE) {
+            param(FirebaseAnalytics.Param.ITEM_ID, productId)
+            param(FirebaseAnalytics.Param.PRICE, price)
+            param(FirebaseAnalytics.Param.CURRENCY, "USD")
+        }
+    }
+
+    fun logSubscriptionCancelled(productId: String) {
+        analytics.logEvent("subscription_cancelled") {
+            param("product_id", productId)
+        }
+    }
+
+    fun logSubscriptionRestored(productId: String) {
+        analytics.logEvent("subscription_restored") {
+            param("product_id", productId)
+        }
+    }
+
+    // Authentication Events
+    fun logLogin(method: String) {
+        analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
+            param(FirebaseAnalytics.Param.METHOD, method)
+        }
+    }
+
+    fun logSignUp(method: String) {
+        analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP) {
+            param(FirebaseAnalytics.Param.METHOD, method)
+        }
+    }
+
+    fun logLogout() {
+        analytics.logEvent("logout") {}
+    }
+
+    // Error Logging
+    fun logError(errorType: String, errorMessage: String) {
+        analytics.logEvent("app_error") {
+            param("error_type", errorType)
+            param("error_message", errorMessage)
+        }
+        crashlytics.log("Error: $errorType - $errorMessage")
+    }
+
+    fun recordException(throwable: Throwable) {
+        crashlytics.recordException(throwable)
+    }
+
+    // Custom Events
+    fun logCustomEvent(eventName: String, parameters: Map<String, Any>? = null) {
+        analytics.logEvent(eventName) {
+            parameters?.forEach { (key, value) ->
+                when (value) {
+                    is String -> param(key, value)
+                    is Long -> param(key, value)
+                    is Double -> param(key, value)
+                    is Bundle -> param(key, value)
+                    else -> param(key, value.toString())
+                }
+            }
+        }
+    }
+
+    // Performance Metrics
+    fun logAppStartupTime(timeMillis: Long) {
+        analytics.logEvent("app_startup") {
+            param("startup_time_ms", timeMillis)
+        }
+    }
+
+    fun logDatabaseQueryTime(queryType: String, timeMillis: Long) {
+        analytics.logEvent("database_query") {
+            param("query_type", queryType)
+            param("query_time_ms", timeMillis)
+        }
+    }
+}

@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">ProTip365</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Bon retour</string>
+    <string name="signup_title">Créer un compte</string>
+    <string name="email_hint">Courriel</string>
+    <string name="password_hint">Mot de passe</string>
+    <string name="confirm_password_hint">Confirmer le mot de passe</string>
+    <string name="login_button">Se connecter</string>
+    <string name="signup_button">S\'inscrire</string>
+    <string name="forgot_password">Mot de passe oublié?</string>
+    <string name="already_have_account">Vous avez déjà un compte? Se connecter</string>
+    <string name="dont_have_account">Vous n\'avez pas de compte? S\'inscrire</string>
+    <string name="reset_password_title">Réinitialiser le mot de passe</string>
+    <string name="reset_password_button">Envoyer le lien de réinitialisation</string>
+    <string name="password_reset_sent">Lien de réinitialisation envoyé à votre courriel</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Tableau de bord</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="week">Semaine</string>
+    <string name="month">Mois</string>
+    <string name="year">Année</string>
+    <string name="total_revenue">Revenu total</string>
+    <string name="salary">Salaire</string>
+    <string name="tips">Pourboires</string>
+    <string name="hours">Heures</string>
+    <string name="sales">Ventes</string>
+    <string name="tip_out">Partage</string>
+    <string name="other_income">Autres revenus</string>
+    <string name="average_tip_percentage">Pourboire moyen %</string>
+    <string name="effective_hourly_rate">Taux horaire effectif</string>
+    <string name="no_data_yet">Aucune donnée</string>
+    <string name="add_first_shift">Ajouter votre premier quart</string>
+
+    <!-- Add/Edit Shift -->
+    <string name="add_shift_title">Ajouter un quart</string>
+    <string name="edit_shift_title">Modifier le quart</string>
+    <string name="add_entry_title">Ajouter une entrée</string>
+    <string name="edit_entry_title">Modifier l\'entrée</string>
+    <string name="shift_type">Quart</string>
+    <string name="entry_type">Entrée</string>
+    <string name="date">Date</string>
+    <string name="start_time">Heure de début</string>
+    <string name="end_time">Heure de fin</string>
+    <string name="employer">Employeur</string>
+    <string name="hourly_rate">Taux horaire</string>
+    <string name="notes">Notes</string>
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete">Supprimer</string>
+    <string name="delete_shift_confirm">Êtes-vous sûr de vouloir supprimer ce quart?</string>
+    <string name="delete_entry_confirm">Êtes-vous sûr de vouloir supprimer cette entrée?</string>
+    <string name="shift_saved">Quart enregistré avec succès</string>
+    <string name="entry_saved">Entrée enregistrée avec succès</string>
+    <string name="shift_deleted">Quart supprimé</string>
+    <string name="entry_deleted">Entrée supprimée</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendrier</string>
+    <string name="shifts_this_month">Quarts ce mois</string>
+    <string name="no_shifts_this_month">Aucun quart ce mois</string>
+    <string name="total_earned">Total gagné</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Paramètres</string>
+    <string name="profile_section">Profil</string>
+    <string name="targets_section">Objectifs</string>
+    <string name="preferences_section">Préférences</string>
+    <string name="security_section">Sécurité</string>
+    <string name="subscription_section">Abonnement</string>
+    <string name="support_section">Support</string>
+    <string name="account_section">Compte</string>
+
+    <!-- Profile Settings -->
+    <string name="name">Nom</string>
+    <string name="preferred_language">Langue préférée</string>
+    <string name="english">English</string>
+    <string name="french">Français</string>
+    <string name="spanish">Español</string>
+
+    <!-- Target Settings -->
+    <string name="tip_percentage_target">Objectif de pourcentage de pourboire</string>
+    <string name="daily_sales_target">Objectif de ventes quotidiennes</string>
+    <string name="weekly_sales_target">Objectif de ventes hebdomadaires</string>
+    <string name="monthly_sales_target">Objectif de ventes mensuelles</string>
+    <string name="daily_hours_target">Objectif d\'heures quotidiennes</string>
+    <string name="weekly_hours_target">Objectif d\'heures hebdomadaires</string>
+    <string name="monthly_hours_target">Objectif d\'heures mensuelles</string>
+
+    <!-- Preference Settings -->
+    <string name="week_start_day">Premier jour de la semaine</string>
+    <string name="sunday">Dimanche</string>
+    <string name="monday">Lundi</string>
+    <string name="default_hourly_rate">Taux horaire par défaut</string>
+    <string name="multiple_employers">Employeurs multiples</string>
+    <string name="default_employer">Employeur par défaut</string>
+
+    <!-- Security Settings -->
+    <string name="pin_setup">Configuration du NIP</string>
+    <string name="biometric_login">Connexion biométrique</string>
+    <string name="face_id">Face ID</string>
+    <string name="fingerprint">Empreinte digitale</string>
+    <string name="auto_lock">Verrouillage automatique</string>
+    <string name="change_pin">Changer le NIP</string>
+    <string name="enter_pin">Entrer le NIP</string>
+    <string name="confirm_pin">Confirmer le NIP</string>
+    <string name="pin_mismatch">Les NIP ne correspondent pas</string>
+    <string name="pin_changed">NIP changé avec succès</string>
+
+    <!-- Subscription -->
+    <string name="subscription_status">Statut de l\'abonnement</string>
+    <string name="part_time">Temps partiel</string>
+    <string name="full_access">Accès complet</string>
+    <string name="no_subscription">Aucun abonnement actif</string>
+    <string name="shifts_per_week">%d quarts par semaine</string>
+    <string name="entries_per_week">%d entrées par semaine</string>
+    <string name="unlimited_shifts">Quarts illimités</string>
+    <string name="unlimited_entries">Entrées illimitées</string>
+    <string name="upgrade">Améliorer</string>
+    <string name="manage_subscription">Gérer l\'abonnement</string>
+    <string name="restore_purchases">Restaurer les achats</string>
+    <string name="price_monthly">%s$/mois</string>
+    <string name="price_annual">%s$/année</string>
+    <string name="free_trial">Essai gratuit de 7 jours</string>
+    <string name="subscription_limit_reached">Limite hebdomadaire atteinte. Améliorez pour ajouter plus de quarts.</string>
+
+    <!-- Support -->
+    <string name="contact_support">Contacter le support</string>
+    <string name="faq">FAQ</string>
+    <string name="privacy_policy">Politique de confidentialité</string>
+    <string name="terms_of_service">Conditions d\'utilisation</string>
+    <string name="rate_app">Évaluer l\'application</string>
+    <string name="share_app">Partager l\'application</string>
+    <string name="version">Version %s</string>
+
+    <!-- Account -->
+    <string name="export_data">Exporter les données</string>
+    <string name="change_password">Changer le mot de passe</string>
+    <string name="sign_out">Se déconnecter</string>
+    <string name="delete_account">Supprimer le compte</string>
+    <string name="delete_account_confirm">Êtes-vous sûr de vouloir supprimer votre compte? Cette action ne peut pas être annulée.</string>
+    <string name="sign_out_confirm">Êtes-vous sûr de vouloir vous déconnecter?</string>
+
+    <!-- Employers -->
+    <string name="employers_title">Employeurs</string>
+    <string name="add_employer">Ajouter un employeur</string>
+    <string name="edit_employer">Modifier l\'employeur</string>
+    <string name="employer_name">Nom de l\'employeur</string>
+    <string name="employer_address">Adresse</string>
+    <string name="employer_hourly_rate">Taux horaire</string>
+    <string name="employer_active">Actif</string>
+    <string name="employer_inactive">Inactif</string>
+    <string name="no_employers">Aucun employeur ajouté</string>
+    <string name="delete_employer_confirm">Êtes-vous sûr de vouloir supprimer cet employeur?</string>
+
+    <!-- Achievements -->
+    <string name="achievements_title">Réalisations</string>
+    <string name="achievement_unlocked">Réalisation débloquée!</string>
+    <string name="achievement_locked">Verrouillé</string>
+    <string name="achievement_progress">%d%% Complété</string>
+
+    <!-- Achievement Names -->
+    <string name="achievement_tip_master">Maître du pourboire</string>
+    <string name="achievement_elite_server">Serveur élite</string>
+    <string name="achievement_tip_champion">Champion du pourboire</string>
+    <string name="achievement_steady_tracker">Suivi constant</string>
+    <string name="achievement_dedicated_logger">Enregistreur dévoué</string>
+    <string name="achievement_tracking_legend">Légende du suivi</string>
+    <string name="achievement_high_earner">Haut salarié</string>
+    <string name="achievement_top_performer">Meilleur performeur</string>
+    <string name="achievement_sales_star">Étoile des ventes</string>
+    <string name="achievement_target_crusher">Briseur d\'objectifs</string>
+    <string name="achievement_goal_getter">Atteinte des objectifs</string>
+    <string name="achievement_perfect_month">Mois parfait</string>
+
+    <!-- Achievement Descriptions -->
+    <string name="achievement_tip_master_desc">Maintenir 20%+ de pourboires moyens</string>
+    <string name="achievement_elite_server_desc">Maintenir 25%+ de pourboires moyens</string>
+    <string name="achievement_tip_champion_desc">Maintenir 30%+ de pourboires moyens</string>
+    <string name="achievement_steady_tracker_desc">Suivre les quarts pendant 7 jours consécutifs</string>
+    <string name="achievement_dedicated_logger_desc">Suivre les quarts pendant 30 jours consécutifs</string>
+    <string name="achievement_tracking_legend_desc">Suivre les quarts pendant 100 jours consécutifs</string>
+    <string name="achievement_high_earner_desc">Gagner 30$/heure en moyenne</string>
+    <string name="achievement_top_performer_desc">Gagner 50$/heure en moyenne</string>
+    <string name="achievement_sales_star_desc">1000$+ de ventes en un quart</string>
+    <string name="achievement_target_crusher_desc">Dépasser l\'objectif de 50%</string>
+    <string name="achievement_goal_getter_desc">Atteindre tous les objectifs hebdomadaires</string>
+    <string name="achievement_perfect_month_desc">Atteindre tous les objectifs mensuels</string>
+
+    <!-- Calculator -->
+    <string name="calculator_title">Calculatrice</string>
+    <string name="tip_calculator">Calculatrice de pourboire</string>
+    <string name="bill_amount">Montant de la facture</string>
+    <string name="tip_percentage">Pourcentage de pourboire</string>
+    <string name="tip_amount">Montant du pourboire</string>
+    <string name="total_amount">Montant total</string>
+    <string name="split_bill">Diviser la facture</string>
+    <string name="number_of_people">Nombre de personnes</string>
+    <string name="per_person">Par personne</string>
+    <string name="tip_out_calculator">Calculatrice de partage</string>
+    <string name="total_tips">Pourboires totaux</string>
+    <string name="tip_out_percentage">Pourcentage de partage</string>
+    <string name="tip_out_amount">Montant du partage</string>
+    <string name="take_home_tips">Pourboires nets</string>
+
+    <!-- Export -->
+    <string name="export_title">Exporter les données</string>
+    <string name="export_format">Format d\'exportation</string>
+    <string name="csv_format">CSV</string>
+    <string name="date_range">Plage de dates</string>
+    <string name="all_data">Toutes les données</string>
+    <string name="custom_range">Plage personnalisée</string>
+    <string name="from_date">Date de début</string>
+    <string name="to_date">Date de fin</string>
+    <string name="include_employers">Inclure les employeurs</string>
+    <string name="all_employers">Tous les employeurs</string>
+    <string name="export_button">Exporter</string>
+    <string name="export_success">Données exportées avec succès</string>
+    <string name="export_failed">Échec de l\'exportation</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="mark_all_read">Tout marquer comme lu</string>
+    <string name="no_notifications">Aucune notification</string>
+    <string name="youre_all_caught_up">Vous êtes à jour!</string>
+    <string name="just_now">À l\'instant</string>
+    <string name="minutes_ago">Il y a %dm</string>
+    <string name="hours_ago">Il y a %dh</string>
+    <string name="days_ago">Il y a %dj</string>
+
+    <!-- Error Messages -->
+    <string name="error_invalid_email">Adresse courriel invalide</string>
+    <string name="error_password_too_short">Le mot de passe doit contenir au moins 6 caractères</string>
+    <string name="error_passwords_dont_match">Les mots de passe ne correspondent pas</string>
+    <string name="error_required_field">Ce champ est obligatoire</string>
+    <string name="error_network">Erreur réseau. Veuillez réessayer.</string>
+    <string name="error_generic">Une erreur s\'est produite. Veuillez réessayer.</string>
+    <string name="error_login_failed">Échec de connexion. Veuillez vérifier vos identifiants.</string>
+    <string name="error_signup_failed">Échec de l\'inscription. Veuillez réessayer.</string>
+    <string name="error_save_failed">Échec de l\'enregistrement. Veuillez réessayer.</string>
+    <string name="error_delete_failed">Échec de la suppression. Veuillez réessayer.</string>
+    <string name="error_load_failed">Échec du chargement des données. Veuillez réessayer.</string>
+
+    <!-- Success Messages -->
+    <string name="success_saved">Enregistré avec succès</string>
+    <string name="success_deleted">Supprimé avec succès</string>
+    <string name="success_updated">Mis à jour avec succès</string>
+    <string name="success_exported">Exporté avec succès</string>
+    <string name="success_restored">Restauré avec succès</string>
+
+    <!-- Loading States -->
+    <string name="loading">Chargement…</string>
+    <string name="saving">Enregistrement…</string>
+    <string name="deleting">Suppression…</string>
+    <string name="exporting">Exportation…</string>
+    <string name="restoring">Restauration…</string>
+</resources>

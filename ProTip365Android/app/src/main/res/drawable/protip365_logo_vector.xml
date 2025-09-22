@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M60,10 C35,10 15,30 15,55 C15,80 35,100 60,100 C85,100 105,80 105,55 C105,30 85,10 60,10 Z" />
+    
+    <!-- Martini glass outline -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M45,35 L45,50 L35,60 L45,70 L55,70 L65,60 L55,50 L55,35 Z" />
+    
+    <!-- Martini glass stem -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M50,70 L50,85" />
+    
+    <!-- Martini glass base -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M45,85 L55,85" />
+    
+    <!-- Green coin -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M50,37 A8,8 0 1,1 50,53 A8,8 0 1,1 50,37 Z" />
+    
+    <!-- Dollar sign -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,40 L50,50 M47,42 L53,42 M47,48 L53,48" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,40 L50,50" />
+</vector>
