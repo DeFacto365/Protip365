@@ -122,6 +122,23 @@ fun SettingsScreen(
                 }
             }
 
+            // Language Section - Moved to match iOS positioning
+            item {
+                SettingsSection(
+                    title = localization.appSettingsText,
+                    icon = IconMapping.Status.info
+                ) {
+                    SettingsItem(
+                        title = localization.languageText,
+                        subtitle = localization.choosePreferredLanguageText,
+                        icon = IconMapping.Communication.language,
+                        onClick = {
+                            showLanguagePicker = true
+                        }
+                    )
+                }
+            }
+
             // Targets Section
             item {
                 SettingsSection(
@@ -243,7 +260,8 @@ fun SettingsScreen(
                 }
             }
 
-            // Subscription Section
+            // Subscription Section - DISABLED FOR TESTING
+            /*
             item {
                 SettingsSection(
                     title = "Subscription",
@@ -281,23 +299,7 @@ fun SettingsScreen(
                     }
                 }
             }
-
-            // App Settings Section
-            item {
-                SettingsSection(
-                    title = localization.appSettingsText,
-                    icon = IconMapping.Status.info
-                ) {
-                    SettingsItem(
-                        title = localization.languageText,
-                        subtitle = localization.choosePreferredLanguageText,
-                        icon = IconMapping.Communication.language,
-                        onClick = {
-                            showLanguagePicker = true
-                        }
-                    )
-                }
-            }
+            */
 
             // Support Section
             item {

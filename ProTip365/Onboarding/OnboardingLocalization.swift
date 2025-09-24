@@ -127,6 +127,38 @@ struct OnboardingLocalization {
         }
     }
 
+    var employerNameLabel: String {
+        switch language {
+        case "fr": return "Nom de votre employeur"
+        case "es": return "Nombre de su empleador"
+        default: return "Your employer's name"
+        }
+    }
+
+    var employerNamePlaceholder: String {
+        switch language {
+        case "fr": return "Ex: Restaurant ABC"
+        case "es": return "Ej: Restaurante ABC"
+        default: return "e.g. ABC Restaurant"
+        }
+    }
+
+    var setupEmployersTitle: String {
+        switch language {
+        case "fr": return "Configurer les employeurs"
+        case "es": return "Configurar empleadores"
+        default: return "Set Up Employers"
+        }
+    }
+
+    var doneButtonText: String {
+        switch language {
+        case "fr": return "Terminé"
+        case "es": return "Hecho"
+        default: return "Done"
+        }
+    }
+
     // MARK: - Step 3: Week Start
 
     var weekStartTitle: String {

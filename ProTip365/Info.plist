@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.18</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>5</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 
@@ -56,6 +56,16 @@
 	<!-- Face ID Usage Description -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>ProTip365 uses Face ID to protect your sensitive financial data and ensure only you can access your tip tracking information.</string>
+
+	<!-- Privacy Usage Descriptions -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>ProTip365 does not track users across other apps or websites.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>ProTip365 sends reminders to add entries for yesterday's shifts and other important updates about your earnings.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ProTip365 may access your photo library to allow you to attach receipts or documents to your shift entries.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ProTip365 may access your camera to allow you to take photos of receipts or documents for your shift entries.</string>
 
 	<!-- Background Modes -->
 	<key>UIBackgroundModes</key>
@@ -103,10 +113,26 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
+	<!-- Encryption Export Compliance -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<!-- Supabase Configuration -->
 	<key>SUPABASE_URL</key>
 	<string>https://ztzpjsbfzcccvbacgskc.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c</string>
+
+	<!-- App Store Metadata -->
+	<key>CFBundleGetInfoString</key>
+	<string>ProTip365 - Professional Tip Tracking</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>15.0</string>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>

@@ -110,7 +110,7 @@ struct AddEntryLocalizedStrings {
 
     var lunchBreakText: String {
         switch language {
-        case "fr": return "Pause déjeuner"
+        case "fr": return "Pause non-payée"
         case "es": return "Descanso para almorzar"
         default: return "Lunch Break"
         }
@@ -201,6 +201,39 @@ struct AddEntryLocalizedStrings {
         case "fr": return "hrs"
         case "es": return "hrs"
         default: return "hours"
+        }
+    }
+
+    // MARK: - Delete Confirmation
+    var deleteConfirmationTitle: String {
+        switch language {
+        case "fr": return "Supprimer l'entrée"
+        case "es": return "Eliminar entrada"
+        default: return "Delete Entry"
+        }
+    }
+
+    var deleteConfirmationMessage: String {
+        switch language {
+        case "fr": return "Êtes-vous sûr de vouloir supprimer cette entrée? Cette action ne peut pas être annulée."
+        case "es": return "¿Está seguro de que desea eliminar esta entrada? Esta acción no se puede deshacer."
+        default: return "Are you sure you want to delete this entry? This action cannot be undone."
+        }
+    }
+
+    var deleteButtonText: String {
+        switch language {
+        case "fr": return "Supprimer"
+        case "es": return "Eliminar"
+        default: return "Delete"
+        }
+    }
+
+    var cancelText: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
         }
     }
 }

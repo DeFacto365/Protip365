@@ -3,9 +3,10 @@ import Supabase
 
 struct ContentView: View {
     @State private var isAuthenticated = false
+    @State private var showOnboarding = false
     @StateObject private var securityManager = SecurityManager()
     @StateObject private var subscriptionManager = SubscriptionManager()
-    @StateObject private var alertManager = AlertManager()
+    @StateObject private var alertManager = AlertManager.shared
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false // Added to check setting
     @Environment(\.horizontalSizeClass) var sizeClass
@@ -22,24 +23,12 @@ struct ContentView: View {
                 if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
                     EnhancedLockScreenView(securityManager: securityManager)
                 } else if isAuthenticated {
-                    // Show loading or main view while checking subscription
-                    if subscriptionManager.isCheckingSubscription {
-                        // Show main app view while checking (prevents flash)
-                        mainAppView
-                            .disabled(true)
-                            .overlay(
-                                Color.black.opacity(0.3)
-                                    .ignoresSafeArea()
-                                    .overlay(
-                                        ProgressView()
-                                            .scaleEffect(1.5)
-                                            .tint(.white)
-                                    )
-                            )
-                    } else if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
-                        mainAppView
+                    if showOnboarding {
+                        OnboardingView(isAuthenticated: $isAuthenticated, showOnboarding: $showOnboarding)
                     } else {
-                        SubscriptionView(subscriptionManager: subscriptionManager)
+                        // TEMPORARILY DISABLED: Skip subscription checks for testing
+                        // Show main app directly without subscription validation
+                        mainAppView
                     }
                 } else {
                     AuthView(isAuthenticated: $isAuthenticated)
@@ -54,11 +43,23 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidSignOut)) { _ in
             isAuthenticated = false
+            showOnboarding = false
             securityManager.isUnlocked = false
+            // Reset subscription state when user signs out to prevent subscription carryover
+            subscriptionManager.resetSubscriptionState()
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidDeleteAccount)) { _ in
             isAuthenticated = false
+            showOnboarding = false
             securityManager.isUnlocked = false
+            // Reset subscription state to ensure clean slate for new accounts
+            subscriptionManager.resetSubscriptionState()
+        }
+        .onAppear {
+            // Force check authentication state on app appear
+            Task {
+                await checkAuth()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -71,6 +72,14 @@ struct ContentView: View {
                 // Refresh subscription status when app becomes active
                 Task {
                     await subscriptionManager.refreshSubscriptionStatus()
+
+                    // Also reload language preference when app becomes active
+                    if let session = try? await SupabaseManager.shared.client.auth.session {
+                        await loadUserLanguage(userId: session.user.id)
+                    }
+
+                    // Refresh alerts from database
+                    await alertManager.refreshAlerts()
                 }
             case .inactive:
                 // Lock the app when it becomes inactive
@@ -141,7 +150,7 @@ struct ContentView: View {
                             Label(dashboardTab, systemImage: IconNames.Navigation.dashboard)
                         }
 
-                        NavigationLink(destination: CalendarShiftsView()) {
+                        NavigationLink(destination: CalendarShiftsView(navigateToShiftId: .constant(nil))) {
                             Label(calendarTab, systemImage: IconNames.Navigation.calendar)
                         }
 
@@ -175,13 +184,18 @@ struct ContentView: View {
         .alert(alertManager.currentAlert?.title ?? "", isPresented: $alertManager.showAlert) {
             Button("OK") {
                 if let alert = alertManager.currentAlert {
-                    alertManager.clearAlert(alert)
+                    Task {
+                        await alertManager.clearAlert(alert)
+                    }
                 }
             }
-            if let alert = alertManager.currentAlert, !alert.action.isEmpty {
-                Button(alert.action) {
+            if let alert = alertManager.currentAlert,
+               let action = alert.action, !action.isEmpty {
+                Button(action) {
                     handleAlertAction(alert)
-                    alertManager.clearAlert(alert)
+                    Task {
+                        await alertManager.clearAlert(alert)
+                    }
                 }
             }
         } message: {
@@ -191,35 +205,159 @@ struct ContentView: View {
         }
     }
 
-    func handleAlertAction(_ alert: AppAlert) {
-        switch alert.type {
-        case .missingShift, .incompleteShift:
+    func handleAlertAction(_ alert: DatabaseAlert) {
+        switch alert.alert_type {
+        case "missingShift", "incompleteShift":
+            // Navigate to calendar for adding entry
+            navigateToCalendar()
+        case "targetAchieved", "personalBest":
             break
-        case .targetAchieved, .personalBest:
+        case "reminder":
             break
-        case .reminder:
+        case "shiftReminder":
+            // Navigate to the specific shift for editing
+            if let shiftId = alert.getShiftId() {
+                navigateToShift(shiftId: shiftId)
+            } else {
+                // Fallback to calendar if no specific shift ID
+                navigateToCalendar()
+            }
+        default:
             break
         }
     }
 
+    private func navigateToCalendar() {
+        // Post notification to change tab to calendar
+        NotificationCenter.default.post(name: .navigateToCalendar, object: nil)
+    }
+
+    private func navigateToShift(shiftId: UUID) {
+        // Post notification to navigate to specific shift
+        NotificationCenter.default.post(name: .navigateToShift, object: shiftId)
+    }
+
     func checkAuth() async {
         do {
-            _ = try await SupabaseManager.shared.client.auth.session
-            await MainActor.run {
-                isAuthenticated = true
+            let session = try await SupabaseManager.shared.client.auth.session
+            print("🔍 Auth check - Session found: \(session.user.id), expires: \(session.expiresAt)")
+            
+            // Additional check: ensure session is valid and not expired
+            if Date(timeIntervalSince1970: session.expiresAt) > Date() {
+                await MainActor.run {
+                    isAuthenticated = true
+                }
+                print("✅ User authenticated successfully")
+                // Load user's language preference from database
+                await loadUserLanguage(userId: session.user.id)
+                // Check if user needs onboarding
+                await checkIfOnboardingNeeded(userId: session.user.id)
+                // TEMPORARILY DISABLED: Skip subscription checking for testing
+                // await subscriptionManager.startSubscriptionChecking()
+            } else {
+                // Session is invalid or expired
+                await MainActor.run {
+                    isAuthenticated = false
+                }
+                print("❌ Session invalid or expired")
             }
         } catch {
+            // No session or error - ensure we're not authenticated
             await MainActor.run {
                 isAuthenticated = false
             }
+            print("❌ No session found: \(error)")
         }
 
         // Listen for auth state changes
         for await state in SupabaseManager.shared.client.auth.authStateChanges {
             await MainActor.run {
-                isAuthenticated = state.session != nil
+                // Only set authenticated if we have a valid, non-expired session
+                isAuthenticated = state.session != nil && 
+                                (state.session?.expiresAt).map { Date(timeIntervalSince1970: $0) > Date() } ?? false
+            }
+
+            // Reload language preference when auth state changes to authenticated
+            if let session = state.session, Date(timeIntervalSince1970: session.expiresAt) > Date() {
+                await loadUserLanguage(userId: session.user.id)
+                // Check if user needs onboarding when auth state changes
+                await checkIfOnboardingNeeded(userId: session.user.id)
+                // TEMPORARILY DISABLED: Skip subscription checking for testing
+                // await subscriptionManager.startSubscriptionChecking()
             }
         }
+    }
+
+    func loadUserLanguage(userId: UUID) async {
+        struct UserLanguage: Decodable {
+            let preferred_language: String?
+        }
+
+        // Try to get user's language preference
+        do {
+            let userLanguage: UserLanguage = try await SupabaseManager.shared.client
+                .from("users_profile")
+                .select("preferred_language")
+                .eq("user_id", value: userId)
+                .single()
+                .execute()
+                .value
+
+            if let preferredLanguage = userLanguage.preferred_language {
+                await MainActor.run {
+                    language = preferredLanguage
+                    print("Loaded language preference from database: \(preferredLanguage)")
+                }
+            } else {
+                print("No language preference set, using default")
+            }
+        } catch {
+            // Profile might not exist yet or language not set
+            print("No language preference found, using default: \(error.localizedDescription)")
+        }
+    }
+    
+    func checkIfOnboardingNeeded(userId: UUID) async {
+        // Check if user has completed onboarding by looking for key profile fields
+        do {
+            let response = try await SupabaseManager.shared.client
+                .from("users_profile")
+                .select("tip_target_percentage, target_sales_daily, target_hours_daily")
+                .eq("user_id", value: userId)
+                .single()
+                .execute()
+            
+            // If we get here, profile exists - check if onboarding fields are set
+            let decoder = JSONDecoder()
+            if let profileData = try? decoder.decode(OnboardingCheck.self, from: response.data) {
+                // If key onboarding fields are missing or default, show onboarding
+                let needsOnboarding = profileData.tip_target_percentage == nil || 
+                                    profileData.tip_target_percentage == 0 ||
+                                    profileData.target_sales_daily == nil ||
+                                    profileData.target_hours_daily == nil
+                
+                await MainActor.run {
+                    showOnboarding = needsOnboarding
+                    if needsOnboarding {
+                        print("🎯 User needs onboarding - showing onboarding flow")
+                    } else {
+                        print("✅ User has completed onboarding")
+                    }
+                }
+            }
+        } catch {
+            // Profile doesn't exist or error - show onboarding
+            await MainActor.run {
+                showOnboarding = true
+                print("🎯 New user detected - showing onboarding flow")
+            }
+        }
+    }
+    
+    struct OnboardingCheck: Decodable {
+        let tip_target_percentage: Double?
+        let target_sales_daily: Double?
+        let target_hours_daily: Double?
     }
 }
 
@@ -231,3 +369,4 @@ struct SettingsViewWrapper: View {
         SettingsView(selectedTab: $dummySelectedTab)
     }
 }
+

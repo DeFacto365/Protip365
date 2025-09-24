@@ -63,6 +63,9 @@ data class Shift(
     @SerialName("lunch_break_minutes")
     val lunchBreakMinutes: Int = 0,
 
+    @SerialName("alert_minutes")
+    val alertMinutes: Int? = null,
+
     @SerialName("updated_at")
     val updatedAt: String? = null
 ) {

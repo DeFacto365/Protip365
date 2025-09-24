@@ -70,10 +70,8 @@ struct DashboardStatsCards: View {
             // Total Income
             totalIncomeSection
 
-            // Show Details Button
-            if !currentStats.shifts.isEmpty {
-                showDetailsButton
-            }
+            // Show Details Button - always show for all tabs
+            showDetailsButton
         }
     }
 
@@ -84,8 +82,8 @@ struct DashboardStatsCards: View {
                 value: DashboardMetrics.formatCurrency(currentStats.sales),
                 icon: "cart.fill",
                 color: .purple,
-                subtitle: getSalesTarget() > 0
-                    ? "\(Int((currentStats.sales / getSalesTarget()) * 100))% of target"
+                subtitle: selectedPeriod == 0 && getSalesTarget() > 0
+                    ? String(format: localization.percentOfTargetText, Int((currentStats.sales / getSalesTarget()) * 100))
                     : nil
             )
 
@@ -113,8 +111,8 @@ struct DashboardStatsCards: View {
             value: String(format: "%.1f hours", currentStats.hours),
             icon: "clock.badge",
             color: .blue,
-            subtitle: getHoursTarget() > 0
-                ? "\(Int((currentStats.hours / getHoursTarget()) * 100))% of target"
+            subtitle: selectedPeriod == 0 && getHoursTarget() > 0
+                ? String(format: localization.percentOfTargetText, Int((currentStats.hours / getHoursTarget()) * 100))
                 : nil
         )
     }
@@ -126,7 +124,9 @@ struct DashboardStatsCards: View {
             icon: "banknote.fill",
             color: .green,
             subtitle: currentStats.tipPercentage > 0
-                ? String(format: "%.1f%% of sales • Target: %.0f%%", currentStats.tipPercentage, userTargets.tipTargetPercentage)
+                ? selectedPeriod == 0
+                    ? String(format: localization.percentOfSalesText + " • " + localization.targetText + ": %.0f%%", currentStats.tipPercentage, userTargets.tipTargetPercentage)
+                    : String(format: localization.percentOfSalesText, currentStats.tipPercentage)
                 : nil
         )
     }
@@ -179,7 +179,7 @@ struct DashboardStatsCards: View {
                 .foregroundStyle(.primary)
             Spacer()
             Text(DashboardMetrics.formatCurrency(currentStats.totalRevenue))
-                .font(.title3)
+                .font(.body)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
         }
@@ -188,26 +188,58 @@ struct DashboardStatsCards: View {
     }
 
     private var showDetailsButton: some View {
-        Button(action: {
-            detailViewData = DashboardMetrics.DetailViewData(
-                type: "total",
-                shifts: currentStats.shifts,
-                period: periodText
-            )
-            HapticFeedback.light()
-        }) {
-            HStack {
-                Image(systemName: "list.bullet")
-                    .font(.body)
-                Text(localization.showDetailsText)
-                    .font(.body)
-                    .fontWeight(.medium)
+        Group {
+            if horizontalSizeClass == .regular {
+                // iPad: Use NavigationLink to push to right pane
+                NavigationLink(destination: DetailView(
+                    shifts: currentStats.shifts.sorted { $0.shift_date > $1.shift_date },
+                    detailType: "total",
+                    periodText: periodText,
+                    onEditShift: { shift in
+                        // Handle edit if needed
+                    }
+                )) {
+                    HStack {
+                        Image(systemName: "list.bullet")
+                            .font(.body)
+                        Text(localization.showDetailsText)
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, Spacing.xxxl)
+                    .padding(.vertical, Spacing.lg)
+                    .background(currentStats.shifts.isEmpty ? Color.gray : Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .disabled(currentStats.shifts.isEmpty)
+                .opacity(currentStats.shifts.isEmpty ? 0.6 : 1.0)
+            } else {
+                // iPhone: Use Button with sheet
+                Button(action: {
+                    detailViewData = DashboardMetrics.DetailViewData(
+                        type: "total",
+                        shifts: currentStats.shifts,
+                        period: periodText
+                    )
+                    HapticFeedback.light()
+                }) {
+                    HStack {
+                        Image(systemName: "list.bullet")
+                            .font(.body)
+                        Text(localization.showDetailsText)
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, Spacing.xxxl)
+                    .padding(.vertical, Spacing.lg)
+                    .background(currentStats.shifts.isEmpty ? Color.gray : Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .disabled(currentStats.shifts.isEmpty)
+                .opacity(currentStats.shifts.isEmpty ? 0.6 : 1.0)
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, Spacing.xxxl)
-            .padding(.vertical, Spacing.lg)
-            .background(.tint)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding(.top, 8)
     }

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTip365 - Track Your Tips & Maximize Your Earnings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .download-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .hero-section {
+            padding: 4rem 0;
+            text-align: center;
+            background: white;
+        }
+        
+        .hero-image {
+            max-width: 200px;
+            height: auto;
+            margin: 2rem 0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .features {
+            padding: 4rem 0;
+            background: #f8f9fa;
+        }
+        
+        .features h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2.5rem;
+            color: #333;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .screenshots {
+            padding: 4rem 0;
+            background: white;
+        }
+        
+        .screenshots h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2.5rem;
+            color: #333;
+        }
+        
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .screenshot {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .screenshot:hover {
+            transform: scale(1.05);
+        }
+        
+        footer {
+            background: #333;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-image {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="logo">ProTip365</h1>
+            <p class="tagline">Track Your Tips & Maximize Your Earnings</p>
+            <div class="download-buttons">
+                <a href="https://apps.apple.com/app/protip365" class="download-btn">Download for iOS</a>
+                <a href="https://play.google.com/store/apps/details?id=com.protip365.monthly" class="download-btn">Download for Android</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="container">
+            <h2>No More Writing Your Shift on Paper</h2>
+            <p>ProTip365 helps service industry professionals track their tips, manage shifts, and maximize their earnings with powerful analytics and insights.</p>
+            <img src="images/IphoneProDashboard.png" alt="ProTip365 Dashboard" class="hero-image">
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">📅</div>
+                    <h3>Shift Management</h3>
+                    <p>Track your shifts, hours worked, and earnings with detailed calendar views and comprehensive reporting.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Earnings Analytics</h3>
+                    <p>Get insights into your earning patterns with detailed analytics and performance tracking.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧮</div>
+                    <h3>Tip Calculator</h3>
+                    <p>Built-in tip calculator to quickly calculate tips and split bills with your team members.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">👥</div>
+                    <h3>Employer Management</h3>
+                    <p>Manage multiple employers, track earnings per location, and maintain detailed records.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Achievement System</h3>
+                    <p>Unlock achievements and track your progress as you reach new earning milestones.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📤</div>
+                    <h3>Data Export</h3>
+                    <p>Export your data for tax purposes or personal analysis with comprehensive reporting tools.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="screenshots">
+        <div class="container">
+            <h2>App Screenshots</h2>
+            <div class="screenshot-grid">
+                <img src="images/IphoneProDashboard.png" alt="Dashboard" class="screenshot">
+                <img src="images/IphoneProCalendar.png" alt="Calendar" class="screenshot">
+                <img src="images/IphoneProEdittEntry.png" alt="Add Entry" class="screenshot">
+                <img src="images/IphoneProTipCalc.png" alt="Tip Calculator" class="screenshot">
+                <img src="images/IphoneProEmployers.png" alt="Employers" class="screenshot">
+                <img src="images/IphoneProSetting1.png" alt="Settings 1" class="screenshot">
+                <img src="images/IphoneProSetting2.png" alt="Settings 2" class="screenshot">
+                <img src="images/IphoneProSetting3.png" alt="Settings 3" class="screenshot">
+                <img src="images/IphoneProSummary.png" alt="Summary" class="screenshot">
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 ProTip365. All rights reserved.</p>
+            <p>Made with ❤️ for service professionals</p>
+        </div>
+    </footer>
+</body>
+</html>

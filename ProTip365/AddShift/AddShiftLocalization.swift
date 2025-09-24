@@ -33,6 +33,39 @@ struct AddShiftLocalization {
         }
     }
 
+    // MARK: - Delete Functionality
+    var deleteShiftTitle: String {
+        switch language {
+        case "fr": return "Supprimer le quart"
+        case "es": return "Eliminar turno"
+        default: return "Delete Shift"
+        }
+    }
+
+    var deleteButtonText: String {
+        switch language {
+        case "fr": return "Supprimer"
+        case "es": return "Eliminar"
+        default: return "Delete"
+        }
+    }
+
+    var cancelButtonText: String {
+        switch language {
+        case "fr": return "Annuler"
+        case "es": return "Cancelar"
+        default: return "Cancel"
+        }
+    }
+
+    var deleteShiftMessage: String {
+        switch language {
+        case "fr": return "Êtes-vous sûr de vouloir supprimer ce quart?"
+        case "es": return "¿Está seguro de que desea eliminar este turno?"
+        default: return "Are you sure you want to delete this shift?"
+        }
+    }
+
     // MARK: - Navigation
     var editShiftText: String {
         switch language {
@@ -136,6 +169,49 @@ struct AddShiftLocalization {
         case "fr": return "Sélectionner la date"
         case "es": return "Seleccionar fecha"
         default: return "Select Date"
+        }
+    }
+
+    // MARK: - Alert Settings
+    var alertText: String {
+        switch language {
+        case "fr": return "Alerte"
+        case "es": return "Alerta"
+        default: return "Alert"
+        }
+    }
+
+    var selectAlertText: String {
+        switch language {
+        case "fr": return "Sélectionner l'alerte"
+        case "es": return "Seleccionar alerta"
+        default: return "Select Alert"
+        }
+    }
+
+    // MARK: - Error Messages
+    var selectEmployerError: String {
+        switch language {
+        case "fr": return "Veuillez sélectionner un employeur"
+        case "es": return "Por favor seleccione un empleador"
+        default: return "Please select an employer"
+        }
+    }
+
+    // MARK: - Overlap Detection Messages
+    var overlapErrorTitle: String {
+        switch language {
+        case "fr": return "Conflit d'horaire"
+        case "es": return "Conflicto de horario"
+        default: return "Schedule Conflict"
+        }
+    }
+
+    func overlapErrorMessage(employerName: String, startTime: String, endTime: String) -> String {
+        switch language {
+        case "fr": return "Ce quart de travail chevauche avec un quart existant chez \(employerName) de \(startTime) à \(endTime)"
+        case "es": return "Este turno se superpone con un turno existente en \(employerName) de \(startTime) a \(endTime)"
+        default: return "This shift overlaps with an existing shift at \(employerName) from \(startTime) to \(endTime)"
         }
     }
 }

@@ -3,6 +3,7 @@ import Supabase
 
 struct SupportSettingsSection: View {
     @Binding var showSuggestIdeas: Bool
+    @Binding var showSupport: Bool
     @Binding var showingExportOptions: Bool
     @Binding var showOnboarding: Bool
     @Binding var shifts: [ShiftIncome]
@@ -17,6 +18,7 @@ struct SupportSettingsSection: View {
 
     init(
         showSuggestIdeas: Binding<Bool>,
+        showSupport: Binding<Bool>,
         showingExportOptions: Binding<Bool>,
         showOnboarding: Binding<Bool>,
         shifts: Binding<[ShiftIncome]>,
@@ -28,6 +30,7 @@ struct SupportSettingsSection: View {
         language: String
     ) {
         self._showSuggestIdeas = showSuggestIdeas
+        self._showSupport = showSupport
         self._showingExportOptions = showingExportOptions
         self._showOnboarding = showOnboarding
         self._shifts = shifts
@@ -41,17 +44,26 @@ struct SupportSettingsSection: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section title with icon
+            HStack(spacing: 12) {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(localization.supportSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+
+            VStack(spacing: 0) {
             // Export Data
             Button(action: {
                 showingExportOptions = true
             }) {
                 HStack {
-                    Image(systemName: IconNames.Actions.export)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .symbolRenderingMode(.monochrome)
-                        .frame(width: 28, height: 28)
                     VStack(alignment: .leading) {
                         Text(localization.exportData)
                             .foregroundStyle(.primary)
@@ -71,30 +83,61 @@ struct SupportSettingsSection: View {
             Rectangle()
                 .fill(.white.opacity(0.2))
                 .frame(height: 1)
-                .padding(.horizontal)
 
-            // Support
-            HStack {
-                Image(systemName: IconNames.Communication.email)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.tint)
-                    .symbolRenderingMode(.monochrome)
-                    .frame(width: 28, height: 28)
-                VStack(alignment: .leading) {
-                    Text(localization.supportSection)
-                        .foregroundStyle(.primary)
-                    Text("support@protip365.com")
+            // Onboarding Guide (Testing)
+            Button(action: {
+                HapticFeedback.selection()
+                showOnboarding = true
+            }) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(localization.onboardingGuide)
+                            .foregroundStyle(.primary)
+                        Text(localization.onboardingGuideSubtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: IconNames.Form.next)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.tertiary)
                 }
-                Spacer()
             }
+            .buttonStyle(PlainButtonStyle())
             .padding()
 
             Rectangle()
                 .fill(.white.opacity(0.2))
+                .frame(height: 1)
+
+            // Support
+            Button(action: {
+                HapticFeedback.selection()
+                showSupport = true
+            }) {
+                HStack {
+                    Image(systemName: IconNames.Communication.email)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20, height: 20)
+                    VStack(alignment: .leading) {
+                        Text(localization.supportSection)
+                            .foregroundStyle(.primary)
+                        Text("support@protip365.com")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: IconNames.Form.next)
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                .padding()
+            }
+
+            Rectangle()
+                .fill(.white.opacity(0.2))
                 .frame(height: 0.5)
-                .padding(.horizontal)
 
             // Suggest Ideas
             Button(action: {
@@ -102,11 +145,6 @@ struct SupportSettingsSection: View {
                 showSuggestIdeas = true
             }) {
                 HStack {
-                    Image(systemName: IconNames.Status.info)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .symbolRenderingMode(.monochrome)
-                        .frame(width: 28, height: 28)
                     Text(localization.suggestIdeas)
                         .foregroundStyle(.primary)
                     Spacer()
@@ -116,14 +154,17 @@ struct SupportSettingsSection: View {
                 }
                 .padding()
             }
+            }
         }
         .padding()
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-        .padding(.horizontal)
         .sheet(isPresented: $showSuggestIdeas) {
-            suggestIdeasSheet
+            feedbackSheet(isSupport: false)
+        }
+        .sheet(isPresented: $showSupport) {
+            feedbackSheet(isSupport: true)
         }
         .sheet(isPresented: $showingExportOptions) {
             ExportOptionsView(
@@ -137,9 +178,9 @@ struct SupportSettingsSection: View {
         }
     }
 
-    // MARK: - Suggest Ideas Sheet
+    // MARK: - Feedback Sheet (for both Support and Suggestions)
 
-    private var suggestIdeasSheet: some View {
+    private func feedbackSheet(isSupport: Bool) -> some View {
         ZStack {
             // iOS 26 Gray Background
             Color(.systemGroupedBackground)
@@ -161,7 +202,6 @@ struct SupportSettingsSection: View {
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
 
                     Spacer()
                 }
@@ -178,30 +218,31 @@ struct SupportSettingsSection: View {
                 VStack(spacing: 0) {
                     // iOS 26 Style Header
                     HStack {
-                        // Cancel Button with iOS 26 style
+                        // Cancel Button
                         Button(action: {
-                            showSuggestIdeas = false
+                            if isSupport {
+                                showSupport = false
+                            } else {
+                                showSuggestIdeas = false
+                            }
                             suggestionText = ""
                             suggestionEmail = ""
                         }) {
-                            Image(systemName: IconNames.Actions.close)
+                            Image(systemName: "xmark")
                                 .font(.title2)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.primary)
-                                .frame(width: 32, height: 32)
-                                .background(Color(.systemGray5))
-                                .clipShape(Circle())
                         }
 
                         Spacer()
 
-                        Text(localization.suggestIdeas)
+                        Text(isSupport ? localization.supportSection : localization.suggestIdeas)
                             .font(.headline)
                             .fontWeight(.semibold)
 
                         Spacer()
 
-                        // Send Button with iOS 26 style
+                        // Send Button
                         Button(action: {
                             HapticFeedback.medium()
                             sendSuggestion()
@@ -209,15 +250,11 @@ struct SupportSettingsSection: View {
                             if isSendingSuggestion {
                                 ProgressView()
                                     .scaleEffect(0.8)
-                                    .frame(width: 32, height: 32)
                             } else {
-                                Image(systemName: IconNames.Actions.save)
+                                Image(systemName: "checkmark")
                                     .font(.title2)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                                    .frame(width: 32, height: 32)
-                                    .background(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color(.systemGray4) : Color.blue)
-                                    .clipShape(Circle())
+                                    .foregroundStyle(suggestionText.isEmpty || suggestionEmail.isEmpty ? Color.gray : Color.accentColor)
                             }
                         }
                         .disabled(suggestionText.isEmpty || suggestionEmail.isEmpty || isSendingSuggestion)
@@ -227,13 +264,13 @@ struct SupportSettingsSection: View {
 
                     ScrollView {
                         VStack(spacing: 20) {
-                            // Suggestion Card - iOS 26 Style
+                            // Feedback Card - iOS 26 Style
                             VStack(alignment: .leading, spacing: 16) {
-                                Label(localization.yourSuggestionHeader, systemImage: IconNames.Status.info)
+                                Label(isSupport ? localization.contactSupport : localization.yourSuggestionHeader, systemImage: isSupport ? IconNames.Communication.email : "lightbulb")
                                     .font(.headline)
                                     .foregroundStyle(.primary)
 
-                                Text(localization.suggestionFooter)
+                                Text(isSupport ? localization.supportDescription : localization.suggestionFooter)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -248,26 +285,37 @@ struct SupportSettingsSection: View {
                                         .textFieldStyle(.plain)
                                         .font(.body)
                                         .padding()
-                                        .background(Color(.secondarySystemGroupedBackground))
+                                        .background(Color(.systemGroupedBackground))
                                         .clipShape(RoundedRectangle(cornerRadius: 10))
                                         .keyboardType(.emailAddress)
                                         .textInputAutocapitalization(.never)
                                         .textContentType(.emailAddress)
                                 }
 
-                                // Suggestion text field second
+                                // Message text field second
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(localization.yourSuggestionHeader)
+                                    Text(isSupport ? localization.yourMessage : localization.yourSuggestionHeader)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
 
-                                    TextEditor(text: $suggestionText)
-                                        .font(.body)
-                                        .frame(minHeight: 120)
-                                        .padding(12)
-                                        .background(Color(.secondarySystemGroupedBackground))
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                        .scrollContentBackground(.hidden)
+                                    ZStack(alignment: .topLeading) {
+                                        if suggestionText.isEmpty {
+                                            Text(isSupport ? localization.describeYourIssue : localization.writeYourSuggestion)
+                                                .font(.body)
+                                                .foregroundStyle(.secondary.opacity(0.5))
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 12)
+                                        }
+
+                                        TextEditor(text: $suggestionText)
+                                            .font(.body)
+                                            .padding(8)
+                                            .scrollContentBackground(.hidden)
+                                            .background(Color.clear)
+                                    }
+                                    .frame(minHeight: 120)
+                                    .background(Color(.systemGroupedBackground))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                             .padding()

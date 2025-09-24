@@ -3,14 +3,15 @@ import SwiftUI
 // MARK: - Calendar Date View (iOS 26 Style)
 struct CalendarDateView: View {
     let date: Date
-    let shifts: [ShiftIncome]
+    let shifts: [Shift]
+    var isSelected: Bool = false
 
     var body: some View {
         VStack(spacing: 4) {
             // Date number
             Text("\(Calendar.current.component(.day, from: date))")
-                .font(.system(size: 17, weight: isToday ? .bold : .medium))
-                .foregroundStyle(isToday ? .white : .primary)
+                .font(.system(size: 17, weight: isToday || isSelected ? .bold : .medium))
+                .foregroundStyle(isToday && !isSelected ? .white : .primary)
 
             // iOS 26 style colored dots for events
             if !shifts.isEmpty {
@@ -39,34 +40,39 @@ struct CalendarDateView: View {
         .frame(width: 44, height: 44)
         .background(
             Circle()
-                .fill(isToday ? Color(.systemGray4) : Color.clear)
+                .fill(
+                    isSelected ? Color(.systemGroupedBackground) :
+                    (isToday ? Color.blue.opacity(0.2) : Color.clear)
+                )
         )
         .contentShape(Rectangle())
+        .onAppear {
+            // Debug logging
+            if !shifts.isEmpty {
+                print("📅 CalendarDateView - Showing \(shifts.count) shifts for date \(Calendar.current.component(.day, from: date))")
+            }
+        }
     }
 
     private var isToday: Bool {
         Calendar.current.isDate(date, inSameDayAs: Date())
     }
 
-    private func colorForShift(_ shift: ShiftIncome, index: Int) -> Color {
-        // Use different colors based on shift status and earnings
-        if shift.has_earnings {
-            // Completed shifts with earnings
-            if let total = shift.total_income, total > 0 {
-                return [Color.green, Color.blue, Color.purple][index % 3]
-            } else {
-                return Color.orange // Completed but no earnings
-            }
-        } else {
-            // Planned shifts (no earnings yet)
-            switch shift.shift_status {
-            case "planned":
-                return [Color.cyan, Color.mint, Color.indigo][index % 3]
-            case "missed":
-                return Color.red
-            default:
-                return [Color.gray, Color.secondary, Color.primary][index % 3]
-            }
+    private func colorForShift(_ shift: Shift, index: Int) -> Color {
+        // Use different colors based on shift status
+        switch shift.status?.lowercased() {
+        case "completed":
+            // Completed shifts - green variations
+            return [Color.green, Color.mint, Color.green.opacity(0.8)][index % 3]
+        case "planned":
+            // Planned/upcoming shifts - purple variations
+            return [Color.purple, Color.indigo, Color.purple.opacity(0.8)][index % 3]
+        case "missed":
+            // Missed shifts - always red
+            return Color.red
+        default:
+            // Default for unknown status or nil - orange variations
+            return [Color.orange, Color.yellow, Color.orange.opacity(0.8)][index % 3]
         }
     }
 }

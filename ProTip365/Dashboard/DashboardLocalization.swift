@@ -84,17 +84,17 @@ struct DashboardLocalization {
 
     var totalGrossSalaryText: String {
         switch language {
-        case "fr": return "Salaire brut prévu"
-        case "es": return "Salario bruto esperado"
-        default: return "Expected Gross Salary"
+        case "fr": return "Salaire brut"
+        case "es": return "Salario bruto"
+        default: return "Gross Salary"
         }
     }
 
     var expectedNetSalaryText: String {
         switch language {
-        case "fr": return "Salaire net"
-        case "es": return "Salario neto"
-        default: return "Net Salary"
+        case "fr": return "Salaire net prévu"
+        case "es": return "Salario neto esperado"
+        default: return "Expected Net Salary"
         }
     }
 
@@ -235,6 +235,30 @@ struct DashboardLocalization {
         case "fr": return "Afficher les détails"
         case "es": return "Mostrar detalles"
         default: return "Show Details"
+        }
+    }
+
+    var percentOfTargetText: String {
+        switch language {
+        case "fr": return "%d%% de l'objectif"
+        case "es": return "%d%% del objetivo"
+        default: return "%d%% of target"
+        }
+    }
+
+    var percentOfSalesText: String {
+        switch language {
+        case "fr": return "%.1f%% des ventes"
+        case "es": return "%.1f%% de las ventas"
+        default: return "%.1f%% of sales"
+        }
+    }
+
+    var targetText: String {
+        switch language {
+        case "fr": return "Objectif"
+        case "es": return "Objetivo"
+        default: return "Target"
         }
     }
 }

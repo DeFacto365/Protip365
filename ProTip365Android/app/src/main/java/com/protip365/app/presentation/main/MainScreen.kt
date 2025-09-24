@@ -6,10 +6,13 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import com.protip365.app.presentation.design.IconMapping
 import com.protip365.app.presentation.localization.rememberNavigationLocalization
+import com.protip365.app.presentation.localization.LocalizedText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -43,12 +46,47 @@ fun MainScreen(
         floatingActionButton = {
             val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
             if (currentRoute == "dashboard" || currentRoute == "calendar") {
-                FloatingActionButton(
-                    onClick = {
-                        navController.navigate("add_shift")
-                    }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Icon(IconMapping.Actions.add, contentDescription = "Add Shift")
+                    // + Entry button
+                    FloatingActionButton(
+                        onClick = {
+                            navController.navigate("add_shift?isEntry=true")
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Text(
+                                text = LocalizedText("quick_entry"),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    
+                    // + Shift button
+                    FloatingActionButton(
+                        onClick = {
+                            navController.navigate("add_shift")
+                        }
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Shift")
+                            Text(
+                                text = "Shift",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -91,9 +129,10 @@ fun MainScreen(
             composable("security") {
                 SecurityScreen(navController)
             }
-            composable("subscription") {
-                SubscriptionScreen(navController)
-            }
+            // Subscription screen disabled for testing
+            // composable("subscription") {
+            //     SubscriptionScreen(navController)
+            // }
             // Support routes
             composable("help") {
                 // TODO: Implement HelpScreen

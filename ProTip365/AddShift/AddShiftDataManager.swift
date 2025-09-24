@@ -3,20 +3,36 @@ import SwiftUI
 // MARK: - AddShift Data Manager
 @MainActor
 class AddShiftDataManager: ObservableObject {
-    @Published var selectedDate = Date()
+    @Published var selectedDate = Date() {
+        didSet {
+            // Re-validate end time when date changes
+            validateEndTime()
+        }
+    }
     @Published var selectedEmployer: Employer?
-    @Published var startTime = Date()
+    @Published var startTime = Date() {
+        didSet {
+            // Ensure end time is at least equal to or after start time
+            validateEndTime()
+        }
+    }
     @Published var endTime = Date()
     @Published var selectedLunchBreak = "None"
+    @Published var selectedAlert = "60 minutes"
     @Published var comments = ""
     @Published var employers: [Employer] = []
     @Published var isLoading = false
     @Published var isInitializing = true
     @Published var errorMessage = ""
     @Published var showErrorAlert = false
+    @Published var defaultAlertMinutes: Int = 60
+    @AppStorage("language") private var language = "en"
 
     private let editingShift: ShiftIncome?
     private let initialDate: Date?
+    private var localization: AddShiftLocalization {
+        AddShiftLocalization(language: language)
+    }
 
     init(editingShift: ShiftIncome? = nil, initialDate: Date? = nil) {
         self.editingShift = editingShift
@@ -31,6 +47,17 @@ class AddShiftDataManager: ObservableObject {
         case "45 min": return 45
         case "60 min": return 60
         default: return 0
+        }
+    }
+
+    var alertMinutes: Int? {
+        switch selectedAlert {
+        case "15 minutes": return 15
+        case "30 minutes": return 30
+        case "60 minutes": return 60
+        case "1 day before": return 1440
+        case "None": return nil
+        default: return nil
         }
     }
 
@@ -51,7 +78,45 @@ class AddShiftDataManager: ObservableObject {
         let lunchMinutes = lunchBreakMinutes
         totalMinutes -= lunchMinutes
 
-        return Double(totalMinutes) / 60.0
+        return max(0, Double(totalMinutes) / 60.0) // Ensure non-negative
+    }
+
+    // MARK: - Validation
+    private func validateEndTime() {
+        let calendar = Calendar.current
+
+        // Create full date-time objects for proper comparison
+        let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
+        let endComponents = calendar.dateComponents([.hour, .minute], from: endTime)
+
+        // Use the selected date as the base for both start and end times
+        var startDateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        var endDateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+
+        startDateComponents.hour = startComponents.hour
+        startDateComponents.minute = startComponents.minute
+        endDateComponents.hour = endComponents.hour
+        endDateComponents.minute = endComponents.minute
+
+        guard let startDateTime = calendar.date(from: startDateComponents),
+              let endDateTime = calendar.date(from: endDateComponents) else {
+            return
+        }
+
+        // If end time is before or equal to start time, adjust it
+        if endDateTime <= startDateTime {
+            // Set end time to start time + 8 hours (typical shift duration)
+            if let newEndTime = calendar.date(byAdding: .hour, value: 8, to: startTime) {
+                endTime = newEndTime
+                print("🔄 Adjusted end time to: \(newEndTime)")
+            } else {
+                // Fallback: set to start time + 1 hour
+                if let fallbackEndTime = calendar.date(byAdding: .hour, value: 1, to: startTime) {
+                    endTime = fallbackEndTime
+                    print("🔄 Fallback end time to: \(fallbackEndTime)")
+                }
+            }
+        }
     }
 
     // MARK: - Initialization Functions
@@ -59,11 +124,47 @@ class AddShiftDataManager: ObservableObject {
         // First load employers
         await loadEmployers()
 
+        // Load user's default alert preference
+        await loadUserDefaults()
+
         // Then setup default times (which may depend on employers being loaded)
         await setupDefaultTimes()
 
         // Finally, mark initialization as complete
         isInitializing = false
+    }
+
+    private func loadUserDefaults() async {
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+
+            struct ProfileDefaults: Decodable {
+                let default_alert_minutes: Int?
+            }
+
+            let profiles: [ProfileDefaults] = try await SupabaseManager.shared.client
+                .from("users_profile")
+                .select("default_alert_minutes")
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+
+            if let profile = profiles.first, let defaultMinutes = profile.default_alert_minutes {
+                defaultAlertMinutes = defaultMinutes
+                // Set the selected alert based on default
+                switch defaultMinutes {
+                case 15: selectedAlert = "15 minutes"
+                case 30: selectedAlert = "30 minutes"
+                case 60: selectedAlert = "60 minutes"
+                case 1440: selectedAlert = "1 day before"
+                default: selectedAlert = "60 minutes"
+                }
+            }
+        } catch {
+            print("Error loading user defaults: \(error)")
+            // Default to 60 minutes if error
+            selectedAlert = "60 minutes"
+        }
     }
 
     private func loadEmployers() async {
@@ -184,26 +285,33 @@ class AddShiftDataManager: ObservableObject {
             startComponents.minute = 0
             startTime = calendar.date(from: startComponents) ?? baseDate
 
-            // Set end time to 5:00 PM on the selected date
-            var endComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
-            endComponents.hour = 17
-            endComponents.minute = 0
-            endTime = calendar.date(from: endComponents) ?? baseDate
+            // Set end time to 8 hours after start time (typical shift duration)
+            // This will be 4:00 PM if start is 8:00 AM
+            if let defaultEndTime = calendar.date(byAdding: .hour, value: 8, to: startTime) {
+                endTime = defaultEndTime
+            } else {
+                // Fallback to 5:00 PM
+                var endComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+                endComponents.hour = 16
+                endComponents.minute = 0
+                endTime = calendar.date(from: endComponents) ?? baseDate
+            }
         }
     }
 
     private func loadNotesForShift(shiftId: UUID) async {
         do {
-            print("📝 Loading notes for shift ID: \(shiftId)")
+            print("📝 Loading notes and alert for shift ID: \(shiftId)")
 
-            // Create a simple struct just for notes
-            struct NoteOnly: Decodable {
+            // Create a simple struct for notes and alert
+            struct ShiftDetails: Decodable {
                 let notes: String?
+                let alert_minutes: Int?
             }
 
-            let result: NoteOnly = try await SupabaseManager.shared.client
+            let result: ShiftDetails = try await SupabaseManager.shared.client
                 .from("shifts")
-                .select("notes")
+                .select("notes, alert_minutes")
                 .eq("id", value: shiftId)
                 .single()
                 .execute()
@@ -215,16 +323,153 @@ class AddShiftDataManager: ObservableObject {
             } else {
                 print("📝 No notes found for shift")
             }
+
+            // Set alert minutes if exists, otherwise keep default
+            if let alertMins = result.alert_minutes {
+                switch alertMins {
+                case 15: selectedAlert = "15 minutes"
+                case 30: selectedAlert = "30 minutes"
+                case 60: selectedAlert = "60 minutes"
+                case 1440: selectedAlert = "1 day before"
+                default: selectedAlert = "None"
+                }
+                print("📝 Loaded alert: \(selectedAlert)")
+            }
         } catch {
-            print("Error loading notes: \(error)")
+            print("Error loading shift details: \(error)")
         }
     }
 
+    // MARK: - Overlap Detection
+    func checkForOverlappingShifts() async -> Bool {
+        do {
+            // Get current user ID
+            let session = try await SupabaseManager.shared.client.auth.session
+            let userId = session.user.id
+
+            // Format date for database query
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let shiftDateString = dateFormatter.string(from: selectedDate)
+
+            // Format times for comparison
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            let newStartTime = timeFormatter.string(from: startTime)
+            let newEndTime = timeFormatter.string(from: endTime)
+
+            print("🔍 Checking for overlapping shifts on \(shiftDateString)")
+            print("🔍 New shift time: \(newStartTime) - \(newEndTime)")
+
+            // Fetch all shifts for the same date
+            let existingShifts: [Shift] = try await SupabaseManager.shared.client
+                .from("shifts")
+                .select()
+                .eq("user_id", value: userId)
+                .eq("shift_date", value: shiftDateString)
+                .execute()
+                .value
+
+            // Check each existing shift for overlap
+            for shift in existingShifts {
+                // Skip if this is the same shift being edited
+                if let editingShift = editingShift,
+                   shift.id == editingShift.shift_id {
+                    continue
+                }
+
+                guard let existingStartTime = shift.start_time,
+                      let existingEndTime = shift.end_time else {
+                    continue
+                }
+
+                print("🔍 Existing shift: \(existingStartTime) - \(existingEndTime)")
+
+                // Convert times to minutes for easier comparison
+                let newStart = timeToMinutes(newStartTime)
+                let newEnd = timeToMinutes(newEndTime)
+                let existingStart = timeToMinutes(existingStartTime)
+                let existingEnd = timeToMinutes(existingEndTime)
+
+                // Check for overlap
+                // Shifts overlap if:
+                // 1. New shift starts during existing shift
+                // 2. New shift ends during existing shift
+                // 3. New shift completely contains existing shift
+                // 4. Existing shift completely contains new shift
+
+                let hasOverlap = (newStart >= existingStart && newStart < existingEnd) ||
+                                (newEnd > existingStart && newEnd <= existingEnd) ||
+                                (newStart <= existingStart && newEnd >= existingEnd) ||
+                                (existingStart <= newStart && existingEnd >= newEnd)
+
+                if hasOverlap {
+                    print("❌ Overlap detected with shift: \(existingStartTime) - \(existingEndTime)")
+
+                    // Get employer name for better error message
+                    var employerName = "another employer"
+                    if let employerId = shift.employer_id {
+                        let employers = try await SupabaseManager.shared.fetchEmployers()
+                        if let employer = employers.first(where: { $0.id == employerId }) {
+                            employerName = employer.name
+                        }
+                    }
+
+                    errorMessage = localization.overlapErrorMessage(employerName: employerName, startTime: existingStartTime, endTime: existingEndTime)
+                    showErrorAlert = true
+                    return true // Overlap found
+                }
+            }
+
+            print("✅ No overlapping shifts found")
+            return false // No overlap
+
+        } catch {
+            print("❌ Error checking for overlapping shifts: \(error)")
+            // On error, allow the save to proceed
+            return false
+        }
+    }
+
+    private func timeToMinutes(_ timeString: String) -> Int {
+        let components = timeString.split(separator: ":")
+        guard components.count >= 2,
+              let hours = Int(components[0]),
+              let minutes = Int(components[1]) else {
+            return 0
+        }
+        return hours * 60 + minutes
+    }
+
     // MARK: - Save Function
-    func saveShift() async -> Bool {
+    func saveShift(subscriptionManager: SubscriptionManager) async -> Bool {
         guard let employer = selectedEmployer else {
             print("❌ No employer selected")
+            errorMessage = localization.selectEmployerError
+            showErrorAlert = true
             return false
+        }
+
+        // Check for overlapping shifts before saving
+        let hasOverlap = await checkForOverlappingShifts()
+        if hasOverlap {
+            print("❌ Cannot save shift due to overlap")
+            return false
+        }
+
+        // Check subscription limits for part-time tier
+        if subscriptionManager.currentTier == .partTime && editingShift == nil {
+            // Only check for new shifts, not edits
+            if !subscriptionManager.canAddShift() {
+                print("❌ Part-time shift limit reached")
+                if let remaining = subscriptionManager.getRemainingShifts() {
+                    errorMessage = "You've reached your weekly limit of 3 shifts. \(remaining) shifts remaining this week."
+                } else {
+                    errorMessage = "You've reached your weekly shift limit."
+                }
+                showErrorAlert = true
+                return false
+            }
         }
 
         print("💾 Starting to save shift...")
@@ -256,6 +501,21 @@ class AddShiftDataManager: ObservableObject {
                     throw NSError(domain: "AddShiftView", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid shift ID"])
                 }
 
+                // Determine status based on actual shift start date/time
+                let calendar = Calendar.current
+
+                // Combine shift date with start time for accurate comparison
+                let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
+                var shiftDateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+                shiftDateComponents.hour = startComponents.hour
+                shiftDateComponents.minute = startComponents.minute
+
+                let shiftStartDateTime = calendar.date(from: shiftDateComponents) ?? selectedDate
+                let now = Date()
+
+                // If shift starts in the future, it should be "planned"
+                let shiftStatus = shiftStartDateTime > now ? "planned" : (existingShift.shift_status ?? "completed")
+
                 let updatedShift = Shift(
                     id: shiftId,  // Use the shift_id from the ShiftIncome model
                     user_id: userId,
@@ -265,10 +525,15 @@ class AddShiftDataManager: ObservableObject {
                     hours: expectedHours,
                     lunch_break_minutes: lunchBreakMinutes,
                     hourly_rate: employer.hourly_rate,
+                    sales: existingShift.sales ?? 0, // Keep existing sales
+                    tips: existingShift.tips ?? 0, // Keep existing tips
+                    cash_out: existingShift.cash_out, // Keep existing cash_out
+                    other: existingShift.other, // Keep existing other
                     notes: comments.isEmpty ? nil : comments,
                     start_time: timeFormatter.string(from: startTime),
                     end_time: timeFormatter.string(from: endTime),
-                    status: "planned",
+                    status: shiftStatus,
+                    alert_minutes: alertMinutes,
                     created_at: nil
                 )
 
@@ -278,8 +543,37 @@ class AddShiftDataManager: ObservableObject {
                 // Update in Supabase
                 try await SupabaseManager.shared.updateShift(updatedShift)
                 print("✅ Shift updated successfully!")
+
+                // Update notification if alert is set
+                if let alertMins = alertMinutes {
+                    try await NotificationManager.shared.updateShiftAlert(
+                        shiftId: shiftId,
+                        shiftDate: selectedDate,
+                        startTime: startTime,
+                        employerName: employer.name,
+                        alertMinutes: alertMins
+                    )
+                } else {
+                    // Cancel notification if alert was removed
+                    NotificationManager.shared.cancelShiftAlert(shiftId: shiftId)
+                }
             } else {
                 // Create new shift
+                // Determine status based on actual shift start date/time
+                let calendar = Calendar.current
+
+                // Combine shift date with start time for accurate comparison
+                let startComponents = calendar.dateComponents([.hour, .minute], from: startTime)
+                var shiftDateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+                shiftDateComponents.hour = startComponents.hour
+                shiftDateComponents.minute = startComponents.minute
+
+                let shiftStartDateTime = calendar.date(from: shiftDateComponents) ?? selectedDate
+                let now = Date()
+
+                // If shift starts in the future, it should be "planned"
+                let shiftStatus = shiftStartDateTime > now ? "planned" : "completed"
+
                 let newShift = Shift(
                     id: UUID(),
                     user_id: userId,
@@ -289,18 +583,39 @@ class AddShiftDataManager: ObservableObject {
                     hours: expectedHours,
                     lunch_break_minutes: lunchBreakMinutes,
                     hourly_rate: employer.hourly_rate,
+                    sales: 0, // Default to 0 for planned shifts
+                    tips: 0,
+                    cash_out: 0,
+                    other: 0,
                     notes: comments.isEmpty ? nil : comments,
                     start_time: timeFormatter.string(from: startTime),
                     end_time: timeFormatter.string(from: endTime),
-                    status: "planned",
+                    status: shiftStatus,
+                    alert_minutes: alertMinutes,
                     created_at: Date()
                 )
 
                 print("📦 Created shift object: \(newShift)")
 
                 // Save to Supabase
-                try await SupabaseManager.shared.saveShift(newShift)
+                let savedShift = try await SupabaseManager.shared.saveShift(newShift)
                 print("✅ Shift saved successfully!")
+
+                // Schedule notification if alert is set
+                if let alertMins = alertMinutes, let shiftId = savedShift.id {
+                    try await NotificationManager.shared.scheduleShiftAlert(
+                        shiftId: shiftId,
+                        shiftDate: selectedDate,
+                        startTime: startTime,
+                        employerName: employer.name,
+                        alertMinutes: alertMins
+                    )
+                }
+
+                // Increment shift count for part-time tier
+                if subscriptionManager.currentTier == .partTime {
+                    subscriptionManager.incrementShiftCount()
+                }
             }
 
             isLoading = false

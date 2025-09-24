@@ -35,9 +35,33 @@ struct PermissionsStep: View {
 
                 Toggle(localization.multipleEmployersQuestion, isOn: $state.useMultipleEmployers)
                     .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    .onChange(of: state.useMultipleEmployers) { _, _ in
+                    .onChange(of: state.useMultipleEmployers) { _, newValue in
                         HapticFeedback.selection()
+                        if newValue {
+                            // Clear single employer name when switching to multiple
+                            state.singleEmployerName = ""
+                            // Show employers page later
+                            state.showEmployersPage = true
+                        } else {
+                            state.showEmployersPage = false
+                        }
                     }
+
+                // Show employer name input for single employer mode
+                if !state.useMultipleEmployers {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localization.employerNameLabel)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        TextField(localization.employerNamePlaceholder, text: $state.singleEmployerName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.words)
+                            .submitLabel(.done)
+                    }
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
                 InfoBox(
                     title: localization.multipleEmployersExplanationTitle,
@@ -49,6 +73,21 @@ struct PermissionsStep: View {
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
             .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+        }
+        .sheet(isPresented: $state.showEmployersPage) {
+            NavigationStack {
+                EmployersView(isOnboarding: true)
+                    .navigationTitle(localization.setupEmployersTitle)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(localization.doneButtonText) {
+                                state.showEmployersPage = false
+                            }
+                            .fontWeight(.semibold)
+                        }
+                    }
+            }
         }
     }
 

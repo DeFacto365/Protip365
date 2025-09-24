@@ -4,6 +4,61 @@ import Supabase
 /// Chart and data loading components for Dashboard view
 struct DashboardCharts {
 
+    // MARK: - Helper Functions
+
+    /// Converts Shift array to ShiftIncome array for compatibility
+    private static func convertShiftsToShiftIncome(_ shifts: [Shift]) -> [ShiftIncome] {
+        return shifts.map { shift in
+            let hours = shift.hours ?? shift.expected_hours ?? 0
+            let hourlyRate = shift.hourly_rate ?? 0
+            let sales = shift.sales ?? 0
+            let tips = shift.tips ?? 0
+            let cashOut = shift.cash_out ?? 0
+            let other = shift.other ?? 0
+
+            // Calculate base income (hours * hourly rate)
+            let baseIncome = hours * hourlyRate
+
+            // Calculate net tips (tips - cash_out)
+            let netTips = tips - cashOut
+
+            // Calculate total income (base + net tips + other)
+            let totalIncome = baseIncome + netTips + other
+
+            // Calculate tip percentage if sales > 0
+            let tipPercentage = sales > 0 ? (tips / sales) * 100 : 0
+
+            return ShiftIncome(
+                income_id: nil,
+                shift_id: shift.id,
+                user_id: shift.user_id,
+                employer_id: shift.employer_id,
+                employer_name: nil, // We don't have employer name in shifts table
+                shift_date: shift.shift_date,
+                expected_hours: shift.expected_hours,
+                lunch_break_minutes: shift.lunch_break_minutes,
+                net_expected_hours: shift.expected_hours,
+                hours: hours,
+                hourly_rate: shift.hourly_rate,
+                sales: sales,
+                tips: tips,
+                cash_out: cashOut,
+                other: other,
+                base_income: baseIncome,
+                net_tips: netTips,
+                total_income: totalIncome,
+                tip_percentage: tipPercentage,
+                start_time: shift.start_time,
+                end_time: shift.end_time,
+                shift_status: shift.status,
+                has_earnings: shift.status == "completed" || tips > 0 || sales > 0,
+                shift_created_at: nil,
+                earnings_created_at: nil,
+                notes: shift.notes
+            )
+        }
+    }
+
     // MARK: - Data Loading
 
     /// Loads user targets from Supabase
@@ -96,7 +151,7 @@ struct DashboardCharts {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
             }
 
-            // Load Today's data
+            // Load Today's data from v_shift_income view
             let todayQuery = SupabaseManager.shared.client
                 .from("v_shift_income")
                 .select()
@@ -110,7 +165,7 @@ struct DashboardCharts {
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Week's data
+            // Load Week's data from v_shift_income view
             let weekStart = DashboardMetrics.getStartOfWeek(for: today, weekStartDay: weekStartDay)
             let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart)!
             let weekQuery = SupabaseManager.shared.client
@@ -127,7 +182,7 @@ struct DashboardCharts {
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Month's data (current calendar month)
+            // Load Month's data (current calendar month) from v_shift_income view
             let calendar = Calendar.current
             let monthStart = calendar.dateInterval(of: .month, for: today)?.start ?? today
             let monthEnd = calendar.dateInterval(of: .month, for: today)?.end ?? today
@@ -145,7 +200,7 @@ struct DashboardCharts {
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Year's data (since January 1st)
+            // Load Year's data (since January 1st) from v_shift_income view
             let yearStart = calendar.dateInterval(of: .year, for: today)?.start ?? today
             let yearQuery = SupabaseManager.shared.client
                 .from("v_shift_income")

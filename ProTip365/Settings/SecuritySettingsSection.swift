@@ -26,7 +26,20 @@ struct SecuritySettingsSection: View {
     }
 
     var body: some View {
-        Section(localization.securitySection) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section title with icon
+            HStack(spacing: 12) {
+                Image(systemName: "lock.shield")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(localization.securitySection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+
             VStack(spacing: Constants.formFieldSpacing) {
                 // App Lock Security
                 VStack(alignment: .leading, spacing: 8) {
@@ -63,7 +76,9 @@ struct SecuritySettingsSection: View {
                     }
                 }
                 .padding(Constants.formPadding)
-                .liquidGlassForm()
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
 
                 // Change PIN Button (if PIN is enabled)
                 if securityManager.currentSecurityType == .pinCode {
@@ -72,7 +87,7 @@ struct SecuritySettingsSection: View {
                     }) {
                         HStack {
                             Image(systemName: "key")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.secondary)
                             Text(localization.changePIN)
                                 .foregroundStyle(.primary)
                             Spacer()
@@ -88,7 +103,7 @@ struct SecuritySettingsSection: View {
             }
         }
         .sheet(isPresented: $showPINSetup) {
-            PINSetupView(securityManager: securityManager, language: language)
+            PINSetupView(securityManager: securityManager, language: language, targetSecurityType: selectedSecurityType)
         }
         .onChange(of: selectedSecurityType) { _, newType in
             handleSecurityTypeChange(newType)
@@ -105,9 +120,12 @@ struct SecuritySettingsSection: View {
             selectedSecurityType = type
         }) {
             HStack {
-                Image(systemName: icon)
-                    .foregroundStyle(isSelected ? .blue : .secondary)
-                    .frame(width: 24, height: 24)
+                // Only show icon for biometric option
+                if type == .biometric {
+                    Image(systemName: icon)
+                        .foregroundStyle(isSelected ? .blue : .secondary)
+                        .frame(width: 24, height: 24)
+                }
 
                 Text(title)
                     .foregroundStyle(.primary)
@@ -187,13 +205,11 @@ struct SecuritySettingsSection: View {
 
         case .biometric:
             if canUseBiometrics {
+                // For biometric, we need to set up PIN first as fallback
                 if securityManager.currentSecurityType == .none {
-                    // Set up PIN first, then enable biometric
                     showPINSetup = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        securityManager.setSecurityType(.biometric)
-                    }
                 } else {
+                    // If we already have PIN, just enable biometric
                     securityManager.setSecurityType(.biometric)
                 }
             }
@@ -229,9 +245,12 @@ struct PINSetupView: View {
     let language: String
     private let localization: SettingsLocalization
 
-    init(securityManager: SecurityManager, language: String) {
+    let targetSecurityType: SecurityType
+    
+    init(securityManager: SecurityManager, language: String, targetSecurityType: SecurityType = .pinCode) {
         self.securityManager = securityManager
         self.language = language
+        self.targetSecurityType = targetSecurityType
         self.localization = SettingsLocalization(language: language)
     }
 
@@ -352,7 +371,8 @@ struct PINSetupView: View {
         } else if !isSettingPin && confirmPin.count == 4 {
             if pin == confirmPin {
                 if securityManager.setPINCode(pin) {
-                    securityManager.setSecurityType(.pinCode)
+                    // Set the target security type (PIN or biometric)
+                    securityManager.setSecurityType(targetSecurityType)
                     dismiss()
                 } else {
                     errorMessage = "Failed to set PIN. Please try again."

@@ -9,8 +9,12 @@ import com.protip365.app.data.remote.supabaseClient
 import com.protip365.app.data.remote.EmailService
 import com.protip365.app.data.repository.*
 import com.protip365.app.domain.repository.*
+import com.protip365.app.data.models.SubscriptionTier
+import com.protip365.app.data.models.UserSubscription
 import com.protip365.app.presentation.localization.LocalizationManager
 import com.protip365.app.presentation.security.SecurityManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 // import com.protip365.app.presentation.export.ExportManager
 import dagger.Module
 import dagger.Provides
@@ -66,12 +70,26 @@ object AppModule {
         janSupabaseClient: JanSupabaseClient
     ): EmployerRepository = EmployerRepositoryImpl(janSupabaseClient)
 
+    // Subscription repository disabled for testing - providing mock implementation
     @Provides
     @Singleton
-    fun provideSubscriptionRepository(
-        @ApplicationContext context: Context,
-        janSupabaseClient: JanSupabaseClient
-    ): SubscriptionRepository = SubscriptionRepositoryImpl(context, janSupabaseClient)
+    fun provideSubscriptionRepository(): SubscriptionRepository = object : SubscriptionRepository {
+        override suspend fun getCurrentSubscription(userId: String?): UserSubscription? = null
+        override suspend fun purchaseSubscription(tier: SubscriptionTier): Result<Unit> = Result.success(Unit)
+        override suspend fun restorePurchases(): Result<Unit> = Result.success(Unit)
+        override suspend fun cancelSubscription(): Result<Unit> = Result.success(Unit)
+        override fun observeSubscriptionStatus(): Flow<SubscriptionTier> = flowOf(SubscriptionTier.FULL_ACCESS)
+        override suspend fun checkWeeklyLimits(userId: String): WeeklyLimits = WeeklyLimits(
+            shiftsUsed = 0,
+            entriesUsed = 0,
+            shiftsLimit = null,
+            entriesLimit = null,
+            canAddShift = true,
+            canAddEntry = true
+        )
+        override suspend fun startFreeTrial(tier: String): Result<Unit> = Result.success(Unit)
+        override suspend fun initializeFree(): Result<Unit> = Result.success(Unit)
+    }
 
     @Provides
     @Singleton

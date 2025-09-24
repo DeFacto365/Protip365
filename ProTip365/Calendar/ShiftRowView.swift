@@ -77,7 +77,7 @@ struct ShiftRowView: View {
         HStack(spacing: 4) {
             if shift.has_earnings {
                 // Show actual hours / expected hours
-                Text("\(shift.hours, specifier: "%.1f")")
+                Text("\(shift.hours ?? 0, specifier: "%.1f")")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
@@ -133,16 +133,16 @@ struct ShiftRowView: View {
             // Sales progress
             if targetSalesDaily > 0 {
                 SalesProgressIndicator(
-                    actual: shift.sales,
+                    actual: shift.sales ?? 0,
                     target: targetSalesDaily
                 )
             }
 
             // Tips percentage indicator (based on sales)
-            if shift.sales > 0 {
+            if (shift.sales ?? 0) > 0 {
                 TipPercentageIndicator(
-                    tips: shift.tips,
-                    sales: shift.sales,
+                    tips: shift.tips ?? 0,
+                    sales: shift.sales ?? 0,
                     targetPercentage: tipTargetPercentage
                 )
             }
@@ -165,39 +165,33 @@ struct ShiftRowView: View {
     private var firstFinancialRowSection: some View {
         HStack(spacing: 16) {
             // Sales (if any)
-            if shift.sales > 0 {
+            if (shift.sales ?? 0) > 0 {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(localization.salesText)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text(formatCurrency(shift.sales))
+                    Text(formatCurrency(shift.sales ?? 0))
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                 }
             }
 
-            // Salary section
+            // Salary section - Net as main, Gross as subtitle (matching Dashboard style)
             if let baseIncome = shift.base_income, baseIncome > 0 {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(localization.grossSalaryText)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Text(formatCurrency(baseIncome))
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(localization.netSalaryText)
+                    Text(localization.expectedNetSalaryText)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     let netSalary = baseIncome * (1 - averageDeductionPercentage / 100)
                     Text(formatCurrency(netSalary))
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.primary)
+                    // Gross salary as subtitle in smaller text
+                    Text("\(localization.grossSalaryText): \(formatCurrency(baseIncome))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -208,12 +202,12 @@ struct ShiftRowView: View {
     private var secondFinancialRowSection: some View {
         HStack(spacing: 16) {
             // Tips
-            if shift.tips > 0 {
+            if (shift.tips ?? 0) > 0 {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(localization.tipsText)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text(formatCurrency(shift.tips))
+                    Text(formatCurrency(shift.tips ?? 0))
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)

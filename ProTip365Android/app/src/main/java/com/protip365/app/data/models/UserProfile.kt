@@ -70,6 +70,9 @@ data class UserProfile(
     @SerialName("preferred_language")
     val preferredLanguage: String = "en", // en, fr, es
 
+    @SerialName("default_alert_minutes")
+    val defaultAlertMinutes: Int? = 60,
+
     @SerialName("metadata")
     @Contextual
     val metadata: Map<String, @Contextual Any?>? = null,

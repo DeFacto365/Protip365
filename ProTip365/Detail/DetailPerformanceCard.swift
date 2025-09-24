@@ -8,15 +8,15 @@ struct DetailPerformanceCard: View {
 
     // Calculations
     var totalHours: Double {
-        shifts.reduce(0) { $0 + $1.hours }
+        shifts.reduce(0) { $0 + ($1.hours ?? 0) }
     }
 
     var totalSales: Double {
-        shifts.reduce(0) { $0 + $1.sales }
+        shifts.reduce(0) { $0 + ($1.sales ?? 0) }
     }
 
     var totalTips: Double {
-        shifts.reduce(0) { $0 + $1.tips }
+        shifts.reduce(0) { $0 + ($1.tips ?? 0) }
     }
 
     var tipPercentage: Double {
@@ -34,7 +34,7 @@ struct DetailPerformanceCard: View {
 
             // Total Hours
             HStack {
-                Label(localization.totalHoursText, systemImage: "clock.badge")
+                Text(localization.totalHoursText)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
@@ -52,7 +52,7 @@ struct DetailPerformanceCard: View {
 
             // Total Sales
             HStack {
-                Label(localization.totalSalesText, systemImage: "cart.fill")
+                Text(localization.totalSalesText)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
@@ -71,7 +71,7 @@ struct DetailPerformanceCard: View {
             // Tip Percentage
             if totalSales > 0 && totalTips > 0 {
                 HStack {
-                    Label(localization.tipPercentText, systemImage: "percent")
+                    Text(localization.tipPercentText)
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()

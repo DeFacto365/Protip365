@@ -232,6 +232,19 @@
     <string name="hours_ago">%dh ago</string>
     <string name="days_ago">%dd ago</string>
 
+    <!-- Alert Settings -->
+    <string name="alert_label">Alert</string>
+    <string name="alert_none">None</string>
+    <string name="alert_15_minutes">15 minutes before</string>
+    <string name="alert_30_minutes">30 minutes before</string>
+    <string name="alert_60_minutes">1 hour before</string>
+    <string name="alert_1_day">1 day before</string>
+    <string name="default_alert_label">Default Alert</string>
+
+    <!-- Shift Alert Notifications -->
+    <string name="notification_title">Upcoming Shift</string>
+    <string name="notification_body">Your shift at %1$s starts at %2$s</string>
+
     <!-- Error Messages -->
     <string name="error_invalid_email">Invalid email address</string>
     <string name="error_password_too_short">Password must be at least 6 characters</string>

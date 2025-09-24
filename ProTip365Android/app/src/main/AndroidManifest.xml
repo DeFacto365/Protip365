@@ -12,6 +12,8 @@
     
     <!-- Notification permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     
     <!-- File system access for exports -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -78,6 +80,12 @@
         
         <!-- Google Play Billing -->
         <uses-library android:name="com.android.vending" android:required="false" />
+        
+        <!-- Register the ShiftAlertReceiver -->
+        <receiver
+            android:name=".presentation.notifications.ShiftAlertReceiver"
+            android:enabled="true"
+            android:exported="false" />
         
         <!-- Network Security Config -->
         <meta-data

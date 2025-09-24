@@ -28,6 +28,8 @@ class OnboardingState: ObservableObject {
     @Published var currentStep = 1
     @Published var selectedLanguage = "en"
     @Published var useMultipleEmployers = false
+    @Published var singleEmployerName = ""
+    @Published var showEmployersPage = false
     @Published var weekStartDay = 0
     @Published var selectedSecurityType = SecurityType.none
     @Published var hasVariableSchedule = false
@@ -49,7 +51,7 @@ class OnboardingState: ObservableObject {
     var isStepValid: Bool {
         switch currentStep {
         case 1: return true // Language selection always valid
-        case 2: return true // Multiple employers always valid (boolean)
+        case 2: return useMultipleEmployers || !singleEmployerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case 3: return true // Week start always valid
         case 4: return true // Security always valid
         case 5: return true // Variable schedule always valid (boolean)
@@ -63,6 +65,8 @@ class OnboardingState: ObservableObject {
         currentStep = 1
         selectedLanguage = "en"
         useMultipleEmployers = false
+        singleEmployerName = ""
+        showEmployersPage = false
         weekStartDay = 0
         selectedSecurityType = .none
         hasVariableSchedule = false
@@ -83,7 +87,7 @@ class OnboardingState: ObservableObject {
 // MARK: - Onboarding Profile Update Model
 
 struct OnboardingProfileUpdate: Encodable {
-    let language: String
+    let preferred_language: String
     let use_multiple_employers: Bool
     let week_start: Int
     let has_variable_schedule: Bool

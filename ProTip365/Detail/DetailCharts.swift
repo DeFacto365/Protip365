@@ -51,7 +51,9 @@ struct DetailCharts: View {
 
     var tipTrends: [(String, Double)] {
         shifts.map { shift in
-            let tipPercent = shift.sales > 0 ? (shift.tips / shift.sales) * 100 : 0
+            let sales = shift.sales ?? 0
+            let tips = shift.tips ?? 0
+            let tipPercent = sales > 0 ? (tips / sales) * 100 : 0
             return (shift.shift_date, tipPercent)
         }.sorted { $0.0 < $1.0 }
     }
@@ -59,7 +61,8 @@ struct DetailCharts: View {
     var hourlyRates: [(String, Double)] {
         shifts.map { shift in
             let totalIncome = shift.total_income ?? 0
-            let hourlyRate = shift.hours > 0 ? totalIncome / shift.hours : 0
+            let hours = shift.hours ?? 0
+            let hourlyRate = hours > 0 ? totalIncome / hours : 0
             return (shift.shift_date, hourlyRate)
         }.sorted { $0.0 < $1.0 }
     }

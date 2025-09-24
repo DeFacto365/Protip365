@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import StoreKit
 
 struct AccountSettingsSection: View {
     @Binding var showSignOutAlert: Bool
@@ -23,93 +24,93 @@ struct AccountSettingsSection: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Sign Out
-            Button(action: {
-                HapticFeedback.medium()
-                showSignOutAlert = true
-            }) {
-                HStack {
-                    Text(localization.signOut)
-                        .foregroundStyle(.red)
-                    Spacer()
+        VStack(spacing: 20) {
+            // Cancel Subscription Card
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "creditcard.circle")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.tint)
+                            .symbolRenderingMode(.monochrome)
+                            .frame(width: 28, height: 28)
+                        Text(localization.cancelSubscriptionTitle)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localization.cancelSubscriptionInstructions)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(localization.cancelSubscriptionWarning)
+                            .font(.caption)
+                            .foregroundStyle(.tint)
+                            .fontWeight(.medium)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Button(action: {
+                        HapticFeedback.selection()
+                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(settingsUrl)
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: IconNames.Navigation.settings)
+                            Text(localization.goToAppleAccountText)
+                            Spacer()
+                            Image(systemName: IconNames.Form.next)
+                        }
+                        .foregroundStyle(.tint)
+                        .padding(.vertical, 8)
+                    }
                 }
                 .padding()
             }
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
 
-            Rectangle()
-                .fill(.white.opacity(0.2))
-                .frame(height: 0.5)
-                .padding(.horizontal)
-
-            // Cancel Subscription Section
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    Image(systemName: IconNames.Financial.money)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .symbolRenderingMode(.monochrome)
-                        .frame(width: 28, height: 28)
-                    Text(localization.cancelSubscriptionTitle)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(localization.cancelSubscriptionInstructions)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(localization.cancelSubscriptionWarning)
-                        .font(.caption)
-                        .foregroundStyle(.tint)
-                        .fontWeight(.medium)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
+            // Sign Out & Delete Account Card
+            VStack(spacing: 0) {
+                // Sign Out
                 Button(action: {
-                    HapticFeedback.selection()
-                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(settingsUrl)
-                    }
+                    HapticFeedback.medium()
+                    showSignOutAlert = true
                 }) {
                     HStack {
-                        Image(systemName: IconNames.Navigation.settings)
-                        Text(localization.goToAppleAccountText)
+                        Text(localization.signOut)
+                            .foregroundStyle(.red)
                         Spacer()
-                        Image(systemName: IconNames.Form.next)
                     }
-                    .foregroundStyle(.tint)
-                    .padding(.vertical, 8)
+                    .padding()
+                }
+
+                Rectangle()
+                    .fill(.white.opacity(0.2))
+                    .frame(height: 0.5)
+
+                // Delete Account
+                Button(action: {
+                    HapticFeedback.medium()
+                    showDeleteAccountAlert = true
+                }) {
+                    HStack {
+                        Text(localization.deleteAccount)
+                            .foregroundStyle(.red)
+                        Spacer()
+                    }
+                    .padding()
                 }
             }
-            .padding()
-
-            Rectangle()
-                .fill(.white.opacity(0.2))
-                .frame(height: 0.5)
-                .padding(.horizontal)
-
-            // Delete Account
-            Button(action: {
-                HapticFeedback.medium()
-                showDeleteAccountAlert = true
-            }) {
-                HStack {
-                    Text(localization.deleteAccount)
-                        .foregroundStyle(.red)
-                    Spacer()
-                }
-                .padding()
-            }
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-        .padding(.horizontal)
         .alert(localization.signOutConfirmTitle, isPresented: $showSignOutAlert) {
             Button(localization.cancelButton, role: .cancel) { }
             Button(localization.signOut, role: .destructive) {
@@ -181,58 +182,92 @@ struct AccountSettingsSection: View {
         }
     }
 
+    private func clearAllStoreKitTransactions() async {
+        // Finish all pending transactions to clear the subscription state
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+            // Finish the transaction to remove it from currentEntitlements
+            await transaction.finish()
+            print("Cleared StoreKit transaction: \(transaction.productID)")
+        }
+        print("All StoreKit transactions cleared")
+    }
+
     private func deleteAccount() {
         isDeletingAccount = true
 
         Task {
             do {
-                // Get current user
-                let userId = try await SupabaseManager.shared.client.auth.session.user.id
+                // Get current session
+                let session = try await SupabaseManager.shared.client.auth.session
+                let authToken = session.accessToken
 
-                // Note: In Supabase, CASCADE DELETE should handle related records
-                // when the user is deleted, but we'll try to delete them first
-                // to ensure clean removal
+                // Call the Edge Function to delete the user completely
+                // Get the Supabase URL directly from Info.plist
+                guard let baseURL = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String else {
+                    print("❌ Failed to get Supabase URL from Info.plist")
+                    throw NSError(domain: "ProTip365", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing Supabase URL"])
+                }
+                let edgeFunctionURL = "\(baseURL)/functions/v1/delete-user"
 
-                // Delete shift_income records first (child records)
-                _ = try? await SupabaseManager.shared.client
-                    .from("shift_income")
-                    .delete()
-                    .eq("user_id", value: userId)
-                    .execute()
+                var request = URLRequest(url: URL(string: edgeFunctionURL)!)
+                request.httpMethod = "POST"
+                request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-                // Delete shifts
-                _ = try? await SupabaseManager.shared.client
-                    .from("shifts")
-                    .delete()
-                    .eq("user_id", value: userId)
-                    .execute()
+                let (data, response) = try await URLSession.shared.data(for: request)
 
-                // Delete employers
-                _ = try? await SupabaseManager.shared.client
-                    .from("employers")
-                    .delete()
-                    .eq("user_id", value: userId)
-                    .execute()
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        print("✅ Account deleted successfully via Edge Function")
+                    } else {
+                        let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+                        print("❌ Edge Function deletion failed: \(errorMessage)")
 
-                // Delete profile
-                _ = try? await SupabaseManager.shared.client
-                    .from("users_profile")
-                    .delete()
-                    .eq("user_id", value: userId)
-                    .execute()
+                        // Fallback to manual deletion
+                        let userId = session.user.id
 
-                // Try to use RPC to delete the user account if available
-                // This requires a database function that the user can call
-                do {
-                    try await SupabaseManager.shared.client
-                        .rpc("delete_user_account")
-                        .execute()
-                } catch {
-                    print("RPC delete_user_account not available or failed: \(error)")
-                    // Continue anyway - data is already deleted
+                        // Delete all user data manually
+                        _ = try? await SupabaseManager.shared.client
+                            .from("shift_income")
+                            .delete()
+                            .eq("user_id", value: userId)
+                            .execute()
+
+                        _ = try? await SupabaseManager.shared.client
+                            .from("shifts")
+                            .delete()
+                            .eq("user_id", value: userId)
+                            .execute()
+
+                        _ = try? await SupabaseManager.shared.client
+                            .from("employers")
+                            .delete()
+                            .eq("user_id", value: userId)
+                            .execute()
+
+                        _ = try? await SupabaseManager.shared.client
+                            .from("users_profile")
+                            .delete()
+                            .eq("user_id", value: userId)
+                            .execute()
+
+                        // Try RPC as last resort
+                        do {
+                            try await SupabaseManager.shared.client
+                                .rpc("delete_account")
+                                .execute()
+                        } catch {
+                            print("RPC delete_account also failed: \(error)")
+                        }
+                    }
                 }
 
-                // IMPORTANT: Sign out the user to clear the session
+                // IMPORTANT: Clear all StoreKit transactions for this user
+                // This prevents the subscription from persisting when recreating the account
+                await clearAllStoreKitTransactions()
+
+                // Sign out the user to clear the session
                 try await SupabaseManager.shared.client.auth.signOut()
 
                 await MainActor.run {

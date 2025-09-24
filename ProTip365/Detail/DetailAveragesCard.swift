@@ -11,12 +11,12 @@ struct DetailAveragesCard: View {
             if let baseIncome = shift.base_income {
                 return total + baseIncome
             }
-            return total + (shift.hours * (shift.hourly_rate ?? 15.0))
+            return total + ((shift.hours ?? 0) * (shift.hourly_rate ?? 15.0))
         }
     }
 
     var totalTips: Double {
-        shifts.reduce(0) { $0 + $1.tips }
+        shifts.reduce(0) { $0 + ($1.tips ?? 0) }
     }
 
     var totalOther: Double {
@@ -33,11 +33,11 @@ struct DetailAveragesCard: View {
     }
 
     var totalHours: Double {
-        shifts.reduce(0) { $0 + $1.hours }
+        shifts.reduce(0) { $0 + ($1.hours ?? 0) }
     }
 
     var totalSales: Double {
-        shifts.reduce(0) { $0 + $1.sales }
+        shifts.reduce(0) { $0 + ($1.sales ?? 0) }
     }
 
     var tipPercentage: Double {
@@ -57,7 +57,7 @@ struct DetailAveragesCard: View {
 
                 // Average per shift
                 HStack {
-                    Label("Avg per Shift", systemImage: "chart.line.uptrend.xyaxis")
+                    Text("Avg per Shift")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
@@ -69,19 +69,19 @@ struct DetailAveragesCard: View {
 
                 // Average hourly rate
                 HStack {
-                    Label("Avg Hourly", systemImage: "clock.badge")
+                    Text("Avg Hourly")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
                     Text(formatCurrency(totalHours > 0 ? totalIncome / totalHours : 0) + "/hr")
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.primary)
                 }
 
                 // Average tip percentage
                 HStack {
-                    Label("Avg Tip %", systemImage: "percent")
+                    Text("Avg Tip %")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
@@ -96,7 +96,7 @@ struct DetailAveragesCard: View {
                 // Best day
                 if let bestShift = shifts.max(by: { ($0.total_income ?? 0) < ($1.total_income ?? 0) }) {
                     HStack {
-                        Label("Best Day", systemImage: "star.fill")
+                        Text("Best Day")
                             .font(.body)
                             .foregroundStyle(.orange)
                         Spacer()
@@ -114,7 +114,7 @@ struct DetailAveragesCard: View {
 
                 // Shift count
                 HStack {
-                    Label("Total Shifts", systemImage: "calendar")
+                    Text("Total Shifts")
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()

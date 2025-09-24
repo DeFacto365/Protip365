@@ -54,7 +54,7 @@ struct ShiftTimeSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
 
@@ -74,7 +74,7 @@ struct ShiftTimeSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -129,7 +129,7 @@ struct ShiftTimeSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
 
@@ -149,7 +149,7 @@ struct ShiftTimeSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -202,7 +202,7 @@ struct ShiftTimeSection: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
+                        .background(Color(.systemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }

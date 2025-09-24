@@ -49,8 +49,9 @@ fun CalendarScreen(
     val state by viewModel.state.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val currentLanguage by viewModel.currentLanguage.collectAsState()
-    val subscriptionTier by viewModel.subscriptionTier.collectAsState()
-    val weeklyLimits by viewModel.weeklyLimits.collectAsState()
+    // Subscription features disabled for testing
+    // val subscriptionTier by viewModel.subscriptionTier.collectAsState()
+    // val weeklyLimits by viewModel.weeklyLimits.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     var isRefreshing by remember { mutableStateOf(false) }
@@ -118,7 +119,8 @@ fun CalendarScreen(
                     language = currentLanguage
                 )
 
-                // Part-time limits indicator (if applicable)
+                // Part-time limits indicator - DISABLED FOR TESTING
+                /*
                 if (subscriptionTier == "part_time") {
                     Spacer(modifier = Modifier.height(12.dp))
                     PartTimeLimitsIndicator(
@@ -127,6 +129,7 @@ fun CalendarScreen(
                         currentLanguage = currentLanguage
                     )
                 }
+                */
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -139,8 +142,7 @@ fun CalendarScreen(
                     onQuickEntry = {
                         navController.navigate("add_entry?date=$selectedDate")
                     },
-                    canAddMore = subscriptionTier != "part_time" ||
-                                 (weeklyLimits.shiftsUsed < 3 && weeklyLimits.entriesUsed < 3),
+                    canAddMore = true, // Subscription limits disabled for testing
                     currentLanguage = currentLanguage
                 )
 

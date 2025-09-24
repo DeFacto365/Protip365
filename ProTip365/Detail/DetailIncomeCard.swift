@@ -13,12 +13,12 @@ struct DetailIncomeCard: View {
             if let baseIncome = shift.base_income {
                 return total + baseIncome
             }
-            return total + (shift.hours * (shift.hourly_rate ?? 15.0))
+            return total + ((shift.hours ?? 0) * (shift.hourly_rate ?? 15.0))
         }
     }
 
     var totalTips: Double {
-        shifts.reduce(0) { $0 + $1.tips }
+        shifts.reduce(0) { $0 + ($1.tips ?? 0) }
     }
 
     var totalOther: Double {
@@ -35,7 +35,7 @@ struct DetailIncomeCard: View {
     }
 
     var totalHours: Double {
-        shifts.reduce(0) { $0 + $1.hours }
+        shifts.reduce(0) { $0 + ($1.hours ?? 0) }
     }
 
     var body: some View {
@@ -48,7 +48,7 @@ struct DetailIncomeCard: View {
 
             // Gross Salary
             HStack {
-                Label(localization.grossSalaryText, systemImage: "dollarsign.circle")
+                Text(localization.grossSalaryText)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
@@ -64,7 +64,7 @@ struct DetailIncomeCard: View {
 
             // Net Salary (after deductions)
             HStack {
-                Label(localization.netSalaryText, systemImage: "dollarsign.bank.building")
+                Text(localization.netSalaryText)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
@@ -73,7 +73,7 @@ struct DetailIncomeCard: View {
                     Text(formatCurrency(netSalary))
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.primary)
                     Text("-\(Int(averageDeductionPercentage))% deductions")
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -82,7 +82,7 @@ struct DetailIncomeCard: View {
 
             // Tips
             HStack {
-                Label(localization.tipsText, systemImage: "banknote.fill")
+                Text(localization.tipsText)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
@@ -101,7 +101,7 @@ struct DetailIncomeCard: View {
             // Other
             if totalOther > 0 {
                 HStack {
-                    Label(localization.otherText, systemImage: "square.and.pencil")
+                    Text(localization.otherText)
                         .font(.body)
                         .foregroundColor(.primary)
                     Spacer()
@@ -114,7 +114,7 @@ struct DetailIncomeCard: View {
             // Tip Out (negative)
             if totalTipOut > 0 {
                 HStack {
-                    Label(localization.tipOutText, systemImage: "minus.circle")
+                    Text(localization.tipOutText)
                         .font(.body)
                         .foregroundStyle(.red)
                     Spacer()
@@ -129,7 +129,7 @@ struct DetailIncomeCard: View {
 
             // Total Income
             HStack {
-                Label(localization.totalIncomeText, systemImage: "chart.line.uptrend.xyaxis")
+                Text(localization.totalIncomeText)
                     .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
@@ -137,7 +137,7 @@ struct DetailIncomeCard: View {
                     Text(formatCurrency(totalIncome))
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.primary)
                     if targetIncome > 0 {
                         Text("\(localization.targetText): \(formatCurrency(targetIncome))")
                             .font(.caption2)

@@ -10,11 +10,14 @@ struct WorkDefaultsSection: View {
     @Binding var showEmployerPicker: Bool
     @Binding var showWeekStartPicker: Bool
     @Binding var weekStartDay: Int
+    @Binding var defaultAlert: String
+    @Binding var showDefaultAlertPicker: Bool
 
     let language: String
     private let localization: SettingsLocalization
 
     @AppStorage("useMultipleEmployers") private var useMultipleEmployersStorage = false
+    private let alertOptions = ["None", "15 minutes", "30 minutes", "60 minutes", "1 day before"]
 
     init(
         defaultHourlyRate: Binding<String>,
@@ -26,6 +29,8 @@ struct WorkDefaultsSection: View {
         showEmployerPicker: Binding<Bool>,
         showWeekStartPicker: Binding<Bool>,
         weekStartDay: Binding<Int>,
+        defaultAlert: Binding<String>,
+        showDefaultAlertPicker: Binding<Bool>,
         language: String
     ) {
         self._defaultHourlyRate = defaultHourlyRate
@@ -37,6 +42,8 @@ struct WorkDefaultsSection: View {
         self._showEmployerPicker = showEmployerPicker
         self._showWeekStartPicker = showWeekStartPicker
         self._weekStartDay = weekStartDay
+        self._defaultAlert = defaultAlert
+        self._showDefaultAlertPicker = showDefaultAlertPicker
         self.language = language
         self.localization = SettingsLocalization(language: language)
     }
@@ -46,7 +53,7 @@ struct WorkDefaultsSection: View {
             HStack(spacing: 12) {
                 Image(systemName: IconNames.Navigation.employersFill)
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.primary)
                     .symbolRenderingMode(.monochrome)
                     .frame(width: 28, height: 28)
                 Text(localization.workDefaultsSection)
@@ -57,15 +64,8 @@ struct WorkDefaultsSection: View {
 
             // Hourly Rate
             HStack {
-                HStack(spacing: 12) {
-                    Image(systemName: IconNames.Financial.money)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .symbolRenderingMode(.monochrome)
-                        .frame(width: 28, height: 28)
-                    Text(localization.hourlyRateLabel)
-                        .foregroundStyle(.primary)
-                }
+                Text(localization.hourlyRateLabel)
+                    .foregroundStyle(.primary)
                 Spacer()
                 HStack {
                     Text("$")
@@ -78,7 +78,7 @@ struct WorkDefaultsSection: View {
                     })
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.primary)
                 }
                 .frame(width: 100)
                 .padding(8)
@@ -87,34 +87,23 @@ struct WorkDefaultsSection: View {
 
             // Average Deduction Percentage
             HStack {
-                HStack(spacing: 12) {
-                    Image(systemName: IconNames.Financial.percentage)
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
-                        .symbolRenderingMode(.monochrome)
-                        .frame(width: 28, height: 28)
-                    Text(localization.averageDeductionLabel)
-                        .foregroundStyle(.primary)
-                }
+                Text(localization.averageDeductionLabel)
+                    .foregroundStyle(.primary)
                 Spacer()
-                HStack {
-                    TextField("30", text: $averageDeductionPercentage, onEditingChanged: { editing in
-                        if editing && (averageDeductionPercentage == "30" || averageDeductionPercentage == "0") {
-                            averageDeductionPercentage = ""
-                        }
-                        HapticFeedback.selection()
-                    })
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.tint)
-                    .onChange(of: averageDeductionPercentage) { _, newValue in
-                        // Validate input to ensure it's between 0 and 100
-                        if let value = Double(newValue), value > 100 {
-                            averageDeductionPercentage = "100"
-                        }
+                TextField("30", text: $averageDeductionPercentage, onEditingChanged: { editing in
+                    if editing && (averageDeductionPercentage == "30" || averageDeductionPercentage == "0") {
+                        averageDeductionPercentage = ""
                     }
-                    Text("%")
-                        .foregroundStyle(.secondary)
+                    HapticFeedback.selection()
+                })
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(.tint)
+                .onChange(of: averageDeductionPercentage) { _, newValue in
+                    // Validate input to ensure it's between 0 and 100
+                    if let value = Double(newValue), value > 100 {
+                        averageDeductionPercentage = "100"
+                    }
                 }
                 .frame(width: 100)
                 .padding(8)
@@ -126,11 +115,11 @@ struct WorkDefaultsSection: View {
                 HStack {
                     Image(systemName: IconNames.Status.info)
                         .font(.caption)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.primary)
                     Text(localization.averageDeductionNoteTitle)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.primary)
                     Spacer()
                 }
                 Text(localization.averageDeductionNoteMessage)
@@ -146,7 +135,6 @@ struct WorkDefaultsSection: View {
             // Multiple Employers Toggle
             LiquidGlassToggle(
                 localization.useMultipleEmployers,
-                icon: IconNames.Navigation.employersFill,
                 description: useMultipleEmployersDescriptionText,
                 isOn: $useMultipleEmployers
             ) { newValue in
@@ -156,7 +144,6 @@ struct WorkDefaultsSection: View {
             // Variable Schedule Toggle
             LiquidGlassToggle(
                 localization.variableScheduleLabel,
-                icon: IconNames.Form.calendar,
                 description: localization.variableScheduleDescription,
                 isOn: $hasVariableSchedule
             ) { newValue in
@@ -170,11 +157,11 @@ struct WorkDefaultsSection: View {
                     HStack {
                         Image(systemName: IconNames.Status.info)
                             .font(.caption)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.primary)
                         Text(localization.variableScheduleEnabledTitle)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.primary)
                         Spacer()
                     }
                     Text(localization.variableScheduleEnabledMessage)
@@ -193,15 +180,8 @@ struct WorkDefaultsSection: View {
             if useMultipleEmployers && !employers.isEmpty {
                 VStack(spacing: 0) {
                     HStack {
-                        HStack(spacing: 12) {
-                            Image(systemName: IconNames.Achievements.star)
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundStyle(.tint)
-                                .symbolRenderingMode(.monochrome)
-                                .frame(width: 28, height: 28)
-                            Text(localization.defaultEmployer)
-                                .foregroundStyle(.primary)
-                        }
+                        Text(localization.defaultEmployer)
+                            .foregroundStyle(.primary)
                         Spacer()
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -214,7 +194,7 @@ struct WorkDefaultsSection: View {
                                 .foregroundStyle(.primary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color(.systemGroupedBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -245,15 +225,8 @@ struct WorkDefaultsSection: View {
             // Week Start Day Picker
             VStack(spacing: 0) {
                 HStack {
-                    HStack(spacing: 12) {
-                        Image(systemName: IconNames.Form.calendar)
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.tint)
-                            .symbolRenderingMode(.monochrome)
-                            .frame(width: 28, height: 28)
-                        Text(localization.weekStartDay)
-                            .foregroundStyle(.primary)
-                    }
+                    Text(localization.weekStartDay)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -266,7 +239,7 @@ struct WorkDefaultsSection: View {
                             .foregroundStyle(.primary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -291,12 +264,55 @@ struct WorkDefaultsSection: View {
                     }
                 }
             }
+
+            // Default Alert Picker
+            VStack(spacing: 0) {
+                HStack {
+                    Text(localization.defaultAlertLabel)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showDefaultAlertPicker.toggle()
+                            showWeekStartPicker = false
+                            showEmployerPicker = false
+                        }
+                    }) {
+                        Text(localizedAlertText(defaultAlert))
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+
+                if showDefaultAlertPicker {
+                    Picker("", selection: $defaultAlert) {
+                        ForEach(alertOptions, id: \.self) { option in
+                            Text(localizedAlertText(option)).tag(option)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(height: 120)
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .onChange(of: defaultAlert) { _, _ in
+                        HapticFeedback.selection()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showDefaultAlertPicker = false
+                            }
+                        }
+                    }
+                }
+            }
         }
         .padding()
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-        .padding(.horizontal)
     }
 
     // MARK: - Helper Methods
@@ -319,6 +335,43 @@ struct WorkDefaultsSection: View {
         case "fr": return "Suivre les quarts de travail avec différents employeurs"
         case "es": return "Seguir turnos con diferentes empleadores"
         default: return "Track shifts across different employers"
+        }
+    }
+
+    private func localizedAlertText(_ alertOption: String) -> String {
+        switch alertOption {
+        case "None":
+            switch language {
+            case "fr": return "Aucune"
+            case "es": return "Ninguna"
+            default: return "None"
+            }
+        case "15 minutes":
+            switch language {
+            case "fr": return "15 minutes avant"
+            case "es": return "15 minutos antes"
+            default: return "15 minutes before"
+            }
+        case "30 minutes":
+            switch language {
+            case "fr": return "30 minutes avant"
+            case "es": return "30 minutos antes"
+            default: return "30 minutes before"
+            }
+        case "60 minutes":
+            switch language {
+            case "fr": return "1 heure avant"
+            case "es": return "1 hora antes"
+            default: return "1 hour before"
+            }
+        case "1 day before":
+            switch language {
+            case "fr": return "1 jour avant"
+            case "es": return "1 día antes"
+            default: return "1 day before"
+            }
+        default:
+            return alertOption
         }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct AppInfoSection: View {
     @Binding var userEmail: String
@@ -6,6 +7,12 @@ struct AppInfoSection: View {
     @Binding var showOnboarding: Bool
 
     private let localization: SettingsLocalization
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
+        return "v\(version) (\(build))"
+    }
 
     init(
         userEmail: Binding<String>,
@@ -19,7 +26,21 @@ struct AppInfoSection: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section title with icon
+            HStack(spacing: 12) {
+                Image(systemName: "person.circle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .symbolRenderingMode(.monochrome)
+                    .frame(width: 28, height: 28)
+                Text(localization.languageSection)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+
+            VStack(spacing: 20) {
             // App Info Section
             HStack(spacing: 16) {
                 // Logo
@@ -46,6 +67,10 @@ struct AppInfoSection: View {
                     Text(userEmail)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    Text(appVersion)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
 
                 Spacer()
@@ -56,10 +81,10 @@ struct AppInfoSection: View {
                 HapticFeedback.selection()
                 showOnboarding = true
             }) {
-                HStack {
+                HStack(spacing: 12) {
                     Image(systemName: IconNames.Status.help)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.secondary)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(localization.howToUseText)
@@ -70,18 +95,15 @@ struct AppInfoSection: View {
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            .buttonStyle(PlainButtonStyle())
 
             // Language Section
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     Image(systemName: IconNames.Navigation.settings)
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.secondary)
                         .symbolRenderingMode(.monochrome)
                         .frame(width: 28, height: 28)
                     Text(localization.languageSection)
@@ -103,9 +125,9 @@ struct AppInfoSection: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-        .padding(.horizontal)
         .sheet(isPresented: $showOnboarding) {
             OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
+            }
         }
     }
 }

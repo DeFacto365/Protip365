@@ -40,7 +40,7 @@ struct ShiftDetailsSection: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
+                        .background(Color(.systemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -85,7 +85,7 @@ struct ShiftDetailsSection: View {
                     .lineLimit(2...2)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
+                    .background(Color(.systemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)

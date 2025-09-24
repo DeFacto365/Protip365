@@ -8,6 +8,23 @@ struct CalendarLocalization {
         self.language = language
     }
 
+    // MARK: - Part-time Limits
+    var shiftsText: String {
+        switch language {
+        case "fr": return "quarts"
+        case "es": return "turnos"
+        default: return "shifts"
+        }
+    }
+
+    var entriesText: String {
+        switch language {
+        case "fr": return "entrées"
+        case "es": return "entradas"
+        default: return "entries"
+        }
+    }
+
     // MARK: - Calendar Title and Navigation
     var calendarTitle: String {
         switch language {

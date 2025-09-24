@@ -51,15 +51,16 @@ struct DashboardMetrics {
         stats.shifts = shifts.filter { $0.has_earnings }
 
         for shift in stats.shifts {
-            // Use actual hours from shift_income
-            stats.hours += shift.hours
-            stats.sales += shift.sales
-            stats.tips += shift.tips
+            // Use actual hours from shift_income (handle optional)
+            stats.hours += (shift.hours ?? 0)
+            stats.sales += (shift.sales ?? 0)
+            stats.tips += (shift.tips ?? 0)
             // Use base_income if available (from v_shift_income view), otherwise calculate
             if let baseIncome = shift.base_income {
                 stats.income += baseIncome
             } else {
-                stats.income += (shift.hours * (shift.hourly_rate ?? defaultHourlyRate))
+                let hours = shift.hours ?? 0
+                stats.income += (hours * (shift.hourly_rate ?? defaultHourlyRate))
             }
             stats.tipOut += (shift.cash_out ?? 0)
             stats.other += (shift.other ?? 0)

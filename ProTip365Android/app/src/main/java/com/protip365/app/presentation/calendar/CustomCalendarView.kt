@@ -174,13 +174,9 @@ fun CalendarDayCell(
     shifts: List<com.protip365.app.data.models.Shift>,
     onDateTapped: (LocalDate) -> Unit
 ) {
-    val hasShifts = shifts.isNotEmpty()
-    val hasCompletedShifts = shifts.any { it.hours > 0 }
-    val hasIncompleteShifts = shifts.any { it.hours <= 0 }
-    
     Box(
         modifier = Modifier
-            .size(40.dp)
+            .size(44.dp) // Increased size to match iOS
             .clip(CircleShape)
             .background(
                 when {
@@ -199,44 +195,92 @@ fun CalendarDayCell(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Date number
             Text(
                 text = date.dayOfMonth.toString(),
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
                 color = when {
                     isSelected -> MaterialTheme.colorScheme.onPrimary
                     isToday -> MaterialTheme.colorScheme.onPrimaryContainer
                     !isCurrentMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     else -> MaterialTheme.colorScheme.onSurface
                 },
-                fontSize = if (isSelected || isToday) 16.sp else 14.sp
+                fontSize = 17.sp // Match iOS size
             )
             
-            // Shift indicators
-            if (hasShifts) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    if (hasCompletedShifts) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(Color.Green)
-                        )
-                    }
-                    if (hasIncompleteShifts) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF9800)) // Orange color
-                        )
-                    }
-                }
+            // iOS-style shift indicators
+            ShiftIndicators(shifts = shifts)
+        }
+    }
+}
+
+@Composable
+fun ShiftIndicators(shifts: List<com.protip365.app.data.models.Shift>) {
+    if (shifts.isEmpty()) {
+        // Empty space to maintain consistent height
+        Spacer(modifier = Modifier.height(6.dp))
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Show up to 3 dots, then "+N" for more
+            val maxDots = 3
+            val shiftsToShow = shifts.take(maxDots)
+            
+            shiftsToShow.forEachIndexed { index, shift ->
+                Box(
+                    modifier = Modifier
+                        .size(6.dp) // Match iOS size
+                        .clip(CircleShape)
+                        .background(colorForShift(shift, index))
+                )
+            }
+            
+            // Show "+N" if more than 3 shifts
+            if (shifts.size > maxDots) {
+                Text(
+                    text = "+${shifts.size - maxDots}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private fun colorForShift(shift: com.protip365.app.data.models.Shift, index: Int): Color {
+    // Use different colors based on shift status and earnings (matching iOS logic)
+    val hasEarnings = shift.totalEarnings > 0
+    
+    return if (hasEarnings) {
+        // Completed shifts with earnings
+        when (index % 3) {
+            0 -> Color(0xFF4CAF50) // Green
+            1 -> Color(0xFF2196F3) // Blue  
+            2 -> Color(0xFF9C27B0) // Purple
+            else -> Color(0xFF4CAF50)
+        }
+    } else {
+        // Planned shifts or completed but no earnings
+        when (shift.status) {
+            "planned" -> when (index % 3) {
+                0 -> Color(0xFF00BCD4) // Cyan
+                1 -> Color(0xFF4DD0E1) // Light Blue
+                2 -> Color(0xFF3F51B5) // Indigo
+                else -> Color(0xFF00BCD4)
+            }
+            "missed" -> Color(0xFFF44336) // Red
+            else -> when (index % 3) {
+                0 -> Color(0xFF9E9E9E) // Gray
+                1 -> Color(0xFF757575) // Dark Gray
+                2 -> Color(0xFF424242) // Darker Gray
+                else -> Color(0xFF9E9E9E)
             }
         }
     }
@@ -269,17 +313,17 @@ fun CustomCalendarLegend(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
             Text(
                 text = when (language) {
-                    "fr" -> "Légende"
-                    "es" -> "Leyenda"
-                    else -> "Legend"
+                    "fr" -> "Légende du calendrier"
+                    "es" -> "Leyenda del calendario"
+                    else -> "Calendar Legend"
                 },
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -288,8 +332,9 @@ fun CustomCalendarLegend(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                // Completed with earnings
                 CustomLegendItem(
-                    color = Color.Green,
+                    color = Color(0xFF4CAF50), // Green
                     label = when (language) {
                         "fr" -> "Complété"
                         "es" -> "Completado"
@@ -297,21 +342,23 @@ fun CustomCalendarLegend(
                     }
                 )
                 
+                // Planned/Scheduled
                 CustomLegendItem(
-                    color = Color(0xFFFF9800), // Orange color
+                    color = Color(0xFF00BCD4), // Cyan
                     label = when (language) {
-                        "fr" -> "Incomplet"
-                        "es" -> "Incompleto"
-                        else -> "Incomplete"
+                        "fr" -> "Planifié"
+                        "es" -> "Programado"
+                        else -> "Scheduled"
                     }
                 )
                 
+                // Missed
                 CustomLegendItem(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color(0xFFF44336), // Red
                     label = when (language) {
-                        "fr" -> "Aujourd'hui"
-                        "es" -> "Hoy"
-                        else -> "Today"
+                        "fr" -> "Manqué"
+                        "es" -> "Perdido"
+                        else -> "Missed"
                     }
                 )
             }

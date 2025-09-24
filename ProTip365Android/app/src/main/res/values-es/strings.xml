@@ -232,6 +232,19 @@
     <string name="hours_ago">Hace %dh</string>
     <string name="days_ago">Hace %dd</string>
 
+    <!-- Alert Settings -->
+    <string name="alert_label">Alerta</string>
+    <string name="alert_none">Ninguna</string>
+    <string name="alert_15_minutes">15 minutos antes</string>
+    <string name="alert_30_minutes">30 minutos antes</string>
+    <string name="alert_60_minutes">1 hora antes</string>
+    <string name="alert_1_day">1 día antes</string>
+    <string name="default_alert_label">Alerta predeterminada</string>
+
+    <!-- Shift Alert Notifications -->
+    <string name="notification_title">Turno próximo</string>
+    <string name="notification_body">Su turno en %1$s comienza a las %2$s</string>
+
     <!-- Error Messages -->
     <string name="error_invalid_email">Dirección de correo electrónico inválida</string>
     <string name="error_password_too_short">La contraseña debe tener al menos 6 caracteres</string>

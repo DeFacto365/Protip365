@@ -50,10 +50,10 @@ struct TimePickerSection: View {
                         // Show as non-clickable text when editing
                         Text(dateFormatter.string(from: selectedDate))
                             .font(.body)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     } else {
                         // Allow date selection for new entries
@@ -72,7 +72,7 @@ struct TimePickerSection: View {
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color(.systemGroupedBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -92,7 +92,7 @@ struct TimePickerSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -138,10 +138,10 @@ struct TimePickerSection: View {
                         // Show as non-clickable text when editing
                         Text(dateFormatter.string(from: selectedEndDate))
                             .font(.body)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     } else {
                         // Allow end date selection for new entries
@@ -160,7 +160,7 @@ struct TimePickerSection: View {
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
-                                .background(Color(.secondarySystemGroupedBackground))
+                                .background(Color(.systemGroupedBackground))
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -180,7 +180,7 @@ struct TimePickerSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -240,7 +240,7 @@ struct TimePickerSection: View {
                         .foregroundColor(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
+                        .background(Color(.systemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }

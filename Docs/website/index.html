@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ProTip365 - Smart tip tracking for service professionals. Track tips, maximize earnings.">
+    <title>ProTip365 - Track Tips. Boost Income.</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #FFFFFF;
+            color: #1C1C1E;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.98);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #E5E5EA;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 9px;
+        }
+
+        .logo span {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #007AFF;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #1C1C1E;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .trial-btn {
+            background: #007AFF;
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 60px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 .blue {
+            color: #007AFF;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #8E8E93;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+
+        .app-badge {
+            display: inline-block;
+            height: 60px;
+            transition: transform 0.3s;
+        }
+
+        .app-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .app-badge img {
+            height: 100%;
+        }
+
+        /* Carousel Styles */
+        .carousel-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            position: relative;
+        }
+
+        .carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .carousel-nav {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-dot.active {
+            background: #007AFF;
+            transform: scale(1.2);
+        }
+
+        .carousel-arrows {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .carousel-arrows:hover {
+            background: rgba(0,0,0,0.7);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-prev {
+            left: 10px;
+        }
+
+        .carousel-next {
+            right: 10px;
+        }
+
+        /* Main Carousel with Description */
+        .main-carousel-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 2rem auto;
+            align-items: start;
+        }
+
+        .carousel-description {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .description-content h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1C1C1E;
+        }
+
+        .description-content p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #8E8E93;
+        }
+
+        /* Horizontal Thumbnail Carousel */
+        .thumbnail-carousel-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: #F8F9FA;
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .thumbnail-track {
+            display: flex;
+            gap: 1rem;
+            min-width: max-content;
+        }
+
+        .thumbnail-slide {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            border: 2px solid transparent;
+            min-width: 100px;
+        }
+
+        .thumbnail-slide:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .thumbnail-slide.active {
+            border-color: #007AFF;
+            background: #F0F8FF;
+        }
+
+        .thumbnail-slide img {
+            width: 60px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .thumbnail-label {
+            font-weight: 600;
+            color: #1C1C1E;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        /* Key Features */
+        .features {
+            padding: 80px 0;
+            background: #F8F9FA;
+        }
+
+        .feature-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        .feature-row.reverse {
+            direction: rtl;
+        }
+
+        .feature-row.reverse .feature-text {
+            direction: ltr;
+        }
+
+        .feature-text h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1C1C1E;
+        }
+
+        .feature-text p {
+            font-size: 1.125rem;
+            color: #8E8E93;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            color: #3C3C43;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: #34C759;
+            font-weight: bold;
+        }
+
+        .feature-image {
+            text-align: center;
+        }
+
+        .feature-image img {
+            width: 280px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+        }
+
+
+        /* CTA */
+        .cta {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            text-align: center;
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .cta .btn-white {
+            background: white;
+            color: #007AFF;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: inline-block;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            background: #1C1C1E;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+        }
+
+        footer a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            margin: 0 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            /* Navigation */
+            nav {
+                padding: 0.75rem 0;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .trial-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            /* Hero */
+            .hero {
+                padding: 80px 0 40px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            .hero p {
+                font-size: 1rem;
+                padding: 0 1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .app-badge {
+                height: 48px;
+            }
+
+            .app-badge img {
+                height: 48px !important;
+            }
+
+            /* Carousel Mobile */
+            .carousel-container {
+                max-width: 300px;
+                margin: 1.5rem auto;
+            }
+
+            .carousel-arrows {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .carousel-prev {
+                left: 5px;
+            }
+
+            .carousel-next {
+                right: 5px;
+            }
+
+            .carousel-nav {
+                margin-top: 1rem;
+            }
+
+            .carousel-dot {
+                width: 10px;
+                height: 10px;
+            }
+
+            /* Main Carousel Mobile */
+            .main-carousel-container {
+                grid-template-columns: 1fr !important;
+                gap: 2rem !important;
+                margin: 1.5rem auto !important;
+            }
+
+            .carousel-description {
+                padding: 1.5rem !important;
+                position: static !important;
+            }
+
+            .description-content h3 {
+                font-size: 1.5rem !important;
+            }
+
+            .description-content p {
+                font-size: 1rem !important;
+            }
+
+            /* Thumbnail Carousel Mobile */
+            .thumbnail-carousel-container {
+                margin: 1rem auto !important;
+                padding: 1rem !important;
+            }
+
+            .thumbnail-slide {
+                min-width: 80px !important;
+                padding: 0.75rem !important;
+            }
+
+            .thumbnail-slide img {
+                width: 50px !important;
+            }
+
+            .thumbnail-label {
+                font-size: 0.7rem !important;
+            }
+
+            /* Features */
+            .features {
+                padding: 40px 0;
+            }
+
+            .feature-row {
+                grid-template-columns: 1fr;
+                gap: 40px;
+                margin-bottom: 60px;
+            }
+
+            .feature-row.reverse {
+                direction: ltr;
+            }
+
+            .feature-text h3 {
+                font-size: 1.5rem;
+            }
+
+            .feature-text p {
+                font-size: 1rem;
+            }
+
+            .feature-image img {
+                width: 100%;
+                max-width: 280px;
+            }
+
+            /* Pain Points Mobile */
+            .pain-points-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+
+            .pain-point-card {
+                padding: 1.5rem !important;
+            }
+
+            .pain-point-card h3 {
+                font-size: 1.25rem !important;
+            }
+
+            .pain-point-card p {
+                font-size: 0.9rem !important;
+            }
+
+            /* Platform Support Mobile */
+            .platform-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 1rem !important;
+            }
+
+            .platform-item {
+                padding: 1rem !important;
+            }
+
+            .platform-item h4 {
+                font-size: 0.9rem !important;
+            }
+
+            .platform-item p {
+                font-size: 0.8rem !important;
+            }
+
+            /* CTA */
+            .cta {
+                padding: 60px 0;
+            }
+
+            .cta h2 {
+                font-size: 2rem;
+                padding: 0 1rem;
+            }
+
+            .cta p {
+                font-size: 1rem;
+                padding: 0 1rem;
+            }
+
+            .cta .app-badge {
+                height: 44px;
+            }
+
+            .cta .app-badge img {
+                height: 44px !important;
+            }
+
+            /* Footer */
+            footer {
+                padding: 30px 1rem;
+            }
+
+            footer a {
+                display: inline-block;
+                margin: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Extra small screens */
+            .logo span {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                font-size: 0.85rem;
+                gap: 0.5rem;
+            }
+
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero-screens {
+                height: 300px;
+            }
+
+            .screen.main {
+                width: 200px;
+            }
+
+            .feature-text h3 {
+                font-size: 1.25rem;
+            }
+
+            .feature-text h3 {
+                font-size: 1.1rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            .feature-text p {
+                font-size: 0.9rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Section headings mobile */
+            .features h2 {
+                font-size: 2rem !important;
+                margin-bottom: 2rem !important;
+            }
+
+            .pain-points h2 {
+                font-size: 2rem !important;
+                margin-bottom: 1.5rem !important;
+            }
+
+            .platform-support h2 {
+                font-size: 1.75rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .cta h2 {
+                font-size: 1.75rem !important;
+            }
+
+            .cta div[style*="display: flex"] {
+                flex-direction: column;
+                gap: 1rem !important;
+            }
+
+            /* Extra small mobile improvements */
+            .hero h1 {
+                font-size: 1.5rem;
+                line-height: 1.3;
+            }
+
+            .hero p {
+                font-size: 0.9rem;
+                padding: 0 1rem;
+            }
+
+            .app-badge img {
+                height: 44px !important;
+            }
+
+            .cta .app-badge img {
+                height: 40px !important;
+            }
+
+            /* Pain points on extra small */
+            .pain-point-card {
+                padding: 1rem !important;
+            }
+
+            .pain-point-card h3 {
+                font-size: 1.1rem !important;
+            }
+
+            /* Platform grid on extra small */
+            .platform-grid {
+                grid-template-columns: 1fr !important;
+                gap: 0.5rem !important;
+            }
+
+            .platform-item {
+                padding: 0.75rem !important;
+            }
+
+            /* Social proof mobile optimization */
+            .social-proof-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+
+            .social-proof-card {
+                padding: 1rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">
+                <img src="images/logo.jpg" alt="ProTip365">
+                <span>ProTip365</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#download">Download</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero container">
+        <h1>Stop Losing Money on <span class="blue">Forgotten Tips</span></h1>
+        <p>Track every tip, maximize every shift. No more paper, no more Excel files. Everything in one place, synced across all your devices.</p>
+
+        <div class="hero-buttons">
+            <a href="https://apps.apple.com/app/protip365/id6736957977" class="app-badge" title="Download ProTip365 on the App Store">
+                <img src="images/app-store-badge.svg" alt="Download on the App Store" style="height: 60px;">
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.protip365.app" class="app-badge" title="Download ProTip365 on Google Play">
+                <img src="images/google-play-badge.svg" alt="Get it on Google Play" style="height: 60px;">
+            </a>
+        </div>
+
+        <!-- Main Carousel with Description -->
+        <div class="main-carousel-container">
+            <div class="carousel-container">
+                <div class="carousel">
+                    <div class="carousel-track" id="carouselTrack">
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProDashboard.png" alt="Dashboard - See Everything at a Glance">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProCalendar.png" alt="Calendar - Plan Your Best Shifts">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProEdittEntry.png" alt="Quick Entry - Log Tips in Seconds">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProEmployers.png" alt="Employers - Manage Multiple Jobs">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProTipCalc.png" alt="Tip Calculator - Calculate Tips Easily">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProSummary.png" alt="Summary - View Your Earnings">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProSetting1.png" alt="Settings - Customize Your App">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProSetting2.png" alt="Settings - Security Options">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IphoneProSetting3.png" alt="Settings - App Preferences">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IpadDashboard.png" alt="iPad Dashboard - See Everything at a Glance">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IpadCalendar.png" alt="iPad Calendar - Plan Your Best Shifts">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IpadEmployer.png" alt="iPad Employers - Manage Multiple Jobs">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IpadEditEntry.png" alt="iPad Quick Entry - Log Tips in Seconds">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/IpadSummary.png" alt="iPad Summary - View Your Earnings">
+                        </div>
+                    </div>
+                    <button class="carousel-arrows carousel-prev" onclick="previousSlide()" title="Previous slide" aria-label="Previous slide">‹</button>
+                    <button class="carousel-arrows carousel-next" onclick="nextSlide()" title="Next slide" aria-label="Next slide">›</button>
+                </div>
+                <div class="carousel-nav">
+                    <button class="carousel-dot active" onclick="currentSlide(1)" title="Go to slide 1" aria-label="Go to slide 1"></button>
+                    <button class="carousel-dot" onclick="currentSlide(2)" title="Go to slide 2" aria-label="Go to slide 2"></button>
+                    <button class="carousel-dot" onclick="currentSlide(3)" title="Go to slide 3" aria-label="Go to slide 3"></button>
+                    <button class="carousel-dot" onclick="currentSlide(4)" title="Go to slide 4" aria-label="Go to slide 4"></button>
+                    <button class="carousel-dot" onclick="currentSlide(5)" title="Go to slide 5" aria-label="Go to slide 5"></button>
+                    <button class="carousel-dot" onclick="currentSlide(6)" title="Go to slide 6" aria-label="Go to slide 6"></button>
+                    <button class="carousel-dot" onclick="currentSlide(7)" title="Go to slide 7" aria-label="Go to slide 7"></button>
+                    <button class="carousel-dot" onclick="currentSlide(8)" title="Go to slide 8" aria-label="Go to slide 8"></button>
+                    <button class="carousel-dot" onclick="currentSlide(9)" title="Go to slide 9" aria-label="Go to slide 9"></button>
+                    <button class="carousel-dot" onclick="currentSlide(10)" title="Go to slide 10" aria-label="Go to slide 10"></button>
+                    <button class="carousel-dot" onclick="currentSlide(11)" title="Go to slide 11" aria-label="Go to slide 11"></button>
+                    <button class="carousel-dot" onclick="currentSlide(12)" title="Go to slide 12" aria-label="Go to slide 12"></button>
+                    <button class="carousel-dot" onclick="currentSlide(13)" title="Go to slide 13" aria-label="Go to slide 13"></button>
+                    <button class="carousel-dot" onclick="currentSlide(14)" title="Go to slide 14" aria-label="Go to slide 14"></button>
+                </div>
+            </div>
+            <div class="carousel-description">
+                <div class="description-content" id="descriptionContent">
+                    <h3 id="slideTitle">📊 Smart Income Tracking</h3>
+                    <p id="slideDescription">Track tips, hourly wages, and total earnings in seconds. Separate cash and credit card tips automatically. Monitor sales performance and tip percentages. Track tip-outs and deductions accurately.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Thumbnail Carousel -->
+        <div class="thumbnail-carousel-container">
+            <div class="thumbnail-track" id="thumbnailTrack">
+                <div class="thumbnail-slide active" onclick="currentSlide(1)">
+                    <img src="images/IphoneProDashboard.png" alt="Dashboard">
+                    <span class="thumbnail-label">Dashboard</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(2)">
+                    <img src="images/IphoneProCalendar.png" alt="Calendar">
+                    <span class="thumbnail-label">Calendar</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(3)">
+                    <img src="images/IphoneProEdittEntry.png" alt="Quick Entry">
+                    <span class="thumbnail-label">Quick Entry</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(4)">
+                    <img src="images/IphoneProEmployers.png" alt="Employers">
+                    <span class="thumbnail-label">Employers</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(5)">
+                    <img src="images/IphoneProTipCalc.png" alt="Tip Calculator">
+                    <span class="thumbnail-label">Tip Calculator</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(6)">
+                    <img src="images/IphoneProSummary.png" alt="Summary">
+                    <span class="thumbnail-label">Summary</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(7)">
+                    <img src="images/IphoneProSetting1.png" alt="Settings 1">
+                    <span class="thumbnail-label">Settings 1</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(8)">
+                    <img src="images/IphoneProSetting2.png" alt="Settings 2">
+                    <span class="thumbnail-label">Settings 2</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(9)">
+                    <img src="images/IphoneProSetting3.png" alt="Settings 3">
+                    <span class="thumbnail-label">Settings 3</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(10)">
+                    <img src="images/IpadDashboard.png" alt="iPad Dashboard">
+                    <span class="thumbnail-label">iPad Dashboard</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(11)">
+                    <img src="images/IpadCalendar.png" alt="iPad Calendar">
+                    <span class="thumbnail-label">iPad Calendar</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(12)">
+                    <img src="images/IpadEmployer.png" alt="iPad Employers">
+                    <span class="thumbnail-label">iPad Employers</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(13)">
+                    <img src="images/IpadEditEntry.png" alt="iPad Quick Entry">
+                    <span class="thumbnail-label">iPad Entry</span>
+                </div>
+                <div class="thumbnail-slide" onclick="currentSlide(14)">
+                    <img src="images/IpadSummary.png" alt="iPad Summary">
+                    <span class="thumbnail-label">iPad Summary</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Benefits -->
+    <section class="features">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 2.5rem; font-weight: 800; margin-bottom: 2rem; color: #1C1C1E;">Stop Losing Money to Old Habits</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #34C759, #30D158); border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                            <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #1C1C1E;">Never Forget a Tip Again</h3>
+                    <p style="font-size: 1rem; color: #8E8E93; line-height: 1.6;">Log tips in seconds with our lightning-fast entry system. No more lost earnings from forgotten tips.</p>
+                </div>
+                
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #007AFF, #5856D6); border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                            <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V7H5V5H19M5,19V9H19V19H5Z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #1C1C1E;">Plan Your Best Shifts</h3>
+                    <p style="font-size: 1rem; color: #8E8E93; line-height: 1.6;">See which shifts and days bring in the most tips. Make data-driven decisions about your schedule.</p>
+                </div>
+                
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #FF9500, #FF6B35); border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                            <path d="M16,6L18.29,8.29L13.41,13.17L9.41,9.17L2,16.59L3.41,18L9.41,12L13.41,16L19.71,9.71L22,12V6H16Z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #1C1C1E;">Track Your Progress</h3>
+                    <p style="font-size: 1rem; color: #8E8E93; line-height: 1.6;">Beautiful charts and analytics show your earning trends. See your true earning power at a glance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pain Points Section -->
+    <section class="pain-points" style="padding: 80px 0; background: #F8F9FA; text-align: center;">
+        <div class="container">
+            <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 2rem; color: #1C1C1E;">Stop Losing Money to Old Habits</h2>
+            <div class="pain-points-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
+                <div class="pain-point-card" style="padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background: linear-gradient(135deg, #FF3B30, #FF9500); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #FF3B30;">Paper Tracking</h3>
+                    <p style="color: #8E8E93; line-height: 1.6;">Stop writing your shifts and tips on random pieces of paper that get lost or forgotten.</p>
+                </div>
+                <div class="pain-point-card" style="padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background: linear-gradient(135deg, #FF3B30, #FF9500); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #FF3B30;">Excel Files</h3>
+                    <p style="color: #8E8E93; line-height: 1.6;">No more complicated spreadsheets that crash or get corrupted. Your data stays safe in the cloud.</p>
+                </div>
+                <div class="pain-point-card" style="padding: 2rem; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background: linear-gradient(135deg, #FF3B30, #FF9500); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                            <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #FF3B30;">Scattered Data</h3>
+                    <p style="color: #8E8E93; line-height: 1.6;">Everything in one place. Access your data from any device, anywhere, anytime.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Platform Support -->
+    <section class="platform-support" style="padding: 60px 0; background: white; text-align: center;">
+        <div class="container">
+            <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #1C1C1E;">Works Everywhere You Do</h2>
+            <p style="font-size: 1.25rem; color: #8E8E93; margin-bottom: 2rem;">Access your data on any device, in any language</p>
+            <div class="platform-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; max-width: 800px; margin: 0 auto;">
+                <div class="platform-item" style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; margin: 0 auto 1rem; background: linear-gradient(135deg, #007AFF, #5856D6); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        </svg>
+                    </div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">iPhone & iPad</h4>
+                    <p style="color: #8E8E93; font-size: 0.9rem;">Native iOS app with full functionality</p>
+                </div>
+                <div class="platform-item" style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; margin: 0 auto 1rem; background: linear-gradient(135deg, #3DDC84, #00BCD4); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4486.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4486.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0959L4.841 5.4435a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+                        </svg>
+                    </div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Android</h4>
+                    <p style="color: #8E8E93; font-size: 0.9rem;">Full Android support coming soon</p>
+                </div>
+                <div class="platform-item" style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; margin: 0 auto 1rem; background: linear-gradient(135deg, #FF6B6B, #4ECDC4); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+                        </svg>
+                    </div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Multi-Language</h4>
+                    <p style="color: #8E8E93; font-size: 0.9rem;">English, French, Spanish support</p>
+                </div>
+                <div class="platform-item" style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; margin: 0 auto 1rem; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+                        </svg>
+                    </div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Cloud Sync</h4>
+                    <p style="color: #8E8E93; font-size: 0.9rem;">Automatic backup & sync</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- CTA -->
+    <section class="cta" id="download">
+        <div class="container">
+            <h2>Stop Losing Money Today</h2>
+            <p>Download now and start maximizing your tips immediately.</p>
+            <div style="display: flex; gap: 1.5rem; justify-content: center; margin-top: 2rem;">
+                <a href="https://apps.apple.com/app/protip365/id6736957977" class="app-badge" title="Download ProTip365 on the App Store">
+                    <img src="images/app-store-badge.svg" alt="Download on the App Store" style="height: 60px; background: white; border-radius: 8px; padding: 6px;">
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.protip365.app" class="app-badge" title="Download ProTip365 on Google Play">
+                    <img src="images/google-play-badge.svg" alt="Get it on Google Play" style="height: 60px; background: white; border-radius: 8px; padding: 6px;">
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 ProTip365. All rights reserved.</p>
+            <div style="margin-top: 1rem;">
+                <a href="privacy-policy.html">Privacy</a>
+                <a href="terms-of-service.html">Terms</a>
+                <a href="mailto:support@protip365.com">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlideIndex = 0;
+        const totalSlides = 14;
+        const carouselTrack = document.getElementById('carouselTrack');
+        const dots = document.querySelectorAll('.carousel-dot');
+        const thumbnails = document.querySelectorAll('.thumbnail-slide');
+        const slideTitle = document.getElementById('slideTitle');
+        const slideDescription = document.getElementById('slideDescription');
+
+        // Slide descriptions from marketing guide
+        const slideData = [
+            {
+                title: "📊 Smart Income Tracking",
+                description: "Track tips, hourly wages, and total earnings in seconds. Separate cash and credit card tips automatically. Monitor sales performance and tip percentages. Track tip-outs and deductions accurately."
+            },
+            {
+                title: "📅 Intelligent Shift Planning", 
+                description: "Visual calendar with color-coded shift performance. Plan future shifts and track actual results. Compare expected vs. actual earnings. Identify your most profitable shifts."
+            },
+            {
+                title: "⚡ Quick Entry System",
+                description: "Enter your shift details faster than it takes to clock out. One-tap tip calculations with smart auto-complete. Support for multiple payment types with instant cloud sync."
+            },
+            {
+                title: "👥 Multi-Employer Support",
+                description: "Manage multiple jobs in one place. Compare earnings across employers. Track different pay rates and tip structures. Perfect for gig economy workers."
+            },
+            {
+                title: "🧮 Tip Calculator",
+                description: "Calculate tips instantly with our built-in calculator. Support for different tip percentages. Quick calculations for large parties and special occasions."
+            },
+            {
+                title: "📈 Earnings Summary",
+                description: "View detailed summaries of your earnings. Track progress toward income goals. Identify earning trends and patterns. Export reports for tax season."
+            },
+            {
+                title: "⚙️ App Settings",
+                description: "Customize your app experience. Set your preferences for notifications, currency, and display options. Configure your account and security settings."
+            },
+            {
+                title: "🔒 Security Options",
+                description: "Protect your data with Face ID/Touch ID. Set up PIN code security. Your data stays private and secure. Cloud sync across all your devices."
+            },
+            {
+                title: "🎯 App Preferences",
+                description: "Fine-tune your app experience. Set language preferences, notification settings, and display options. Customize the app to work exactly how you want."
+            },
+            {
+                title: "📱 iPad Dashboard - Optimized for Tablets",
+                description: "Experience the full power of ProTip365 on iPad. Larger screen real estate means better visibility of your earnings data, charts, and analytics. Perfect for detailed financial planning."
+            },
+            {
+                title: "📅 iPad Calendar - Enhanced Planning",
+                description: "Plan your shifts with the enhanced iPad calendar view. More space to see your entire month at a glance, making it easier to identify patterns and optimize your schedule."
+            },
+            {
+                title: "👥 iPad Employers - Multi-Job Management",
+                description: "Manage multiple employers with ease on iPad. Compare jobs side-by-side, track different pay structures, and make informed decisions about which shifts to prioritize."
+            },
+            {
+                title: "⚡ iPad Quick Entry - Faster Input",
+                description: "Larger touch targets and more screen space make data entry even faster on iPad. Perfect for logging tips and shifts quickly during busy periods."
+            },
+            {
+                title: "📈 iPad Summary - Comprehensive Analytics",
+                description: "View detailed earnings summaries and analytics on the iPad's larger screen. Better visibility of charts, trends, and financial insights for smarter decision making."
+            }
+        ];
+
+        function updateCarousel() {
+            const translateX = -currentSlideIndex * 100;
+            carouselTrack.style.transform = `translateX(${translateX}%)`;
+            
+            // Update dots
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlideIndex);
+            });
+
+            // Update thumbnails
+            thumbnails.forEach((thumb, index) => {
+                thumb.classList.toggle('active', index === currentSlideIndex);
+            });
+
+            // Update description
+            slideTitle.textContent = slideData[currentSlideIndex].title;
+            slideDescription.textContent = slideData[currentSlideIndex].description;
+        }
+
+        function nextSlide() {
+            currentSlideIndex = (currentSlideIndex + 1) % totalSlides;
+            updateCarousel();
+        }
+
+        function previousSlide() {
+            currentSlideIndex = (currentSlideIndex - 1 + totalSlides) % totalSlides;
+            updateCarousel();
+        }
+
+        function currentSlide(n) {
+            currentSlideIndex = n - 1;
+            updateCarousel();
+        }
+
+        // Auto-play carousel
+        setInterval(nextSlide, 4000);
+
+        // Touch/swipe support for mobile
+        let startX = 0;
+        let endX = 0;
+
+        carouselTrack.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+        });
+
+        carouselTrack.addEventListener('touchend', (e) => {
+            endX = e.changedTouches[0].clientX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = startX - endX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    previousSlide();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

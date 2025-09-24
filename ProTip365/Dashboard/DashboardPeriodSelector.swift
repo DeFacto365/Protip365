@@ -7,19 +7,20 @@ struct DashboardPeriodSelector: View {
 
     let localization: DashboardLocalization
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @AppStorage("language") private var language = "en"
 
     var body: some View {
         VStack(spacing: 12) {
             // Main period selector
             Picker("Period", selection: $selectedPeriod) {
-                Text("Today").tag(0)
-                Text("Week").tag(1)
-                Text("Month").tag(2)
-                Text("Year").tag(3)
+                Text(localization.todayText).tag(0)
+                Text(localization.weekText).tag(1)
+                Text(localization.monthText).tag(2)
+                Text(localization.yearText).tag(3)
             }
+            .id(language) // Force refresh when language changes
             .pickerStyle(.segmented)
             .padding()
-            .liquidGlassCard()
             .padding(.horizontal)
             .frame(maxWidth: horizontalSizeClass == .regular ? 600 : .infinity)
             .onChange(of: selectedPeriod) { _, _ in
@@ -65,7 +66,6 @@ struct DashboardPeriodSelector: View {
             .buttonStyle(PlainButtonStyle())
         }
         .padding()
-        .liquidGlassCard()
         .padding(.horizontal)
     }
 }

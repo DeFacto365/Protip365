@@ -36,7 +36,7 @@ struct EarningsSection: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color(.systemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
@@ -62,7 +62,7 @@ struct EarningsSection: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color(.systemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
@@ -88,7 +88,7 @@ struct EarningsSection: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color(.systemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
@@ -114,7 +114,7 @@ struct EarningsSection: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color(.systemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 16)
@@ -135,7 +135,7 @@ struct EarningsSection: View {
                     .lineLimit(3...6)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color(.secondarySystemGroupedBackground))
+                    .background(Color(.systemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(minWidth: 200)
             }

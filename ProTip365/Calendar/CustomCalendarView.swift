@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Custom Calendar View
 struct CustomCalendarView: View {
     @Binding var selectedDate: Date
-    let shiftsForDate: (Date) -> [ShiftIncome]
+    let shiftsForDate: (Date) -> [Shift]
     let onDateTapped: (Date) -> Void
     let language: String
 
@@ -52,7 +52,7 @@ struct CustomCalendarView: View {
             // iOS 26 style calendar grid
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 8) {
                 ForEach(monthDates, id: \.self) { date in
-                    CalendarDateView(date: date, shifts: shiftsForDate(date))
+                    CalendarDateView(date: date, shifts: shiftsForDate(date), isSelected: calendar.isDate(date, inSameDayAs: selectedDate))
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selectedDate = date

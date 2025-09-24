@@ -20,9 +20,10 @@ struct WorkInfoSection: View {
     let statusText: String
     let totalHoursText: String
     let hoursUnit: String
+    let showDidntWorkOption: Bool  // Control whether to show the "Didn't work" toggle
 
     // MARK: - Action Closures
-    let closeOtherPickers: () -> Void
+    let closeOtherPickers: (String?) -> Void
 
     // MARK: - Body
     var body: some View {
@@ -40,7 +41,7 @@ struct WorkInfoSection: View {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showEmployerPicker.toggle()
                             if showEmployerPicker {
-                                closeOtherPickers()
+                                closeOtherPickers("employer")
                             }
                         }
                     }) {
@@ -49,7 +50,7 @@ struct WorkInfoSection: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemGroupedBackground))
+                            .background(Color(.systemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -80,23 +81,25 @@ struct WorkInfoSection: View {
                     .padding(.horizontal, 8)
             }
 
-            // Didn't Work Toggle
-            HStack {
-                Text(didntWorkText)
-                    .font(.body)
-                    .foregroundColor(.primary)
+            // Didn't Work Toggle (only shown for new entries)
+            if showDidntWorkOption {
+                HStack {
+                    Text(didntWorkText)
+                        .font(.body)
+                        .foregroundColor(.primary)
 
-                Spacer()
+                    Spacer()
 
-                CompactLiquidGlassToggle(isOn: $didntWork) { newValue in
-                    if !newValue {
-                        missedReason = ""
-                        showReasonPicker = false
+                    CompactLiquidGlassToggle(isOn: $didntWork) { newValue in
+                        if !newValue {
+                            missedReason = ""
+                            showReasonPicker = false
+                        }
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
 
             // Reason Picker (shown when Didn't Work is toggled)
             if didntWork {
@@ -111,7 +114,7 @@ struct WorkInfoSection: View {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showReasonPicker.toggle()
                             if showReasonPicker {
-                                closeOtherPickers()
+                                closeOtherPickers("reason")
                             }
                         }
                     }) {
@@ -125,7 +128,7 @@ struct WorkInfoSection: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .background(Color(.secondarySystemGroupedBackground))
+                        .background(Color(.systemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }

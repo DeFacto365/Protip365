@@ -115,6 +115,25 @@ class LocalizationManager @Inject constructor() {
             "achievements" -> "Achievements"
             "achievement_progress" -> "Achievement Progress"
             "achievements_unlocked" -> "achievements unlocked"
+            // Alert System
+            "alert_label" -> "Alert"
+            "alert_none" -> "None"
+            "alert_15_minutes" -> "15 minutes before"
+            "alert_30_minutes" -> "30 minutes before"
+            "alert_60_minutes" -> "1 hour before"
+            "alert_1_day" -> "1 day before"
+            "default_alert_label" -> "Default Alert"
+            "notification_title" -> "Upcoming Shift"
+            "notification_body" -> "Your shift at %1$s starts at %2$s"
+            // Error Messages
+            "error_shift_not_found" -> "Shift not found"
+            "error_user_not_logged_in" -> "User not logged in"
+            "error_failed_to_save_shift" -> "Failed to save shift"
+            "error_failed_to_save_entry" -> "Failed to save entry"
+            "error_failed_to_delete_shift" -> "Failed to delete shift"
+            "error_shift_limit_reached" -> "You've reached your weekly shift limit. Upgrade to Full Access for unlimited shifts."
+            "error_entry_limit_reached" -> "You've reached your weekly entry limit. Upgrade to Full Access for unlimited entries."
+            "default_employer_name" -> "Work"
             else -> key
         }
         
@@ -175,6 +194,25 @@ class LocalizationManager @Inject constructor() {
             "achievements" -> "Réalisations"
             "achievement_progress" -> "Progrès des réalisations"
             "achievements_unlocked" -> "réalisations débloquées"
+            // Alert System
+            "alert_label" -> "Alerte"
+            "alert_none" -> "Aucune"
+            "alert_15_minutes" -> "15 minutes avant"
+            "alert_30_minutes" -> "30 minutes avant"
+            "alert_60_minutes" -> "1 heure avant"
+            "alert_1_day" -> "1 jour avant"
+            "default_alert_label" -> "Alerte par défaut"
+            "notification_title" -> "Quart à venir"
+            "notification_body" -> "Votre quart chez %1$s commence à %2$s"
+            // Error Messages
+            "error_shift_not_found" -> "Quart non trouvé"
+            "error_user_not_logged_in" -> "Utilisateur non connecté"
+            "error_failed_to_save_shift" -> "Échec de la sauvegarde du quart"
+            "error_failed_to_save_entry" -> "Échec de la sauvegarde de l'entrée"
+            "error_failed_to_delete_shift" -> "Échec de la suppression du quart"
+            "error_shift_limit_reached" -> "Vous avez atteint votre limite hebdomadaire de quarts. Passez à l'accès complet pour des quarts illimités."
+            "error_entry_limit_reached" -> "Vous avez atteint votre limite hebdomadaire d'entrées. Passez à l'accès complet pour des entrées illimitées."
+            "default_employer_name" -> "Travail"
             else -> key
         }
         
@@ -235,6 +273,25 @@ class LocalizationManager @Inject constructor() {
             "achievements" -> "Logros"
             "achievement_progress" -> "Progreso de logros"
             "achievements_unlocked" -> "logros desbloqueados"
+            // Alert System
+            "alert_label" -> "Alerta"
+            "alert_none" -> "Ninguna"
+            "alert_15_minutes" -> "15 minutos antes"
+            "alert_30_minutes" -> "30 minutos antes"
+            "alert_60_minutes" -> "1 hora antes"
+            "alert_1_day" -> "1 día antes"
+            "default_alert_label" -> "Alerta por defecto"
+            "notification_title" -> "Turno próximo"
+            "notification_body" -> "Tu turno en %1$s comienza a las %2$s"
+            // Error Messages
+            "error_shift_not_found" -> "Turno no encontrado"
+            "error_user_not_logged_in" -> "Usuario no conectado"
+            "error_failed_to_save_shift" -> "Error al guardar turno"
+            "error_failed_to_save_entry" -> "Error al guardar entrada"
+            "error_failed_to_delete_shift" -> "Error al eliminar turno"
+            "error_shift_limit_reached" -> "Has alcanzado tu límite semanal de turnos. Actualiza a Acceso Completo para turnos ilimitados."
+            "error_entry_limit_reached" -> "Has alcanzado tu límite semanal de entradas. Actualiza a Acceso Completo para entradas ilimitadas."
+            "default_employer_name" -> "Trabajo"
             else -> key
         }
         

@@ -101,6 +101,14 @@ struct SettingsLocalization {
         }
     }
 
+    var defaultAlertLabel: String {
+        switch language {
+        case "fr": return "Alerte de quart par défaut"
+        case "es": return "Alerta de turno predeterminada"
+        default: return "Default Shift Alert"
+        }
+    }
+
     // MARK: - Targets Section
 
     var targetsSection: String {
@@ -227,6 +235,30 @@ struct SettingsLocalization {
         }
     }
 
+    var exportDataDescription: String {
+        switch language {
+        case "fr": return "CSV et autres formats"
+        case "es": return "CSV y otros formatos"
+        default: return "CSV and other formats"
+        }
+    }
+
+    var onboardingGuide: String {
+        switch language {
+        case "fr": return "Guide de configuration"
+        case "es": return "Guía de configuración"
+        default: return "Setup Guide"
+        }
+    }
+
+    var onboardingGuideSubtitle: String {
+        switch language {
+        case "fr": return "Revoir la configuration initiale"
+        case "es": return "Revisar la configuración inicial"
+        default: return "Review initial setup"
+        }
+    }
+
     var appTutorial: String {
         switch language {
         case "fr": return "Tutoriel de l'application"
@@ -289,9 +321,9 @@ struct SettingsLocalization {
 
     var averageDeductionLabel: String {
         switch language {
-        case "fr": return "Déductions moyennes %"
-        case "es": return "Deducciones promedio %"
-        default: return "Average deductions %"
+        case "fr": return "Déductions AVG"
+        case "es": return "Deducciones AVG"
+        default: return "AVG deductions"
         }
     }
 
@@ -367,7 +399,15 @@ struct SettingsLocalization {
         }
     }
 
-    // MARK: - Tip Targets Section
+    // MARK: - Targets Section
+
+    var yourTargetsTitle: String {
+        switch language {
+        case "fr": return "Vos objectifs"
+        case "es": return "Tus objetivos"
+        default: return "Your Targets"
+        }
+    }
 
     var tipTargetsSection: String {
         switch language {
@@ -382,6 +422,14 @@ struct SettingsLocalization {
         case "fr": return "Pourcentage de pourboire cible"
         case "es": return "Porcentaje objetivo de propinas"
         default: return "Target Tip Percentage"
+        }
+    }
+
+    var tipPercentageShortLabel: String {
+        switch language {
+        case "fr": return "Pourboire %"
+        case "es": return "Propina %"
+        default: return "Tip %"
         }
     }
 
@@ -509,16 +557,6 @@ struct SettingsLocalization {
         }
     }
 
-    // MARK: - Export Section
-
-    var exportDataDescription: String {
-        switch language {
-        case "fr": return "Exporter vers CSV ou Excel"
-        case "es": return "Exportar a CSV o Excel"
-        default: return "Export to CSV or Excel"
-        }
-    }
-
     // MARK: - Subscription Section
 
     var cancelSubscriptionTitle: String {
@@ -600,6 +638,46 @@ struct SettingsLocalization {
         case "fr": return "Merci pour vos commentaires, nous l'apprécions."
         case "es": return "Gracias por sus comentarios, lo apreciamos."
         default: return "Thank you for your feedback, we appreciate it."
+        }
+    }
+
+    var contactSupport: String {
+        switch language {
+        case "fr": return "Contacter le support"
+        case "es": return "Contactar soporte"
+        default: return "Contact Support"
+        }
+    }
+
+    var supportDescription: String {
+        switch language {
+        case "fr": return "Décrivez votre problème et nous vous répondrons dans les plus brefs délais."
+        case "es": return "Describa su problema y le responderemos lo antes posible."
+        default: return "Describe your issue and we'll get back to you as soon as possible."
+        }
+    }
+
+    var yourMessage: String {
+        switch language {
+        case "fr": return "Votre message"
+        case "es": return "Su mensaje"
+        default: return "Your message"
+        }
+    }
+
+    var describeYourIssue: String {
+        switch language {
+        case "fr": return "Décrivez votre problème..."
+        case "es": return "Describa su problema..."
+        default: return "Describe your issue..."
+        }
+    }
+
+    var writeYourSuggestion: String {
+        switch language {
+        case "fr": return "Écrivez votre suggestion..."
+        case "es": return "Escriba su sugerencia..."
+        default: return "Write your suggestion..."
         }
     }
 
