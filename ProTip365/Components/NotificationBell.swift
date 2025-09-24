@@ -12,8 +12,8 @@ struct NotificationBell: View {
             Color.clear
                 .frame(width: 44, height: 44)
 
-            // iOS notification center icon
-            Image(systemName: "list.bullet.rectangle")
+            // iOS notification tray icon (SF Symbols)
+            Image(systemName: "tray.badge")
                 .font(.title2)
                 .foregroundColor(alertManager.hasUnreadAlerts ? .blue : .secondary)
                 .scaleEffect(animateBell ? 1.1 : 1.0)
@@ -84,7 +84,7 @@ struct AlertsListView: View {
             Group {
                 if alertManager.alerts.isEmpty {
                     VStack(spacing: 20) {
-                        Image(systemName: "bell.slash")
+                        Image(systemName: "tray.badge.slash")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary)
 
