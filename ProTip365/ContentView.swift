@@ -80,6 +80,9 @@ struct ContentView: View {
 
                     // Refresh alerts from database
                     await alertManager.refreshAlerts()
+
+                    // Update app badge using recommended iOS 17+ method
+                    alertManager.updateAppBadge()
                 }
             case .inactive:
                 // Lock the app when it becomes inactive

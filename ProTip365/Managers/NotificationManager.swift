@@ -151,17 +151,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         // Apple HIG: Add meaningful actions
         content.categoryIdentifier = "SHIFT_REMINDER"
 
-        // Set badge count using appropriate API for iOS version
-        if #available(iOS 17.0, *) {
-            // For iOS 17+, we'll set badge to 1 since we can't easily read current count
-            content.badge = NSNumber(value: 1)
-        } else {
-            // For iOS 16 and earlier, use the deprecated API
-            let currentBadge = await MainActor.run {
-                UIApplication.shared.applicationIconBadgeNumber
-            }
-            content.badge = NSNumber(value: currentBadge + 1)
-        }
+        // Set badge for notification payload (recommended approach)
+        // The actual app badge will be managed by AlertManager using setBadgeCount
+        content.badge = NSNumber(value: 1)
 
         // Add userInfo for handling when notification fires
         content.userInfo = [

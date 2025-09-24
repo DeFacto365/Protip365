@@ -128,7 +128,8 @@ class AlertManager: ObservableObject {
         content.title = "ProTip - \(title)"
         content.body = body
         content.sound = .default
-        // Set a safe badge value without using deprecated APIs
+        // Set badge for notification payload (iOS 17+ recommended approach)
+        // App badge count is managed separately via setBadgeCount in updateAppBadgeCount()
         content.badge = NSNumber(value: 1)
 
         // Schedule for immediate delivery (or you can set a specific time)
@@ -304,9 +305,36 @@ class AlertManager: ObservableObject {
         await loadAlertsFromDatabase()
     }
 
+    func updateAppBadge() {
+        updateAppBadgeCount()
+    }
+
     private func updateUnreadStatus() {
         // Since we delete read alerts, all alerts in the array are unread
         hasUnreadAlerts = !alerts.isEmpty
+
+        // Update app badge count using iOS 17+ recommended method
+        updateAppBadgeCount()
+    }
+
+    private func updateAppBadgeCount() {
+        let badgeCount = alerts.count
+
+        if #available(iOS 17.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(badgeCount) { error in
+                if let error = error {
+                    print("⚠️ Failed to set badge count via UNUserNotificationCenter: \(error)")
+                } else {
+                    print("🔔 App badge updated to \(badgeCount) via setBadgeCount")
+                }
+            }
+        } else {
+            // Fallback for iOS 16 and earlier
+            DispatchQueue.main.async {
+                UIApplication.shared.applicationIconBadgeNumber = badgeCount
+                print("🔔 App badge updated to \(badgeCount) via UIApplication")
+            }
+        }
     }
 
     private func formatCurrency(_ amount: Double) -> String {
