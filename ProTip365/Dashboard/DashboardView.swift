@@ -146,6 +146,7 @@ struct DashboardView: View {
                         .scaledToFit()
                         .frame(width: 30, height: 30)
                         .foregroundColor(.primary)
+                        .background(Color.clear)
                 }
             }
             .sheet(item: horizontalSizeClass != .regular ? $detailViewData : .constant(nil)) { data in

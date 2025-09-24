@@ -263,11 +263,17 @@ struct iOS26LiquidGlassMainView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToShift)) { notification in
+            print("📢 LiquidGlassTabBar: Received navigateToShift notification")
+            print("📦 Notification object: \(notification.object ?? "nil")")
             if let shiftId = notification.object as? UUID {
+                print("✅ LiquidGlassTabBar: Valid shift ID received: \(shiftId)")
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     selectedTab = "calendar"
                     navigateToShiftId = shiftId
+                    print("🎯 LiquidGlassTabBar: Set selectedTab to 'calendar' and navigateToShiftId to \(shiftId)")
                 }
+            } else {
+                print("❌ LiquidGlassTabBar: Invalid or missing shift ID in notification")
             }
         }
     }

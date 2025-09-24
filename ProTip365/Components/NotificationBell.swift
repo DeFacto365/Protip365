@@ -18,6 +18,7 @@ struct NotificationBell: View {
                 .foregroundColor(alertManager.hasUnreadAlerts ? .blue : .secondary)
                 .scaleEffect(animateBell ? 1.1 : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: animateBell)
+                .background(Color.clear)
 
             // iOS-style notification badge
             if alertManager.hasUnreadAlerts && alertManager.alerts.count > 0 {

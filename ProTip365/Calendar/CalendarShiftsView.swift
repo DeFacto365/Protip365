@@ -98,9 +98,13 @@ struct CalendarShiftsView: View {
                 await loadAllShifts()
             }
             .onChange(of: navigateToShiftId) { _, newShiftId in
+                print("🔄 CalendarShiftsView: navigateToShiftId changed to: \(newShiftId?.description ?? "nil")")
                 if let shiftId = newShiftId {
+                    print("📍 CalendarShiftsView: Navigating to shift with ID: \(shiftId)")
                     navigateToSpecificShift(shiftId: shiftId)
                     navigateToShiftId = nil // Reset after navigation
+                } else {
+                    print("⚠️ CalendarShiftsView: No shift ID provided")
                 }
             }
             .alert(deleteAlertTitle, isPresented: $showingDeleteConfirmation, presenting: shiftToDelete) { shift in
