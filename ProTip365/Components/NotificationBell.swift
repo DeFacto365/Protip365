@@ -247,6 +247,7 @@ struct AlertRowView: View {
     }
 
     private func handleAlertTap(_ alert: DatabaseAlert) {
+        print("🔥 Alert tapped! Alert ID: \(alert.id), Type: \(alert.alert_type)")
         // iOS standard: tap alert to navigate and auto-dismiss
         navigateToContent(alert)
         dismiss() // Close the alerts sheet
@@ -258,24 +259,33 @@ struct AlertRowView: View {
     }
 
     private func navigateToContent(_ alert: DatabaseAlert) {
+        print("🔍 Navigating to content for alert type: \(alert.alert_type)")
+        print("🔍 Alert data: \(alert.data ?? "nil")")
+
         switch alert.alert_type {
         case "missingShift", "incompleteShift":
+            print("📅 Navigating to calendar for missing/incomplete shift")
             // Navigate to calendar for adding entry
             NotificationCenter.default.post(name: .navigateToCalendar, object: nil)
         case "shiftReminder":
             // Navigate to the specific shift for editing
             if let shiftId = alert.getShiftId() {
+                print("📍 Navigating to shift with ID: \(shiftId)")
                 NotificationCenter.default.post(name: .navigateToShift, object: shiftId)
             } else {
+                print("⚠️ No shift ID found in alert data, navigating to calendar instead")
+                print("⚠️ Alert data: \(alert.getDataDictionary() ?? [:])")
                 // Fallback to calendar if no specific shift ID
                 NotificationCenter.default.post(name: .navigateToCalendar, object: nil)
             }
         case "targetAchieved", "personalBest":
+            print("🎯 Target/achievement alert - marking as read")
             // These don't have navigation, just mark as read
             Task {
                 await alertManager.clearAlert(alert)
             }
         default:
+            print("❓ Unknown alert type: \(alert.alert_type)")
             break
         }
     }

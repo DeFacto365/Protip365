@@ -154,3 +154,4 @@ class ShiftAlertReceiver : BroadcastReceiver() {
         notificationManager.notify(shiftId.hashCode(), notification)
     }
 }
+
