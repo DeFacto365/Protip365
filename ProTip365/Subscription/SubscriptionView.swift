@@ -184,12 +184,18 @@ struct SubscriptionView: View {
                         }
                         .padding(.top, 4)
 
-                        // Sign In Button
+                        // Sign Out Button
                         Button(action: {
-                            // Handle sign in - dismiss to show auth screen
-                            // This will be handled by ContentView navigation
+                            Task {
+                                do {
+                                    try await SupabaseManager.shared.client.auth.signOut()
+                                    NotificationCenter.default.post(name: .userDidSignOut, object: nil)
+                                } catch {
+                                    print("Error signing out: \(error)")
+                                }
+                            }
                         }) {
-                            Text(signInButton)
+                            Text(signOutButton)
                                 .font(.body)
                                 .foregroundColor(.blue)
                         }
@@ -308,11 +314,11 @@ struct SubscriptionView: View {
         }
     }
 
-    var signInButton: String {
+    var signOutButton: String {
         switch language {
-        case "fr": return "Se connecter"
-        case "es": return "Iniciar sesión"
-        default: return "Sign In"
+        case "fr": return "Se déconnecter"
+        case "es": return "Cerrar sesión"
+        default: return "Sign Out"
         }
     }
 
