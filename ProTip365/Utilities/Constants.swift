@@ -148,3 +148,29 @@ extension Notification.Name {
     static let navigateToCalendar = Notification.Name("navigateToCalendar")
     static let navigateToShift = Notification.Name("navigateToShift")
 }
+
+// MARK: - Locale-Aware Number Parsing
+extension String {
+    /// Converts a string to Double with locale-aware decimal separator handling
+    /// Accepts both "." (English) and "," (French, Spanish) as decimal separators
+    /// Examples: "10.50" -> 10.5, "10,50" -> 10.5, "10" -> 10.0
+    func toLocaleDouble() -> Double? {
+        // First, try direct conversion (works for English "10.50")
+        if let value = Double(self) {
+            return value
+        }
+
+        // If that fails, try replacing comma with period (French/Spanish "10,50")
+        let normalizedString = self.replacingOccurrences(of: ",", with: ".")
+        if let value = Double(normalizedString) {
+            return value
+        }
+
+        // As a fallback, try using NumberFormatter with current locale
+        let formatter = NumberFormatter()
+        formatter.locale = Locale.current
+        formatter.numberStyle = .decimal
+
+        return formatter.number(from: self)?.doubleValue
+    }
+}

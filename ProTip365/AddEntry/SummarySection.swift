@@ -87,7 +87,7 @@ struct SummarySection: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text(String(format: "$%.2f", Double(sales) ?? 0))
+                    Text(String(format: "$%.2f", sales.toLocaleDouble() ?? 0))
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -114,32 +114,32 @@ struct SummarySection: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text(String(format: "$%.2f", Double(tips) ?? 0))
+                    Text(String(format: "$%.2f", tips.toLocaleDouble() ?? 0))
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
 
                 // Other
-                if Double(other) ?? 0 > 0 {
+                if other.toLocaleDouble() ?? 0 > 0 {
                     HStack {
                         Text(otherText)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(String(format: "$%.2f", Double(other) ?? 0))
+                        Text(String(format: "$%.2f", other.toLocaleDouble() ?? 0))
                             .font(.subheadline)
                             .fontWeight(.medium)
                     }
                 }
 
                 // Tip Out (negative)
-                if Double(tipOut) ?? 0 > 0 {
+                if tipOut.toLocaleDouble() ?? 0 > 0 {
                     HStack {
                         Text(tipOutText)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(String(format: "-$%.2f", Double(tipOut) ?? 0))
+                        Text(String(format: "-$%.2f", tipOut.toLocaleDouble() ?? 0))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundStyle(.red)

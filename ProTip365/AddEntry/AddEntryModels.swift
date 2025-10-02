@@ -176,9 +176,9 @@ extension AddEntryState {
     }
 
     var totalEarnings: Double {
-        let tipsAmount = Double(tips) ?? 0
-        let tipOutAmount = Double(tipOut) ?? 0
-        let otherAmount = Double(other) ?? 0
+        let tipsAmount = tips.toLocaleDouble() ?? 0
+        let tipOutAmount = tipOut.toLocaleDouble() ?? 0
+        let otherAmount = other.toLocaleDouble() ?? 0
         let hourlyRate = selectedEmployer?.hourly_rate ?? 15.00 // Default rate
         let salary = calculatedHours * hourlyRate
         return salary + tipsAmount + otherAmount - tipOutAmount

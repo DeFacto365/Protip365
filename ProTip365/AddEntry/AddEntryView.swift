@@ -282,9 +282,9 @@ struct AddEntryView: View {
     }
 
     private func computeTotalEarnings() -> Double {
-        let tipsAmount = Double(state.tips) ?? 0
-        let tipOutAmount = Double(state.tipOut) ?? 0
-        let otherAmount = Double(state.other) ?? 0
+        let tipsAmount = state.tips.toLocaleDouble() ?? 0
+        let tipOutAmount = state.tipOut.toLocaleDouble() ?? 0
+        let otherAmount = state.other.toLocaleDouble() ?? 0
         let hourlyRate = state.selectedEmployer?.hourly_rate ?? defaultHourlyRate
         let salary = state.calculatedHours * hourlyRate
         return salary + tipsAmount + otherAmount - tipOutAmount
@@ -566,9 +566,9 @@ struct AddEntryView: View {
                     // Calculate snapshot values
                     let hourlyRate = state.selectedEmployer?.hourly_rate ?? defaultHourlyRate
                     let grossIncome = state.calculatedHours * hourlyRate
-                    let tipsAmount = Double(state.tips) ?? 0
-                    let tipOutAmount = Double(state.tipOut) ?? 0
-                    let otherAmount = Double(state.other) ?? 0
+                    let tipsAmount = state.tips.toLocaleDouble() ?? 0
+                    let tipOutAmount = state.tipOut.toLocaleDouble() ?? 0
+                    let otherAmount = state.other.toLocaleDouble() ?? 0
                     let totalIncome = grossIncome + tipsAmount + otherAmount - tipOutAmount
 
                     // Get deduction percentage from AppStorage
@@ -585,7 +585,7 @@ struct AddEntryView: View {
                             actual_start_time: startTimeStr,
                             actual_end_time: endTimeStr,
                             actual_hours: state.calculatedHours,
-                            sales: Double(state.sales) ?? 0,
+                            sales: state.sales.toLocaleDouble() ?? 0,
                             tips: tipsAmount,
                             cash_out: tipOutAmount,
                             other: otherAmount,
@@ -613,7 +613,7 @@ struct AddEntryView: View {
                             actual_start_time: startTimeStr,
                             actual_end_time: endTimeStr,
                             actual_hours: state.calculatedHours,
-                            sales: Double(state.sales) ?? 0,
+                            sales: state.sales.toLocaleDouble() ?? 0,
                             tips: tipsAmount,
                             cash_out: tipOutAmount,
                             other: otherAmount,
