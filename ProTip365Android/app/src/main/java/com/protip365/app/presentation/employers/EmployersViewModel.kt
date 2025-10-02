@@ -6,6 +6,7 @@ import com.protip365.app.data.models.Employer
 import com.protip365.app.domain.repository.AuthRepository
 import com.protip365.app.domain.repository.EmployerRepository
 import com.protip365.app.domain.repository.SubscriptionRepository
+import com.protip365.app.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class EmployersViewModel @Inject constructor(
     private val employerRepository: EmployerRepository,
     private val authRepository: AuthRepository,
-    private val subscriptionRepository: SubscriptionRepository
+    private val subscriptionRepository: SubscriptionRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EmployersState())
@@ -34,16 +36,17 @@ class EmployersViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             
-            val user = authRepository.getCurrentUser()
-            user?.let {
-                currentUserId = it.userId
-                
-                // Check subscription status
-                val subscription = subscriptionRepository.getCurrentSubscription(it.userId)
-                val hasFullAccess = subscription?.status == "active" && subscription.productId?.contains("full") == true
-                
-                // Load employers
-                val employers = employerRepository.getEmployers(it.userId)
+            try {
+                val user = authRepository.getCurrentUser()
+                user?.let {
+                    currentUserId = it.userId
+
+                    // Check subscription status
+                    val subscription = subscriptionRepository.getCurrentSubscription(it.userId)
+                    val hasFullAccess = subscription?.status == "active" && subscription.productId?.contains("full") == true
+
+                    // Load employers
+                    val employers = employerRepository.getEmployers(it.userId)
                 
                 _state.value = _state.value.copy(
                     employers = employers,
@@ -51,10 +54,16 @@ class EmployersViewModel @Inject constructor(
                     hasFullAccess = hasFullAccess,
                     isLoading = false
                 )
-            } ?: run {
+                } ?: run {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "User not logged in"
+                    )
+                }
+            } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     isLoading = false,
-                    error = "User not logged in"
+                    error = "Error loading employers: ${e.message}"
                 )
             }
         }
@@ -64,20 +73,14 @@ class EmployersViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = currentUserId ?: return@launch
             
-            // Check if user can add more employers
-            if (!_state.value.hasFullAccess && _state.value.employers.size >= 1) {
-                _state.value = _state.value.copy(
-                    error = "Upgrade to Full Access for multiple employers"
-                )
-                return@launch
-            }
+            // Check if user can add more employers (removed upgrade requirement - all users can add multiple employers)
+            // Note: This check is disabled as we only have one subscription tier
             
             val employer = Employer(
                 id = UUID.randomUUID().toString(),
                 userId = userId,
                 name = name,
                 hourlyRate = hourlyRate,
-                defaultHourlyRate = hourlyRate,
                 active = true
             )
             
@@ -99,8 +102,7 @@ class EmployersViewModel @Inject constructor(
             val employer = _state.value.employers.find { it.id == employerId } ?: return@launch
             val updatedEmployer = employer.copy(
                 name = name,
-                hourlyRate = hourlyRate,
-                defaultHourlyRate = hourlyRate
+                hourlyRate = hourlyRate
             )
             
             employerRepository.updateEmployer(updatedEmployer).fold(
@@ -116,14 +118,48 @@ class EmployersViewModel @Inject constructor(
         }
     }
 
+    fun loadEmployer(employerId: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            try {
+                val employer = employerRepository.getEmployer(employerId)
+                if (employer != null) {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        selectedEmployer = employer
+                    )
+                } else {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Employer not found"
+                    )
+                }
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load employer"
+                )
+            }
+        }
+    }
+
     fun setDefaultEmployer(employerId: String) {
         viewModelScope.launch {
             val userId = currentUserId ?: return@launch
             
-            // TODO: Implement setDefaultEmployer through UserProfile repository
-            // For now, just update the local state
-            _state.value = _state.value.copy(
-                defaultEmployerId = employerId
+            // Update the default employer through UserProfile repository
+            val metadata = mapOf("default_employer_id" to employerId)
+            userRepository.updateUserMetadata(metadata).fold(
+                onSuccess = {
+                    _state.value = _state.value.copy(
+                        defaultEmployerId = employerId
+                    )
+                },
+                onFailure = { error ->
+                    // Handle error - could show a toast or error message
+                    println("Failed to set default employer: ${error.message}")
+                }
             )
         }
     }
@@ -177,6 +213,7 @@ class EmployersViewModel @Inject constructor(
 data class EmployersState(
     val employers: List<Employer> = emptyList(),
     val defaultEmployerId: String? = null,
+    val selectedEmployer: Employer? = null,
     val hasFullAccess: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null

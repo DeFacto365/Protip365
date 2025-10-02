@@ -189,6 +189,7 @@ struct iOS26LiquidGlassMainView: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var navigateToShiftId: UUID? = nil
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     
     // Tab items based on app configuration
     private var tabItems: [TabItem] {
@@ -269,8 +270,12 @@ struct iOS26LiquidGlassMainView: View {
                 print("✅ LiquidGlassTabBar: Valid shift ID received: \(shiftId)")
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     selectedTab = "calendar"
+                    print("🎯 LiquidGlassTabBar: Changed to calendar tab")
+                }
+                // Set the shift ID after a slight delay to ensure the view is ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     navigateToShiftId = shiftId
-                    print("🎯 LiquidGlassTabBar: Set selectedTab to 'calendar' and navigateToShiftId to \(shiftId)")
+                    print("🎯 LiquidGlassTabBar: Set navigateToShiftId to \(shiftId)")
                 }
             } else {
                 print("❌ LiquidGlassTabBar: Invalid or missing shift ID in notification")

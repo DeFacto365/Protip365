@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.presentation.localization.rememberOnboardingLocalization
 
@@ -17,11 +18,12 @@ import com.protip365.app.presentation.localization.rememberOnboardingLocalizatio
 @Composable
 fun OnboardingScreen(
     navController: NavController,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    viewModel: OnboardingViewModel = hiltViewModel()
 ) {
-    var currentStep by remember { mutableStateOf(1) }
-    var state by remember { mutableStateOf(OnboardingState()) }
-    val totalSteps = 7
+    var currentStep by remember { mutableStateOf(0) }
+    val state by viewModel.state.collectAsState()
+    val totalSteps = 7 // Matching iOS: Language, Employers, Week Start, Security, Variable, Targets, How To Use
     val localization = rememberOnboardingLocalization()
     
     Scaffold(
@@ -62,49 +64,64 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 when (currentStep) {
-                    1 -> LanguageStep(
+                    0 -> LanguageStep(
                         state = state,
                         localization = localization,
                         onLanguageSelected = { language ->
-                            state = state.copy(language = language)
+                            viewModel.updateLanguage(language)
                         }
                     )
-                    2 -> MultipleEmployersStep(
-                        state = state,
-                        onMultipleEmployersChanged = { useMultiple ->
-                            state = state.copy(useMultipleEmployers = useMultiple)
+                    1 -> {
+                        // Load employers when entering this step (in case user just created them)
+                        LaunchedEffect(Unit) {
+                            if (state.useMultipleEmployers) {
+                                viewModel.loadEmployers()
+                            }
                         }
-                    )
-                    3 -> WeekStartStep(
+
+                        MultipleEmployersStep(
+                            state = state,
+                            onMultipleEmployersChanged = { useMultiple ->
+                                viewModel.updateMultipleEmployers(useMultiple)
+                            },
+                            onSingleEmployerNameChanged = { name ->
+                                viewModel.updateSingleEmployerName(name)
+                            },
+                            onDefaultEmployerChanged = { employerId ->
+                                viewModel.updateDefaultEmployer(employerId)
+                            },
+                            onNavigateToEmployers = {
+                                // Navigate to employers screen and load employers when returning
+                                navController.navigate("employers")
+                            }
+                        )
+                    }
+                    2 -> WeekStartStep(
                         state = state,
                         onWeekStartChanged = { weekStart ->
-                            state = state.copy(weekStart = weekStart)
+                            viewModel.updateWeekStart(weekStart)
                         }
                     )
-                    4 -> SecurityStep(
+                    3 -> SecurityStep(
                         state = state,
                         onSecurityTypeChanged = { securityType ->
-                            state = state.copy(securityType = securityType)
+                            viewModel.updateSecurityType(securityType)
                         }
                     )
-                    5 -> VariableScheduleStep(
+                    4 -> VariableScheduleStep(
                         state = state,
                         onVariableScheduleChanged = { hasVariable ->
-                            state = state.copy(hasVariableSchedule = hasVariable)
+                            viewModel.updateVariableSchedule(hasVariable)
                         }
                     )
-                    6 -> TargetsStep(
+                    5 -> TargetsStep(
                         state = state,
-                        onTargetsChanged = { tipPercentage, salesDaily, hoursDaily ->
-                            state = state.copy(
-                                tipTargetPercentage = tipPercentage,
-                                targetSalesDaily = salesDaily,
-                                targetHoursDaily = hoursDaily
-                            )
+                        onTargetsChanged = { tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly ->
+                            viewModel.updateTargets(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
                         }
                     )
-                    7 -> CompletionStep(
-                        onComplete = onComplete
+                    6 -> HowToUseStep(
+                        state = state
                     )
                 }
             }
@@ -118,7 +135,7 @@ fun OnboardingScreen(
                     .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (currentStep > 1) {
+                if (currentStep > 0) {
                 OutlinedButton(
                     onClick = { currentStep-- },
                     modifier = Modifier.weight(1f)
@@ -131,17 +148,18 @@ fun OnboardingScreen(
                 
                 Button(
                     onClick = {
-                        if (currentStep < totalSteps) {
+                        if (currentStep < totalSteps - 1) {
                             currentStep++
                         } else {
-                            onComplete()
+                            // Last step - complete onboarding
+                            viewModel.completeOnboarding(onComplete)
                         }
                     },
                     modifier = Modifier.weight(1f),
                     enabled = state.isStepValid()
                 ) {
                     Text(
-                        text = if (currentStep < totalSteps) localization.nextButtonText else localization.getStartedText
+                        text = if (currentStep < totalSteps - 1) localization.nextButtonText else "Finish"
                     )
                 }
             }

@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Custom Calendar View
 struct CustomCalendarView: View {
     @Binding var selectedDate: Date
-    let shiftsForDate: (Date) -> [Shift]
+    let shiftsForDate: (Date) -> [ShiftWithEntry]
     let onDateTapped: (Date) -> Void
     let language: String
 

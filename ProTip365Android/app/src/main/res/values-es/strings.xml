@@ -18,6 +18,11 @@
     <string name="reset_password_button">Enviar enlace de restablecimiento</string>
     <string name="password_reset_sent">Enlace de restablecimiento enviado a tu correo</string>
 
+    <!-- Auth Screen Branding -->
+    <string name="app_name_title">ProTip365</string>
+    <string name="auth_welcome_text">Rastrea tus propinas</string>
+    <string name="auth_tagline">Rastrea cada propina.\nGestiona cada turno.\nAccede a tus datos en cualquier lugar.</string>
+
     <!-- Dashboard -->
     <string name="dashboard_title">Panel de control</string>
     <string name="today">Hoy</string>
@@ -65,9 +70,24 @@
     <string name="no_shifts_this_month">No hay turnos este mes</string>
     <string name="total_earned">Total ganado</string>
 
+    <!-- Add Shift Dialog -->
+    <string name="existing_shift_found">Turno existente encontrado</string>
+    <string name="existing_shift_message">Ya existe un turno para esta fecha. ¿Qué te gustaría hacer?</string>
+    <string name="modify_existing_shift">Modificar turno existente</string>
+    <string name="add_new_shift">Agregar nuevo turno</string>
+
+    <!-- Add Entry Dialog -->
+    <string name="existing_shift_no_entry_message">Existe un turno sin entrada para esta fecha. ¿Qué te gustaría hacer?</string>
+    <string name="existing_shift_with_entry_message">Existe un turno con entrada para esta fecha. ¿Qué te gustaría hacer?</string>
+    <string name="add_entry_to_existing_shift">Agregar entrada al turno existente</string>
+    <string name="edit_existing_entry">Editar entrada existente</string>
+    <string name="create_new_shift_and_entry">Crear nuevo turno y entrada</string>
+
     <!-- Settings -->
     <string name="settings_title">Configuración</string>
     <string name="profile_section">Perfil</string>
+    <string name="settings_name_label">Nombre</string>
+    <string name="settings_email_label">Correo electrónico</string>
     <string name="targets_section">Objetivos</string>
     <string name="preferences_section">Preferencias</string>
     <string name="security_section">Seguridad</string>
@@ -95,8 +115,18 @@
     <string name="week_start_day">Primer día de la semana</string>
     <string name="sunday">Domingo</string>
     <string name="monday">Lunes</string>
+    <string name="tuesday">Martes</string>
+    <string name="wednesday">Miércoles</string>
+    <string name="thursday">Jueves</string>
+    <string name="friday">Viernes</string>
+    <string name="saturday">Sábado</string>
     <string name="default_hourly_rate">Tarifa por hora predeterminada</string>
     <string name="multiple_employers">Múltiples empleadores</string>
+    <string name="work_for_multiple_employers">Trabajo para múltiples empleadores</string>
+    <string name="variable_schedule">Horario variable</string>
+    <string name="work_irregular_hours">Trabajo horas irregulares</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
     <string name="default_employer">Empleador predeterminado</string>
 
     <!-- Security Settings -->
@@ -143,6 +173,23 @@
     <string name="sign_out">Cerrar sesión</string>
     <string name="delete_account">Eliminar cuenta</string>
     <string name="delete_account_confirm">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.</string>
+    <string name="delete_account_warning_title">⚠️ Eliminación permanente de cuenta</string>
+    <string name="delete_account_warning_subtitle">Esta acción no se puede deshacer. Todos tus datos se perderán permanentemente.</string>
+    <string name="what_will_be_deleted">Lo que se eliminará:</string>
+    <string name="deletion_item_shifts">Todos tus registros de turnos y horarios</string>
+    <string name="deletion_item_entries">Todas tus entradas de propinas y ganancias</string>
+    <string name="deletion_item_employers">Toda la información y configuraciones de empleadores</string>
+    <string name="deletion_item_settings">Todas las preferencias y configuraciones de la app</string>
+    <string name="deletion_item_achievements">Todos los datos de logros y progreso</string>
+    <string name="deletion_item_subscriptions">Las suscripciones activas serán canceladas</string>
+    <string name="alternatives_before_deletion">Considera estas alternativas:</string>
+    <string name="alternatives_description">Puedes exportar tus datos, cerrar sesión, o contactar soporte si tienes problemas.</string>
+    <string name="go_to_settings">Ir a configuración</string>
+    <string name="confirm_deletion">Confirmar eliminación</string>
+    <string name="type_delete_to_confirm">Escribe ELIMINAR para confirmar</string>
+    <string name="delete_permanently">Eliminar permanentemente</string>
+    <string name="need_help">¿Necesitas ayuda?</string>
+    <string name="contact_support_for_deletion">Si necesitas asistencia con la eliminación de cuenta o tienes preguntas, nuestro equipo de soporte está aquí para ayudarte.</string>
     <string name="sign_out_confirm">¿Estás seguro de que deseas cerrar sesión?</string>
 
     <!-- Employers -->
@@ -151,11 +198,18 @@
     <string name="edit_employer">Editar empleador</string>
     <string name="employer_name">Nombre del empleador</string>
     <string name="employer_address">Dirección</string>
+    <string name="default_employer_label">Empleador predeterminado</string>
+    <string name="select_employer">Seleccionar empleador</string>
     <string name="employer_hourly_rate">Tarifa por hora</string>
     <string name="employer_active">Activo</string>
     <string name="employer_inactive">Inactivo</string>
     <string name="no_employers">No hay empleadores agregados</string>
     <string name="delete_employer_confirm">¿Estás seguro de que deseas eliminar este empleador?</string>
+
+    <!-- Shift Sales Target -->
+    <string name="sales_target">Objetivo de ventas</string>
+    <string name="use_default_target">Usar objetivo predeterminado</string>
+    <string name="custom_target">Objetivo personalizado</string>
 
     <!-- Achievements -->
     <string name="achievements_title">Logros</string>
@@ -202,6 +256,8 @@
     <string name="number_of_people">Número de personas</string>
     <string name="per_person">Por persona</string>
     <string name="tip_out_calculator">Calculadora de propina compartida</string>
+    <string name="tip_out_distribution">Distribución de propina compartida</string>
+    <string name="tip_out_explanation">Ingresa el % de tus propinas para distribuir a cada rol</string>
     <string name="total_tips">Propinas totales</string>
     <string name="tip_out_percentage">Porcentaje de propina compartida</string>
     <string name="tip_out_amount">Monto de propina compartida</string>
@@ -271,4 +327,148 @@
     <string name="deleting">Eliminando…</string>
     <string name="exporting">Exportando…</string>
     <string name="restoring">Restaurando…</string>
+
+    <!-- Period View Types -->
+    <string name="calendar_month">Mes calendario</string>
+    <string name="four_weeks_pay">4 semanas</string>
+
+    <!-- Alert Screen -->
+    <string name="more_options">Más opciones</string>
+
+    <!-- Subscription Screen -->
+    <string name="basic_analytics">Análisis básicos</string>
+    <string name="single_employer">Empleador único</string>
+    <string name="advanced_analytics">Análisis avanzados</string>
+    <string name="priority_support">Soporte prioritario</string>
+    <string name="custom_targets">Objetivos personalizados</string>
+    <string name="unlimited_everything">Todo ilimitado</string>
+    <string name="limited_features">Funciones limitadas</string>
+    <string name="available_plans">Planes Disponibles</string>
+    <string name="export_to_csv">Exportar a CSV</string>
+    <string name="achievements_badges">Logros y medallas</string>
+    <string name="free_trial_title">Prueba Gratuita</string>
+    <string name="shifts_entries_per_week">%d turnos y entradas por semana</string>
+    <string name="renews_on">Se renueva el %s</string>
+    <string name="expires_on">Expira el %s</string>
+    <string name="active">Activo</string>
+    <string name="recommended">RECOMENDADO</string>
+    <string name="current_plan">Plan Actual</string>
+    <string name="cancel_subscription">Cancelar Suscripción</string>
+    <string name="cancel_subscription_disclaimer">Puedes cancelar en cualquier momento. Tu suscripción permanecerá activa hasta el final del período de facturación actual.</string>
+    <string name="subscription_terms">Las suscripciones se facturan mensualmente y se pueden cancelar en cualquier momento. Todos los precios están en USD.</string>
+
+    <!-- Calendar Screen -->
+    <string name="previous_month">Mes anterior</string>
+    <string name="next_month">Mes siguiente</string>
+    <string name="no_shifts">Sin turnos</string>
+
+    <!-- Targets Screen -->
+    <string name="target_amount">Cantidad objetivo</string>
+
+    <!-- Onboarding Screen -->
+    <string name="back">Atrás</string>
+    <string name="eg_restaurant_name">ej. Nombre del restaurante</string>
+    <string name="decide_later">Decidir más tarde</string>
+    <string name="not_set">No establecido</string>
+    <string name="invalid_number">Número inválido</string>
+
+    <!-- Sign Up Screen -->
+    <string name="show_password">Mostrar contraseña</string>
+    <string name="hide_password">Ocultar contraseña</string>
+
+    <!-- Add/Edit Shift Screen -->
+    <string name="delete_shift">Eliminar turno</string>
+    <string name="error">Error</string>
+    <string name="enter_hourly_rate">Ingrese la tarifa por hora</string>
+    <string name="add_notes_optional">Agregar notas (opcional)</string>
+
+    <!-- Calculator Screen -->
+    <string name="hourly_rate_calculator">Tarifa por hora</string>
+
+    <!-- Settings Screen -->
+    <string name="profile">Perfil</string>
+    <string name="security">Seguridad</string>
+    <string name="update_account_password">Actualizar contraseña de cuenta</string>
+
+    <!-- Common Units -->
+    <string name="currency_symbol">$</string>
+    <string name="percentage_symbol">%</string>
+    <string name="hours_abbr">hrs</string>
+    <string name="hour_abbr">h</string>
+    <string name="minute_abbr">m</string>
+    <string name="placeholder_zero">0.00</string>
+    <string name="placeholder_dots">••••</string>
+
+    <!-- Error Messages -->
+    <string name="network_error">Error de red. Por favor verifique su conexión</string>
+    <string name="unexpected_error">Ocurrió un error inesperado</string>
+    <string name="validation_error">Por favor verifique su entrada</string>
+    <string name="shift_not_found">Turno no encontrado</string>
+    <string name="user_not_logged_in">Usuario no conectado</string>
+    <string name="invalid_credentials">Email o contraseña inválidos</string>
+    <string name="weak_password">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="passwords_dont_match">Las contraseñas no coinciden</string>
+    <string name="email_already_exists">El email ya existe</string>
+
+    <!-- Terms and Conditions -->
+    <string name="terms_title">Términos y Condiciones</string>
+    <string name="terms_last_updated">Última actualización: enero 2025</string>
+    <string name="terms_intro">Bienvenido a ProTip365. Al usar nuestra aplicación, acepta estos términos y condiciones.</string>
+
+    <string name="terms_section1_title">1. Aceptación de términos</string>
+    <string name="terms_section1_content">Al descargar, instalar o usar ProTip365, reconoce que ha leído, entendido y acepta estar sujeto a estos términos y condiciones.</string>
+
+    <string name="terms_section2_title">2. Descripción del servicio</string>
+    <string name="terms_section2_content">ProTip365 es una aplicación de seguimiento de propinas y gestión de turnos diseñada para profesionales de la industria de servicios. La aplicación le permite rastrear sus turnos de trabajo, propinas, ganancias y generar informes para uso personal.</string>
+
+    <string name="terms_section3_title">3. Cuenta de usuario</string>
+    <string name="terms_section3_content">Usted es responsable de mantener la confidencialidad de sus credenciales de cuenta y de todas las actividades que ocurran bajo su cuenta. Debe notificarnos inmediatamente cualquier uso no autorizado de su cuenta.</string>
+
+    <string name="terms_section4_title">4. Datos del usuario y privacidad</string>
+    <string name="terms_section4_content">Respetamos su privacidad y protegemos sus datos personales. Toda la información financiera que ingrese está encriptada y almacenada de forma segura. No compartimos su información personal con terceros sin su consentimiento, excepto cuando lo requiera la ley.</string>
+
+    <string name="terms_section5_title">5. Uso aceptable</string>
+    <string name="terms_section5_content">Acepta usar ProTip365 solo para fines legales y de acuerdo con estos términos. No puede usar la aplicación para:\n• Violar cualquier ley o regulación aplicable\n• Almacenar información falsa o engañosa\n• Intentar obtener acceso no autorizado a nuestros sistemas\n• Interferir con el uso del servicio por parte de otros usuarios</string>
+
+    <string name="terms_section6_title">6. Suscripción y pago</string>
+    <string name="terms_section6_content">ProTip365 ofrece niveles de suscripción gratuitos y de pago. Las suscripciones de pago se facturan mensual o anualmente a través de la tienda de aplicaciones. Puede cancelar su suscripción en cualquier momento a través de la configuración de su cuenta en la tienda de aplicaciones. Los reembolsos están sujetos a la política de reembolso de la tienda de aplicaciones.</string>
+
+    <string name="terms_section7_title">7. Precisión de los datos</string>
+    <string name="terms_section7_content">Si bien ProTip365 le ayuda a rastrear y calcular sus ganancias, usted es responsable de la precisión de los datos que ingresa. Los cálculos de la aplicación se proporcionan solo con fines informativos y no deben usarse para fines fiscales o legales sin verificación.</string>
+
+    <string name="terms_section8_title">8. Limitación de responsabilidad</string>
+    <string name="terms_section8_content">ProTip365 se proporciona \"tal cual\" sin garantías de ningún tipo. No somos responsables de ningún daño indirecto, incidental, especial o consecuente que surja del uso de la aplicación, incluida, entre otros, la pérdida de ganancias o datos.</string>
+
+    <string name="terms_section9_title">9. Modificaciones</string>
+    <string name="terms_section9_content">Nos reservamos el derecho de modificar estos términos en cualquier momento. Le notificaremos cualquier cambio actualizando la fecha de \"Última actualización\". Su uso continuo de ProTip365 después de los cambios constituye la aceptación de los términos modificados.</string>
+
+    <string name="terms_section10_title">10. Terminación</string>
+    <string name="terms_section10_content">Podemos terminar o suspender su cuenta de inmediato, sin previo aviso, por cualquier motivo, incluido el incumplimiento de estos términos. Tras la terminación, su derecho a usar la aplicación cesará de inmediato.</string>
+
+    <string name="terms_section11_title">11. Información de contacto</string>
+    <string name="terms_section11_content">Si tiene alguna pregunta sobre estos términos y condiciones, contáctenos en:\n\nCorreo: support@protip365.com\nSitio web: www.protip365.com</string>
+
+    <string name="terms_accept_button">Acepto</string>
+    <string name="terms_decline_button">Rechazar</string>
+
+    <!-- New Subscription Marketing (Oct 2, 2025) -->
+    <string name="subscription_header_title">Rastrea Cada Propina.\nGestiona Cada Turno.\nAccede a Tus Datos en Todas Partes.</string>
+    <string name="subscription_header_subtitle">La aplicación inteligente de seguimiento de propinas diseñada para profesionales de la industria de servicios que desean reemplazar recibos de papel y archivos de Excel con gestión de datos en tiempo real en todos sus dispositivos.</string>
+    <string name="premium_features">Funciones Premium</string>
+    <string name="feature_unlimited_shifts">Turnos ilimitados por día</string>
+    <string name="feature_multiple_employers">Gestión de múltiples empleadores</string>
+    <string name="feature_advanced_analytics">Análisis avanzados e informes detallados</string>
+    <string name="feature_data_export">Exportación de datos (CSV/PDF)</string>
+    <string name="feature_cloud_sync">Sincronización automática en la nube</string>
+    <string name="feature_priority_support">Soporte prioritario</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_catchphrase">Maximiza tus ingresos, una propina a la vez</string>
+
+    <!-- Settings Targets -->
+    <string name="set_your_goals_title">Establece tus metas</string>
+    <string name="set_your_goals_description">Establece metas diarias, semanales y mensuales para rastrear tu progreso.</string>
+    <string name="tip_targets">Objetivos de propinas</string>
+    <string name="sales_targets">Objetivos de ventas</string>
+    <string name="hours_targets">Objetivos de horas</string>
 </resources>

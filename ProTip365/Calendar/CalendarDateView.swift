@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Calendar Date View (iOS 26 Style)
 struct CalendarDateView: View {
     let date: Date
-    let shifts: [Shift]
+    let shifts: [ShiftWithEntry]
     var isSelected: Bool = false
 
     var body: some View {
@@ -58,9 +58,9 @@ struct CalendarDateView: View {
         Calendar.current.isDate(date, inSameDayAs: Date())
     }
 
-    private func colorForShift(_ shift: Shift, index: Int) -> Color {
+    private func colorForShift(_ shift: ShiftWithEntry, index: Int) -> Color {
         // Use different colors based on shift status
-        switch shift.status?.lowercased() {
+        switch shift.expected_shift.status.lowercased() {
         case "completed":
             // Completed shifts - green variations
             return [Color.green, Color.mint, Color.green.opacity(0.8)][index % 3]

@@ -165,8 +165,10 @@ struct OnboardingView: View {
                         .execute()
                 }
 
+                // Note: We don't update the name here because it was already set during signup
                 let updates = OnboardingProfileUpdate(
                     preferred_language: state.selectedLanguage,
+                    name: nil, // Keep the name from signup - don't overwrite
                     use_multiple_employers: state.useMultipleEmployers,
                     week_start: state.weekStartDay,
                     has_variable_schedule: state.hasVariableSchedule,
@@ -176,14 +178,22 @@ struct OnboardingView: View {
                     target_sales_monthly: state.hasVariableSchedule ? 0 : (Double(state.targetSalesMonthly) ?? 0),
                     target_hours_daily: Double(state.targetHoursDaily) ?? 0,
                     target_hours_weekly: state.hasVariableSchedule ? 0 : (Double(state.targetHoursWeekly) ?? 0),
-                    target_hours_monthly: state.hasVariableSchedule ? 0 : (Double(state.targetHoursMonthly) ?? 0)
+                    target_hours_monthly: state.hasVariableSchedule ? 0 : (Double(state.targetHoursMonthly) ?? 0),
+                    average_deduction_percentage: Double(state.averageDeductionPercentage) ?? 30.0,
+                    default_employer_id: state.defaultEmployerId?.uuidString,
+                    onboarding_completed: true
                 )
 
+                print("🔍 Onboarding: Updating profile preferences (name already set during signup)")
+                print("🔍 Onboarding: week_start = \(state.weekStartDay)")
+                print("🔍 Onboarding: use_multiple_employers = \(state.useMultipleEmployers)")
+                print("🔍 Onboarding: tip_target_percentage = \(Double(state.tipTargetPercentage) ?? 15.0)")
                 try await SupabaseManager.shared.client
                     .from("users_profile")
                     .update(updates)
                     .eq("user_id", value: userId)
                     .execute()
+                print("🔍 Onboarding: Profile update completed")
 
                 // Set security type if not none
                 if state.selectedSecurityType != .none {

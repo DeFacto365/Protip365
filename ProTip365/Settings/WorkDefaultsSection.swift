@@ -98,7 +98,7 @@ struct WorkDefaultsSection: View {
                 })
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.primary)
                 .onChange(of: averageDeductionPercentage) { _, newValue in
                     // Validate input to ensure it's between 0 and 100
                     if let value = Double(newValue), value > 100 {

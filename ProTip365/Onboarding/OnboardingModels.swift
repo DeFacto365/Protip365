@@ -17,7 +17,7 @@ enum OnboardingStep: Int, CaseIterable {
 }
 
 enum Field {
-    case tipPercentage, dailySales, weeklySales, monthlySales, dailyHours, weeklyHours, monthlyHours
+    case tipPercentage, averageDeductionPercentage, dailySales, weeklySales, monthlySales, dailyHours, weeklyHours, monthlyHours
 }
 
 // SecurityType is already defined in SecurityManager.swift
@@ -27,9 +27,12 @@ enum Field {
 class OnboardingState: ObservableObject {
     @Published var currentStep = 1
     @Published var selectedLanguage = "en"
+    @Published var userName = ""
     @Published var useMultipleEmployers = false
     @Published var singleEmployerName = ""
     @Published var showEmployersPage = false
+    @Published var defaultEmployerId: UUID? = nil
+    @Published var employers: [Employer] = []
     @Published var weekStartDay = 0
     @Published var selectedSecurityType = SecurityType.none
     @Published var hasVariableSchedule = false
@@ -40,6 +43,7 @@ class OnboardingState: ObservableObject {
     @Published var targetHoursDaily = ""
     @Published var targetHoursWeekly = ""
     @Published var targetHoursMonthly = ""
+    @Published var averageDeductionPercentage = "30"
     @Published var showPINSetup = false
     @Published var isLoading = false
     @Published var showError = false
@@ -67,6 +71,8 @@ class OnboardingState: ObservableObject {
         useMultipleEmployers = false
         singleEmployerName = ""
         showEmployersPage = false
+        defaultEmployerId = nil
+        employers = []
         weekStartDay = 0
         selectedSecurityType = .none
         hasVariableSchedule = false
@@ -77,6 +83,7 @@ class OnboardingState: ObservableObject {
         targetHoursDaily = ""
         targetHoursWeekly = ""
         targetHoursMonthly = ""
+        averageDeductionPercentage = "30"
         showPINSetup = false
         isLoading = false
         showError = false
@@ -88,6 +95,7 @@ class OnboardingState: ObservableObject {
 
 struct OnboardingProfileUpdate: Encodable {
     let preferred_language: String
+    let name: String?
     let use_multiple_employers: Bool
     let week_start: Int
     let has_variable_schedule: Bool
@@ -98,4 +106,7 @@ struct OnboardingProfileUpdate: Encodable {
     let target_hours_daily: Double
     let target_hours_weekly: Double
     let target_hours_monthly: Double
+    let average_deduction_percentage: Double
+    let default_employer_id: String?
+    let onboarding_completed: Bool
 }

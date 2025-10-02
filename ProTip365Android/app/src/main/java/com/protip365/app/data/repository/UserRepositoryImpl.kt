@@ -23,6 +23,23 @@ class UserRepositoryImpl @Inject constructor(
 
     private val prefs: SharedPreferences = context.getSharedPreferences("protip365_prefs", Context.MODE_PRIVATE)
 
+    override suspend fun getCurrentUser(): Flow<UserProfile?> = flow {
+        val userId = getCurrentUserId()
+        if (userId != null) {
+            emit(getUserProfile(userId))
+        } else {
+            emit(null)
+        }
+    }
+
+    override suspend fun getCurrentUserId(): String? {
+        return try {
+            supabaseClient.auth.currentUserOrNull()?.id
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override suspend fun getUserProfile(userId: String): UserProfile? {
         return try {
             supabaseClient

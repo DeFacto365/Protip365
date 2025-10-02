@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +38,10 @@ fun TargetsScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         TopAppBar(
-            title = { Text("Targets") },
+            title = { Text(stringResource(R.string.targets_section)) },
             navigationIcon = {
                 IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                 }
             },
             actions = {
@@ -58,7 +60,7 @@ fun TargetsScreen(
                             navController.navigateUp()
                         }
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
                 }
             }
@@ -107,8 +109,8 @@ fun TargetsScreen(
                         dailyTarget = it
                         hasChanges = true
                     },
-                    label = { Text("Target amount") },
-                    leadingIcon = { Text("$") },
+                    label = { Text(stringResource(R.string.target_amount)) },
+                    leadingIcon = { Text(stringResource(R.string.currency_symbol)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next
@@ -124,64 +126,92 @@ fun TargetsScreen(
                 )
             }
 
-            // Weekly Target
-            Column {
-                Text(
-                    text = "Weekly Target",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = weeklyTarget,
-                    onValueChange = { 
-                        weeklyTarget = it
-                        hasChanges = true
-                    },
-                    label = { Text("Target amount") },
-                    leadingIcon = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Text(
-                    text = "Your weekly earning goal",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+            // Only show Weekly and Monthly targets if NOT variable schedule
+            if (!state.hasVariableSchedule) {
+                // Weekly Target
+                Column {
+                    Text(
+                        text = "Weekly Target",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = weeklyTarget,
+                        onValueChange = {
+                            weeklyTarget = it
+                            hasChanges = true
+                        },
+                        label = { Text(stringResource(R.string.target_amount)) },
+                        leadingIcon = { Text(stringResource(R.string.currency_symbol)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Text(
+                        text = "Your weekly earning goal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
 
-            // Monthly Target
-            Column {
-                Text(
-                    text = "Monthly Target",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = monthlyTarget,
-                    onValueChange = { 
-                        monthlyTarget = it
-                        hasChanges = true
-                    },
-                    label = { Text("Target amount") },
-                    leadingIcon = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
+                // Monthly Target
+                Column {
+                    Text(
+                        text = "Monthly Target",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = monthlyTarget,
+                        onValueChange = {
+                            monthlyTarget = it
+                            hasChanges = true
+                        },
+                        label = { Text(stringResource(R.string.target_amount)) },
+                        leadingIcon = { Text(stringResource(R.string.currency_symbol)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Text(
+                        text = "Your monthly earning goal",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            } else {
+                // Show info card when variable schedule is enabled
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                Text(
-                    text = "Your monthly earning goal",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Weekly and monthly targets are hidden when Variable Schedule is enabled. Focus on your daily target!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
             }
 
             // Quick presets

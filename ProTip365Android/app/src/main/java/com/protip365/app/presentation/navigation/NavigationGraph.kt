@@ -112,7 +112,11 @@ fun NavigationGraph(
         }
 
         composable(Screen.Calendar.route) {
-            CalendarScreen(navController)
+            CalendarScreen(
+                onNavigateToAddShift = { navController.navigate("add_shift") },
+                onNavigateToAddEntry = { date -> navController.navigate("add_entry?initialDate=${date}") },
+                onNavigateToEditShift = { shiftId -> navController.navigate("edit_shift/$shiftId") }
+            )
         }
 
         composable(Screen.Employers.route) {
@@ -129,27 +133,7 @@ fun NavigationGraph(
 
         composable(Screen.Settings.route) {
             SettingsScreen(
-                navController = navController,
-                onNavigateToProfile = {
-                    navController.navigate(Screen.Profile.route)
-                },
-                onNavigateToSecurity = {
-                    navController.navigate(Screen.Security.route)
-                },
-                onNavigateToTargets = {
-                    navController.navigate(Screen.Targets.route)
-                },
-                onNavigateToSubscription = {
-                    navController.navigate(Screen.Subscription.route)
-                },
-                onNavigateToExport = {
-                    navController.navigate(Screen.Export.route)
-                },
-                onSignOut = {
-                    navController.navigate(Screen.Auth.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                navController = navController
             )
         }
 
@@ -166,7 +150,7 @@ fun NavigationGraph(
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")?.let {
-                LocalDate.parse(it)
+                kotlinx.datetime.LocalDate.parse(it)
             }
 
             AddEditShiftScreen(

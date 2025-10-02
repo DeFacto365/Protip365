@@ -3,6 +3,7 @@ import Supabase
 
 struct SettingsView: View {
     @Binding var selectedTab: String
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     // State variables
     @State private var userEmail = ""
@@ -56,6 +57,7 @@ struct SettingsView: View {
     @State private var originalValues: OriginalSettings?
 
     struct OriginalSettings {
+        let userName: String
         let defaultHourlyRate: String
         let averageDeductionPercentage: String
         let tipTargetPercentage: String
@@ -204,13 +206,15 @@ struct SettingsView: View {
     private var settingsContent: some View {
         VStack(spacing: 20) {
             AppInfoSection(
-                userEmail: $userEmail,
                 language: $language,
                 showOnboarding: $showOnboarding
             )
 
-            // TEMPORARILY DISABLED: Hide subscription section for testing
-            // SubscriptionSettingsSection(language: language)
+            ProfileSettingsSection(
+                userEmail: $userEmail,
+                userName: $userName,
+                language: language
+            )
 
             WorkDefaultsSection(
                 defaultHourlyRate: $defaultHourlyRate,
@@ -261,12 +265,65 @@ struct SettingsView: View {
                 language: language
             )
 
+            // Subscription Management Section - Only for active subscribers
+            SubscriptionManagementSection(
+                subscriptionManager: subscriptionManager,
+                language: language
+            )
+
             AccountSettingsSection(
                 showSignOutAlert: $showSignOutAlert,
                 showDeleteAccountAlert: $showDeleteAccountAlert,
                 isDeletingAccount: $isDeletingAccount,
                 language: language
             )
+
+            #if DEBUG
+            // Debug Section - Only visible in DEBUG builds
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "hammer.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.orange)
+                        .frame(width: 28, height: 28)
+                    Text("Developer Tools")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
+
+                NavigationLink {
+                    SubscriptionDebugView(subscriptionManager: subscriptionManager)
+                } label: {
+                    HStack {
+                        Text("Subscription Debug")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: IconNames.Form.next)
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                }
+
+                NavigationLink {
+                    StoreKitTestDebugView()
+                } label: {
+                    HStack {
+                        Text("StoreKit Debug")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: IconNames.Form.next)
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+            #endif
 
             Spacer()
                 .frame(height: 30)
@@ -280,7 +337,8 @@ struct SettingsView: View {
     private var hasUnsavedChanges: Bool {
         guard let original = originalValues else { return false }
 
-        return original.defaultHourlyRate != defaultHourlyRate ||
+        return original.userName != userName ||
+               original.defaultHourlyRate != defaultHourlyRate ||
                original.averageDeductionPercentage != averageDeductionPercentage ||
                original.tipTargetPercentage != tipTargetPercentage ||
                original.targetTipDaily != targetTipDaily ||
@@ -302,6 +360,7 @@ struct SettingsView: View {
 
     private func storeOriginalValues() {
         originalValues = OriginalSettings(
+            userName: userName,
             defaultHourlyRate: defaultHourlyRate,
             averageDeductionPercentage: averageDeductionPercentage,
             tipTargetPercentage: tipTargetPercentage,
@@ -353,16 +412,60 @@ struct SettingsView: View {
 
     func loadShifts() async {
         do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            _ = try await SupabaseManager.shared.client.auth.session.user.id
 
-            // Load all shifts for the user (for export purposes)
-            let shiftsQuery = SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .order("shift_date", ascending: false)
+            // Load all shifts for the user (for export purposes) using new simplified method
+            let startDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+            let endDate = Date()
+            let shiftsWithEntries = try await SupabaseManager.shared.fetchShiftsWithEntries(from: startDate, to: endDate)
 
-            shifts = try await shiftsQuery.execute().value
+            // Convert to ShiftIncome for compatibility with export system
+            shifts = shiftsWithEntries.map { shiftWithEntry in
+                let shift = shiftWithEntry.expected_shift
+                let entry = shiftWithEntry.entry
+
+                let hours = entry?.actual_hours ?? shift.expected_hours
+                let sales = entry?.sales ?? 0
+                let tips = entry?.tips ?? 0
+                let cashOut = entry?.cash_out ?? 0
+                let other = entry?.other ?? 0
+
+                let baseIncome = hours * shift.hourly_rate
+                let netTips = tips - cashOut
+                let totalIncome = baseIncome + netTips + other
+                let tipPercentage = sales > 0 ? (tips / sales) * 100 : 0
+
+                return ShiftIncome(
+                    income_id: entry?.id,
+                    shift_id: shift.id,
+                    user_id: shift.user_id,
+                    employer_id: shift.employer_id,
+                    employer_name: shiftWithEntry.employer_name,
+                    shift_date: shift.shift_date,
+                    expected_hours: shift.expected_hours,
+                    lunch_break_minutes: shift.lunch_break_minutes,
+                    net_expected_hours: shift.expected_hours,
+                    hours: hours,
+                    hourly_rate: shift.hourly_rate,
+                    sales: sales,
+                    tips: tips,
+                    cash_out: cashOut,
+                    other: other,
+                    base_income: baseIncome,
+                    net_tips: netTips,
+                    total_income: totalIncome,
+                    tip_percentage: tipPercentage,
+                    sales_target: shift.sales_target,
+                    start_time: shift.start_time,
+                    end_time: shift.end_time,
+                    actual_start_time: entry?.actual_start_time,
+                    actual_end_time: entry?.actual_end_time,
+                    shift_status: shift.status,
+                    shift_created_at: shift.created_at,
+                    earnings_created_at: entry?.created_at,
+                    notes: entry?.notes ?? shift.notes
+                )
+            }
         } catch {
             print("Error loading shifts: \(error)")
         }
@@ -399,10 +502,13 @@ struct SettingsView: View {
                 .eq("user_id", value: userId)
                 .execute()
                 .value
+            
+            print("🔍 Found \(profiles.count) profile(s) for user \(userId)")
 
             if let userProfile = profiles.first {
+                print("🔍 Profile name field: '\(userProfile.name ?? "nil")'")
                 defaultHourlyRate = userProfile.default_hourly_rate > 0 ? String(format: "%.2f", userProfile.default_hourly_rate) : ""
-                averageDeductionPercentage = (userProfile.average_deduction_percentage ?? 30) > 0 ? String(format: "%.0f", userProfile.average_deduction_percentage ?? 30) : ""
+                averageDeductionPercentage = userProfile.average_deduction_percentage != nil ? String(format: "%.0f", userProfile.average_deduction_percentage ?? 30) : ""
                 tipTargetPercentage = (userProfile.tip_target_percentage ?? 0) > 0 ? String(format: "%.0f", userProfile.tip_target_percentage ?? 0) : ""
                 targetTipDaily = (userProfile.target_tip_daily ?? 0) > 0 ? String(format: "%.2f", userProfile.target_tip_daily ?? 0) : ""
                 targetTipWeekly = (userProfile.target_tip_weekly ?? 0) > 0 ? String(format: "%.2f", userProfile.target_tip_weekly ?? 0) : ""
@@ -444,6 +550,7 @@ struct SettingsView: View {
 
                 // Load user name
                 userName = userProfile.name ?? ""
+                print("🔍 Loaded user name: '\(userName)' from profile")
             }
         } catch {
             print("Error loading settings: \(error)")
@@ -501,18 +608,22 @@ struct SettingsView: View {
                 language: language,
                 preferred_language: language,
                 week_start: weekStartDay,
-                name: nil,
+                name: userName.isEmpty ? nil : userName,
                 use_multiple_employers: useMultipleEmployers,
                 has_variable_schedule: hasVariableSchedule,
                 default_employer_id: defaultEmployerId?.uuidString,
                 default_alert_minutes: alertMinutes
             )
+            
+            print("🔍 Saving user name: '\(userName)' (will be nil if empty: \(userName.isEmpty))")
 
             try await SupabaseManager.shared.client
                 .from("users_profile")
                 .update(updates)
                 .eq("user_id", value: userId)
                 .execute()
+            
+            print("🔍 Profile update completed successfully")
 
             UserDefaults.standard.set(Double(defaultHourlyRate) ?? 15.00, forKey: "defaultHourlyRate")
 

@@ -164,8 +164,56 @@ class DashboardLocalization(private val language: String) {
             "es" -> "Exportar datos"
             else -> "Export Data"
         }
+
+    // MARK: - Performance Card
+    val performanceText: String
+        get() = when (language) {
+            "fr" -> "Performance"
+            "es" -> "Rendimiento"
+            else -> "Performance"
+        }
+
+    val overallText: String
+        get() = when (language) {
+            "fr" -> "Global"
+            "es" -> "General"
+            else -> "Overall"
+        }
+
+    val setTargetsPromptText: String
+        get() = when (language) {
+            "fr" -> "Définissez des objectifs dans les paramètres pour suivre vos performances"
+            "es" -> "Establece objetivos en Configuración para rastrear tu rendimiento"
+            else -> "Set targets in Settings to track your performance"
+        }
+
+    val goToSettingsText: String
+        get() = when (language) {
+            "fr" -> "Aller aux paramètres →"
+            "es" -> "Ir a Configuración →"
+            else -> "Go to Settings →"
+        }
+
+    val tipPercentageText: String
+        get() = when (language) {
+            "fr" -> "% Pourboires"
+            "es" -> "% Propinas"
+            else -> "Tip %"
+        }
+
+    val hoursShortText: String
+        get() = when (language) {
+            "fr" -> "hrs"
+            "es" -> "hrs"
+            else -> "hrs"
+        }
+
+    val ofTargetText: String
+        get() = when (language) {
+            "fr" -> "de l'objectif"
+            "es" -> "del objetivo"
+            else -> "of target"
+        }
 }
-
-
 
 

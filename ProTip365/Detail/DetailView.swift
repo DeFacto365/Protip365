@@ -4,6 +4,8 @@ struct DetailView: View {
     let shifts: [ShiftIncome]
     let detailType: String
     let periodText: String
+    let periodStartDate: Date?
+    let periodEndDate: Date?
     var onEditShift: (ShiftIncome) -> Void
     @Environment(\.dismiss) var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -92,7 +94,9 @@ struct DetailView: View {
                                             targetIncome: targetIncome,
                                             targetTips: targetTips,
                                             targetSales: targetSales,
-                                            targetHours: targetHours
+                                            targetHours: targetHours,
+                                            periodStartDate: periodStartDate,
+                                            periodEndDate: periodEndDate
                                         )
                                         .frame(maxWidth: .infinity)
                                     }
@@ -117,7 +121,9 @@ struct DetailView: View {
                                         targetIncome: targetIncome,
                                         targetTips: targetTips,
                                         targetSales: targetSales,
-                                        targetHours: targetHours
+                                        targetHours: targetHours,
+                                        periodStartDate: periodStartDate,
+                                        periodEndDate: periodEndDate
                                     )
                                     .frame(maxWidth: 400)
 
@@ -141,7 +147,9 @@ struct DetailView: View {
                                     targetIncome: targetIncome,
                                     targetTips: targetTips,
                                     targetSales: targetSales,
-                                    targetHours: targetHours
+                                    targetHours: targetHours,
+                                    periodStartDate: periodStartDate,
+                                    periodEndDate: periodEndDate
                                 )
                                 DetailShiftsList(
                                     shifts: shifts,

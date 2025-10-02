@@ -1,192 +1,103 @@
 package com.protip365.app.presentation.calendar
 
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.protip365.app.data.models.Entry
-import com.protip365.app.data.models.Shift
-import com.protip365.app.domain.repository.AuthRepository
-import com.protip365.app.domain.repository.ShiftRepository
+import com.protip365.app.data.models.CompletedShift
+import com.protip365.app.domain.repository.CompletedShiftRepository
+import com.protip365.app.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val shiftRepository: ShiftRepository,
-    private val authRepository: AuthRepository
+    private val completedShiftRepository: CompletedShiftRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(CalendarState())
-    val state: StateFlow<CalendarState> = _state.asStateFlow()
+    private val _uiState = MutableStateFlow(CalendarUiState())
+    val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
-    private val _selectedDate = MutableStateFlow<LocalDate?>(LocalDate.now())
-    val selectedDate: StateFlow<LocalDate?> = _selectedDate.asStateFlow()
-
-    private val _currentLanguage = MutableStateFlow("en")
-    val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
-
-    private val _subscriptionTier = MutableStateFlow("free")
-    val subscriptionTier: StateFlow<String> = _subscriptionTier.asStateFlow()
-
-    private val _weeklyLimits = MutableStateFlow(WeeklyLimits())
-    val weeklyLimits: StateFlow<WeeklyLimits> = _weeklyLimits.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _shifts = MutableStateFlow<List<CompletedShift>>(emptyList())
+    val shifts: StateFlow<List<CompletedShift>> = _shifts.asStateFlow()
 
     init {
-        loadMonthData()
+        _uiState.update { it.copy(isLoading = true) }
+        loadShifts()
     }
 
-    fun selectDate(date: LocalDate) {
-        _selectedDate.value = date
-        loadDateData(date)
-    }
-
-    fun isPastDateOrToday(date: LocalDate): Boolean {
-        val today = LocalDate.now()
-        return date <= today
-    }
-
-    fun isFutureDate(date: LocalDate): Boolean {
-        val today = LocalDate.now()
-        return date > today
-    }
-
-    fun getRecommendedAction(date: LocalDate): String {
-        return if (isPastDateOrToday(date)) {
-            "entry" // Recommend entry for past/today dates
-        } else {
-            "shift" // Recommend shift for future dates
-        }
-    }
-
-    private fun loadMonthData() {
+    private fun loadShifts() {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
-                val user = authRepository.getCurrentUser()
-                if (user == null) {
-                    _isLoading.value = false
-                    return@launch
+                val currentUser = userRepository.getCurrentUser().first()
+                val userId = currentUser?.userId ?: return@launch
+
+                completedShiftRepository.observeCompletedShifts(userId).collect { shiftList ->
+                    _shifts.value = shiftList
+                    _uiState.update { it.copy(isLoading = false, error = null) }
                 }
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val startOfMonth = kotlinx.datetime.LocalDate(now.year, now.month, 1)
-            val endOfMonth = startOfMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
-
-            val shifts = shiftRepository.getShifts(user.userId, startOfMonth, endOfMonth)
-            val entries = shiftRepository.getEntries(user.userId, startOfMonth, endOfMonth)
-
-            val datesWithShifts = mutableSetOf<LocalDate>()
-            val earningsByDate = mutableMapOf<LocalDate, Double>()
-
-            shifts.forEach { shift ->
-                val date = LocalDate.parse(shift.shiftDate)
-                datesWithShifts.add(date)
-                earningsByDate[date] = (earningsByDate[date] ?: 0.0) + shift.totalEarnings
-            }
-
-            entries.forEach { entry ->
-                val date = LocalDate.parse(entry.entryDate)
-                datesWithShifts.add(date)
-                earningsByDate[date] = (earningsByDate[date] ?: 0.0) + entry.totalEarnings
-            }
-
-            val monthlyTotal = earningsByDate.values.sum()
-
-            _state.value = _state.value.copy(
-                datesWithShifts = datesWithShifts,
-                earningsByDate = earningsByDate,
-                monthlyTotal = monthlyTotal
-            )
-            _isLoading.value = false
-
-            // Load selected date data
-            _selectedDate.value?.let { loadDateData(it) }
             } catch (e: Exception) {
-                _isLoading.value = false
-                // Log error or update state with error message
+                _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
         }
     }
 
-    private fun loadDateData(date: LocalDate) {
-        viewModelScope.launch {
-            val user = authRepository.getCurrentUser() ?: return@launch
 
-            // Convert java.time.LocalDate to kotlinx.datetime.LocalDate
-            val kotlinDate = kotlinx.datetime.LocalDate(date.year, date.monthValue, date.dayOfMonth)
+    fun selectDate(date: LocalDate) {
+        _uiState.update { it.copy(selectedDate = date) }
+    }
 
-            val shifts = shiftRepository.getShifts(user.userId, kotlinDate, kotlinDate)
-            val entries = shiftRepository.getEntries(user.userId, kotlinDate, kotlinDate)
+    fun getShiftsForDate(date: LocalDate): List<CompletedShift> {
+        return _shifts.value.filter { shift ->
+            try {
+                val shiftDate = LocalDate.parse(shift.shiftDate)
+                shiftDate == date
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
-            val totalEarnings = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.totalEarnings }
+    fun getShiftsForMonth(year: Int, month: Int): List<CompletedShift> {
+        return _shifts.value.filter { shift ->
+            try {
+                val shiftDate = LocalDate.parse(shift.shiftDate)
+                shiftDate.year == year && shiftDate.monthNumber == month
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
-            _state.value = _state.value.copy(
-                selectedDateShifts = shifts,
-                selectedDateEntries = entries,
-                selectedDateEarnings = totalEarnings
+    fun navigateToPreviousMonth() {
+        _uiState.update { state ->
+            val newMonth = if (state.currentMonth == 1) 12 else state.currentMonth - 1
+            val newYear = if (state.currentMonth == 1) state.currentYear - 1 else state.currentYear
+            state.copy(
+                currentMonth = newMonth,
+                currentYear = newYear
             )
         }
     }
 
-    fun refreshData() {
-        loadMonthData()
-        // loadWeeklyLimits() // TODO: Implement when subscription logic is ready
-    }
-
-    private fun loadWeeklyLimits() {
-        // TODO: Load weekly limits from subscription repository
-    }
-
-    fun deleteShift(shift: Shift) {
-        viewModelScope.launch {
-            shiftRepository.deleteShift(shift.id)
-            refreshData()
-        }
-    }
-
-    fun deleteEntry(entry: Entry) {
-        viewModelScope.launch {
-            shiftRepository.deleteEntry(entry.id)
-            refreshData()
-        }
-    }
-
-    private fun getEmployerColor(employerId: String?): Color? {
-        return employerId?.let {
-            // Generate a consistent color based on employer ID
-            val hash = it.hashCode()
-            val hue = (hash % 360).toFloat()
-            Color.hsl(hue, 0.7f, 0.8f)
+    fun navigateToNextMonth() {
+        _uiState.update { state ->
+            val newMonth = if (state.currentMonth == 12) 1 else state.currentMonth + 1
+            val newYear = if (state.currentMonth == 12) state.currentYear + 1 else state.currentYear
+            state.copy(
+                currentMonth = newMonth,
+                currentYear = newYear
+            )
         }
     }
 }
 
-data class ShiftData(
-    val shifts: List<Shift> = emptyList(),
-    val entries: List<Entry> = emptyList(),
-    val totalEarnings: Double = 0.0,
-    val totalHours: Double = 0.0
-)
-
-data class CalendarState(
-    val shiftsDataMap: Map<LocalDate, ShiftData> = emptyMap(),
-    val datesWithShifts: Set<LocalDate> = emptySet(),
-    val earningsByDate: Map<LocalDate, Double> = emptyMap(),
-    val monthlyTotal: Double = 0.0,
-    val selectedDateShifts: List<Shift> = emptyList(),
-    val selectedDateEntries: List<Entry> = emptyList(),
-    val selectedDateEarnings: Double = 0.0
-)
-
-data class WeeklyLimits(
-    val shiftsUsed: Int = 0,
-    val entriesUsed: Int = 0
+data class CalendarUiState(
+    val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+    val currentMonth: Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).monthNumber,
+    val currentYear: Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )

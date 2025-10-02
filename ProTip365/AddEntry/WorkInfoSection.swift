@@ -21,9 +21,41 @@ struct WorkInfoSection: View {
     let totalHoursText: String
     let hoursUnit: String
     let showDidntWorkOption: Bool  // Control whether to show the "Didn't work" toggle
+    let totalEarnings: Double
+    let defaultHourlyRate: Double
 
     // MARK: - Action Closures
     let closeOtherPickers: (String?) -> Void
+
+    // MARK: - App Storage
+    @AppStorage("averageDeductionPercentage") private var averageDeductionPercentage: Double = 30.0
+    @AppStorage("language") private var language = "en"
+
+    // MARK: - Computed Properties
+    private var grossPay: Double {
+        calculatedHours * (selectedEmployer?.hourly_rate ?? defaultHourlyRate)
+    }
+
+    private var netPay: Double {
+        let deductionMultiplier = 1.0 - (averageDeductionPercentage / 100.0)
+        return grossPay * deductionMultiplier
+    }
+
+    private var avgNetText: String {
+        switch language {
+        case "fr": return "Net moy"
+        case "es": return "Neto prom"
+        default: return "Avg Net"
+        }
+    }
+
+    private var grossText: String {
+        switch language {
+        case "fr": return "Brut"
+        case "es": return "Bruto"
+        default: return "Gross"
+        }
+    }
 
     // MARK: - Body
     var body: some View {
@@ -184,9 +216,16 @@ struct WorkInfoSection: View {
                         }
                     }
                 } else {
-                    Text(totalHoursText)
-                        .font(.body)
-                        .foregroundColor(.primary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(totalHoursText)
+                            .font(.body)
+                            .foregroundColor(.primary)
+
+                        // Show Avg Net and Gross on second line (based on hourly pay only, not tips)
+                        Text("\(avgNetText) $\(String(format: "%.0f", netPay)) / \(grossText) $\(String(format: "%.0f", grossPay))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     Spacer()
 

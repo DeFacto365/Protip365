@@ -18,7 +18,6 @@ struct NotificationBell: View {
                 .foregroundColor(alertManager.hasUnreadAlerts ? .blue : .secondary)
                 .scaleEffect(animateBell ? 1.1 : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: animateBell)
-                .background(Color.clear)
 
             // iOS-style notification badge
             if alertManager.hasUnreadAlerts && alertManager.alerts.count > 0 {
@@ -250,8 +249,21 @@ struct AlertRowView: View {
     private func handleAlertTap(_ alert: DatabaseAlert) {
         print("🔥 Alert tapped! Alert ID: \(alert.id), Type: \(alert.alert_type)")
         // iOS standard: tap alert to navigate and auto-dismiss
-        navigateToContent(alert)
-        dismiss() // Close the alerts sheet
+        dismiss() // Close the alerts sheet first
+
+        // Clear the alert from database since user has acted on it
+        // (except for achievement alerts which are handled in navigateToContent)
+        if !["targetAchieved", "personalBest"].contains(alert.alert_type) {
+            Task {
+                await alertManager.clearAlert(alert)
+                print("🗑️ Alert cleared after navigation")
+            }
+        }
+
+        // Delay navigation slightly to ensure sheet is dismissed and listeners are active
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            navigateToContent(alert)
+        }
     }
 
     private func handleAlertActionOnly(_ alert: DatabaseAlert) {

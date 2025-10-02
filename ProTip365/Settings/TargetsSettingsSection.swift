@@ -50,10 +50,7 @@ struct TargetsSettingsSection: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Targets explanation
-            targetsExplanationSection
-
-            // All Targets in One Card
+            // All Targets in One Card (with goals explanation at top)
             allTargetsSection
         }
         .onTapGesture {
@@ -64,37 +61,21 @@ struct TargetsSettingsSection: View {
 
     // MARK: - Section Views
 
-    private var targetsExplanationSection: some View {
-        VStack(spacing: 8) {
-            Text(localization.setYourGoalsTitle)
-                .font(.headline)
-                .foregroundStyle(.primary)
-
-            Text(localization.setYourGoalsDescription)
-                .font(.caption)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-    }
-
     private var allTargetsSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Section Title
-            HStack(spacing: 12) {
-                Image(systemName: "target") // Target/bullseye icon
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .symbolRenderingMode(.monochrome)
-                    .frame(width: 28, height: 28)
-                Text(localization.yourTargetsTitle)
+            // Set Your Goals explanation at top
+            VStack(spacing: 8) {
+                Text(localization.setYourGoalsTitle)
                     .font(.headline)
                     .foregroundStyle(.primary)
-                Spacer()
+
+                Text(localization.setYourGoalsDescription)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
             }
+
+            Divider()
 
             // MARK: - Tip Targets
             VStack(alignment: .leading, spacing: 12) {
@@ -267,7 +248,7 @@ struct TargetsSettingsSection: View {
             })
             .keyboardType(.decimalPad)
             .multilineTextAlignment(.trailing)
-            .foregroundStyle(.tint)
+            .foregroundStyle(.primary)
             .focused($focusedField, equals: field)
             .frame(width: 100)
             .padding(.horizontal, 12)

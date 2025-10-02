@@ -3,6 +3,7 @@ import StoreKit
 
 struct SubscriptionTiersView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
+    var onContinueAnyway: (() -> Void)?
     @AppStorage("language") private var language = "en"
     @State private var isLoading = false
     @State private var selectedProductId: String? = nil
@@ -19,8 +20,10 @@ struct SubscriptionTiersView: View {
                     headerView
 
                     // Current subscription status (if applicable)
-                    if subscriptionManager.currentTier == .partTime {
+                    if subscriptionManager.isSubscribed && !subscriptionManager.isInTrialPeriod {
                         currentSubscriptionView
+                    } else if subscriptionManager.isInTrialPeriod {
+                        trialStatusView
                     }
 
                     // Show loading state if products aren't loaded
@@ -54,71 +57,83 @@ struct SubscriptionTiersView: View {
                         .padding(.vertical, 40)
                         .padding(.horizontal)
                     } else if subscriptionManager.products.isEmpty {
+                        // Products failed to load - show clear message
                         VStack(spacing: 20) {
-                            Image(systemName: "cart.badge.questionmark")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
-                            Text(noProductsText)
-                                .font(.headline)
-                            Text(noProductsDetailText)
-                                .font(.caption)
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.orange)
+
+                            Text("Can't Connect to App Store")
+                                .font(.title2)
+                                .fontWeight(.bold)
+
+                            Text("We're having trouble loading subscription options. You can try again or continue using the app.")
+                                .font(.body)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
-                            Button(retryText) {
-                                Task {
-                                    await loadProductsWithTimeout()
+                                .padding(.horizontal)
+
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    Task {
+                                        await loadProductsWithTimeout()
+                                    }
+                                }) {
+                                    Label("Try Again", systemImage: "arrow.clockwise")
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.blue)
+                                        .foregroundStyle(.white)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+
+                                Button(action: {
+                                    // Use the callback to bypass subscription
+                                    if let onContinueAnyway = onContinueAnyway {
+                                        onContinueAnyway()
+                                    } else {
+                                        dismiss()
+                                    }
+                                }) {
+                                    Text("Continue Without Subscription")
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color.green)
+                                        .foregroundStyle(.white)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
                             }
-                            .buttonStyle(.bordered)
+                            .padding(.horizontal)
                         }
                         .padding(.vertical, 40)
-                        .padding(.horizontal)
                     } else {
-                    // Subscription tiers
-                    VStack(spacing: 20) {
-                        // Part-time tier
-                        SubscriptionTierCard(
-                            tierName: partTimeTitle,
-                            description: partTimeDescription,
-                            features: partTimeFeatures,
-                            monthlyPrice: "$2.99",
-                            yearlyPrice: "$30",
-                            monthlyProductId: "com.protip365.parttime.monthly",
-                            yearlyProductId: "com.protip365.parttime.Annual",
-                            isCurrentTier: subscriptionManager.currentTier == .partTime,
-                            isLoading: isLoading,
-                            selectedProductId: $selectedProductId,
-                            language: language,
-                            onPurchase: { productId in
-                                await purchase(productId: productId)
-                            }
-                        )
-
-                        // Full access tier
-                        SubscriptionTierCard(
-                            tierName: fullAccessTitle,
-                            description: fullAccessDescription,
-                            features: fullAccessFeatures,
-                            monthlyPrice: "$4.99",
-                            yearlyPrice: "$49.99",
-                            monthlyProductId: "com.protip365.monthly",
-                            yearlyProductId: "com.protip365.annual",
-                            isCurrentTier: subscriptionManager.currentTier == .fullAccess,
-                            isUpgrade: subscriptionManager.currentTier == .partTime,
-                            hasTrial: true,
-                            isLoading: isLoading,
-                            selectedProductId: $selectedProductId,
-                            language: language,
-                            onPurchase: { productId in
-                                await purchase(productId: productId)
-                            }
-                        )
-                    }
-                    .padding(.horizontal)
+                        // Single Premium tier
+                        VStack(spacing: 20) {
+                            SubscriptionTierCard(
+                                tierName: premiumTitle,
+                                description: premiumDescription,
+                                features: premiumFeatures,
+                                monthlyPrice: "$3.99",
+                                yearlyPrice: nil, // No yearly option for now
+                                monthlyProductId: "com.protip365.premium.monthly",
+                                yearlyProductId: nil,
+                                isCurrentTier: subscriptionManager.currentTier == .premium,
+                                hasTrial: true,
+                                isLoading: $isLoading,
+                                selectedProductId: $selectedProductId,
+                                language: language,
+                                onPurchase: { productId in
+                                    await purchase(productId: productId)
+                                }
+                            )
+                        }
+                        .padding(.horizontal)
                     }
 
                     // Restore purchases button
                     restorePurchasesButton
+
+                    // Don't show duplicate continue button since we already have it above
 
                     // Terms
                     termsText
@@ -156,15 +171,22 @@ struct SubscriptionTiersView: View {
                 .frame(width: 80, height: 80)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
 
-            Text("ProTip365")
-                .font(.largeTitle)
-                .fontWeight(.bold)
+            Text(headerTitle)
+                .font(.system(size: 28, weight: .bold))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Text(chooseYourPlan)
+            Text(headerSubtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 20)
         }
         .padding(.top)
+        .padding(.horizontal)
     }
 
     private var currentSubscriptionView: some View {
@@ -176,35 +198,34 @@ struct SubscriptionTiersView: View {
                     .fontWeight(.medium)
             }
 
-            if let remainingShifts = subscriptionManager.getRemainingShifts(),
-               let remainingEntries = subscriptionManager.getRemainingEntries() {
-                HStack(spacing: 20) {
-                    VStack {
-                        Text("\(remainingShifts)")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        Text(shiftsRemainingText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+            Text(enjoyingPremiumText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal)
+    }
 
-                    Divider()
-                        .frame(height: 40)
-
-                    VStack {
-                        Text("\(remainingEntries)")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        Text(entriesRemainingText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+    private var trialStatusView: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image(systemName: "clock.fill")
+                    .foregroundStyle(.blue)
+                Text(trialStatusText)
+                    .fontWeight(.medium)
             }
 
-            Text(upgradeToUnlimitedText)
+            Text("\(subscriptionManager.trialDaysRemaining) \(daysRemainingText)")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text(trialInfoText)
                 .font(.caption)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -300,10 +321,10 @@ struct SubscriptionTiersView: View {
             // This handles both new purchases and existing subscriptions
             if subscriptionManager.isSubscribed {
                 // If we now have a subscription, dismiss or show onboarding
-                if !subscriptionManager.isInTrialPeriod && subscriptionManager.currentTier == .none {
-                    showOnboarding = true
-                } else {
+                if !subscriptionManager.isInTrialPeriod {
                     dismiss()
+                } else {
+                    showOnboarding = true
                 }
             }
         }
@@ -313,9 +334,9 @@ struct SubscriptionTiersView: View {
 
     var navigationTitle: String {
         switch language {
-        case "fr": return "Abonnements"
-        case "es": return "Suscripciones"
-        default: return "Subscriptions"
+        case "fr": return "Abonnement Premium"
+        case "es": return "Suscripción Premium"
+        default: return "Premium Subscription"
         }
     }
 
@@ -327,126 +348,103 @@ struct SubscriptionTiersView: View {
         }
     }
 
-    var chooseYourPlan: String {
+    var headerTitle: String {
         switch language {
-        case "fr": return "Choisissez votre forfait"
-        case "es": return "Elige tu plan"
-        default: return "Choose your plan"
+        case "fr": return "Suivez Chaque Pourboire.\nGérez Chaque Quart.\nAccédez à Vos Données Partout."
+        case "es": return "Rastrea Cada Propina.\nGestiona Cada Turno.\nAccede a Tus Datos en Todas Partes."
+        default: return "Track Every Tip.\nManage Every Shift.\nAccess Your Data Anywhere."
+        }
+    }
+
+    var headerSubtitle: String {
+        switch language {
+        case "fr": return "L'application intelligente de suivi des pourboires conçue pour les professionnels de l'industrie des services qui veulent remplacer les reçus papier et les fichiers Excel par une gestion des données en temps réel sur tous leurs appareils."
+        case "es": return "La aplicación inteligente de seguimiento de propinas diseñada para profesionales de la industria de servicios que desean reemplazar recibos de papel y archivos de Excel con gestión de datos en tiempo real en todos sus dispositivos."
+        default: return "The smart tip tracking app designed for service industry professionals who want to replace paper slips and Excel files with real-time data management across all their devices."
         }
     }
 
     var currentPlanText: String {
         switch language {
-        case "fr": return "Forfait actuel: Temps partiel"
-        case "es": return "Plan actual: Tiempo parcial"
-        default: return "Current Plan: Part-time"
+        case "fr": return "Abonnement Premium Actif"
+        case "es": return "Suscripción Premium Activa"
+        default: return "Premium Subscription Active"
         }
     }
 
-    var shiftsRemainingText: String {
+    var enjoyingPremiumText: String {
         switch language {
-        case "fr": return "quarts restants"
-        case "es": return "turnos restantes"
-        default: return "shifts remaining"
+        case "fr": return "Profitez de toutes les fonctionnalités premium"
+        case "es": return "Disfruta de todas las funciones premium"
+        default: return "Enjoying all premium features"
         }
     }
 
-    var entriesRemainingText: String {
+    var trialStatusText: String {
         switch language {
-        case "fr": return "entrées restantes"
-        case "es": return "entradas restantes"
-        default: return "entries remaining"
+        case "fr": return "Période d'essai"
+        case "es": return "Período de prueba"
+        default: return "Trial Period"
         }
     }
 
-    var upgradeToUnlimitedText: String {
+    var daysRemainingText: String {
         switch language {
-        case "fr": return "Passez à l'accès illimité ci-dessous"
-        case "es": return "Actualiza a acceso ilimitado a continuación"
-        default: return "Upgrade to unlimited access below"
+        case "fr": return "jours restants"
+        case "es": return "días restantes"
+        default: return "days remaining"
         }
     }
 
-    var partTimeTitle: String {
+    var trialInfoText: String {
         switch language {
-        case "fr": return "Temps partiel"
-        case "es": return "Tiempo parcial"
-        default: return "Part-time"
+        case "fr": return "Profitez de toutes les fonctionnalités. Annulez à tout moment."
+        case "es": return "Disfruta de todas las funciones. Cancela en cualquier momento."
+        default: return "Enjoy all features. Cancel anytime."
         }
     }
 
-    var partTimeDescription: String {
+    var premiumTitle: String {
         switch language {
-        case "fr": return "Parfait pour les employés à temps partiel"
-        case "es": return "Perfecto para empleados a tiempo parcial"
-        default: return "Perfect for part-time employees"
+        case "fr": return "ProTip365 Premium"
+        case "es": return "ProTip365 Premium"
+        default: return "ProTip365 Premium"
         }
     }
 
-    var partTimeFeatures: [String] {
+    var premiumDescription: String {
         switch language {
-        case "fr": return [
-            "3 quarts par semaine",
-            "3 entrées par semaine",
-            "Analyses de base",
-            "Synchronisation cloud"
-        ]
-        case "es": return [
-            "3 turnos por semana",
-            "3 entradas por semana",
-            "Análisis básico",
-            "Sincronización en la nube"
-        ]
-        default: return [
-            "3 shifts per week",
-            "3 entries per week",
-            "Basic analytics",
-            "Cloud sync"
-        ]
+        case "fr": return "Tout ce dont vous avez besoin pour gérer vos revenus de pourboires"
+        case "es": return "Todo lo que necesitas para gestionar tus ingresos por propinas"
+        default: return "Everything you need to manage your tip income"
         }
     }
 
-    var fullAccessTitle: String {
-        switch language {
-        case "fr": return "Accès complet"
-        case "es": return "Acceso completo"
-        default: return "Full Access"
-        }
-    }
-
-    var fullAccessDescription: String {
-        switch language {
-        case "fr": return "Illimité pour les professionnels"
-        case "es": return "Ilimitado para profesionales"
-        default: return "Unlimited for professionals"
-        }
-    }
-
-    var fullAccessFeatures: [String] {
+    var premiumFeatures: [String] {
         switch language {
         case "fr": return [
-            "Quarts illimités",
-            "Entrées illimitées",
-            "Analyses avancées",
-            "Historique complet",
-            "Plusieurs employeurs",
-            "Synchronisation cloud"
+            "Suivi illimité des quarts de travail par jour",
+            "Gestion de plusieurs employeurs",
+            "Analyses avancées et rapports détaillés",
+            "Export de données (CSV/PDF)",
+            "Synchronisation automatique dans le cloud",
+            "Support prioritaire"
         ]
         case "es": return [
-            "Turnos ilimitados",
-            "Entradas ilimitadas",
-            "Análisis avanzado",
-            "Historial completo",
-            "Múltiples empleadores",
-            "Sincronización en la nube"
+            "Turnos ilimitados por día",
+            "Gestión de múltiples empleadores",
+            "Análisis avanzados e informes detallados",
+            "Exportación de datos (CSV/PDF)",
+            "Sincronización automática en la nube",
+            "Soporte prioritario"
         ]
         default: return [
-            "Unlimited shifts",
-            "Unlimited entries",
-            "Advanced analytics",
-            "Full history",
-            "Multiple employers",
-            "Cloud sync"
+            "Unlimited shifts per day",
+            "Multiple employer management",
+            "Advanced analytics and detailed reports",
+            "Data export (CSV/PDF)",
+            "Automatic cloud synchronization",
+            "Priority support"
         ]
         }
     }
@@ -469,17 +467,25 @@ struct SubscriptionTiersView: View {
 
     var termsString: String {
         switch language {
-        case "fr": return "Les abonnements se renouvellent automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
-        case "es": return "Las suscripciones se renuevan automáticamente. Cancele en cualquier momento en la configuración de App Store."
-        default: return "Subscriptions auto-renew. Cancel anytime in App Store settings."
+        case "fr": return "Essai gratuit de 7 jours, puis 3,99$/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+        case "es": return "Prueba gratuita de 7 días, luego $3.99/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+        default: return "7-day free trial, then $3.99/month. Subscription auto-renews. Cancel anytime in App Store settings."
+        }
+    }
+
+    var retryText: String {
+        switch language {
+        case "fr": return "Réessayer"
+        case "es": return "Reintentar"
+        default: return "Retry"
         }
     }
 
     var loadingProductsText: String {
         switch language {
-        case "fr": return "Chargement des forfaits..."
-        case "es": return "Cargando planes..."
-        default: return "Loading subscription plans..."
+        case "fr": return "Chargement de l'abonnement..."
+        case "es": return "Cargando suscripción..."
+        default: return "Loading subscription..."
         }
     }
 
@@ -493,228 +499,188 @@ struct SubscriptionTiersView: View {
 
     var noProductsText: String {
         switch language {
-        case "fr": return "Aucun forfait disponible"
-        case "es": return "No hay planes disponibles"
-        default: return "No Plans Available"
+        case "fr": return "Abonnement non disponible"
+        case "es": return "Suscripción no disponible"
+        default: return "Subscription Unavailable"
         }
     }
 
     var noProductsDetailText: String {
         switch language {
-        case "fr": return "Vérifiez votre connexion Internet et réessayez"
-        case "es": return "Verifique su conexión a Internet e intente nuevamente"
-        default: return "Check your internet connection and try again"
-        }
-    }
-
-    var retryText: String {
-        switch language {
-        case "fr": return "Réessayer"
-        case "es": return "Reintentar"
-        default: return "Retry"
+        case "fr": return "Veuillez vérifier votre connexion et réessayer"
+        case "es": return "Por favor, verifique su conexión e intente nuevamente"
+        default: return "Please check your connection and try again"
         }
     }
 
     var timeoutErrorText: String {
         switch language {
-        case "fr": return "Le chargement a pris trop de temps. Vérifiez votre connexion."
-        case "es": return "La carga tardó demasiado. Verifique su conexión."
-        default: return "Loading took too long. Check your connection."
+        case "fr": return "Le chargement a pris trop de temps. Veuillez réessayer."
+        case "es": return "La carga tardó demasiado. Por favor, inténtelo de nuevo."
+        default: return "Loading took too long. Please try again."
         }
     }
 
     var noProductsFoundText: String {
         switch language {
-        case "fr": return "Aucun produit trouvé. Les abonnements peuvent ne pas être disponibles dans votre région."
-        case "es": return "No se encontraron productos. Las suscripciones pueden no estar disponibles en su región."
-        default: return "No products found. Subscriptions may not be available in your region."
+        case "fr": return "Aucun abonnement trouvé. Assurez-vous d'être connecté à l'App Store."
+        case "es": return "No se encontró ninguna suscripción. Asegúrese de estar conectado a App Store."
+        default: return "No subscription found. Make sure you're connected to App Store."
         }
     }
 }
 
-// MARK: - Subscription Tier Card
-
+// Simplified Subscription Tier Card for single tier
 struct SubscriptionTierCard: View {
     let tierName: String
     let description: String
     let features: [String]
-    let monthlyPrice: String?
+    let monthlyPrice: String
     let yearlyPrice: String?
-    let monthlyProductId: String?
+    let monthlyProductId: String
     let yearlyProductId: String?
     let isCurrentTier: Bool
     var isUpgrade: Bool = false
     var hasTrial: Bool = false
-    let isLoading: Bool
+    @Binding var isLoading: Bool
     @Binding var selectedProductId: String?
     let language: String
     let onPurchase: (String) async -> Void
 
-    @State private var selectedBilling: String = "monthly"
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 20) {
             // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(tierName)
-                        .font(.title2)
+            VStack(spacing: 8) {
+                Text(tierName)
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                if hasTrial {
+                    HStack {
+                        Image(systemName: "gift.fill")
+                            .foregroundStyle(.green)
+                        Text(trialBadgeText)
+                            .foregroundStyle(.green)
+                            .fontWeight(.semibold)
+                    }
+                    .font(.caption)
+                }
+
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Price
+            VStack(spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(monthlyPrice)
+                        .font(.largeTitle)
                         .fontWeight(.bold)
-                    Text(description)
-                        .font(.caption)
+                    Text(perMonthText)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                if isCurrentTier {
-                    Text(currentText)
+
+                if hasTrial {
+                    Text(afterTrialText)
                         .font(.caption)
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.green.opacity(0.2))
-                        .foregroundStyle(.green)
-                        .clipShape(Capsule())
+                        .foregroundStyle(.secondary)
                 }
             }
 
             // Features
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 ForEach(features, id: \.self) { feature in
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.caption)
                             .foregroundStyle(.green)
+                            .font(.system(size: 20))
                         Text(feature)
                             .font(.subheadline)
+                        Spacer()
                     }
                 }
             }
+            .padding()
+            .background(Color(.tertiarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            // Pricing options
-            if yearlyPrice != nil {
-                Picker("Billing", selection: $selectedBilling) {
-                    Text(monthlyText).tag("monthly")
-                    Text(yearlyText).tag("yearly")
-                }
-                .pickerStyle(.segmented)
-            }
-
-            // Price and purchase button
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedBilling == "monthly" ? (monthlyPrice ?? "") : (yearlyPrice ?? ""))
-                        .font(.title3)
-                        .fontWeight(.bold)
-                    Text(selectedBilling == "monthly" ? perMonthText : perYearText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if hasTrial && !isCurrentTier && !isUpgrade {
-                        Text(trialText)
-                            .font(.caption2)
-                            .foregroundStyle(.tint)
-                    }
-                }
-
-                Spacer()
-
+            // Purchase button
+            if !isCurrentTier {
                 Button(action: {
-                    let productId = selectedBilling == "monthly" ? monthlyProductId : yearlyProductId
-                    if let productId = productId {
-                        Task {
-                            await onPurchase(productId)
-                        }
+                    Task {
+                        await onPurchase(monthlyProductId)
                     }
                 }) {
-                    if isLoading && selectedProductId == (selectedBilling == "monthly" ? monthlyProductId : yearlyProductId) {
+                    if isLoading && selectedProductId == monthlyProductId {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
                     } else {
-                        Text(buttonText)
-                            .fontWeight(.medium)
+                        Text(subscribeButtonText)
+                            .fontWeight(.semibold)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(isCurrentTier || isLoading)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .disabled(isLoading)
+            } else {
+                // Current plan indicator
+                Label(currentPlanText, systemImage: "checkmark.circle.fill")
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.green.opacity(0.1))
+                    .foregroundStyle(.green)
+                    .fontWeight(.medium)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(isCurrentTier ? Color.green : Color.clear, lineWidth: 2)
-        )
     }
 
     // Localization
-    var currentText: String {
+    var trialBadgeText: String {
         switch language {
-        case "fr": return "ACTUEL"
-        case "es": return "ACTUAL"
-        default: return "CURRENT"
-        }
-    }
-
-    var monthlyText: String {
-        switch language {
-        case "fr": return "Mensuel"
-        case "es": return "Mensual"
-        default: return "Monthly"
-        }
-    }
-
-    var yearlyText: String {
-        switch language {
-        case "fr": return "Annuel"
-        case "es": return "Anual"
-        default: return "Yearly"
+        case "fr": return "7 JOURS GRATUITS"
+        case "es": return "7 DÍAS GRATIS"
+        default: return "7 DAYS FREE"
         }
     }
 
     var perMonthText: String {
         switch language {
-        case "fr": return "par mois"
-        case "es": return "por mes"
-        default: return "per month"
+        case "fr": return "/mois"
+        case "es": return "/mes"
+        default: return "/month"
         }
     }
 
-    var perYearText: String {
+    var afterTrialText: String {
         switch language {
-        case "fr": return "par an (économisez 20%)"
-        case "es": return "por año (ahorra 20%)"
-        default: return "per year (save 20%)"
+        case "fr": return "après l'essai gratuit"
+        case "es": return "después de la prueba gratuita"
+        default: return "after free trial"
         }
     }
 
-    var trialText: String {
+    var subscribeButtonText: String {
         switch language {
-        case "fr": return "Essai gratuit de 7 jours"
-        case "es": return "Prueba gratis de 7 días"
-        default: return "7-day free trial"
+        case "fr": return "Commencer l'essai gratuit"
+        case "es": return "Comenzar prueba gratis"
+        default: return "Start Free Trial"
         }
     }
 
-    var buttonText: String {
-        if isCurrentTier {
-            switch language {
-            case "fr": return "Actuel"
-            case "es": return "Actual"
-            default: return "Current"
-            }
-        } else if isUpgrade {
-            switch language {
-            case "fr": return "Améliorer"
-            case "es": return "Mejorar"
-            default: return "Upgrade"
-            }
-        } else {
-            switch language {
-            case "fr": return "S'abonner"
-            case "es": return "Suscribir"
-            default: return "Subscribe"
-            }
+    var currentPlanText: String {
+        switch language {
+        case "fr": return "Plan actuel"
+        case "es": return "Plan actual"
+        default: return "Current Plan"
         }
     }
 }

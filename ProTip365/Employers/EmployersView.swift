@@ -17,6 +17,7 @@ struct EmployersView: View {
     @State private var showCannotDeleteAlert = false
     @State private var employerToDelete: Employer?
     @State private var employerShiftCounts: [UUID: Int] = [:]
+    @State private var employerEntryCounts: [UUID: Int] = [:]
 
     let isOnboarding: Bool
     private let localization = EmployersLocalization.shared
@@ -158,6 +159,7 @@ struct EmployersView: View {
             EmployerCard(
                 employer: employer,
                 shiftCount: employerShiftCounts[employer.id] ?? 0,
+                entryCount: employerEntryCounts[employer.id] ?? 0,
                 onEdit: { startEditingEmployer(employer) },
                 onDelete: { handleEmployerDeletion(employer) }
             )
@@ -181,8 +183,9 @@ struct EmployersView: View {
                 .execute()
                 .value
 
-            // Load shift counts for each employer
+            // Load shift counts and entry counts for each employer
             await loadShiftCounts(for: employers)
+            await loadEntryCounts(for: employers)
 
             isLoading = false
         } catch {
@@ -196,27 +199,80 @@ struct EmployersView: View {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
 
             for employer in employers {
-                // Count all income entries for this employer from the view
+                // Count all expected shifts for this employer
                 struct CountResult: Decodable {
-                    let shift_id: UUID?
+                    let id: UUID?
                 }
 
-                let entries: [CountResult] = try await SupabaseManager.shared.client
-                    .from("v_shift_income")
-                    .select("shift_id")
+                let shifts: [CountResult] = try await SupabaseManager.shared.client
+                    .from("expected_shifts")
+                    .select("id")
                     .eq("user_id", value: userId)
                     .eq("employer_id", value: employer.id)
                     .execute()
                     .value
 
-                employerShiftCounts[employer.id] = entries.count
+                employerShiftCounts[employer.id] = shifts.count
 
-                if entries.count > 0 {
-                    print("Employer \(employer.name) has \(entries.count) entries")
-                }
+                print("DEBUG: Employer \(employer.name) has \(shifts.count) shifts")
             }
         } catch {
             print("Error loading shift counts: \(error)")
+        }
+    }
+
+    func loadEntryCounts(for employers: [Employer]) async {
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            print("DEBUG: Loading entry counts for user \(userId)")
+
+            // Load all entries for this user in one query, then group by employer
+            struct EntryWithShift: Decodable {
+                let id: UUID
+                let shift_id: UUID
+                let expected_shifts: ExpectedShiftInfo
+            }
+
+            struct ExpectedShiftInfo: Decodable {
+                let employer_id: UUID?
+            }
+
+            // Single query to get all entries with their associated employer info
+            print("DEBUG: Fetching all entries with employer information...")
+            let entriesWithShifts: [EntryWithShift] = try await SupabaseManager.shared.client
+                .from("shift_entries")
+                .select("id, shift_id, expected_shifts!inner(employer_id)")
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+
+            print("DEBUG: Found \(entriesWithShifts.count) total entries")
+
+            // Reset all counts to 0 first
+            for employer in employers {
+                employerEntryCounts[employer.id] = 0
+            }
+
+            // Group entries by employer
+            for entry in entriesWithShifts {
+                if let employerId = entry.expected_shifts.employer_id {
+                    let currentCount = employerEntryCounts[employerId] ?? 0
+                    employerEntryCounts[employerId] = currentCount + 1
+                }
+            }
+
+            // Log results for each employer
+            for employer in employers {
+                let count = employerEntryCounts[employer.id] ?? 0
+                print("DEBUG: Employer \(employer.name) has \(count) entries")
+            }
+
+        } catch {
+            print("ERROR loading entry counts: \(error)")
+            // Fallback: set all to 0
+            for employer in employers {
+                employerEntryCounts[employer.id] = 0
+            }
         }
     }
 
@@ -340,9 +396,10 @@ struct EmployersView: View {
 
     private func handleEmployerDeletion(_ employer: Employer) {
         let shiftCount = employerShiftCounts[employer.id] ?? 0
+        let entryCount = employerEntryCounts[employer.id] ?? 0
         employerToDelete = employer
 
-        if shiftCount > 0 {
+        if shiftCount > 0 || entryCount > 0 {
             showCannotDeleteAlert = true
         } else {
             showDeleteAlert = true

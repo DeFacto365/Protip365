@@ -10,18 +10,30 @@ plugins {
 
 android {
     namespace = "com.protip365.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.protip365.monthly"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 35
+        versionCode = 22
+        versionName = "1.1.22"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // Use default debug keystore
+        }
+        create("release") {
+            storeFile = file("../APK/ProTip365-release-key.jks")
+            storePassword = "Volks.196977!"
+            keyAlias = "key0"
+            keyPassword = "Volks.196977!"
         }
     }
 
@@ -32,6 +44,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
@@ -98,6 +111,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:storage-kt:2.5.3")
     implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.3")
+    implementation("io.github.jan-tennert.supabase:functions-kt:2.5.3")
 
     // Ktor client for Supabase
     implementation("io.ktor:ktor-client-android:2.3.7")
@@ -155,6 +169,8 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))

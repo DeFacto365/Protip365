@@ -111,9 +111,9 @@ fun WorkDefaultsSection(
                 label = {
                     Text(
                         when (currentLanguage) {
-                            "fr" -> "Pourcentage de déduction moyen"
-                            "es" -> "Porcentaje de deducción promedio"
-                            else -> "Average Deduction Percentage"
+                            "fr" -> "Déductions moyennes"
+                            "es" -> "Deducciones promedio"
+                            else -> "Avg deductions"
                         }
                     )
                 },
@@ -134,9 +134,22 @@ fun WorkDefaultsSection(
                 modifier = Modifier.fillMaxWidth(),
                 isError = state.averageDeductionPercentage < 0 || state.averageDeductionPercentage > 100,
                 supportingText = if (state.averageDeductionPercentage < 0 || state.averageDeductionPercentage > 100) {
-                    { Text("Percentage must be between 0-100", color = MaterialTheme.colorScheme.error) }
+                    { Text(
+                        when (currentLanguage) {
+                            "fr" -> "Le pourcentage doit être entre 0-100"
+                            "es" -> "El porcentaje debe estar entre 0-100"
+                            else -> "Percentage must be between 0-100"
+                        },
+                        color = MaterialTheme.colorScheme.error
+                    ) }
                 } else {
-                    { Text("Typical tip-out percentage for your industry") }
+                    { Text(
+                        when (currentLanguage) {
+                            "fr" -> "Déductions fiscales et salariales moyennes (%)"
+                            "es" -> "Deducciones fiscales y salariales promedio (%)"
+                            else -> "Average tax and salary deductions (%)"
+                        }
+                    ) }
                 }
             )
             

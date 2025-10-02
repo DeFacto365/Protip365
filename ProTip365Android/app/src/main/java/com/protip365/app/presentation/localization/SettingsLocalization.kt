@@ -81,6 +81,56 @@ class SettingsLocalization(private val language: String) {
             else -> "About"
         }
 
+    // MARK: - Alert Settings
+    val alertLabel: String
+        get() = when (language) {
+            "fr" -> "Alerte"
+            "es" -> "Alerta"
+            else -> "Alert"
+        }
+
+    val alertNone: String
+        get() = when (language) {
+            "fr" -> "Aucune"
+            "es" -> "Ninguna"
+            else -> "None"
+        }
+
+    val alert15Minutes: String
+        get() = when (language) {
+            "fr" -> "15 minutes avant"
+            "es" -> "15 minutos antes"
+            else -> "15 minutes before"
+        }
+
+    val alert30Minutes: String
+        get() = when (language) {
+            "fr" -> "30 minutes avant"
+            "es" -> "30 minutos antes"
+            else -> "30 minutes before"
+        }
+
+    val alert1Hour: String
+        get() = when (language) {
+            "fr" -> "1 heure avant"
+            "es" -> "1 hora antes"
+            else -> "1 hour before"
+        }
+
+    val alert1Day: String
+        get() = when (language) {
+            "fr" -> "1 jour avant"
+            "es" -> "1 día antes"
+            else -> "1 day before"
+        }
+
+    val defaultAlertLabel: String
+        get() = when (language) {
+            "fr" -> "Alerte par défaut"
+            "es" -> "Alerta predeterminada"
+            else -> "Default Alert"
+        }
+
     // MARK: - Profile Settings
     val setNameText: String
         get() = when (language) {

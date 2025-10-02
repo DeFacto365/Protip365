@@ -74,7 +74,7 @@ class AppStoreValidator {
         let bundleVersion = plist["CFBundleShortVersionString"] as? String ?? ""
         let buildNumber = plist["CFBundleVersion"] as? String ?? ""
         
-        if bundleVersion == "1.1.17" && buildNumber == "17" {
+        if bundleVersion == "1.1.30" && buildNumber == "30" {
             print("   ✅ Version: \(bundleVersion) (\(buildNumber))")
         } else {
             errors.append("Version mismatch: \(bundleVersion) (\(buildNumber))")
@@ -83,10 +83,9 @@ class AppStoreValidator {
         // Check required keys
         let requiredKeys = [
             "CFBundleDisplayName",
-            "CFBundleIdentifier", 
+            "CFBundleIdentifier",
             "NSFaceIDUsageDescription",
-            "NSLocalNetworkUsageDescription",
-            "NSUserTrackingUsageDescription"
+            "NSLocalNetworkUsageDescription"
         ]
         
         for key in requiredKeys {
@@ -127,13 +126,13 @@ class AppStoreValidator {
             let price = subscription["displayPrice"] as? String ?? ""
             let period = subscription["recurringSubscriptionPeriod"] as? String ?? ""
             
-            if productID == "com.protip365.monthly" {
+            if productID == "com.protip365.premium.monthly" {
                 print("   ✅ Product ID: \(productID)")
             } else {
                 errors.append("Incorrect Product ID: \(productID)")
             }
             
-            if price == "4.99" {
+            if price == "3.99" {
                 print("   ✅ Price: $\(price)")
             } else {
                 warnings.append("Price mismatch: $\(price)")
@@ -164,7 +163,7 @@ class AppStoreValidator {
     private func validateAppIcons(_ errors: inout [String], _ warnings: inout [String]) {
         print("\n🖼️  Validating App Icons...")
         
-        let iconPath = "ProTip365/Assets.xcassets/AppIcon.appiconset/ProTip365Icon.jpg"
+        let iconPath = "ProTip365/Assets.xcassets/AppIcon.appiconset/ProTip365Icon_1024.png"
         
         if FileManager.default.fileExists(atPath: iconPath) {
             print("   ✅ App icon exists: \(iconPath)")
@@ -209,8 +208,7 @@ class AppStoreValidator {
         
         let privacyKeys = [
             "NSFaceIDUsageDescription",
-            "NSLocalNetworkUsageDescription", 
-            "NSUserTrackingUsageDescription",
+            "NSLocalNetworkUsageDescription",
             "NSPhotoLibraryUsageDescription",
             "NSCameraUsageDescription"
         ]
@@ -236,20 +234,20 @@ class AppStoreValidator {
         // Check for version consistency
         let marketingVersionMatches = projectContent.components(separatedBy: .newlines)
             .filter { $0.contains("MARKETING_VERSION") }
-            .allSatisfy { $0.contains("1.1.17") }
+            .allSatisfy { $0.contains("1.1.30") }
         
         let buildVersionMatches = projectContent.components(separatedBy: .newlines)
             .filter { $0.contains("CURRENT_PROJECT_VERSION") }
-            .allSatisfy { $0.contains("17") }
+            .allSatisfy { $0.contains("30") }
         
         if marketingVersionMatches {
-            print("   ✅ Marketing Version: 1.1.17")
+            print("   ✅ Marketing Version: 1.1.30")
         } else {
             errors.append("Marketing version mismatch in project settings")
         }
         
         if buildVersionMatches {
-            print("   ✅ Build Version: 17")
+            print("   ✅ Build Version: 30")
         } else {
             errors.append("Build version mismatch in project settings")
         }

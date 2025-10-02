@@ -1,12 +1,7 @@
 package com.protip365.app.presentation.dashboard
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,49 +10,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.protip365.app.R
+import com.protip365.app.utils.localizedString
 import java.text.NumberFormat
 import java.util.Locale
 
-data class DashboardStats(
-    val totalRevenue: Double = 0.0,
-    val totalWages: Double = 0.0,
-    val totalTips: Double = 0.0,
-    val totalHours: Double = 0.0,
-    val totalSales: Double = 0.0,
-    val totalTipOut: Double = 0.0,
-    val otherIncome: Double = 0.0,
-    val averageTipPercentage: Double = 0.0,
-    val hourlyRate: Double = 0.0,
-    val revenueChange: Double = 0.0,
-    val wagesChange: Double = 0.0,
-    val tipsChange: Double = 0.0,
-    val hoursChange: Double = 0.0,
-    val salesChange: Double = 0.0,
-    val tipOutChange: Double = 0.0,
-    val otherChange: Double = 0.0
-)
-
-data class UserTargets(
-    val tipTargetPercentage: Double = 20.0,
-    val targetSalesDaily: Double? = null,
-    val targetSalesWeekly: Double? = null,
-    val targetSalesMonthly: Double? = null,
-    val targetHoursDaily: Double? = null,
-    val targetHoursWeekly: Double? = null,
-    val targetHoursMonthly: Double? = null
-)
-
+/**
+ * iOS-style Dashboard Stats Cards
+ * Matches the exact layout from iOS DashboardStatsCards.swift
+ */
 @Composable
 fun DashboardStatsCards(
-    currentStats: DashboardStats,
-    userTargets: UserTargets,
+    currentStats: DashboardState,
+    userTargets: DashboardMetrics.UserTargets,
     selectedPeriod: Int,
     monthViewType: Int,
     averageDeductionPercentage: Double,
@@ -65,282 +34,269 @@ fun DashboardStatsCards(
     currentLanguage: String = "en",
     onDetailClick: (String) -> Unit = {}
 ) {
-    Column(
+    // iOS-style linear list layout in a single card
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Main revenue card
-        MainRevenueCard(
-            totalRevenue = currentStats.totalRevenue,
-            revenueChange = currentStats.revenueChange,
-            selectedPeriod = selectedPeriod,
-            currentLanguage = currentLanguage,
-            onClick = { onDetailClick("revenue") }
-        )
-
-        // Stats grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Salaire/Gages"
-                        "es" -> "Salario/Sueldos"
-                        else -> "Salary/Wages"
-                    },
-                    value = formatCurrency(currentStats.totalWages),
-                    change = currentStats.wagesChange,
-                    icon = Icons.Default.AttachMoney,
-                    onClick = { onDetailClick("wages") }
-                )
-            }
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Pourboires"
-                        "es" -> "Propinas"
-                        else -> "Tips"
-                    },
-                    value = formatCurrency(currentStats.totalTips),
-                    subtitle = "${String.format("%.1f", currentStats.averageTipPercentage)}%",
-                    change = currentStats.tipsChange,
-                    icon = Icons.Default.MonetizationOn,
-                    targetPercentage = if (currentStats.totalSales > 0)
-                        (currentStats.totalTips / currentStats.totalSales * 100) / userTargets.tipTargetPercentage * 100
-                    else null,
-                    onClick = { onDetailClick("tips") }
-                )
-            }
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Heures"
-                        "es" -> "Horas"
-                        else -> "Hours"
-                    },
-                    value = String.format("%.1f", currentStats.totalHours),
-                    subtitle = "${formatCurrency(currentStats.hourlyRate)}/hr",
-                    change = currentStats.hoursChange,
-                    icon = Icons.Default.Schedule,
-                    targetPercentage = getTargetProgress(
-                        currentStats.totalHours,
-                        userTargets,
-                        selectedPeriod,
-                        "hours"
-                    ),
-                    onClick = { onDetailClick("hours") }
-                )
-            }
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Ventes"
-                        "es" -> "Ventas"
-                        else -> "Sales"
-                    },
-                    value = formatCurrency(currentStats.totalSales),
-                    change = currentStats.salesChange,
-                    icon = Icons.Default.ShoppingCart,
-                    targetPercentage = getTargetProgress(
-                        currentStats.totalSales,
-                        userTargets,
-                        selectedPeriod,
-                        "sales"
-                    ),
-                    onClick = { onDetailClick("sales") }
-                )
-            }
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Partage"
-                        "es" -> "Compartir"
-                        else -> "Tip-out"
-                    },
-                    value = formatCurrency(currentStats.totalTipOut),
-                    change = currentStats.tipOutChange,
-                    icon = Icons.Default.Share,
-                    onClick = { onDetailClick("tipout") }
-                )
-            }
-            item {
-                StatCard(
-                    title = when (currentLanguage) {
-                        "fr" -> "Autre"
-                        "es" -> "Otro"
-                        else -> "Other"
-                    },
-                    value = formatCurrency(currentStats.otherIncome),
-                    change = currentStats.otherChange,
-                    icon = Icons.Default.MoreHoriz,
-                    onClick = { onDetailClick("other") }
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MainRevenueCard(
-    totalRevenue: Double,
-    revenueChange: Double,
-    selectedPeriod: Int,
-    currentLanguage: String,
-    onClick: () -> Unit
-) {
-    // Removed background - just text on transparent background
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp)
-            .clickable { onClick() },
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = when (currentLanguage) {
-                "fr" -> "Revenu Total"
-                "es" -> "Ingresos Totales"
-                else -> "Total Revenue"
-            },
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = formatCurrency(totalRevenue),
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        if (revenueChange != 0.0) {
-            Spacer(modifier = Modifier.height(8.dp))
-            ChangeIndicator(change = revenueChange)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun StatCard(
-    title: String,
-    value: String,
-    subtitle: String? = null,
-    change: Double,
-    icon: ImageVector,
-    targetPercentage: Double? = null,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Left side - Text content
-            Column(
-                modifier = Modifier.weight(1f)
+            // Sales section
+            CompactStatRow(
+                title = localizedString(R.string.sales_label),
+                value = formatCurrency(currentStats.totalSales),
+                icon = Icons.Default.ShoppingCart,
+                iconColor = Color(0xFF9C27B0), // Purple
+                subtitle = if (selectedPeriod == 0 && userTargets.dailySales > 0) {
+                    String.format("%.0f%% of target", (currentStats.totalSales / userTargets.dailySales) * 100)
+                } else null
+            )
+
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+            // Expected Net Salary section
+            val netSalary = currentStats.totalWages * (1 - averageDeductionPercentage / 100)
+            CompactStatRow(
+                title = localizedString(R.string.expected_net_salary),
+                value = formatCurrency(netSalary),
+                icon = Icons.Default.AttachMoney,
+                iconColor = Color(0xFF2196F3), // Blue
+                subtitle = String.format(
+                    "Gross Salary: %s",
+                    formatCurrency(currentStats.totalWages)
+                )
+            )
+
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+            // Hours Worked section
+            CompactStatRow(
+                title = localizedString(R.string.hours_worked_label),
+                value = String.format("%.1f hours", currentStats.totalHours),
+                icon = Icons.Default.Schedule,
+                iconColor = Color(0xFF2196F3), // Blue
+                subtitle = if (selectedPeriod == 0 && userTargets.dailyHours > 0) {
+                    String.format("%.0f%% of target", (currentStats.totalHours / userTargets.dailyHours) * 100)
+                } else null
+            )
+
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+            // Tips section
+            CompactStatRow(
+                title = localizedString(R.string.tips_label),
+                value = formatCurrency(currentStats.totalTips),
+                icon = Icons.Default.MonetizationOn,
+                iconColor = Color(0xFF4CAF50), // Green
+                subtitle = if (currentStats.averageTipPercentage > 0) {
+                    if (selectedPeriod == 0 && userTargets.tipTargetPercentage > 0) {
+                        String.format("%.1f%% of sales • Target: %.0f%%",
+                            currentStats.averageTipPercentage,
+                            userTargets.tipTargetPercentage)
+                    } else {
+                        String.format("%.1f%% of sales", currentStats.averageTipPercentage)
+                    }
+                } else null
+            )
+
+            // Other section (only if there's other income)
+            if (currentStats.otherIncome > 0) {
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                CompactStatRow(
+                    title = localizedString(R.string.other_label),
+                    value = formatCurrency(currentStats.otherIncome),
+                    icon = Icons.Default.Edit,
+                    iconColor = Color(0xFF2196F3), // Blue
+                    subtitle = null
+                )
+            }
+
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+            // Subtotal
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    text = localizedString(R.string.subtotal_label).uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    text = formatCurrency(
+                        netSalary + currentStats.totalTips + currentStats.otherIncome
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                if (subtitle != null) {
+            }
+
+            // Tip Out section (only if there's tip out)
+            if (currentStats.totalTipOut > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RemoveCircle,
+                            contentDescription = null,
+                            tint = Color(0xFFF44336), // Red
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = localizedString(R.string.tip_out_label),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFF44336),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                     Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
-                targetPercentage?.let { percentage ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { (percentage / 100.0).coerceIn(0.0, 1.0).toFloat() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                        color = when {
-                            percentage >= 100 -> Color(0xFF4CAF50)
-                            percentage >= 75 -> Color(0xFFFFC107)
-                            else -> MaterialTheme.colorScheme.primary
-                        }
+                        text = "-${formatCurrency(currentStats.totalTipOut)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFF44336)
                     )
                 }
             }
-            
-            // Right side - Icon and change indicator
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+
+            Divider(
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                thickness = 1.dp
+            )
+
+            // Total Income
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = localizedString(R.string.total_income_label).uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = formatCurrency(currentStats.totalRevenue),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            // Show Details Button
+            Button(
+                onClick = { onDetailClick("total") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(12.dp),
+                enabled = currentStats.hasData
             ) {
                 Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    modifier = Modifier.size(32.dp), // Made bigger
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    imageVector = Icons.Default.List,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
-                if (change != 0.0) {
-                    ChangeIndicator(change = change, small = true)
-                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = localizedString(R.string.show_details),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ChangeIndicator(change: Double, small: Boolean = false) {
-    val isPositive = change > 0
-    val color by animateColorAsState(
-        targetValue = if (isPositive) Color(0xFF4CAF50) else Color(0xFFF44336),
-        label = "changeColor"
-    )
-
+private fun CompactStatRow(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    iconColor: Color,
+    subtitle: String? = null
+) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(color.copy(alpha = 0.1f))
-            .padding(horizontal = if (small) 6.dp else 8.dp, vertical = if (small) 2.dp else 4.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
-            contentDescription = null,
-            modifier = Modifier.size(if (small) 12.dp else 16.dp),
-            tint = color
-        )
-        Spacer(modifier = Modifier.width(2.dp))
+        // Left side - Icon and title
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        iconColor.copy(alpha = 0.15f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
+
+        // Right side - Value
         Text(
-            text = "${if (isPositive) "+" else ""}${String.format("%.1f", change)}%",
-            style = if (small) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
-            color = color,
-            fontWeight = FontWeight.Medium
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -348,27 +304,4 @@ private fun ChangeIndicator(change: Double, small: Boolean = false) {
 private fun formatCurrency(amount: Double): String {
     val format = NumberFormat.getCurrencyInstance(Locale.US)
     return format.format(amount)
-}
-
-private fun getTargetProgress(
-    value: Double,
-    targets: UserTargets,
-    selectedPeriod: Int,
-    type: String
-): Double? {
-    return when (type) {
-        "sales" -> when (selectedPeriod) {
-            0 -> targets.targetSalesDaily?.let { (value / it) * 100 }
-            1 -> targets.targetSalesWeekly?.let { (value / it) * 100 }
-            2 -> targets.targetSalesMonthly?.let { (value / it) * 100 }
-            else -> null
-        }
-        "hours" -> when (selectedPeriod) {
-            0 -> targets.targetHoursDaily?.let { (value / it) * 100 }
-            1 -> targets.targetHoursWeekly?.let { (value / it) * 100 }
-            2 -> targets.targetHoursMonthly?.let { (value / it) * 100 }
-            else -> null
-        }
-        else -> null
-    }
 }

@@ -73,6 +73,21 @@ data class UserProfile(
     @SerialName("default_alert_minutes")
     val defaultAlertMinutes: Int? = 60,
 
+    @SerialName("onboarding_completed")
+    val onboardingCompleted: Boolean? = false,
+
+    @SerialName("profile_photo_url")
+    val profilePhotoURL: String? = null,
+
+    @SerialName("subscription_tier")
+    val subscriptionTier: String = "none", // none, parttime, full
+
+    @SerialName("subscription_status")
+    val subscriptionStatus: String = "active",
+
+    @SerialName("subscription_expires_at")
+    val subscriptionExpiresAt: String? = null,
+
     @SerialName("metadata")
     @Contextual
     val metadata: Map<String, @Contextual Any?>? = null,
@@ -87,5 +102,17 @@ data class UserProfile(
         require(weekStart in 0..6) { "Week start must be between 0 and 6" }
         require(averageDeductionPercentage in 0.0..100.0) { "Average deduction percentage must be between 0 and 100" }
         require(preferredLanguage in listOf("en", "fr", "es")) { "Preferred language must be en, fr, or es" }
+        require(subscriptionTier in listOf("none", "parttime", "full")) { "Subscription tier must be none, parttime, or full" }
+        require(subscriptionStatus in listOf("active", "expired", "cancelled")) { "Subscription status must be active, expired, or cancelled" }
     }
 }
+
+/**
+ * Data class for checking onboarding completion status.
+ * Used to prevent showing onboarding to users who have already completed it.
+ */
+@Serializable
+data class OnboardingCheck(
+    @SerialName("onboarding_completed")
+    val onboarding_completed: Boolean? = false
+)

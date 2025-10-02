@@ -15,4 +15,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "ProTip365"
 include(":app")
-include(":app")

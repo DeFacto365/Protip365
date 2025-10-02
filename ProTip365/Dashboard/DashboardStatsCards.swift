@@ -13,6 +13,8 @@ struct DashboardStatsCards: View {
     @Binding var detailViewData: DashboardMetrics.DetailViewData?
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @AppStorage("weekStart") private var weekStartDay: Int = 0
+    @AppStorage("hasVariableSchedule") private var hasVariableSchedule: Bool = false
 
     var periodText: String {
         DashboardMetrics.getPeriodText(
@@ -20,6 +22,20 @@ struct DashboardStatsCards: View {
             monthViewType: monthViewType,
             localization: localization
         )
+    }
+
+    // IMPORTANT: These use the same logic as DashboardCharts.loadAllStats()
+    // for consistent week calculation across the app
+    var periodStartDate: Date? {
+        guard selectedPeriod == 1 else { return nil } // Only for week view
+        // Uses the same getStartOfWeek function as data loading
+        return DashboardMetrics.getStartOfWeek(for: Date(), weekStartDay: weekStartDay)
+    }
+
+    var periodEndDate: Date? {
+        guard selectedPeriod == 1, let startDate = periodStartDate else { return nil }
+        // Week is always 7 days (start + 6 days), matching DashboardCharts logic
+        return Calendar.current.date(byAdding: .day, value: 6, to: startDate)
     }
 
     var body: some View {
@@ -40,6 +56,16 @@ struct DashboardStatsCards: View {
 
     private var unifiedCompactCards: some View {
         VStack(spacing: 12) {
+            // Performance Card - NEW
+            DashboardPerformanceCard(
+                currentStats: currentStats,
+                userTargets: userTargets,
+                selectedPeriod: selectedPeriod,
+                monthViewType: monthViewType,
+                hasVariableSchedule: hasVariableSchedule,
+                localization: localization
+            )
+
             // Sales at the top
             salesSection
 
@@ -195,6 +221,8 @@ struct DashboardStatsCards: View {
                     shifts: currentStats.shifts.sorted { $0.shift_date > $1.shift_date },
                     detailType: "total",
                     periodText: periodText,
+                    periodStartDate: periodStartDate,
+                    periodEndDate: periodEndDate,
                     onEditShift: { shift in
                         // Handle edit if needed
                     }
@@ -220,7 +248,9 @@ struct DashboardStatsCards: View {
                     detailViewData = DashboardMetrics.DetailViewData(
                         type: "total",
                         shifts: currentStats.shifts,
-                        period: periodText
+                        period: periodText,
+                        startDate: periodStartDate,
+                        endDate: periodEndDate
                     )
                     HapticFeedback.light()
                 }) {

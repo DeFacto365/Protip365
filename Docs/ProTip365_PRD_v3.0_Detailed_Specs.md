@@ -1,27 +1,61 @@
-# ProTip365 - Detailed iOS Implementation Specifications
-**Version:** 3.1
-**Date:** December 2024
-**Platform:** iOS (Fully Implemented v1.0.23), Android (Implementation Guide)
-**Purpose:** Complete technical specification with latest updates for Android development
+# ProTip365 - Product Requirements Document & Technical Specifications
+**Version:** 4.1
+**Date:** October 2, 2025
+**Platform:** iOS (v1.1.31 - Production Ready), Android (In Development)
+**Purpose:** Complete product specification and technical implementation guide
 
 ---
 
 ## Table of Contents
-1. [App Architecture Overview](#app-architecture-overview)
-2. [Core Systems & Managers](#core-systems--managers)
-3. [Authentication System](#authentication-system)
-4. [Localization System](#localization-system)
-5. [Security System](#security-system)
-6. [Subscription System](#subscription-system)
-7. [Navigation System](#navigation-system)
-8. [Page-by-Page Specifications](#page-by-page-specifications)
-9. [Data Models & Database](#data-models--database)
-10. [UI Components & Design System](#ui-components--design-system)
-11. [Android Implementation Roadmap](#android-implementation-roadmap)
+1. [Product Overview](#product-overview)
+2. [App Architecture](#app-architecture)
+3. [Core Systems & Managers](#core-systems--managers)
+4. [Feature Specifications](#feature-specifications)
+5. [Data Models & Database](#data-models--database)
+6. [UI Components & Design System](#ui-components--design-system)
+7. [Technical Implementation Details](#technical-implementation-details)
+8. [Android Development Guide](#android-development-guide)
 
 ---
 
-## App Architecture Overview
+## Product Overview
+
+### What is ProTip365?
+ProTip365 is a comprehensive tip and shift tracking application designed for service industry professionals. It enables users to:
+- Track shifts, hours, and earnings across multiple employers
+- Monitor tips, sales, and performance metrics
+- Set and achieve income targets
+- Analyze performance trends over time
+- Export data for tax purposes and record keeping
+
+### Target Audience
+- Restaurant servers and bartenders
+- Delivery drivers (food delivery, rideshare)
+- Hotel and hospitality staff
+- Any tipped service industry professional
+
+### Key Value Propositions
+1. **Simplified Income Tracking**: Quick shift entry with comprehensive financial data
+2. **Multi-Employer Support**: Track work across multiple jobs seamlessly
+3. **Performance Analytics**: Understand earnings patterns and optimize performance
+4. **Tax Preparation**: Export capabilities for accurate tax reporting
+5. **Privacy & Security**: PIN and biometric protection for sensitive financial data
+
+### Current Status
+- **iOS**: v1.1.31 (Production, App Store)
+- **Android**: In active development
+- **Subscription Model**: $3.99/month with 7-day free trial
+- **Platform**: Supabase (PostgreSQL + Auth + Realtime)
+
+### Recent Updates (v1.1.31)
+- Fixed subscription page appearing twice on app launch
+- Fixed shift status being overwritten when editing existing shifts
+- Fixed today's shifts incorrectly marked as "completed"
+- Added per-shift sales target customization
+
+---
+
+## App Architecture
 
 ### Main App Structure
 ```
@@ -100,203 +134,66 @@ func deleteShift(id: UUID) async throws
 **Features:**
 - Product loading and purchasing
 - Subscription status tracking
-- Receipt validation
-- Part-time limit enforcement (3 shifts/3 entries per week)
-- Trial period management
+- Receipt validation with Apple servers
+- 7-day free trial management
+- Trial period validation
+- Optimized subscription checking to prevent duplicate flows
+
+**Critical Implementation:**
+- Subscription checking happens ONCE per app launch
+- Auth state listener prevents duplicate subscription checks
+- Guards against concurrent subscription validation
+- Ensures subscription screen doesn't appear twice on launch
 
 ### 4. AlertManager (ObservableObject)
 **File:** `Managers/AlertManager.swift`
-**Purpose:** In-app notification system
+**Purpose:** Comprehensive in-app notification and alert system
 
 **Alert Types:**
-- Missing shift reminders
-- Target achievement celebrations
-- Personal best notifications
+- `shiftReminder`: Upcoming shift notifications with navigation
+- `missingShift`: Reminders for missing shift data
+- `incompleteShift`: Alerts for incomplete shift entries
+- `targetAchieved`: Target achievement celebrations
+- `personalBest`: Personal record notifications
+- `reminder`: General reminders
 - Subscription limit warnings
-- Weekly summaries
 
----
+**Key Features:**
+- Database-backed persistent alerts (synced across devices)
+- Visual notification bell with badge count
+- Interactive alert list with swipe-to-delete
+- Direct navigation to relevant content
+- Auto-deletion after user action
+- Real-time badge updates (iOS 17+ compatible)
+- Full localization support (EN/FR/ES)
 
-## Authentication System
-
-### AuthView Structure
-**File:** `Authentication/AuthView.swift`
-**Components:**
-1. Language selector (top right)
-2. Logo and welcome text
-3. Email/password fields
-4. Sign up/Sign in toggle
-5. Forgot password link
-6. Welcome sign-up flow
-
-**AddEntryView Updates:**
-**File:** `AddEntry/AddEntryView.swift`
-- "Didn't work" option only shown for new entries (not in edit mode)
-- Delete button added to header when editing
-- Delete confirmation dialog with localization
-- Proper date selection from calendar
-- Financial data (sales, tips, etc.) saved to shifts table
-- Presentation detent set to .large for full-screen view
-
-### Authentication Flow
-```
-1. Language Selection (EN/FR/ES)
-2. Email/Password Entry
-3. Form Validation
-4. Supabase Authentication
-5. User Profile Creation
-6. Security Setup (PIN/Biometric)
-7. Subscription Selection
-8. Main App Entry
-```
-
-### Key Features:
-- **Real-time Validation**: Email format, password strength
-- **Loading States**: Disabled UI during authentication
-- **Error Handling**: User-friendly error messages
-- **Password Reset**: Email-based reset flow
-- **Welcome Flow**: Guided setup for new users
-
-### Localization Support:
-- All text dynamically changes based on selected language
-- Language preference persisted to database
-- System language auto-detection on first launch
-
----
-
-## Localization System
-
-### Implementation Structure
-```
-Localization/
-├── en.lproj/Localizable.strings
-├── fr.lproj/Localizable.strings
-└── es.lproj/Localizable.strings
-```
-
-### Language Management
-**File:** `ProTip365App.swift`
-- Auto-detects iOS system language on first launch
-- Supports EN, FR, ES with fallback to English
-- Syncs with system language changes
-- Persists user preference to Supabase database
-
-### Dynamic Localization Pattern
+**Alert Data Structure:**
 ```swift
-@AppStorage("language") private var language = "en"
-
-var welcomeText: String {
-    switch language {
-    case "fr": return "Bienvenue dans ProTip365"
-    case "es": return "Bienvenido a ProTip365"
-    default: return "Welcome to ProTip365"
-    }
+struct DatabaseAlert {
+    let id: UUID
+    let user_id: UUID
+    let alert_type: String
+    let title: String
+    let message: String
+    let action: String?
+    let data: Data? // JSON encoded additional data
+    let created_at: Date
+    let read: Bool
 }
 ```
 
-### Localization Files Structure
-Each `.lproj` folder contains:
-- `Localizable.strings`: UI text translations
-- `InfoPlist.strings`: System-level translations
-- Face ID usage descriptions
-- Local network usage descriptions
-
+**Navigation System:**
+- Alerts can contain navigation data (e.g., shiftId)
+- Tapping alerts navigates directly to relevant content
+- Automatic tab switching and view presentation
+- Timing-coordinated navigation for smooth UX
 ---
 
-## Security System
+## Feature Specifications
 
-### EnhancedLockScreenView
-**File:** `Authentication/EnhancedLockScreenView.swift`
-**Features:**
-- Blurred background with app content
-- Biometric authentication prompt
-- PIN entry fallback
-- Haptic feedback
-- Auto-retry on failure
+### Authentication & Onboarding
 
-### PIN Entry System
-**File:** `Authentication/PINEntryView.swift`
-**Features:**
-- 4-digit PIN input
-- Secure keypad
-- Visual feedback
-- Haptic responses
-- Error handling
-
-### Security Integration
-- Auto-lock on app background/inactive
-- Biometric re-authentication on app resume
-- Secure PIN storage using CryptoKit
-- Keychain integration for persistence
-
----
-
-## Subscription System
-
-### SubscriptionManager Features
-**File:** `Subscription/SubscriptionManager.swift`
-- StoreKit 2 integration
-- Product loading and purchasing
-- Subscription status validation
-- Receipt verification
-- Part-time limit enforcement
-- Trial period management
-
-### Subscription Tiers
-**Part-Time Tier:**
-- $2.99/month, $30/year
-- 3 shifts per week limit
-- 3 entries per week limit
-- Single employer
-- Basic features
-
-**Full Access Tier:**
-- $4.99/month, $49.99/year
-- Unlimited shifts/entries
-- Multiple employers
-- Advanced analytics
-- Data export
-
-### SubscriptionTiersView
-**File:** `Subscription/SubscriptionTiersView.swift`
-- Product cards with feature comparison
-- Pricing display
-- Trial period information
-- Purchase flow integration
-- Upgrade/downgrade handling
-
----
-
-## Navigation System
-
-### iOS26LiquidGlassTabBar
-**File:** `Components/iOS26LiquidGlassTabBar.swift`
-**Features:**
-- Liquid glass design with blur effects
-- Smooth animations and transitions
-- Scroll-aware behavior
-- Dynamic tab visibility (Employers conditional)
-- Haptic feedback
-
-### Tab Structure
-```
-Dashboard → DashboardView
-Calendar → CalendarShiftsView
-Employers → EmployersView (conditional)
-Calculator → TipCalculatorView
-Settings → SettingsView
-```
-
-### iPad Navigation
-- Uses `NavigationSplitView` for sidebar navigation
-- Persistent sidebar with list-style navigation
-- Detail view for main content
-
----
-
-## Page-by-Page Specifications
-
-### 1. Authentication Page (AuthView)
+#### 1. Authentication Page (AuthView)
 
 **File:** `Authentication/AuthView.swift`
 **Components:**
@@ -334,7 +231,22 @@ Settings → SettingsView
 - Success: Navigation to main app
 - Validation: Real-time field validation
 
-### 2. Dashboard Page (DashboardView)
+**Localization:**
+- Auto-detects iOS system language on first launch
+- Supports EN, FR, ES with fallback to English
+- Syncs with system language changes
+- Persists user preference to Supabase
+
+**Security:**
+- Biometric authentication (Face ID / Touch ID)
+- 4-digit PIN protection
+- Auto-lock on background/inactive
+- CryptoKit for PIN hashing
+- Keychain integration
+
+### Core Features
+
+#### 2. Dashboard Page (DashboardView)
 
 **File:** `Dashboard/DashboardView.swift`
 **Components:**
@@ -369,11 +281,12 @@ Settings → SettingsView
    - "Add First Shift" button
 
 **Data Sources:**
-- Loads from v_shift_income view
+- Loads from `expected_shifts` joined with `shift_entries`
 - Handles optional fields with fallback values
 - Calculated metrics include deduction percentages
 - Target comparisons for daily metrics
 - Historical trends
+- Simplified queries with better performance
 
 **DashboardMetrics Helper:**
 - Calculates stats with optional field handling
@@ -381,7 +294,12 @@ Settings → SettingsView
 - Manages target calculations by period
 - Handles NET vs GROSS income display
 
-### 3. Calendar Page (CalendarShiftsView)
+**Navigation:**
+- iOS26LiquidGlassTabBar for iPhone
+- NavigationSplitView for iPad
+- Conditional Employers tab (when multi-employer enabled)
+
+#### 3. Calendar Page (CalendarShiftsView)
 
 **File:** `Calendar/CalendarShiftsView.swift`
 **Components:**
@@ -416,13 +334,84 @@ Settings → SettingsView
    - Fully localized (EN/FR/ES)
 
 **Features:**
-- Loads directly from shifts table for calendar display
+- Loads directly from `expected_shifts` table for calendar display
 - Color-coded by shift status (not employer)
 - Selected date passes to AddEntryView
 - Delete from edit view with confirmation
 - Proper padding to avoid tab bar overlap
 
-### 4. Settings Page (SettingsView)
+#### 3.1 Add/Edit Shift (AddShiftView)
+
+**File:** `AddShift/AddShiftView.swift`
+**Data Manager:** `AddShift/AddShiftDataManager.swift`
+
+**Components:**
+1. **Header**
+   - Cancel button (X icon)
+   - Title (New Shift / Edit Shift)
+   - Delete button (when editing)
+   - Save button (checkmark icon)
+
+2. **Shift Details Section**
+   - Employer selection (dropdown)
+   - Notes/comments (text field)
+   - Sales target (optional per-shift override, defaults to user's daily target)
+
+3. **Time Section**
+   - Start date picker
+   - Start time picker
+   - End date picker (separate for cross-day shifts)
+   - End time picker
+   - Lunch break dropdown (None, 15, 30, 45, 60 min)
+
+4. **Alert Section**
+   - Reminder dropdown (15 min, 30 min, 60 min, 1 day, None)
+   - Uses default from settings
+   - Can override per shift
+
+5. **Summary Section**
+   - Expected hours calculation
+   - Real-time updates
+   - Cross-day shift support
+
+**Validation Features:**
+1. **Overlap Prevention**
+   ```swift
+   checkForOverlappingShifts() -> Bool
+   - Queries existing shifts for the same date
+   - Compares time ranges in minutes
+   - Excludes current shift when editing
+   - Shows error with conflict details
+   ```
+
+2. **Cross-Day Support**
+   - Separate date tracking for start/end
+   - Automatic overnight detection
+   - Proper hour calculation across dates
+   - Visual indication of overnight shifts
+
+3. **Smart Defaults**
+   - 8-hour default duration
+   - Auto-adjustment of end time
+   - Default alert from user settings
+   - Current employer pre-selected
+
+4. **Error Messages**
+   - "Shift Conflict" alert
+   - Shows conflicting employer and times
+   - Localized in EN/FR/ES
+   - Clear resolution guidance
+
+5. **Status Management**
+   - **New Shifts**: Status auto-set based on shift date (not time)
+     - Today or future → "planned"
+     - Yesterday or earlier → "completed"
+   - **Editing Shifts**: Status is PRESERVED from original shift
+     - Never auto-changed when editing
+     - User must explicitly change status if desired
+   - **Critical**: Comparing dates only (ignoring time) prevents today's shifts from being marked "completed"
+
+#### 4. Settings Page (SettingsView)
 
 **File:** `Settings/SettingsView.swift`
 **Sections:**
@@ -450,10 +439,10 @@ Settings → SettingsView
    - Security type selection
 
 5. **Subscription Section**
-   - Current plan display
-   - Usage statistics (Part-Time)
-   - Upgrade button
+   - Current subscription status
+   - Trial days remaining (if applicable)
    - Manage subscription link
+   - Subscription renewal date
 
 6. **Support Section**
    - In-app support form
@@ -473,7 +462,14 @@ Settings → SettingsView
 - Real-time validation
 - Loading states for async operations
 
-### 5. Employers Page (EmployersView)
+**Subscription Management:**
+- StoreKit 2 integration
+- $3.99/month with 7-day free trial
+- Subscription status display
+- Trial days remaining
+- Manage subscription link
+
+#### 5. Employers Page (EmployersView)
 
 **File:** `Employers/EmployersView.swift`
 **Components:**
@@ -501,7 +497,7 @@ Settings → SettingsView
 - Analytics by employer
 - Performance comparison
 
-### 6. Calculator Page (TipCalculatorView)
+#### 6. Calculator Page (TipCalculatorView)
 
 **File:** `Utilities/TipCalculatorView.swift`
 **Components:**
@@ -535,7 +531,7 @@ Settings → SettingsView
 
 ## Data Models & Database
 
-### Core Models
+### Core Models (Simplified Structure)
 **File:** `Managers/Models.swift`
 
 ```swift
@@ -557,89 +553,109 @@ struct Employer: Codable, Identifiable, Hashable {
     let created_at: Date
 }
 
-struct Shift: Codable, Identifiable, Hashable {
+struct ExpectedShift: Codable, Identifiable, Hashable {
     let id: UUID?
     let user_id: UUID
     let employer_id: UUID?
+
+    // Scheduling data
     let shift_date: String
-    let expected_hours: Double?
-    let hours: Double? // Actual hours worked
+    let start_time: String
+    let end_time: String
+    let expected_hours: Double
+    let hourly_rate: Double
+
+    // Break time
     let lunch_break_minutes: Int?
-    let hourly_rate: Double?
+
+    // Sales target (optional per-shift override)
+    let sales_target: Double?
+
+    // Status and metadata
+    let status: String // planned, completed, missed
+    let alert_minutes: Int?
+    let notes: String?
+
+    let created_at: Date?
+    let updated_at: Date?
+}
+
+struct ShiftEntry: Codable, Identifiable, Hashable {
+    let id: UUID?
+    let shift_id: UUID
+    let user_id: UUID
+
+    // Actual work times
+    let actual_start_time: String
+    let actual_end_time: String
+    let actual_hours: Double
+
+    // Financial data
     let sales: Double?
     let tips: Double?
     let cash_out: Double?
     let other: Double?
+
+    // Entry-specific notes
     let notes: String?
-    let start_time: String?
-    let end_time: String?
-    let status: String? // planned, completed, missed
+
     let created_at: Date?
+    let updated_at: Date?
 }
 
-struct ShiftIncome: Codable, Identifiable, Equatable {
-    let income_id: UUID? // ID from shift_income table
-    let shift_id: UUID?  // ID from shifts table
-    var id: UUID { shift_id ?? income_id ?? UUID() }
+// Combined view for dashboard display
+struct CompletedShift: Codable, Identifiable, Equatable {
+    let id: UUID
     let user_id: UUID
     let employer_id: UUID?
     let employer_name: String?
+
+    // Shift planning data
     let shift_date: String
-    let expected_hours: Double?
+    let expected_hours: Double
+    let hourly_rate: Double
     let lunch_break_minutes: Int?
-    let net_expected_hours: Double?
-    let hours: Double? // Optional to handle missing data
-    let hourly_rate: Double?
-    let sales: Double? // Optional to handle missing data
-    let tips: Double? // Optional to handle missing data
+
+    // Actual work data (from shift_entry)
+    let actual_hours: Double?
+    let sales: Double?
+    let tips: Double?
     let cash_out: Double?
     let other: Double?
+
+    // Calculated fields
     let base_income: Double?
     let net_tips: Double?
     let total_income: Double?
     let tip_percentage: Double?
-    let start_time: String?
-    let end_time: String?
-    let shift_status: String?
-    let has_earnings: Bool
-    let shift_created_at: String?
-    let earnings_created_at: String?
-    let notes: String?
-}
 
-struct ShiftIncomeData: Codable, Identifiable {
-    let id: UUID?
-    let shift_id: UUID
-    let user_id: UUID
-    let actual_hours: Double
-    let sales: Double
-    let tips: Double
-    let cash_out: Double?
-    let other: Double?
-    let actual_start_time: String?
-    let actual_end_time: String?
+    let status: String
     let notes: String?
     let created_at: Date?
 }
 ```
 
-### Database Schema
-**Tables:**
+### Simplified Database Schema
+**Core Tables:**
 - `users_profile`: User settings and preferences
 - `employers`: Multi-employer support
-- `shifts`: Planned/scheduled shifts with expected hours
-- `shift_income`: Actual earnings data for completed shifts
-- `v_shift_income`: View combining shifts and shift_income data
+- `expected_shifts`: Planned/scheduled shifts with expected hours and timing
+- `shift_entries`: Actual work data and financial earnings (one-to-one with expected_shifts)
 - `achievements`: User achievement tracking
 - `alerts`: In-app notification system
 - `user_subscriptions`: Subscription management
 
-**Important Views:**
-- `v_shift_income`: Combined view with RLS (Row Level Security) enabled
-  - Joins shifts and shift_income tables
-  - Calculates base_income, net_tips, total_income
-  - Provides has_earnings flag
-  - Security: Users can only see their own data
+**Key Improvements:**
+- **Simplified Structure**: Reduced from 4+ overlapping tables to 2 core tables
+- **Clear Separation**: `expected_shifts` for planning, `shift_entries` for actual work
+- **No Data Duplication**: Each piece of data has a single source of truth
+- **Better Performance**: Simpler queries, fewer joins required
+- **Maintained RLS**: All tables have Row Level Security enabled
+
+**Table Relationships:**
+- `expected_shifts` ↔ `shift_entries` (one-to-one via shift_id)
+- `expected_shifts` → `employers` (many-to-one)
+- All tables → `users_profile` (many-to-one via user_id)
 
 ---
 
@@ -676,15 +692,83 @@ struct ShiftIncomeData: Codable, Identifiable {
 - Smooth animations
 
 ### Component Library
-**Files:**
-- `Components/FlexibleHeader.swift`
-- `Components/iOS26LiquidGlassTabBar.swift`
-- `Components/LiquidGlassToggle.swift`
-- `Components/NotificationBell.swift`
+**Key Components:**
+
+**1. NotificationBell** (`Components/NotificationBell.swift`)
+- Interactive notification icon with badge
+- Sheet presentation for alert list
+- Swipe-to-delete functionality
+- Color-coded alert types
+- Time-ago formatting
+- Direct navigation support
+- Auto-deletion after action
+
+**2. iOS26LiquidGlassTabBar** (`Components/iOS26LiquidGlassTabBar.swift`)
+- Custom tab bar with glass morphism
+- Navigation state management
+- Alert navigation coordination
+- Adaptive sizing for device types
+
+**3. FlexibleHeader** (`Components/FlexibleHeader.swift`)
+- Collapsible header with animations
+- Contextual actions
+- Adaptive layout
+
+**4. LiquidGlassToggle** (`Components/LiquidGlassToggle.swift`)
+- Custom toggle with glass effects
+- Smooth state transitions
+- Haptic feedback
 
 ---
 
-## Android Implementation Roadmap
+## Technical Implementation Details
+
+### Navigation System
+**iOS26LiquidGlassTabBar** (`Components/iOS26LiquidGlassTabBar.swift`)
+- Liquid glass design with blur effects
+- Smooth animations and transitions
+- Scroll-aware behavior
+- Dynamic tab visibility (Employers conditional)
+- Haptic feedback
+
+**Tab Structure:**
+- Dashboard → DashboardView
+- Calendar → CalendarShiftsView
+- Employers → EmployersView (conditional on useMultipleEmployers)
+- Calculator → TipCalculatorView
+- Settings → SettingsView
+
+**iPad Navigation:**
+- NavigationSplitView for sidebar navigation
+- Persistent sidebar with list-style navigation
+- Detail view for main content
+
+### Localization System
+**Implementation:** `ProTip365App.swift`, `en.lproj/`, `fr.lproj/`, `es.lproj/`
+
+**Features:**
+- Auto-detects iOS system language on first launch
+- Dynamic language switching without restart
+- Persists preference to Supabase database
+- Syncs across devices
+- Falls back to English for unsupported languages
+
+**Pattern:**
+```swift
+@AppStorage("language") private var language = "en"
+
+var localizedText: String {
+    switch language {
+    case "fr": return "Texte en français"
+    case "es": return "Texto en español"
+    default: return "Text in English"
+    }
+}
+```
+
+---
+
+## Android Development Guide
 
 ### Phase 1: Core Infrastructure
 1. **Project Setup**
@@ -749,7 +833,8 @@ struct ShiftIncomeData: Codable, Identifiable {
 
 3. **Subscription Integration**
    - Google Play Billing
-   - Part-time limits
+   - 7-day free trial
+   - $3.99/month subscription
    - Subscription management
 
 ### Phase 5: Testing & Launch
@@ -765,12 +850,102 @@ struct ShiftIncomeData: Codable, Identifiable {
 
 ---
 
+## Database Migration & Simplification
+
+### Migration Overview
+**Date:** September 2024
+**Purpose:** Simplify overly complex database structure
+
+**Previous Issues Addressed:**
+- Multiple overlapping tables: `shifts`, `shift_income`, `entries`, `v_shift_income`
+- Data duplication across tables (shift_date, employer_id, hourly_rate)
+- Redundant fields: `lunch_break_hours` + `lunch_break_minutes` (only minutes used)
+- Complex queries requiring multiple joins
+
+**New Simplified Architecture:**
+
+**1. `expected_shifts` Table:**
+```sql
+CREATE TABLE expected_shifts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    employer_id UUID REFERENCES employers(id),
+
+    -- Scheduling data
+    shift_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    expected_hours DECIMAL(5,2) NOT NULL,
+    hourly_rate DECIMAL(10,2) NOT NULL,
+
+    -- Break time
+    lunch_break_minutes INTEGER DEFAULT 0,
+
+    -- Sales target (optional per-shift override)
+    sales_target DECIMAL(10,2),
+
+    -- Status and metadata
+    status TEXT DEFAULT 'planned' CHECK (status IN ('planned', 'completed', 'missed')),
+    alert_minutes INTEGER,
+    notes TEXT,
+
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Status Field Behavior:**
+- **New shifts**: Auto-set based on shift DATE only (not time)
+  - `shift_date >= today` → "planned"
+  - `shift_date < today` → "completed"
+- **Editing shifts**: Status is preserved, never auto-changed
+- **User control**: Status can be manually changed through UI
+
+**2. `shift_entries` Table:**
+```sql
+CREATE TABLE shift_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    shift_id UUID NOT NULL REFERENCES expected_shifts(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+
+    -- Actual work times
+    actual_start_time TIME NOT NULL,
+    actual_end_time TIME NOT NULL,
+    actual_hours DECIMAL(5,2) NOT NULL,
+
+    -- Financial data
+    sales DECIMAL(10,2) DEFAULT 0,
+    tips DECIMAL(10,2) DEFAULT 0,
+    cash_out DECIMAL(10,2) DEFAULT 0,
+    other DECIMAL(10,2) DEFAULT 0,
+
+    -- Entry-specific notes
+    notes TEXT,
+
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+
+    -- Ensure one entry per shift
+    UNIQUE(shift_id)
+);
+```
+
+**Benefits:**
+- **50% Reduction** in table complexity
+- **Eliminated Data Duplication** - single source of truth for each data point
+- **Improved Query Performance** - fewer joins required
+- **Clearer Data Model** - planning vs actual work clearly separated
+- **Maintained Security** - RLS enabled on all new tables
+- **Preserved Functionality** - all existing features supported
+
+---
+
 ## Critical Implementation Notes
 
 ### 1. Feature Parity Requirements
 - **100% feature match** with iOS version
 - **Identical data models** and validation
-- **Same subscription tiers** and pricing
+- **Same subscription model** ($3.99/month with 7-day trial)
 - **Equivalent UI/UX** experience
 - **Cross-platform data sync** via Supabase
 
@@ -795,109 +970,227 @@ struct ShiftIncomeData: Codable, Identifiable {
 
 ---
 
-**Document Version**: 3.1
-**Last Updated**: December 2024
-**Status**: Complete iOS Specification (v1.0.23), Android Roadmap Ready
-**Next Review**: Post Android Implementation
+## Summary
 
-## Recent Updates (v1.0.25 - Shift Overlap Validation)
+### Current State (October 2025)
+**iOS Application (v1.1.30):**
+- ✅ Production ready and available on App Store
+- ✅ Complete feature set with all core functionality
+- ✅ Subscription system with 7-day free trial
+- ✅ Multi-language support (EN, FR, ES)
+- ✅ Security features (PIN, biometric)
+- ✅ Comprehensive alert and notification system
+- ✅ Simplified database architecture with optimal performance
 
-### Shift Overlap Prevention System
-1. **Overlap Detection Logic**
-   - Prevents creating shifts that overlap with existing shifts on the same date
-   - Comprehensive validation checks four overlap scenarios:
-     - New shift starting during an existing shift
-     - New shift ending during an existing shift
-     - New shift completely containing an existing shift
-     - Existing shift completely containing a new shift
-   - Shows specific conflict details including employer name and time range
+**Android Application:**
+- 🔄 In active development
+- 🔄 Core infrastructure completed
+- 🔄 Working toward feature parity with iOS
 
-2. **Smart Time Validation**
-   - Automatic end time adjustment when start time changes
-   - Ensures end time is always after start time
-   - Defaults to 8-hour shift duration for new shifts
-   - Handles cross-midnight shifts appropriately
+### Key Achievements
+1. **Simplified Database:** Reduced from 4+ overlapping tables to 2 core tables
+2. **Modern Alert System:** Database-backed alerts with smart navigation
+3. **Cross-Platform Ready:** Shared Supabase backend for iOS and Android
+4. **Production Stability:** Multiple iterations of bug fixes and improvements
+5. **Localization:** Full support for English, French, and Spanish
 
-3. **Error Messaging**
-   - Clear, localized error messages in English, French, and Spanish
-   - Shows exact conflict details (employer and time range)
-   - User-friendly guidance for resolution
+### Next Priorities
+1. Complete Android feature parity
+2. Android app store launch
+3. User feedback integration
+4. Performance optimizations
+5. Feature enhancements based on analytics
 
-4. **Implementation Details**
-   - `checkForOverlappingShifts()` function in AddShiftDataManager
-   - Time comparison using minutes for accuracy
-   - Skips self-comparison when editing existing shifts
-   - Integrated validation before database operations
+---
 
-## Recent Updates (v1.0.24 - Alert System)
+---
 
-### New Alert Notification System
-1. **Shift Alert Notifications**
-   - Added customizable alert notifications for upcoming shifts
-   - Alert options: 15 minutes, 30 minutes, 60 minutes, 1 day before
-   - Notifications display employer name and shift start time
-   - Full localization support (EN/FR/ES)
+## Document Change Log
 
-2. **Add/Edit Shift Updates**
-   - New "Alert" dropdown in shift creation/editing
-   - Automatically uses default alert from settings
-   - Can override default alert per shift
-   - Persists alert preferences in database
+### Version 4.0 (October 2025)
+**Major Restructuring:**
+- Consolidated duplicate and outdated sections
+- Updated to reflect iOS v1.1.30 production status
+- Clarified product overview and value propositions
+- Streamlined architecture documentation
+- Removed redundant technical details
+- Updated subscription pricing and trial information
+- Consolidated alert system documentation
+- Updated current implementation status
 
-3. **Settings Enhancement**
-   - Added "Default Alert" setting in Work Defaults section
-   - User-defined default for all new shifts
-   - Syncs across devices via Supabase
+### Version 3.2 (September 2024)
+**Changes:**
+- Database simplification (removed redundant tables)
+- Shift validation and cross-day support
+- Enhanced alert system with navigation
 
-4. **NotificationManager Implementation**
-   - Schedules iOS local notifications
-   - Handles notification permissions
-   - Updates/cancels notifications when shifts change
-   - Supports all iOS notification features
+### Version 3.1 (August 2024)
+**Changes:**
+- Initial comprehensive iOS specification
+- Android implementation roadmap
+- Core systems documentation
 
-5. **Database Schema Updates**
-   - Added `alert_minutes` column to shifts table
-   - Added `default_alert_minutes` to users_profile table
-   - Created indexes for efficient alert queries
-   - Added constraints for valid alert values
+---
 
-## Recent Updates (v1.0.23)
+## Recent Feature Additions (v1.0.24 - v1.1.30)
 
-### Major Fixes and Improvements
-1. **Calendar Display Issues Fixed**
-   - Shifts now properly display with color-coded status
-   - Fixed data loading from shifts table
-   - Added proper refresh handlers
-   - Resolved date selection issues
+### v1.1.30 (Current Production)
+- Language auto-detection from iOS system settings
+- Improved notification handling and badge management
+- Enhanced subscription state management
+- Bug fixes and performance improvements
 
-2. **Dashboard Data Loading**
-   - Fixed v_shift_income view data retrieval
-   - Made ShiftIncome fields optional to handle missing data
-   - Proper handling of sales, tips, and financial data
-   - NET salary calculation with deduction percentages
+### v1.1.31 - Critical Bug Fixes (October 2, 2025)
 
-3. **Security Enhancement**
-   - Added Row Level Security (RLS) to v_shift_income view
-   - Ensures users only see their own data
-   - Created SQL migration script for RLS policies
+#### 1. Subscription Flow Fix
+**Issue:** Subscription page appeared twice on app launch (flash → disappear → reappear)
 
-4. **UI/UX Improvements**
-   - Removed "Didn't work" option from edit mode
-   - Added delete functionality to edit entry page
-   - Fixed button positioning under tab bar
-   - Changed calendar legend colors (Purple for Planned)
-   - Removed grey background from entry cards
+**Root Cause:**
+- Duplicate `.onAppear` block in ContentView calling `checkAuth()` after `.task` already called it
+- Auth state changes listener triggering multiple subscription checks during initial setup
 
-5. **Localization Updates**
-   - Complete calendar localization (EN/FR/ES)
-   - Added delete confirmation translations
-   - Fixed date format localization
-   - Updated status text translations
+**Solution:**
+- Removed duplicate `.onAppear` block in `ContentView.swift`
+- Added guard in auth state listener to prevent concurrent subscription checks
+- Subscription now checks ONCE per app launch
 
-6. **Model Updates**
-   - Made hours, sales, tips fields optional in ShiftIncome
-   - Added proper null handling throughout the app
-   - Fixed compilation errors in multiple views
-   - Updated ExportManager for optional fields
+**Files Changed:**
+- `ProTip365/ContentView.swift:66-71` (removed duplicate onAppear)
+- `ProTip365/ContentView.swift:344-361` (added concurrent check guard)
+
+#### 2. Shift Status Preservation Fix
+**Issue:** Editing existing shifts incorrectly changed status to "completed"
+
+**Root Cause:**
+- Save logic calculated status for ALL shifts (new and existing)
+- Status was being recalculated based on date/time, overwriting the existing status
+
+**Solution:**
+- When **editing** existing shifts: Preserve original status, never auto-change
+- When **creating** new shifts: Auto-set status based on DATE only (not time)
+
+**Files Changed:**
+- `ProTip365/AddShift/AddShiftDataManager.swift:512-530` (preserve status on edit)
+
+#### 3. Today's Shifts Status Fix
+**Issue:** Creating new shifts for "today" marked them as "completed" if the start time had passed
+
+**Root Cause:**
+- Status logic compared full date-time instead of just the date
+- If creating a shift for today at 9am when it's currently 2pm, it would mark as "completed"
+
+**Solution:**
+- Changed comparison from date-time to DATE only
+- Today or future dates → "planned"
+- Yesterday or earlier → "completed"
+
+**Files Changed:**
+- `ProTip365/AddShift/AddShiftDataManager.swift:550-556` (date-only comparison)
+
+**Implementation Guide:**
+- See `/Docs/ANDROID_SHIFT_STATUS_PRESERVATION_FIX.md` for Android implementation details
+
+#### 4. Per-Shift Sales Target
+**Enhancement:** Added ability to set custom sales targets per shift
+
+**Features:**
+- Optional `sales_target` field in `expected_shifts` table
+- Empty value defaults to user's daily sales target
+- Custom value overrides default for that specific shift
+
+**Files Changed:**
+- `ProTip365/AddShift/AddShiftDataManager.swift:35,339-344,516-517,558-559` (sales_target field)
+- `ProTip365/AddShift/AddShiftView.swift:190,199` (sales_target UI binding)
+- Database schema updated with `sales_target` column
+
+---
+
+### v1.0.26 - Shift Validation & Cross-Day Support
+
+### Comprehensive Shift Validation System
+
+#### 1. Shift Overlap Prevention
+**File:** `AddShift/AddShiftDataManager.swift`
+
+**Overlap Detection Algorithm:**
+```swift
+// Four overlap scenarios checked:
+1. New shift starts during existing shift:
+   newStart >= existingStart && newStart < existingEnd
+2. New shift ends during existing shift:
+   newEnd > existingStart && newEnd <= existingEnd
+3. New shift completely contains existing:
+   newStart <= existingStart && newEnd >= existingEnd
+4. Existing shift completely contains new:
+   existingStart <= newStart && existingEnd >= newEnd
+```
+
+**Features:**
+- Real-time validation before saving
+- Excludes self when editing existing shifts
+- Multi-employer support (can have overlapping shifts at different employers)
+- Time-based comparison using minutes since midnight
+- Database query optimization with date filtering
+
+**Error Handling:**
+- Localized error messages (EN/FR/ES)
+- Shows conflicting employer name and time range
+- Alert dialog with clear explanation
+- Prevents database save on conflict
+
+#### 2. Cross-Day Shift Support
+**Implementation:**
+- Separate `selectedDate` and `endDate` variables
+- Automatic overnight shift detection
+- Smart validation for end time vs start time
+- Proper hour calculation across date boundaries
+
+**UI Updates:**
+- Independent date pickers for start and end
+- Visual indication of overnight shifts
+- Automatic date advancement for late-night shifts
+- Preserves existing single-date shifts
+
+**Validation Logic:**
+```swift
+// Detect cross-day shifts automatically
+if endTimeMinutes < startTimeMinutes {
+    endDate = nextDay
+}
+
+// Calculate hours across dates
+let timeInterval = endDateTime - startDateTime
+let hours = timeInterval / 3600
+```
+
+#### 3. Smart Time Management
+- Auto-adjustment of end time when start time changes
+- Default 8-hour shift duration for new shifts
+- Lunch break deduction from total hours
+- Prevention of negative duration shifts
+- Handling of 24+ hour shifts for cross-day scenarios
+
+### v1.0.25 - Enhanced Alert System
+- Visual notification bell with badge count
+- Alert list management with swipe-to-delete
+- Smart navigation from alerts to relevant content
+- Alert types: shift reminders, missing shifts, incomplete shifts, achievements
+- Database-backed alerts with RLS security
+- iOS 17+ badge management API
+
+### v1.0.24 - Alert Foundation System
+- Shift alert notifications (15min, 30min, 1hr, 1 day before)
+- Default alert settings in user preferences
+- NotificationManager for iOS local notifications
+- Alert permissions handling
+- Database schema updates for alerts
+
+### v1.0.23 - Major Fixes
+- Calendar display improvements with color-coded status
+- Dashboard data loading from simplified database
+- Row Level Security (RLS) implementation
+- UI/UX polish (delete functionality, positioning fixes)
+- Complete localization (EN/FR/ES)
+- Optional field handling throughout app
 
 

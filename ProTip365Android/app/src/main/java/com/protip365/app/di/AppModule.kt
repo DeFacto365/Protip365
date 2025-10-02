@@ -58,11 +58,31 @@ object AppModule {
         janSupabaseClient: JanSupabaseClient
     ): UserRepository = UserRepositoryImpl(janSupabaseClient, context)
 
+
+    // New simplified repositories
     @Provides
     @Singleton
-    fun provideShiftRepository(
+    fun provideExpectedShiftRepository(
         janSupabaseClient: JanSupabaseClient
-    ): ShiftRepository = ShiftRepositoryImpl(janSupabaseClient)
+    ): ExpectedShiftRepository = ExpectedShiftRepositoryImpl(janSupabaseClient)
+
+    @Provides
+    @Singleton
+    fun provideShiftEntryRepository(
+        janSupabaseClient: JanSupabaseClient
+    ): ShiftEntryRepository = ShiftEntryRepositoryImpl(janSupabaseClient)
+
+    @Provides
+    @Singleton
+    fun provideCompletedShiftRepository(
+        expectedShiftRepository: ExpectedShiftRepository,
+        shiftEntryRepository: ShiftEntryRepository,
+        employerRepository: EmployerRepository
+    ): CompletedShiftRepository = CompletedShiftRepositoryImpl(
+        expectedShiftRepository,
+        shiftEntryRepository,
+        employerRepository
+    )
 
     @Provides
     @Singleton
@@ -105,11 +125,23 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideEmailService(): EmailService = EmailService()
+    fun provideEmailService(
+        supabaseClient: SupabaseClient
+    ): EmailService = EmailService(supabaseClient)
 
     @Provides
     @Singleton
-    fun provideLocalizationManager(): LocalizationManager = LocalizationManager()
+    fun providePreferencesManager(
+        @ApplicationContext context: Context
+    ): com.protip365.app.data.local.PreferencesManager =
+        com.protip365.app.data.local.PreferencesManager(context)
+
+    @Provides
+    @Singleton
+    fun provideLocalizationManager(
+        @ApplicationContext context: Context,
+        preferencesManager: com.protip365.app.data.local.PreferencesManager
+    ): LocalizationManager = LocalizationManager(context, preferencesManager)
 
     @Provides
     @Singleton

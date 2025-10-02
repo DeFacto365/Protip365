@@ -4,6 +4,8 @@ import com.protip365.app.data.models.UserProfile
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
+    suspend fun getCurrentUser(): Flow<UserProfile?>
+    suspend fun getCurrentUserId(): String?
     suspend fun getUserProfile(userId: String): UserProfile?
     suspend fun updateUserProfile(userProfile: UserProfile): Result<Unit>
     suspend fun updateUserProfile(updates: Map<String, Any?>): Result<Unit>

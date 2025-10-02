@@ -18,6 +18,11 @@
     <string name="reset_password_button">Send Reset Link</string>
     <string name="password_reset_sent">Password reset link sent to your email</string>
 
+    <!-- Auth Screen Branding -->
+    <string name="app_name_title">ProTip365</string>
+    <string name="auth_welcome_text">Track Your Tips</string>
+    <string name="auth_tagline">Track Every Tip.\nManage Every Shift.\nAccess Your Data Anywhere.</string>
+
     <!-- Dashboard -->
     <string name="dashboard_title">Dashboard</string>
     <string name="today">Today</string>
@@ -35,6 +40,17 @@
     <string name="effective_hourly_rate">Effective Hourly Rate</string>
     <string name="no_data_yet">No data yet</string>
     <string name="add_first_shift">Add Your First Shift</string>
+
+    <!-- Dashboard Labels (iOS-style) -->
+    <string name="sales_label">Sales</string>
+    <string name="expected_net_salary">Expected Net Salary</string>
+    <string name="hours_worked_label">Hours Worked</string>
+    <string name="tips_label">Tips</string>
+    <string name="other_label">Other</string>
+    <string name="subtotal_label">Subtotal</string>
+    <string name="tip_out_label">Tip Out</string>
+    <string name="total_income_label">Total Income</string>
+    <string name="show_details">Show Details</string>
 
     <!-- Add/Edit Shift -->
     <string name="add_shift_title">Add Shift</string>
@@ -65,9 +81,24 @@
     <string name="no_shifts_this_month">No shifts this month</string>
     <string name="total_earned">Total Earned</string>
 
+    <!-- Add Shift Dialog -->
+    <string name="existing_shift_found">Existing Shift Found</string>
+    <string name="existing_shift_message">A shift already exists for this date. What would you like to do?</string>
+    <string name="modify_existing_shift">Modify Existing Shift</string>
+    <string name="add_new_shift">Add New Shift</string>
+
+    <!-- Add Entry Dialog -->
+    <string name="existing_shift_no_entry_message">A shift without an entry exists for this date. What would you like to do?</string>
+    <string name="existing_shift_with_entry_message">A shift with an entry exists for this date. What would you like to do?</string>
+    <string name="add_entry_to_existing_shift">Add Entry to Existing Shift</string>
+    <string name="edit_existing_entry">Edit Existing Entry</string>
+    <string name="create_new_shift_and_entry">Create New Shift &amp; Entry</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="profile_section">Profile</string>
+    <string name="settings_name_label">Name</string>
+    <string name="settings_email_label">Email</string>
     <string name="targets_section">Targets</string>
     <string name="preferences_section">Preferences</string>
     <string name="security_section">Security</string>
@@ -95,8 +126,18 @@
     <string name="week_start_day">Week Start Day</string>
     <string name="sunday">Sunday</string>
     <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
     <string name="default_hourly_rate">Default Hourly Rate</string>
     <string name="multiple_employers">Multiple Employers</string>
+    <string name="work_for_multiple_employers">I work for multiple employers</string>
+    <string name="variable_schedule">Variable Schedule</string>
+    <string name="work_irregular_hours">I work irregular hours</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="default_employer">Default Employer</string>
 
     <!-- Security Settings -->
@@ -143,6 +184,23 @@
     <string name="sign_out">Sign Out</string>
     <string name="delete_account">Delete Account</string>
     <string name="delete_account_confirm">Are you sure you want to delete your account? This action cannot be undone.</string>
+    <string name="delete_account_warning_title">⚠️ Permanent Account Deletion</string>
+    <string name="delete_account_warning_subtitle">This action cannot be undone. All your data will be permanently lost.</string>
+    <string name="what_will_be_deleted">What will be deleted:</string>
+    <string name="deletion_item_shifts">All your shift records and schedules</string>
+    <string name="deletion_item_entries">All your tip and earnings entries</string>
+    <string name="deletion_item_employers">All employer information and settings</string>
+    <string name="deletion_item_settings">All app preferences and configurations</string>
+    <string name="deletion_item_achievements">All achievements and progress data</string>
+    <string name="deletion_item_subscriptions">Active subscriptions will be cancelled</string>
+    <string name="alternatives_before_deletion">Consider these alternatives:</string>
+    <string name="alternatives_description">You can export your data, sign out, or contact support if you\'re having issues.</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="confirm_deletion">Confirm Deletion</string>
+    <string name="type_delete_to_confirm">Type DELETE to confirm</string>
+    <string name="delete_permanently">Delete Permanently</string>
+    <string name="need_help">Need Help?</string>
+    <string name="contact_support_for_deletion">If you need assistance with account deletion or have questions, our support team is here to help.</string>
     <string name="sign_out_confirm">Are you sure you want to sign out?</string>
 
     <!-- Employers -->
@@ -151,11 +209,18 @@
     <string name="edit_employer">Edit Employer</string>
     <string name="employer_name">Employer Name</string>
     <string name="employer_address">Address</string>
+    <string name="default_employer_label">Default Employer</string>
+    <string name="select_employer">Select Employer</string>
     <string name="employer_hourly_rate">Hourly Rate</string>
     <string name="employer_active">Active</string>
     <string name="employer_inactive">Inactive</string>
     <string name="no_employers">No employers added</string>
     <string name="delete_employer_confirm">Are you sure you want to delete this employer?</string>
+
+    <!-- Shift Sales Target -->
+    <string name="sales_target">Sales Target</string>
+    <string name="use_default_target">Use Default Target</string>
+    <string name="custom_target">Custom Target</string>
 
     <!-- Achievements -->
     <string name="achievements_title">Achievements</string>
@@ -202,6 +267,8 @@
     <string name="number_of_people">Number of People</string>
     <string name="per_person">Per Person</string>
     <string name="tip_out_calculator">Tip-out Calculator</string>
+    <string name="tip_out_distribution">Tip-out Distribution</string>
+    <string name="tip_out_explanation">Enter % of your tips to distribute to each role</string>
     <string name="total_tips">Total Tips</string>
     <string name="tip_out_percentage">Tip-out Percentage</string>
     <string name="tip_out_amount">Tip-out Amount</string>
@@ -228,9 +295,9 @@
     <string name="no_notifications">No Notifications</string>
     <string name="youre_all_caught_up">You\'re all caught up!</string>
     <string name="just_now">Just now</string>
-    <string name="minutes_ago">%dm ago</string>
-    <string name="hours_ago">%dh ago</string>
-    <string name="days_ago">%dd ago</string>
+    <string name="minutes_ago">%d minutes ago</string>
+    <string name="hours_ago">%d hours ago</string>
+    <string name="days_ago">%d days ago</string>
 
     <!-- Alert Settings -->
     <string name="alert_label">Alert</string>
@@ -271,4 +338,197 @@
     <string name="deleting">Deleting…</string>
     <string name="exporting">Exporting…</string>
     <string name="restoring">Restoring…</string>
+
+    <!-- Period View Types -->
+    <string name="calendar_month">Calendar Month</string>
+    <string name="four_weeks_pay">4 Weeks Pay</string>
+
+    <!-- Alert Screen -->
+    <string name="more_options">More options</string>
+
+    <!-- Subscription Screen -->
+    <string name="basic_analytics">Basic analytics</string>
+    <string name="single_employer">Single employer</string>
+    <string name="advanced_analytics">Advanced analytics</string>
+    <string name="priority_support">Priority support</string>
+    <string name="custom_targets">Custom targets</string>
+    <string name="unlimited_everything">Unlimited everything</string>
+    <string name="limited_features">Limited features</string>
+    <string name="available_plans">Available Plans</string>
+    <string name="export_to_csv">Export to CSV</string>
+    <string name="achievements_badges">Achievements &amp; badges</string>
+    <string name="free_trial_title">Free Trial</string>
+    <string name="shifts_entries_per_week">%d shifts &amp; entries per week</string>
+    <string name="renews_on">Renews on %s</string>
+    <string name="expires_on">Expires on %s</string>
+    <string name="active">Active</string>
+    <string name="recommended">RECOMMENDED</string>
+    <string name="current_plan">Current Plan</string>
+    <string name="cancel_subscription">Cancel Subscription</string>
+    <string name="cancel_subscription_disclaimer">You can cancel anytime. Your subscription will remain active until the end of the current billing period.</string>
+    <string name="subscription_terms">Subscriptions are billed monthly and can be cancelled anytime. All prices are in USD.</string>
+
+    <!-- Calendar Screen -->
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="no_shifts">No shifts</string>
+
+    <!-- Targets Screen -->
+    <string name="target_amount">Target amount</string>
+
+    <!-- Onboarding Screen -->
+    <string name="back">Back</string>
+    <string name="eg_restaurant_name">e.g., Restaurant Name</string>
+    <string name="decide_later">Decide later</string>
+    <string name="not_set">Not set</string>
+    <string name="invalid_number">Invalid number</string>
+    <string name="welcome">Welcome</string>
+    <string name="work_settings">Work Settings</string>
+    <string name="subscription">Subscription</string>
+    <string name="complete">Complete</string>
+    <string name="get_started">Get Started</string>
+    <string name="complete_setup">Complete Setup</string>
+    <string name="next">Next</string>
+    <string name="welcome_to_protip365">Welcome to ProTip365!</string>
+    <string name="welcome_description">Track your tips, manage earnings, and reach your financial goals.</string>
+    <string name="choose_your_language">Choose your language:</string>
+    <string name="set_up_work_preferences">Set up your work preferences</string>
+    <string name="must_be_positive">Must be positive</string>
+    <string name="secure_your_data">Secure your data</string>
+    <string name="optional_pin_security">Optional: Add a PIN for extra security</string>
+    <string name="pin_security_enabled">PIN Security Enabled</string>
+    <string name="no_pin_security">No PIN Security</string>
+    <string name="data_will_be_protected">Your data will be protected</string>
+    <string name="quick_access_without_pin">Quick access without PIN</string>
+    <string name="pin_must_be_4_digits">PIN must be 4 digits</string>
+    <string name="create_4_digit_pin">Create 4-digit PIN</string>
+    <string name="please_confirm_pin">Please confirm PIN</string>
+    <string name="use_fingerprint_face_id">Use Fingerprint/Face ID</string>
+    <string name="quick_and_secure_access">Quick and secure access</string>
+    <string name="choose_your_plan">Choose your plan</string>
+    <string name="subscription_cancel_anytime">You can change or cancel your subscription anytime</string>
+    <string name="all_set">All Set!</string>
+    <string name="protip365_account_ready">Your ProTip365 account is ready.</string>
+    <string name="start_tracking_tips">Start tracking your tips and reach your financial goals.</string>
+    <string name="your_settings">Your Settings</string>
+    <string name="language">Language</string>
+    <string name="pin_enabled">PIN enabled</string>
+    <string name="no_pin">No PIN</string>
+    <string name="selected">Selected</string>
+    <string name="must_be_0_100">Must be 0-100</string>
+    <string name="three_shifts_per_week">3 shifts per week</string>
+    <string name="three_entries_per_shift">3 entries per shift</string>
+
+    <!-- Sign Up Screen -->
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
+
+    <!-- Add/Edit Shift Screen -->
+    <string name="delete_shift">Delete Shift</string>
+    <string name="error">Error</string>
+    <string name="enter_hourly_rate">Enter hourly rate</string>
+    <string name="add_notes_optional">Add notes (optional)</string>
+
+    <!-- Calculator Screen -->
+    <string name="hourly_rate_calculator">Hourly Rate</string>
+
+    <!-- Settings Screen -->
+    <string name="profile">Profile</string>
+    <string name="security">Security</string>
+    <string name="update_account_password">Update your account password</string>
+
+    <!-- Common Units -->
+    <string name="currency_symbol">$</string>
+    <string name="percentage_symbol">%</string>
+    <string name="hours_abbr">hrs</string>
+    <string name="hour_abbr">h</string>
+    <string name="minute_abbr">m</string>
+    <string name="placeholder_zero">0.00</string>
+    <string name="placeholder_dots">••••</string>
+
+    <!-- Error Messages -->
+    <string name="network_error">Network error. Please check your connection</string>
+    <string name="unexpected_error">An unexpected error occurred</string>
+    <string name="validation_error">Please check your input</string>
+    <string name="shift_not_found">Shift not found</string>
+    <string name="user_not_logged_in">User not logged in</string>
+    <string name="invalid_credentials">Invalid email or password</string>
+    <string name="weak_password">Password must be at least 6 characters</string>
+    <string name="passwords_dont_match">Passwords don\'t match</string>
+    <string name="email_already_exists">Email already exists</string>
+
+    <!-- New Subscription Strings for Single Tier -->
+    <string name="premium_active">Premium Active</string>
+    <string name="enjoying_premium">Enjoying all premium features</string>
+    <string name="trial_period">Trial Period</string>
+    <string name="trial_days_remaining">%d days remaining</string>
+    <string name="free_trial_7_days">7 DAYS FREE</string>
+    <string name="after_trial">after free trial</string>
+    <string name="start_free_trial">Start Free Trial</string>
+    <string name="subscribe_now">Subscribe Now</string>
+    <string name="full_history">Full history access</string>
+    <string name="cloud_sync">Cloud sync across devices</string>
+    <string name="subscription_terms_single">7-day free trial, then $3.99/month. Subscription auto-renews. Cancel anytime in Play Store settings.</string>
+
+    <!-- New Subscription Marketing (Oct 2, 2025) -->
+    <string name="subscription_header_title">Track Every Tip.\nManage Every Shift.\nAccess Your Data Anywhere.</string>
+    <string name="subscription_header_subtitle">The smart tip tracking app designed for service industry professionals who want to replace paper slips and Excel files with real-time data management across all their devices.</string>
+    <string name="premium_features">Premium Features</string>
+    <string name="feature_unlimited_shifts">Unlimited shifts per day</string>
+    <string name="feature_multiple_employers">Multiple employer management</string>
+    <string name="feature_advanced_analytics">Advanced analytics and detailed reports</string>
+    <string name="feature_data_export">Data export (CSV/PDF)</string>
+    <string name="feature_cloud_sync">Automatic cloud synchronization</string>
+    <string name="feature_priority_support">Priority support</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_catchphrase">Maximize Your Tips, One Shift at a Time</string>
+
+    <!-- Settings Targets -->
+    <string name="set_your_goals_title">Set Your Goals</string>
+    <string name="set_your_goals_description">Set daily, weekly, and monthly targets to track your progress.</string>
+    <string name="tip_targets">Tip Targets</string>
+    <string name="sales_targets">Sales Targets</string>
+    <string name="hours_targets">Hours Targets</string>
+
+    <!-- Terms and Conditions -->
+    <string name="terms_title">Terms and Conditions</string>
+    <string name="terms_last_updated">Last Updated: January 2025</string>
+    <string name="terms_intro">Welcome to ProTip365. By using our application, you agree to these Terms and Conditions.</string>
+
+    <string name="terms_section1_title">1. Acceptance of Terms</string>
+    <string name="terms_section1_content">By downloading, installing, or using ProTip365, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.</string>
+
+    <string name="terms_section2_title">2. Service Description</string>
+    <string name="terms_section2_content">ProTip365 is a tip tracking and shift management application designed for service industry professionals. The app allows you to track your work shifts, tips, earnings, and generate reports for personal use.</string>
+
+    <string name="terms_section3_title">3. User Account</string>
+    <string name="terms_section3_content">You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account.</string>
+
+    <string name="terms_section4_title">4. User Data and Privacy</string>
+    <string name="terms_section4_content">We respect your privacy and protect your personal data. All financial information you enter is encrypted and stored securely. We do not share your personal information with third parties without your consent, except as required by law.</string>
+
+    <string name="terms_section5_title">5. Acceptable Use</string>
+    <string name="terms_section5_content">You agree to use ProTip365 only for lawful purposes and in accordance with these Terms. You may not use the app to:\n• Violate any applicable laws or regulations\n• Store false or misleading information\n• Attempt to gain unauthorized access to our systems\n• Interfere with other users\' use of the service</string>
+
+    <string name="terms_section6_title">6. Subscription and Payment</string>
+    <string name="terms_section6_content">ProTip365 offers both free and paid subscription tiers. Paid subscriptions are billed monthly or annually through the app store. You can cancel your subscription at any time through your app store account settings. Refunds are subject to the app store\'s refund policy.</string>
+
+    <string name="terms_section7_title">7. Data Accuracy</string>
+    <string name="terms_section7_content">While ProTip365 helps you track and calculate your earnings, you are responsible for the accuracy of the data you enter. The app\'s calculations are provided for informational purposes only and should not be relied upon for tax or legal purposes without verification.</string>
+
+    <string name="terms_section8_title">8. Limitation of Liability</string>
+    <string name="terms_section8_content">ProTip365 is provided \"as is\" without warranties of any kind. We are not liable for any indirect, incidental, special, or consequential damages arising from your use of the app, including but not limited to lost profits or data loss.</string>
+
+    <string name="terms_section9_title">9. Modifications</string>
+    <string name="terms_section9_content">We reserve the right to modify these Terms at any time. We will notify you of any changes by updating the \"Last Updated\" date. Your continued use of ProTip365 after changes constitutes acceptance of the modified Terms.</string>
+
+    <string name="terms_section10_title">10. Termination</string>
+    <string name="terms_section10_content">We may terminate or suspend your account immediately, without prior notice, for any reason, including breach of these Terms. Upon termination, your right to use the app will cease immediately.</string>
+
+    <string name="terms_section11_title">11. Contact Information</string>
+    <string name="terms_section11_content">If you have any questions about these Terms and Conditions, please contact us at:\n\nEmail: support@protip365.com\nWebsite: www.protip365.com</string>
+
+    <string name="terms_accept_button">I Accept</string>
+    <string name="terms_decline_button">Decline</string>
 </resources>

@@ -27,11 +27,17 @@ class ConfigManager {
 
     public var supabaseAnonKey: String {
         // Try Info.plist first
-        if let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String {
+        if let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
+           key != "YOUR_SUPABASE_ANON_KEY_HERE",
+           !key.isEmpty {
             return key
         }
 
-        // Fallback to build-time configuration
+        // IMPORTANT: You need to add your actual Supabase anon key
+        // Get it from: https://supabase.com/dashboard/project/ztzpjsbfzcccvbacgskc/settings/api
+        // The anon key should be a JWT token that starts with "eyJ"
+
+        // Fallback to the actual anon key
         #if DEBUG
         return "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
         #else

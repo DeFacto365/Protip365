@@ -14,4 +14,5 @@ interface AuthRepository {
     suspend fun isLoggedIn(): Boolean
     fun observeAuthState(): Flow<Boolean>
     suspend fun deleteAccount(): Result<Unit>
+    suspend fun checkEmailExists(email: String): Boolean
 }

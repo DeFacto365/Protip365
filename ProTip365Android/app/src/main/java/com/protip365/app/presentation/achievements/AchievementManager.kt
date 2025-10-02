@@ -1,7 +1,6 @@
 package com.protip365.app.presentation.achievements
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import com.protip365.app.data.models.CompletedShift
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +17,7 @@ class AchievementManager @Inject constructor() {
     val newAchievements: StateFlow<List<Achievement>> = _newAchievements.asStateFlow()
     
     fun checkForAchievements(
-        shifts: List<com.protip365.app.data.models.Shift>,
+        shifts: List<CompletedShift>,
         currentStats: DashboardStats,
         targets: UserTargets
     ) {
@@ -157,9 +156,9 @@ class AchievementManager @Inject constructor() {
         return _achievements.value.any { it.type == type }
     }
     
-    private fun hasPerfectWeek(shifts: List<com.protip365.app.data.models.Shift>): Boolean {
+    private fun hasPerfectWeek(shifts: List<CompletedShift>): Boolean {
         // Check if there are 7 consecutive days with shifts
-        val shiftDates = shifts.map { java.time.LocalDate.parse(it.shiftDate) }.distinct().sorted()
+        val shiftDates = shifts.map { java.time.LocalDate.parse(it.shiftDate) }.distinct().sorted<java.time.LocalDate>()
         
         if (shiftDates.size < 7) return false
         

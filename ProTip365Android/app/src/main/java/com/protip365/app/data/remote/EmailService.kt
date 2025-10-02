@@ -22,11 +22,15 @@ data class EmailResponse(
 )
 
 @Singleton
-class EmailService @Inject constructor() {
+class EmailService @Inject constructor(
+    private val supabaseClient: SupabaseClient
+) {
     
     suspend fun sendSuggestion(suggestion: String): Result<EmailResponse> {
         return try {
-            // TODO: Implement actual Supabase function call
+            val userId = supabaseClient.getCurrentUserId()
+            
+            // For now, return success - Edge Functions will be implemented later
             Result.success(EmailResponse(success = true))
         } catch (e: Exception) {
             Result.failure(e)
@@ -35,7 +39,9 @@ class EmailService @Inject constructor() {
 
     suspend fun sendSupportRequest(subject: String, message: String): Result<EmailResponse> {
         return try {
-            // TODO: Implement actual Supabase function call
+            val userId = supabaseClient.getCurrentUserId()
+            
+            // For now, return success - Edge Functions will be implemented later
             Result.success(EmailResponse(success = true))
         } catch (e: Exception) {
             Result.failure(e)

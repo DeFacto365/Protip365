@@ -28,8 +28,8 @@ class ExportManager @Inject constructor() {
     
     suspend fun exportToCSV(
         context: Context,
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>,
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>,
         fileName: String? = null
     ): Uri? {
         _isExporting.value = true
@@ -74,8 +74,8 @@ class ExportManager @Inject constructor() {
     
     suspend fun exportToPDF(
         context: Context,
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>,
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>,
         fileName: String? = null
     ): Uri? {
         _isExporting.value = true
@@ -122,8 +122,8 @@ class ExportManager @Inject constructor() {
     
     fun shareData(
         context: Context,
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>
     ): Intent {
         val shareText = buildShareText(shifts, entries)
         
@@ -136,8 +136,8 @@ class ExportManager @Inject constructor() {
     }
     
     private fun buildCSVContent(
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>
     ): String {
         val csv = StringBuilder()
         
@@ -147,14 +147,14 @@ class ExportManager @Inject constructor() {
         // Add shifts
         shifts.forEach { shift ->
             csv.appendLine(
-                "${shift.shiftDate}," +
+                "${shift.expectedShift.shiftDate}," +
                 "Shift," +
-                "${shift.startTime ?: ""}," +
-                "${shift.endTime ?: ""}," +
+                "${shift.expectedShift.startTime}," +
+                "${shift.expectedShift.endTime}," +
                 "${shift.hours}," +
                 "${shift.tips}," +
                 "${shift.sales}," +
-                "${shift.hourlyRate ?: 0.0}," +
+                "${shift.expectedShift.hourlyRate}," +
                 "${shift.totalEarnings}," +
                 "\"${shift.notes ?: ""}\""
             )
@@ -163,15 +163,15 @@ class ExportManager @Inject constructor() {
         // Add entries
         entries.forEach { entry ->
             csv.appendLine(
-                "${entry.entryDate}," +
+                "${entry.createdAt ?: "N/A"}," +
                 "Entry," +
-                "N/A," +
-                "N/A," +
-                "0," +
+                "${entry.actualStartTime}," +
+                "${entry.actualEndTime}," +
+                "${entry.actualHours}," +
                 "${entry.tips}," +
                 "${entry.sales}," +
-                "${entry.hourlyRate ?: 0.0}," +
-                "${entry.totalEarnings}," +
+                "N/A," +
+                "${entry.netIncome}," +
                 "\"${entry.notes ?: ""}\""
             )
         }
@@ -180,8 +180,8 @@ class ExportManager @Inject constructor() {
     }
     
     private fun buildPDFContent(
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>
     ): String {
         val content = StringBuilder()
         
@@ -195,7 +195,7 @@ class ExportManager @Inject constructor() {
         val totalHours = shifts.sumOf { it.hours }
         val totalTips = shifts.sumOf { it.tips } + entries.sumOf { it.tips }
         val totalSales = shifts.sumOf { it.sales } + entries.sumOf { it.sales }
-        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.totalEarnings }
+        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalEarnings(15.0) }
         
         content.appendLine("SUMMARY")
         content.appendLine("Total Shifts: $totalShifts")
@@ -212,8 +212,8 @@ class ExportManager @Inject constructor() {
         
         shifts.forEach { shift ->
             content.appendLine("SHIFT - ${shift.shiftDate}")
-            content.appendLine("  Start: ${shift.startTime ?: "N/A"}")
-            content.appendLine("  End: ${shift.endTime ?: "N/A"}")
+            content.appendLine("  Start: ${shift.expectedShift.startTime}")
+            content.appendLine("  End: ${shift.expectedShift.endTime}")
             content.appendLine("  Hours: ${shift.hours}")
             content.appendLine("  Tips: $${String.format("%.2f", shift.tips)}")
             content.appendLine("  Sales: $${String.format("%.2f", shift.sales)}")
@@ -225,10 +225,10 @@ class ExportManager @Inject constructor() {
         }
         
         entries.forEach { entry ->
-            content.appendLine("ENTRY - ${entry.entryDate}")
+            content.appendLine("ENTRY - ${entry.actualStartTime}")
             content.appendLine("  Tips: $${String.format("%.2f", entry.tips)}")
             content.appendLine("  Sales: $${String.format("%.2f", entry.sales)}")
-            content.appendLine("  Revenue: $${String.format("%.2f", entry.totalEarnings)}")
+            content.appendLine("  Revenue: $${String.format("%.2f", entry.getTotalEarnings(15.0))}")
             if (entry.notes?.isNotEmpty() == true) {
                 content.appendLine("  Notes: ${entry.notes}")
             }
@@ -239,15 +239,15 @@ class ExportManager @Inject constructor() {
     }
     
     private fun buildShareText(
-        shifts: List<com.protip365.app.data.models.Shift>,
-        entries: List<com.protip365.app.data.models.Entry>
+        shifts: List<com.protip365.app.data.models.CompletedShift>,
+        entries: List<com.protip365.app.data.models.ShiftEntry>
     ): String {
         val totalShifts = shifts.size
         val totalEntries = entries.size
         val totalHours = shifts.sumOf { it.hours }
         val totalTips = shifts.sumOf { it.tips } + entries.sumOf { it.tips }
         val totalSales = shifts.sumOf { it.sales } + entries.sumOf { it.sales }
-        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.totalEarnings }
+        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalEarnings(15.0) }
         
         return """
             📊 ProTip365 Summary

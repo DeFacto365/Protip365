@@ -1,11 +1,16 @@
 package com.protip365.app.presentation.settings
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import com.protip365.app.presentation.design.IconMapping
 import com.protip365.app.presentation.components.LanguagePickerDialog
@@ -18,26 +23,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.BuildConfig
+import com.protip365.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    onNavigateToProfile: () -> Unit = {},
-    onNavigateToSecurity: () -> Unit = {},
-    onNavigateToTargets: () -> Unit = {},
-    onNavigateToSubscription: () -> Unit = {},
-    onNavigateToExport: () -> Unit = {},
-    onSignOut: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val user by viewModel.user.collectAsStateWithLifecycle()
     var showLanguagePicker by remember { mutableStateOf(false) }
+    var showAlertPicker by remember { mutableStateOf(false) }
     val localization = rememberSettingsLocalization()
     val localizationState = rememberLocalizationState()
 
@@ -73,7 +79,7 @@ fun SettingsScreen(
                                 onClick = { viewModel.cancelChanges() },
                                 enabled = !state.isSaving
                             ) {
-                                Text("Cancel")
+                                Text(stringResource(R.string.cancel))
                             }
                             TextButton(
                                 onClick = { viewModel.saveSettings() },
@@ -85,7 +91,7 @@ fun SettingsScreen(
                                         strokeWidth = 2.dp
                                     )
                                 } else {
-                                    Text("Save", color = MaterialTheme.colorScheme.primary)
+                                    Text(stringResource(R.string.save), color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -105,32 +111,37 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Profile Section
+            // Logo at the top
             item {
-                SettingsSection(
-                    title = "Profile",
-                    icon = IconMapping.Status.info
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    SettingsItem(
-                        title = user?.name ?: "Set your name",
-                        subtitle = if (user?.name.isNullOrEmpty()) "Tap to set your profile" else "Tap to update profile",
-                        icon = Icons.Default.Person,
-                        onClick = {
-                            navController.navigate("profile")
-                        }
+                    Image(
+                        painter = painterResource(id = R.drawable.protip365_logo),
+                        contentDescription = "ProTip365 Logo",
+                        modifier = Modifier.size(80.dp)
                     )
                 }
             }
 
-            // Language Section - Moved to match iOS positioning
+            // App Info & Language Section - iOS ordering
             item {
                 SettingsSection(
                     title = localization.appSettingsText,
                     icon = IconMapping.Status.info
                 ) {
                     SettingsItem(
+                        title = "Version",
+                        subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                        icon = Icons.Default.AppSettingsAlt,
+                        onClick = {}
+                    )
+                    SettingsItem(
                         title = localization.languageText,
-                        subtitle = localization.choosePreferredLanguageText,
+                        subtitle = localizationState.currentLanguage.displayName,
                         icon = IconMapping.Communication.language,
                         onClick = {
                             showLanguagePicker = true
@@ -139,34 +150,19 @@ fun SettingsScreen(
                 }
             }
 
-            // Targets Section
+            // Profile Section
             item {
                 SettingsSection(
-                    title = "Targets",
-                    icon = Icons.Default.TrendingUp
+                    title = stringResource(R.string.profile),
+                    icon = IconMapping.Status.info
                 ) {
-                    SettingsItem(
-                        title = "Daily Target",
-                        subtitle = "$${state.dailyTarget.toInt()}",
-                        icon = Icons.Default.CalendarToday,
-                        onClick = {
-                            navController.navigate("targets")
-                        }
-                    )
-                    SettingsItem(
-                        title = "Weekly Target",
-                        subtitle = "$${state.weeklyTarget.toInt()}",
-                        icon = Icons.Default.DateRange,
-                        onClick = {
-                            navController.navigate("targets")
-                        }
-                    )
-                    SettingsItem(
-                        title = "Monthly Target",
-                        subtitle = "$${state.monthlyTarget.toInt()}",
-                        icon = Icons.Default.CalendarMonth,
-                        onClick = {
-                            navController.navigate("targets")
+                    SettingsTextFieldItem(
+                        title = "Name",
+                        subtitle = "Your display name",
+                        icon = Icons.Default.Person,
+                        value = user?.name ?: "",
+                        onValueChange = { newName ->
+                            viewModel.updateName(newName)
                         }
                     )
                 }
@@ -178,58 +174,148 @@ fun SettingsScreen(
                     title = "Work Defaults",
                     icon = IconMapping.Financial.money
                 ) {
-                    SettingsItem(
+                    // Default Hourly Rate
+                    SettingsNumberFieldItem(
                         title = "Default Hourly Rate",
-                        subtitle = "$${state.defaultHourlyRate}/hour",
+                        subtitle = "Set your default hourly rate",
                         icon = IconMapping.Financial.hours,
-                        onClick = {
-                            navController.navigate("targets")
-                        }
+                        value = state.defaultHourlyRate,
+                        onValueChange = { newValue ->
+                            viewModel.updateDefaultHourlyRate(newValue)
+                        },
+                        suffix = "/hr",
+                        decimalPlaces = 2
                     )
-                    SettingsItem(
+
+                    // Average Deduction
+                    SettingsNumberFieldItem(
+                        title = when (localizationState.currentLanguage.code) {
+                            "fr" -> "Déductions moyennes"
+                            "es" -> "Deducciones promedio"
+                            else -> "Average Deduction"
+                        },
+                        subtitle = when (localizationState.currentLanguage.code) {
+                            "fr" -> "Déductions fiscales et salariales"
+                            "es" -> "Deducciones fiscales y salariales"
+                            else -> "Tax and salary deductions"
+                        },
+                        icon = Icons.Default.Percent,
+                        value = state.averageDeductionPercentage,
+                        onValueChange = { newValue ->
+                            viewModel.updateAverageDeductionPercentage(newValue)
+                        },
+                        suffix = "%",
+                        decimalPlaces = 1
+                    )
+
+                    // Multiple Employers Toggle
+                    SettingsToggleItem(
                         title = "Multiple Employers",
-                        subtitle = if (state.useMultipleEmployers) "Enabled" else "Disabled",
+                        subtitle = "Track shifts for multiple employers",
                         icon = IconMapping.Navigation.employers,
-                        onClick = {
-                            navController.navigate("targets")
+                        checked = state.useMultipleEmployers,
+                        onCheckedChange = { enabled ->
+                            viewModel.updateMultipleEmployers(enabled)
                         }
                     )
+
+                    // Variable Schedule Toggle
+                    SettingsToggleItem(
+                        title = localization.variableScheduleLabel,
+                        subtitle = localization.variableScheduleDescription,
+                        icon = Icons.Default.Schedule,
+                        checked = state.hasVariableSchedule,
+                        onCheckedChange = { enabled ->
+                            viewModel.updateHasVariableSchedule(enabled)
+                        }
+                    )
+
+                    // Default Employer Dropdown (only shown if multiple employers is enabled)
+                    if (state.useMultipleEmployers) {
+                        SettingsDropdownStringItem(
+                            title = "Default Employer",
+                            subtitle = "Select default employer for new shifts",
+                            icon = IconMapping.Navigation.employers,
+                            selectedValue = state.defaultEmployerId,
+                            options = listOf(null to "None") + state.employers.map { it.id to it.name },
+                            onValueSelected = { employerId ->
+                                viewModel.updateDefaultEmployer(employerId)
+                            }
+                        )
+                    }
+
+                    // Week Start Day
+                    SettingsDropdownItem(
+                        title = "Week Start Day",
+                        subtitle = "Choose which day starts your work week",
+                        icon = Icons.Default.CalendarMonth,
+                        selectedValue = state.weekStartDay,
+                        options = listOf(
+                            0 to "Sunday",
+                            1 to "Monday",
+                            2 to "Tuesday",
+                            3 to "Wednesday",
+                            4 to "Thursday",
+                            5 to "Friday",
+                            6 to "Saturday"
+                        ),
+                        onValueSelected = { day ->
+                            viewModel.updateWeekStartDay(day ?: 1)
+                        }
+                    )
+
+                    // Default Shift Alert
+                    SettingsDropdownItem(
+                        title = "Default Shift Alert",
+                        subtitle = "Set default shift reminder time",
+                        icon = Icons.Default.NotificationsActive,
+                        selectedValue = state.defaultAlertMinutes,
+                        options = listOf(
+                            null to localization.alertNone,
+                            15 to localization.alert15Minutes,
+                            30 to localization.alert30Minutes,
+                            60 to localization.alert1Hour,
+                            1440 to localization.alert1Day
+                        ),
+                        onValueSelected = { minutes ->
+                            viewModel.updateDefaultAlertMinutes(minutes ?: 0)
+                        }
+                    )
+                }
+            }
+
+            // Targets Section
+            item {
+                SettingsSection(
+                    title = "Targets",
+                    icon = Icons.AutoMirrored.Filled.TrendingUp
+                ) {
                     SettingsItem(
-                        title = "Cash Out",
-                        subtitle = if (state.trackCashOut) "Tracking enabled" else "Tracking disabled",
-                        icon = IconMapping.Financial.tips,
+                        title = "Daily Target",
+                        subtitle = "$${state.dailyTarget.toInt()}",
+                        icon = Icons.Default.CalendarToday,
                         onClick = {
                             navController.navigate("targets")
                         }
                     )
                     
-                    // Variable Schedule Toggle
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = localization.variableScheduleLabel,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = localization.variableScheduleDescription,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        
-                        Spacer(modifier = Modifier.width(16.dp))
-                        
-                        Switch(
-                            checked = false, // TODO: Get from user preferences
-                            onCheckedChange = { /* TODO: Update user preference */ }
+                    // Only show Weekly and Monthly targets if NOT using variable schedule
+                    if (!state.hasVariableSchedule) {
+                        SettingsItem(
+                            title = "Weekly Target",
+                            subtitle = "$${state.weeklyTarget.toInt()}",
+                            icon = Icons.Default.DateRange,
+                            onClick = {
+                                navController.navigate("targets")
+                            }
+                        )
+                        SettingsItem(
+                            title = "Monthly Target",
+                            subtitle = "$${state.monthlyTarget.toInt()}",
+                            icon = Icons.Default.CalendarMonth,
+                            onClick = {
+                                navController.navigate("targets")
+                            }
                         )
                     }
                 }
@@ -238,7 +324,7 @@ fun SettingsScreen(
             // Security Section
             item {
                 SettingsSection(
-                    title = "Security",
+                    title = stringResource(R.string.security),
                     icon = IconMapping.Security.shield
                 ) {
                     SettingsItem(
@@ -250,8 +336,8 @@ fun SettingsScreen(
                         }
                     )
                     SettingsItem(
-                        title = "Change Password",
-                        subtitle = "Update your account password",
+                        title = stringResource(R.string.change_password),
+                        subtitle = stringResource(R.string.update_account_password),
                         icon = IconMapping.Security.locked,
                         onClick = {
                             navController.navigate("change_password")
@@ -260,46 +346,35 @@ fun SettingsScreen(
                 }
             }
 
-            // Subscription Section - DISABLED FOR TESTING
-            /*
+            // Subscription Section (only show management card if subscribed/trial)
             item {
                 SettingsSection(
                     title = "Subscription",
                     icon = IconMapping.Achievements.crown
                 ) {
-                    val subscriptionTitle = when (state.subscriptionTier) {
-                        "full_access" -> "Full Access"
-                        "part_time" -> "Part-Time Pro"
-                        else -> "Free Trial"
-                    }
-                    val subscriptionSubtitle = when (state.subscriptionTier) {
-                        "full_access" -> "Unlimited shifts & entries"
-                        "part_time" -> "3 shifts & 3 entries per week"
-                        else -> "Limited features"
-                    }
-                    
+                    // Always show subscription option
                     SettingsItem(
-                        title = subscriptionTitle,
-                        subtitle = subscriptionSubtitle,
-                        icon = IconMapping.Financial.money,
+                        title = if (state.subscriptionTier == "full") {
+                            "ProTip365 Premium"
+                        } else {
+                            "Subscribe to ProTip365 Premium"
+                        },
+                        subtitle = if (state.subscriptionTier == "full") {
+                            "Active subscription - Unlimited access"
+                        } else {
+                            "$3.99/month - 7 days free trial"
+                        },
+                        icon = if (state.subscriptionTier == "full") {
+                            IconMapping.Financial.money
+                        } else {
+                            IconMapping.Actions.add
+                        },
                         onClick = {
                             navController.navigate("subscription")
                         }
                     )
-                    
-                    if (state.subscriptionTier != "full_access") {
-                        SettingsItem(
-                            title = "Upgrade to Full Access",
-                            subtitle = "$4.99/month - Unlimited everything",
-                            icon = IconMapping.Actions.add,
-                            onClick = {
-                                navController.navigate("subscription")
-                            }
-                        )
-                    }
                 }
             }
-            */
 
             // Support Section
             item {
@@ -307,14 +382,6 @@ fun SettingsScreen(
                     title = "Support",
                     icon = IconMapping.Status.help
                 ) {
-                    SettingsItem(
-                        title = "Help Center",
-                        subtitle = "View guides and tutorials",
-                        icon = IconMapping.Status.help,
-                        onClick = {
-                            navController.navigate("help")
-                        }
-                    )
                     SettingsItem(
                         title = "Contact Support",
                         subtitle = "Get help from our team",
@@ -329,14 +396,6 @@ fun SettingsScreen(
                         icon = IconMapping.Security.shield,
                         onClick = {
                             navController.navigate("privacy")
-                        }
-                    )
-                    SettingsItem(
-                        title = "Terms of Service",
-                        subtitle = "View terms and conditions",
-                        icon = IconMapping.Status.info,
-                        onClick = {
-                            navController.navigate("terms")
                         }
                     )
                 }
@@ -365,9 +424,9 @@ fun SettingsScreen(
                         }
                     )
                     SettingsItem(
-                        title = "Sign Out",
+                        title = stringResource(R.string.sign_out),
                         subtitle = "Sign out of your account",
-                        icon = Icons.Default.Logout,
+                        icon = Icons.AutoMirrored.Filled.Logout,
                         textColor = MaterialTheme.colorScheme.error,
                         onClick = {
                             viewModel.signOut()
@@ -377,28 +436,13 @@ fun SettingsScreen(
                         }
                     )
                     SettingsItem(
-                        title = "Delete Account",
+                        title = stringResource(R.string.delete_account),
                         subtitle = "Permanently delete your account",
                         icon = Icons.Default.DeleteForever,
                         textColor = MaterialTheme.colorScheme.error,
                         onClick = {
                             navController.navigate("delete_account")
                         }
-                    )
-                }
-            }
-
-            // App Info
-            item {
-                SettingsSection(
-                    title = "About",
-                    icon = Icons.Default.Info
-                ) {
-                    SettingsItem(
-                        title = "Version",
-                        subtitle = "1.0.0 (Build 1)",
-                        icon = Icons.Default.AppSettingsAlt,
-                        onClick = {}
                     )
                 }
             }
@@ -409,13 +453,86 @@ fun SettingsScreen(
             isOpen = showLanguagePicker,
             currentLanguage = localizationState.currentLanguage.code,
             onLanguageSelected = { languageCode ->
-                // TODO: Update user language preference
-                println("Language selected: $languageCode")
+                viewModel.updateLanguage(languageCode)
+                showLanguagePicker = false
             },
             onDismiss = {
                 showLanguagePicker = false
             }
         )
+
+        // Alert Picker Dialog
+        if (showAlertPicker) {
+            DefaultAlertPickerDialog(
+                selectedMinutes = state.defaultAlertMinutes,
+                onMinutesSelected = { minutes ->
+                    viewModel.updateDefaultAlertMinutes(minutes ?: 0)
+                    showAlertPicker = false
+                },
+                onDismiss = {
+                    showAlertPicker = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsTextFieldItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text("Enter name") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true,
+                modifier = Modifier.width(150.dp)
+            )
+        }
     }
 }
 
@@ -517,4 +634,342 @@ fun SettingsItem(
             )
         }
     }
+}
+
+@Composable
+fun SettingsToggleItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    textColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = textColor
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsNumberFieldItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    value: Double,
+    onValueChange: (Double) -> Unit,
+    suffix: String = "",
+    decimalPlaces: Int = 2
+) {
+    var textValue by remember(value) {
+        mutableStateOf(String.format("%.${decimalPlaces}f", value))
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            OutlinedTextField(
+                value = textValue,
+                onValueChange = { newValue ->
+                    textValue = newValue
+                    newValue.toDoubleOrNull()?.let {
+                        onValueChange(it)
+                    }
+                },
+                suffix = { if (suffix.isNotEmpty()) Text(suffix) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done
+                ),
+                singleLine = true,
+                modifier = Modifier.width(120.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDropdownItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    selectedValue: Int?,
+    options: List<Pair<Int?, String>>,
+    onValueSelected: (Int?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier.width(150.dp)
+            ) {
+                OutlinedTextField(
+                    value = options.find { it.first == selectedValue }?.second ?: options.find { it.first == null }?.second ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor(),
+                    singleLine = true
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    options.forEach { (value, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onValueSelected(value)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDropdownStringItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    selectedValue: String?,
+    options: List<Pair<String?, String>>,
+    onValueSelected: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier.width(150.dp)
+            ) {
+                OutlinedTextField(
+                    value = options.find { it.first == selectedValue }?.second ?: options.find { it.first == null }?.second ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor(),
+                    singleLine = true
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    options.forEach { (value, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onValueSelected(value)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DefaultAlertPickerDialog(
+    selectedMinutes: Int?,
+    onMinutesSelected: (Int?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val localization = rememberSettingsLocalization()
+    val options = listOf(
+        0 to localization.alertNone,
+        15 to localization.alert15Minutes,
+        30 to localization.alert30Minutes,
+        60 to localization.alert1Hour,
+        1440 to localization.alert1Day
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(localization.defaultAlertLabel) },
+        text = {
+            Column {
+                options.forEach { (minutes, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onMinutesSelected(if (minutes == 0) null else minutes)
+                            }
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (minutes == 0 && selectedMinutes == null) ||
+                                      (minutes != 0 && minutes == selectedMinutes),
+                            onClick = {
+                                onMinutesSelected(if (minutes == 0) null else minutes)
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }

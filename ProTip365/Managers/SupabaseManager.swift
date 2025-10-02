@@ -21,6 +21,13 @@ class SupabaseManager: ObservableObject {
             fatalError("❌ Invalid Supabase URL format")
         }
 
+        #if DEBUG
+        print("🔑 Initializing Supabase with:")
+        print("   URL: \(config.supabaseURL)")
+        print("   Key: \(String(config.supabaseAnonKey.prefix(20)))...") // Only show first 20 chars for security
+        print("   Key Length: \(config.supabaseAnonKey.count)")
+        #endif
+
         let client = SupabaseClient(
             supabaseURL: url,
             supabaseKey: config.supabaseAnonKey
@@ -70,9 +77,7 @@ class SupabaseManager: ObservableObject {
     }
     
     func updateShift(_ shift: Shift) async throws {
-        guard let shiftId = shift.id else {
-            throw NSError(domain: "SupabaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Shift ID is required for update"])
-        }
+        let shiftId = shift.id
         
         try await client
             .from("shifts")

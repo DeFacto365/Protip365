@@ -33,6 +33,19 @@ struct WelcomeSignUpView: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
 
+                // Gradient overlay
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.6, green: 0.8, blue: 1.0),     // Light blue
+                        Color(red: 1.0, green: 0.7, blue: 0.9),     // Light pink
+                        Color(red: 0.8, green: 0.7, blue: 1.0)      // Light purple
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .opacity(0.2)
+                .ignoresSafeArea()
+
                 VStack(spacing: 0) {
                     // Progress indicator
                     ProgressBar(currentStep: currentStep, totalSteps: 3)
@@ -189,6 +202,12 @@ struct WelcomeSignUpView: View {
                             validateEmail()
                         }
                     }
+                    .onAppear {
+                        // Auto-focus the email field when this view appears
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            focusedField = .email
+                        }
+                    }
 
                 if isCheckingEmail {
                     HStack {
@@ -253,6 +272,12 @@ struct WelcomeSignUpView: View {
                     .focused($focusedField, equals: .password)
                     .onChange(of: password) { _, _ in
                         validatePasswords()
+                    }
+                    .onAppear {
+                        // Auto-focus the password field when this view appears
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            focusedField = .password
+                        }
                     }
             }
 
@@ -343,6 +368,12 @@ struct WelcomeSignUpView: View {
                     )
                     .textContentType(.name)
                     .focused($focusedField, equals: .userName)
+                    .onAppear {
+                        // Auto-focus the name field when this view appears
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            focusedField = .userName
+                        }
+                    }
             }
 
             // Summary
@@ -440,37 +471,33 @@ struct WelcomeSignUpView: View {
             return
         }
 
-        // Check if email exists in database
+        // Check if email exists using RPC function
         isCheckingEmail = true
         Task {
             do {
-                // Try to check if user exists - this is a workaround
-                // In production, you'd have a proper endpoint for this
-                _ = try await SupabaseManager.shared.client.auth.signIn(
-                    email: email,
-                    password: "dummy_check_password_12345"
-                )
-
-                // If we get here without error, email exists
-                await MainActor.run {
-                    emailAlreadyExists = true
-                    emailError = emailAlreadyExistsText
-                    isCheckingEmail = false
-                }
-            } catch {
-                // If error contains "Invalid login credentials", email doesn't exist (good!)
-                // If error contains "Email not confirmed", email exists but not verified
-                let errorString = error.localizedDescription.lowercased()
+                // Call the RPC function to check if email exists in auth.users
+                let exists: Bool = try await SupabaseManager.shared.client
+                    .rpc("check_email_exists", params: ["check_email": email])
+                    .execute()
+                    .value
 
                 await MainActor.run {
-                    if errorString.contains("email not confirmed") ||
-                       errorString.contains("user already registered") {
+                    if exists {
                         emailAlreadyExists = true
                         emailError = emailAlreadyExistsText
+                        emailIsValid = false
                     } else {
                         emailIsValid = true
                         emailAlreadyExists = false
                     }
+                    isCheckingEmail = false
+                }
+            } catch {
+                print("❌ Email check error: \(error.localizedDescription)")
+                // On error, allow to proceed
+                await MainActor.run {
+                    emailIsValid = true
+                    emailAlreadyExists = false
                     isCheckingEmail = false
                 }
             }
@@ -498,10 +525,17 @@ struct WelcomeSignUpView: View {
     }
 
     private func createAccount() {
+        print("🚀 createAccount() called")
+        print("   Email: \(email)")
+        print("   Password length: \(password.count)")
+        print("   Username: \(userName)")
+
         isLoading = true
 
         Task {
+            print("📝 Starting signup task...")
             do {
+                print("📧 Calling Supabase signUp...")
                 // Sign up the user
                 let response = try await SupabaseManager.shared.client.auth.signUp(
                     email: email,
@@ -509,8 +543,16 @@ struct WelcomeSignUpView: View {
                     data: ["name": .string(userName)]
                 )
 
-                // Create user profile
+                print("✅ Signup response received:")
+                print("   User ID: \(response.user.id)")
+                print("   User email: \(response.user.email ?? "nil")")
+                print("   Session: \(response.session != nil ? "exists" : "nil")")
+                print("   User created at: \(response.user.createdAt)")
+
+                // Check if user already exists by trying to create profile
+                // If the user already exists, the profile insert will fail with a unique constraint error
                 let userId = response.user.id
+                print("💾 Preparing to insert profile for user: \(userId)")
                 struct ProfileInsert: Encodable {
                         let user_id: UUID
                         let name: String
@@ -525,25 +567,83 @@ struct WelcomeSignUpView: View {
                         language: language
                     )
 
-                try await SupabaseManager.shared.client
-                    .from("users_profile")
-                    .insert(profile)
-                    .execute()
+                print("📝 Attempting profile insert...")
+                do {
+                    try await SupabaseManager.shared.client
+                        .from("users_profile")
+                        .insert(profile)
+                        .execute()
+                    print("✅ Profile inserted successfully")
+                } catch let profileError {
+                    print("❌ Profile insert error: \(profileError)")
+                    print("   Error type: \(type(of: profileError))")
+                    print("   Error description: \(profileError.localizedDescription)")
 
+                    // Check if it's a duplicate key error
+                    let errorString = String(describing: profileError).lowercased()
+                    print("   Checking error string: \(errorString)")
+
+                    if errorString.contains("duplicate") || errorString.contains("unique") || errorString.contains("already exists") {
+                        print("🚫 Duplicate user detected!")
+                        throw NSError(
+                            domain: "SignupError",
+                            code: 409,
+                            userInfo: [NSLocalizedDescriptionKey: "This email address is already in use. Please sign in instead."]
+                        )
+                    }
+                    throw profileError
+                }
+
+                print("🔐 Attempting auto sign-in...")
                 // Sign in automatically
                 _ = try await SupabaseManager.shared.client.auth.signIn(
                     email: email,
                     password: password
                 )
+                print("✅ Auto sign-in successful")
 
                 await MainActor.run {
+                    print("✅ Setting isAuthenticated = true")
                     isAuthenticated = true
                     isLoading = false
-                    showOnboarding = true
+                    // Don't set showOnboarding = true here
+                    // Let ContentView handle the flow: Auth → Subscription → Onboarding
                 }
             } catch {
+                print("❌ Account creation failed:")
+                print("   Error type: \(type(of: error))")
+                print("   Error description: \(error.localizedDescription)")
+                print("   Full error: \(error)")
+
+                // Try to extract more detailed error info
+                if let nsError = error as NSError? {
+                    print("   NSError domain: \(nsError.domain)")
+                    print("   NSError code: \(nsError.code)")
+                    print("   NSError userInfo: \(nsError.userInfo)")
+                }
+
                 await MainActor.run {
-                    errorMessage = error.localizedDescription
+                    // Provide more specific error messages
+                    let errorDesc = error.localizedDescription.lowercased()
+
+                    print("🔍 Checking error description: '\(errorDesc)'")
+
+                    if errorDesc.contains("already") ||
+                       errorDesc.contains("exists") ||
+                       errorDesc.contains("duplicate") ||
+                       errorDesc.contains("user already registered") {
+                        print("✅ Detected duplicate email error")
+                        errorMessage = emailAlreadyExistsText
+                    } else if errorDesc.contains("users_profile") {
+                        errorMessage = "Failed to create user profile. Please try again."
+                    } else if errorDesc.contains("invalid") && errorDesc.contains("email") {
+                        errorMessage = invalidEmailFormatText
+                    } else if errorDesc.contains("password") {
+                        errorMessage = "Password is too weak. Use at least 6 characters."
+                    } else {
+                        // Show the actual error to debug
+                        errorMessage = "DEBUG: \(error.localizedDescription)"
+                    }
                     showError = true
                     isLoading = false
                 }

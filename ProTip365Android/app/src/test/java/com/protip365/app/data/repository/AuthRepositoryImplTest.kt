@@ -1,6 +1,6 @@
 package com.protip365.app.data.repository
 
-import com.protip365.app.data.models.User
+import com.protip365.app.data.models.UserProfile
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
@@ -54,18 +54,18 @@ class AuthRepositoryImplTest {
             this.password = password
         } } returns authResponse
         
-        val mockUser = User(
+        val mockUser = UserProfile(
             userId = "user123",
-            email = email,
             name = "Test User",
-            phone = null,
-            createdAt = "2024-01-01T00:00:00Z",
-            useMultipleEmployers = false
+            defaultHourlyRate = 15.0,
+            weekStart = 0,
+            useMultipleEmployers = false,
+            preferredLanguage = "en"
         )
         
         coEvery { postgrest.from("users").select {
             filter { eq("id", "user123") }
-        }.decodeSingleOrNull<User>() } returns mockUser
+        }.decodeSingleOrNull<UserProfile>() } returns mockUser
         
         // When
         val result = authRepository.signIn(email, password)
@@ -75,7 +75,6 @@ class AuthRepositoryImplTest {
         val user = result.getOrNull()
         assertNotNull(user)
         assertEquals("user123", user?.userId)
-        assertEquals(email, user?.email)
         assertEquals("Test User", user?.name)
     }
     
@@ -122,26 +121,25 @@ class AuthRepositoryImplTest {
             this.data = mapOf("name" to name)
         } } returns authResponse
         
-        val mockUser = User(
+        val mockUser = UserProfile(
             userId = "user123",
-            email = email,
             name = name,
-            phone = null,
-            createdAt = "2024-01-01T00:00:00Z",
-            useMultipleEmployers = false
+            defaultHourlyRate = 15.0,
+            weekStart = 0,
+            useMultipleEmployers = false,
+            preferredLanguage = "en"
         )
         
         coEvery { postgrest.from("users").upsert(mockUser) } returns Unit
         
         // When
-        val result = authRepository.signUp(name, email, password)
+        val result = authRepository.signUp(email, password)
         
         // Then
         assertTrue(result.isSuccess)
         val user = result.getOrNull()
         assertNotNull(user)
         assertEquals("user123", user?.userId)
-        assertEquals(email, user?.email)
         assertEquals(name, user?.name)
     }
     
@@ -182,18 +180,18 @@ class AuthRepositoryImplTest {
         
         coEvery { auth.currentUserOrNull() } returns userInfo
         
-        val mockUser = User(
+        val mockUser = UserProfile(
             userId = "user123",
-            email = "test@example.com",
             name = "Test User",
-            phone = null,
-            createdAt = "2024-01-01T00:00:00Z",
-            useMultipleEmployers = false
+            defaultHourlyRate = 15.0,
+            weekStart = 0,
+            useMultipleEmployers = false,
+            preferredLanguage = "en"
         )
         
         coEvery { postgrest.from("users").select {
             filter { eq("id", "user123") }
-        }.decodeSingleOrNull<User>() } returns mockUser
+        }.decodeSingleOrNull<UserProfile>() } returns mockUser
         
         // When
         val user = authRepository.getCurrentUser()
@@ -201,7 +199,6 @@ class AuthRepositoryImplTest {
         // Then
         assertNotNull(user)
         assertEquals("user123", user?.userId)
-        assertEquals("test@example.com", user?.email)
         assertEquals("Test User", user?.name)
     }
     

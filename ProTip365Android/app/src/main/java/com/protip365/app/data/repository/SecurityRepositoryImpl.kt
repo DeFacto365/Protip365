@@ -26,34 +26,32 @@ class SecurityRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearPin(): Result<Unit> = try {
-        // TODO: Add clearPin method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.clearPin()
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to clear PIN"))
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun isPinSet(): Boolean {
-        // TODO: Add isPinSet method to SecurityManager
-        return false
+        return securityManager.isPinSet()
     }
 
     override suspend fun enableBiometric(): Result<Unit> = try {
-        // TODO: Add enableBiometric method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.enableBiometric()
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to enable biometric"))
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun disableBiometric(): Result<Unit> = try {
-        // TODO: Add disableBiometric method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.disableBiometric()
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to disable biometric"))
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun isBiometricEnabled(): Boolean {
-        // TODO: Add isBiometricEnabled method to SecurityManager
-        return false
+        return securityManager.isBiometricEnabled()
     }
 
     override suspend fun isBiometricAvailable(): Boolean {
@@ -62,37 +60,34 @@ class SecurityRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setAutoLockMinutes(minutes: Int): Result<Unit> = try {
-        // TODO: Add setAutoLockMinutes method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.setAutoLockMinutes(minutes)
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to set auto-lock minutes"))
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun getAutoLockMinutes(): Int {
-        // TODO: Add getAutoLockMinutes method to SecurityManager
-        return 5 // Default 5 minutes
+        return securityManager.getAutoLockMinutes()
     }
 
     override suspend fun setLastActiveTime(timestamp: Long): Result<Unit> = try {
-        // TODO: Add setLastActiveTime method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.setLastActiveTime(timestamp)
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to set last active time"))
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     override suspend fun getLastActiveTime(): Long {
-        // TODO: Add getLastActiveTime method to SecurityManager
-        return System.currentTimeMillis()
+        return securityManager.getLastActiveTime()
     }
 
     override suspend fun shouldShowLockScreen(): Boolean {
-        // TODO: Add shouldShowLockScreen method to SecurityManager
-        return false
+        return securityManager.shouldShowLockScreen()
     }
 
     override suspend fun resetSecuritySettings(): Result<Unit> = try {
-        // TODO: Add resetSecuritySettings method to SecurityManager
-        Result.success(Unit)
+        val success = securityManager.resetSecuritySettings()
+        if (success) Result.success(Unit) else Result.failure(Exception("Failed to reset security settings"))
     } catch (e: Exception) {
         Result.failure(e)
     }

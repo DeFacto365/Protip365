@@ -2,7 +2,6 @@ import SwiftUI
 import Supabase
 
 struct AppInfoSection: View {
-    @Binding var userEmail: String
     @Binding var language: String
     @Binding var showOnboarding: Bool
 
@@ -15,11 +14,9 @@ struct AppInfoSection: View {
     }
 
     init(
-        userEmail: Binding<String>,
         language: Binding<String>,
         showOnboarding: Binding<Bool>
     ) {
-        self._userEmail = userEmail
         self._language = language
         self._showOnboarding = showOnboarding
         self.localization = SettingsLocalization(language: language.wrappedValue)
@@ -47,30 +44,26 @@ struct AppInfoSection: View {
                 Image("Logo2")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 50, height: 50)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .frame(width: 60, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 4) {
                     // App Name
                     HStack(spacing: 0) {
                         Text("ProTip")
-                            .font(.headline)
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
 
                         Text("365")
-                            .font(.headline)
+                            .font(.title2)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
                     }
 
-                    Text(userEmail)
+                    Text(appVersion)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-
-                    Text(appVersion)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
 
                 Spacer()

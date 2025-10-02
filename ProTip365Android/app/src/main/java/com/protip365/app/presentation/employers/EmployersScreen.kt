@@ -11,8 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,15 +29,15 @@ fun EmployersScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         TopAppBar(
-            title = { Text("Employers") },
+            title = { Text(stringResource(R.string.employers_title)) },
             navigationIcon = {
                 IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                 }
             },
             actions = {
                 IconButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Employer")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_employer))
                 }
             }
         )
@@ -90,7 +92,7 @@ fun EmployersScreen(
                                 )
                                 Column {
                                     Text(
-                                        text = "Upgrade for Multiple Employers",
+                                        text = "Multiple Employers Available",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -206,17 +208,18 @@ fun EmployerCard(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "$${employer.defaultHourlyRate}/hour",
+                            text = "$${employer.hourlyRate}/hour",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (employer.totalEarnings > 0) {
-                            Text(
-                                text = "Total: $${"%,.2f".format(employer.totalEarnings)}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        // TODO: Calculate total earnings from CompletedShifts
+                        // if (totalEarnings > 0) {
+                        //     Text(
+                        //         text = "Total: $${"%,.2f".format(totalEarnings)}",
+                        //         style = MaterialTheme.typography.bodyMedium,
+                        //         color = MaterialTheme.colorScheme.primary
+                        //     )
+                        // }
                     }
                 }
 
@@ -224,7 +227,7 @@ fun EmployerCard(
                 Box {
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more_options))
                     }
                     DropdownMenu(
                         expanded = expanded,

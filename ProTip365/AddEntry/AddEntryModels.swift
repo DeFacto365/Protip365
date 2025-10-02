@@ -93,6 +93,12 @@ struct ShiftUpdate: Encodable {
     let notes: String?
 }
 
+// For updating only the status when adding/editing entry data
+struct ShiftStatusUpdate: Encodable {
+    let status: String
+    let notes: String?
+}
+
 struct IncomeInsert: Encodable {
     let shift_id: UUID
     let user_id: UUID
@@ -104,6 +110,11 @@ struct IncomeInsert: Encodable {
     let actual_start_time: String
     let actual_end_time: String
     let notes: String?
+    let hourly_rate: Double
+    let gross_income: Double
+    let total_income: Double
+    let net_income: Double
+    let deduction_percentage: Double
 }
 
 struct IncomeUpdate: Encodable {
@@ -116,6 +127,11 @@ struct IncomeUpdate: Encodable {
     let actual_end_time: String
     let notes: String?
     let updated_at: String
+    let hourly_rate: Double
+    let gross_income: Double
+    let total_income: Double
+    let net_income: Double
+    let deduction_percentage: Double
 }
 
 struct IncomeCheck: Decodable {

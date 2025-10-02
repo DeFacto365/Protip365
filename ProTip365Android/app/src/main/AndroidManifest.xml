@@ -40,6 +40,8 @@
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.ProTip365">
+            
+            <!-- Main launcher intent -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -55,16 +57,12 @@
             </intent-filter>
         </activity>
         
-        <!-- Splash Screen Activity -->
+        <!-- Splash Screen Activity (removed from launcher) -->
         <activity
             android:name=".presentation.SplashActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.ProTip365.Splash"
             android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         
         <!-- File Provider for sharing exports -->

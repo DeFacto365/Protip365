@@ -146,8 +146,8 @@ class AchievementRepositoryImpl @Inject constructor(
 
     private suspend fun checkTipPercentageAchievement(userId: String, minPercentage: Int): Boolean {
         return try {
-            val shifts = supabaseClient
-                .from("shifts")
+            val shiftEntries = supabaseClient
+                .from("shift_entries")
                 .select {
                     filter {
                         eq("user_id", userId)
@@ -157,11 +157,11 @@ class AchievementRepositoryImpl @Inject constructor(
                 }
                 .decodeList<Map<String, Any>>()
 
-            if (shifts.isEmpty()) return false
+            if (shiftEntries.isEmpty()) return false
 
-            val averageTipPercentage = shifts.map { shift ->
-                val tips = (shift["tips"] as? Number)?.toDouble() ?: 0.0
-                val sales = (shift["sales"] as? Number)?.toDouble() ?: 0.0
+            val averageTipPercentage = shiftEntries.map { entry ->
+                val tips = (entry["tips"] as? Number)?.toDouble() ?: 0.0
+                val sales = (entry["sales"] as? Number)?.toDouble() ?: 0.0
                 if (sales > 0) (tips / sales) * 100 else 0.0
             }.average()
 
@@ -182,27 +182,34 @@ class AchievementRepositoryImpl @Inject constructor(
 
     private suspend fun checkHourlyRateAchievement(userId: String, minRate: Double): Boolean {
         return try {
-            val shifts = supabaseClient
-                .from("shifts")
+            // Need to join expected_shifts and shift_entries for complete data
+            val shiftEntries = supabaseClient
+                .from("shift_entries")
                 .select {
                     filter {
                         eq("user_id", userId)
-                        gt("hours", 0)
+                        gt("actual_hours", 0)
                     }
                 }
-                .decodeList<Map<String, Any>>()
+                .decodeList<com.protip365.app.data.models.ShiftEntry>()
 
-            if (shifts.isEmpty()) return false
+            val expectedShifts = supabaseClient
+                .from("expected_shifts")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<com.protip365.app.data.models.ExpectedShift>()
 
-            val averageRate = shifts.map { shift ->
-                val tips = (shift["tips"] as? Number)?.toDouble() ?: 0.0
-                val other = (shift["other"] as? Number)?.toDouble() ?: 0.0
-                val cashOut = (shift["cash_out"] as? Number)?.toDouble() ?: 0.0
-                val hours = (shift["hours"] as? Number)?.toDouble() ?: 0.0
-                val hourlyRate = (shift["hourly_rate"] as? Number)?.toDouble() ?: 0.0
-                
-                val totalEarnings = hourlyRate * hours + tips + other - cashOut
-                if (hours > 0) totalEarnings / hours else 0.0
+            if (shiftEntries.isEmpty()) return false
+
+            val averageRate = shiftEntries.mapNotNull { entry ->
+                val expectedShift = expectedShifts.find { it.id == entry.shiftId }
+                expectedShift?.let {
+                    val totalEarnings = it.hourlyRate * entry.actualHours + entry.tips + entry.other - entry.cashOut
+                    if (entry.actualHours > 0) totalEarnings / entry.actualHours else 0.0
+                }
             }.average()
 
             averageRate >= minRate
@@ -213,8 +220,8 @@ class AchievementRepositoryImpl @Inject constructor(
 
     private suspend fun checkSalesAchievement(userId: String, minSales: Double): Boolean {
         return try {
-            val shifts = supabaseClient
-                .from("shifts")
+            val shiftEntries = supabaseClient
+                .from("shift_entries")
                 .select {
                     filter {
                         eq("user_id", userId)
@@ -223,7 +230,7 @@ class AchievementRepositoryImpl @Inject constructor(
                 }
                 .decodeList<Map<String, Any>>()
 
-            shifts.isNotEmpty()
+            shiftEntries.isNotEmpty()
         } catch (e: Exception) {
             false
         }

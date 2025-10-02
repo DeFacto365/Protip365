@@ -6,10 +6,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import com.protip365.app.presentation.design.IconMapping
 import com.protip365.app.presentation.localization.rememberNavigationLocalization
-import com.protip365.app.presentation.localization.LocalizedText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -29,6 +27,8 @@ import com.protip365.app.presentation.localization.LocalizedBottomNavItems
 import com.protip365.app.presentation.localization.rememberLocalization
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
+import com.protip365.app.presentation.components.iOS26LiquidGlassTabBar
+import com.protip365.app.presentation.components.getTabItems
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,58 +37,22 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val useMultipleEmployers by viewModel.useMultipleEmployers.collectAsState()
-    val localization = rememberNavigationLocalization()
 
     Scaffold(
         bottomBar = {
-            BottomNavBar(navController, useMultipleEmployers)
-        },
-        floatingActionButton = {
-            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-            if (currentRoute == "dashboard" || currentRoute == "calendar") {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    // + Entry button
-                    FloatingActionButton(
-                        onClick = {
-                            navController.navigate("add_shift?isEntry=true")
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Text(
-                                text = LocalizedText("quick_entry"),
-                                style = MaterialTheme.typography.labelSmall
-                            )
+            iOS26LiquidGlassTabBar(
+                selectedTabId = navController.currentBackStackEntryAsState().value?.destination?.route ?: "dashboard",
+                onTabSelected = { tabId ->
+                    navController.navigate(tabId) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
                         }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    
-                    // + Shift button
-                    FloatingActionButton(
-                        onClick = {
-                            navController.navigate("add_shift")
-                        }
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Shift")
-                            Text(
-                                text = "Shift",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                }
-            }
+                },
+                tabItems = getTabItems(useMultipleEmployers)
+            )
         }
     ) { paddingValues ->
         NavHost(
@@ -100,7 +64,11 @@ fun MainScreen(
                 DashboardScreen(navController)
             }
             composable("calendar") {
-                CalendarScreen(navController)
+                CalendarScreen(
+                    onNavigateToAddShift = { navController.navigate("add_shift") },
+                    onNavigateToAddEntry = { date -> navController.navigate("add_entry?initialDate=${date}") },
+                    onNavigateToEditShift = { shiftId -> navController.navigate("edit_shift/$shiftId") }
+                )
             }
             if (useMultipleEmployers) {
                 composable("employers") {

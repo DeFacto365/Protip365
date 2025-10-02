@@ -41,6 +41,8 @@ struct DashboardMetrics {
         let type: String
         let shifts: [ShiftIncome]
         let period: String
+        let startDate: Date?
+        let endDate: Date?
     }
 
     // MARK: - Metric Calculations
@@ -60,7 +62,7 @@ struct DashboardMetrics {
                 stats.income += baseIncome
             } else {
                 let hours = shift.hours ?? 0
-                stats.income += (hours * (shift.hourly_rate ?? defaultHourlyRate))
+                stats.income += (hours * shift.hourly_rate)
             }
             stats.tipOut += (shift.cash_out ?? 0)
             stats.other += (shift.other ?? 0)
@@ -182,6 +184,29 @@ struct DashboardMetrics {
         } else {
             return .red
         }
+    }
+
+    // MARK: - Target Calculation Utilities
+
+    /// Calculate effective sales target based on shifts with custom targets
+    /// - Parameters:
+    ///   - shifts: Array of shifts to analyze
+    ///   - defaultTarget: Default sales target per shift from user settings
+    /// - Returns: Effective sales target considering custom shift targets
+    static func calculateEffectiveSalesTarget(shifts: [ShiftIncome], defaultTarget: Double) -> Double {
+        var totalTarget: Double = 0
+
+        for shift in shifts {
+            if let customTarget = shift.sales_target {
+                // Use custom target if set
+                totalTarget += customTarget
+            } else {
+                // Use default target if no custom target
+                totalTarget += defaultTarget
+            }
+        }
+
+        return totalTarget
     }
 
     // MARK: - Date Utilities

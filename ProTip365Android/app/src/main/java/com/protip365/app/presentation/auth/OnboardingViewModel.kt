@@ -2,12 +2,15 @@ package com.protip365.app.presentation.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.protip365.app.data.local.PreferencesManager
 import com.protip365.app.data.models.Employer
 import com.protip365.app.domain.repository.AuthRepository
 import com.protip365.app.domain.repository.EmployerRepository
 import com.protip365.app.domain.repository.SecurityRepository
 import com.protip365.app.domain.repository.SubscriptionRepository
 import com.protip365.app.domain.repository.UserRepository
+import com.protip365.app.presentation.localization.LocalizationManager
+import com.protip365.app.presentation.localization.SupportedLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,15 +26,54 @@ class OnboardingViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val employerRepository: EmployerRepository,
     private val securityRepository: SecurityRepository,
-    private val subscriptionRepository: SubscriptionRepository
+    private val subscriptionRepository: SubscriptionRepository,
+    private val preferencesManager: PreferencesManager,
+    private val localizationManager: LocalizationManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
     val state: StateFlow<OnboardingState> = _state.asStateFlow()
 
+    init {
+        // Load user profile to pre-fill name from signup
+        loadUserProfile()
+    }
+
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            try {
+                val userId = userRepository.getCurrentUserId()
+                userId?.let { id ->
+                    val userProfile = userRepository.getUserProfile(id)
+                    userProfile?.let { profile ->
+                        _state.value = _state.value.copy(
+                            name = profile.name ?: ""
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error silently - use empty name as default
+            }
+        }
+    }
+
+    fun setName(name: String) {
+        _state.value = _state.value.copy(name = name)
+    }
+
     fun setLanguage(language: String) {
         _state.value = _state.value.copy(language = language)
         viewModelScope.launch {
+            // Set language in LocalizationManager immediately for UI updates
+            localizationManager.setLanguage(when(language) {
+                "en" -> SupportedLanguage.ENGLISH
+                "fr" -> SupportedLanguage.FRENCH
+                "es" -> SupportedLanguage.SPANISH
+                else -> SupportedLanguage.ENGLISH
+            })
+
+            // Also save to user preferences and database
+            preferencesManager.setLanguage(language)
             userRepository.setLanguagePreference(language)
         }
     }
@@ -50,6 +92,24 @@ class OnboardingViewModel @Inject constructor(
 
     fun setWeekStart(startsMonday: Boolean) {
         _state.value = _state.value.copy(weekStartsMonday = startsMonday)
+        viewModelScope.launch {
+            // Save to preferences immediately
+            preferencesManager.setWeekStartsMonday(startsMonday)
+        }
+    }
+
+    fun setUseMultipleEmployers(useMultiple: Boolean) {
+        _state.value = _state.value.copy(useMultipleEmployers = useMultiple)
+        viewModelScope.launch {
+            preferencesManager.setMultipleEmployers(useMultiple)
+        }
+    }
+
+    fun setVariableSchedule(hasVariable: Boolean) {
+        _state.value = _state.value.copy(hasVariableSchedule = hasVariable)
+        viewModelScope.launch {
+            preferencesManager.setVariableSchedule(hasVariable)
+        }
     }
 
     fun toggleSecurity() {
@@ -78,7 +138,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun validateStep(step: Int): Boolean {
         return when (step) {
-            0 -> true // Welcome step - always valid
+            0 -> _state.value.name.isNotBlank() && _state.value.language.isNotBlank() // Welcome step - require name and language
             1 -> validateWorkSettings()
             2 -> validateSecuritySettings()
             3 -> true // Subscription step - always valid
@@ -120,7 +180,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun canProceed(step: Int): Boolean {
         return when (step) {
-            0 -> _state.value.language.isNotBlank()
+            0 -> _state.value.name.isNotBlank() && _state.value.language.isNotBlank()
             1 -> _state.value.employerName.isNotBlank() &&
                  _state.value.hourlyRate.isNotBlank() &&
                  _state.value.tipTarget.isNotBlank()
@@ -152,15 +212,25 @@ class OnboardingViewModel @Inject constructor(
                 val hourlyRate = _state.value.hourlyRate.toDoubleOrNull() ?: 15.0
                 val tipTarget = _state.value.tipTarget.toDoubleOrNull() ?: 20.0
 
+                // Update user profile with comprehensive settings
                 userRepository.updateUserProfile(
                     mapOf(
+                        "name" to _state.value.name,
                         "preferred_language" to _state.value.language,
                         "default_hourly_rate" to hourlyRate,
                         "tip_target_percentage" to tipTarget,
                         "week_starts_monday" to _state.value.weekStartsMonday,
+                        "use_multiple_employers" to _state.value.useMultipleEmployers,
+                        "has_variable_schedule" to _state.value.hasVariableSchedule,
                         "onboarding_completed" to true
                     )
                 )
+
+                // Save additional preferences locally for immediate access
+                preferencesManager.setDailyTarget(400.0f) // Default daily target
+                preferencesManager.setWeeklyTarget(2800.0f) // Default weekly target
+                preferencesManager.setMonthlyTarget(12000.0f) // Default monthly target
+                preferencesManager.setOnboardingCompleted(true)
 
                 // 2. Create default employer
                 if (_state.value.employerName.isNotBlank()) {
@@ -169,7 +239,6 @@ class OnboardingViewModel @Inject constructor(
                         userId = user.userId,
                         name = _state.value.employerName,
                         hourlyRate = hourlyRate,
-                        defaultHourlyRate = hourlyRate,
                         active = true
                     )
                     employerRepository.createEmployer(employer)
@@ -178,9 +247,14 @@ class OnboardingViewModel @Inject constructor(
                 // 3. Set up security
                 if (_state.value.usePin) {
                     securityRepository.setPin(_state.value.pin)
+                    preferencesManager.setSecurityEnabled(true)
                     if (_state.value.useBiometric) {
                         securityRepository.enableBiometric()
+                        preferencesManager.setBiometricEnabled(true)
                     }
+                } else {
+                    preferencesManager.setSecurityEnabled(false)
+                    preferencesManager.setBiometricEnabled(false)
                 }
 
                 // 4. Initialize subscription
@@ -219,6 +293,9 @@ class OnboardingViewModel @Inject constructor(
 }
 
 data class OnboardingState(
+    // Personal Info
+    val name: String = "",
+
     // Welcome/Language
     val language: String = "en",
 
@@ -227,6 +304,8 @@ data class OnboardingState(
     val hourlyRate: String = "15.00",
     val tipTarget: String = "20",
     val weekStartsMonday: Boolean = false,
+    val useMultipleEmployers: Boolean = false,
+    val hasVariableSchedule: Boolean = false,
 
     // Security
     val usePin: Boolean = false,

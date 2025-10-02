@@ -46,11 +46,17 @@ class SubscriptionViewModel @Inject constructor(
                         currentTier = if (subscription.status == "active") "full" else "free",
                         expiresAt = expiresAt,
                         willRenew = subscription.status == "active",
+                        isInTrialPeriod = false, // TODO: Determine from subscription data
+                        trialDaysRemaining = 0, // TODO: Calculate from subscription data
                         isLoading = false
                     )
                 } else {
                     _state.value = SubscriptionState(
                         currentTier = "free",
+                        expiresAt = null,
+                        willRenew = false,
+                        isInTrialPeriod = false,
+                        trialDaysRemaining = 0,
                         isLoading = false
                     )
                 }
@@ -61,9 +67,22 @@ class SubscriptionViewModel @Inject constructor(
     fun subscribeToPlan(tier: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            
+
             // In a real app, this would integrate with Google Play Billing
             // For now, we'll simulate the subscription
+
+            // 🔴 CRITICAL: When implementing real billing, DO NOT navigate to onboarding
+            // without first checking the onboarding_completed flag!
+            // See ANDROID_ONBOARDING_FIX_GUIDE.md Section 4 for implementation details
+            //
+            // After successful purchase, use this pattern:
+            // val userId = authRepository.getCurrentUser()?.userId ?: return@launch
+            // val profile = userRepository.getUserProfile(userId)
+            // val needsOnboarding = !(profile?.onboardingCompleted ?: false)
+            // if (needsOnboarding) {
+            //     // Only then navigate to onboarding
+            // }
+
             _state.value = _state.value.copy(
                 isLoading = false,
                 error = "Google Play Billing not implemented yet"
@@ -95,6 +114,21 @@ class SubscriptionViewModel @Inject constructor(
         }
     }
 
+    fun restorePurchases() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+
+            // In a real app, this would restore from Google Play Billing
+            // For now, we'll just reload from the database
+
+            // 🔴 CRITICAL: When implementing real restore, DO NOT navigate to onboarding
+            // without first checking the onboarding_completed flag!
+            // See ANDROID_ONBOARDING_FIX_GUIDE.md Section 4 for implementation details
+
+            loadSubscription()
+        }
+    }
+
     fun restoreSubscription() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
@@ -110,6 +144,8 @@ data class SubscriptionState(
     val currentTier: String = "free", // free, part_time, full_access
     val expiresAt: String? = null,
     val willRenew: Boolean = true,
+    val isInTrialPeriod: Boolean = false,
+    val trialDaysRemaining: Int = 0,
     val isLoading: Boolean = true,
     val error: String? = null
 )

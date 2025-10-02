@@ -77,9 +77,9 @@ struct AddShiftLocalization {
 
     var newShiftText: String {
         switch language {
-        case "fr": return "Nouveau quart"
-        case "es": return "Nuevo turno"
-        default: return "New Shift"
+        case "fr": return "Ajouter un quart"
+        case "es": return "Agregar turno"
+        default: return "Add Shift"
         }
     }
 
@@ -97,6 +97,30 @@ struct AddShiftLocalization {
         case "fr": return "Sélectionner un employeur"
         case "es": return "Seleccionar empleador"
         default: return "Select Employer"
+        }
+    }
+
+    var salesTargetText: String {
+        switch language {
+        case "fr": return "Objectif de ventes"
+        case "es": return "Objetivo de ventas"
+        default: return "Sales Target"
+        }
+    }
+
+    var useDefaultTargetText: String {
+        switch language {
+        case "fr": return "Utiliser l'objectif par défaut"
+        case "es": return "Usar objetivo predeterminado"
+        default: return "Use Default Target"
+        }
+    }
+
+    var customTargetText: String {
+        switch language {
+        case "fr": return "Objectif personnalisé"
+        case "es": return "Objetivo personalizado"
+        default: return "Custom Target"
         }
     }
 

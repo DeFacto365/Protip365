@@ -3,11 +3,15 @@ package com.protip365.app.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.protip365.app.data.local.PreferencesManager
+import com.protip365.app.data.models.Employer
 import com.protip365.app.data.models.UserProfile
 import com.protip365.app.domain.repository.AuthRepository
-import com.protip365.app.domain.repository.ShiftRepository
+import com.protip365.app.domain.repository.CompletedShiftRepository
+import com.protip365.app.domain.repository.EmployerRepository
 import com.protip365.app.domain.repository.SubscriptionRepository
 import com.protip365.app.domain.repository.UserRepository
+import com.protip365.app.presentation.localization.LocalizationManager
+import com.protip365.app.presentation.localization.SupportedLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -20,9 +24,11 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val shiftRepository: ShiftRepository,
+    private val completedShiftRepository: CompletedShiftRepository,
     private val subscriptionRepository: SubscriptionRepository,
-    private val preferencesManager: PreferencesManager
+    private val employerRepository: EmployerRepository,
+    private val preferencesManager: PreferencesManager,
+    private val localizationManager: LocalizationManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -77,6 +83,13 @@ class SettingsViewModel @Inject constructor(
         currentUser?.let { user ->
             _user.value = user
 
+            // Load employers
+            val employers = try {
+                employerRepository.getEmployers(user.userId)
+            } catch (e: Exception) {
+                emptyList()
+            }
+
             // Load subscription info
             val subscription = subscriptionRepository.getCurrentSubscription(user.userId)
 
@@ -89,15 +102,19 @@ class SettingsViewModel @Inject constructor(
 
                 // Work defaults
                 defaultHourlyRate = user.defaultHourlyRate ?: 15.0,
+                defaultAlertMinutes = user.defaultAlertMinutes,
                 useMultipleEmployers = user.useMultipleEmployers,
                 weekStartsMonday = user.metadata?.get("week_starts_monday") as? Boolean ?: false,
                 defaultTipPercentage = user.metadata?.get("default_tip_percentage") as? Double ?: 20.0,
+                defaultEmployerId = user.defaultEmployerId,
+                employers = employers,
 
                 // Features
                 trackCashOut = user.metadata?.get("track_cash_out") as? Boolean ?: true,
                 trackOtherIncome = user.metadata?.get("track_other_income") as? Boolean ?: false,
                 enableNotifications = user.metadata?.get("enable_notifications") as? Boolean ?: true,
                 reminderTime = user.metadata?.get("reminder_time") as? String ?: "20:00",
+                hasVariableSchedule = user.metadata?.get("has_variable_schedule") as? Boolean ?: preferencesManager.getVariableSchedule(),
 
                 // Security
                 biometricEnabled = preferencesManager.isBiometricEnabled(),
@@ -131,6 +148,18 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun updateName(name: String) {
+        updateField { it.copy() }
+        viewModelScope.launch {
+            try {
+                userRepository.updateUserProfile(mapOf("name" to name))
+                _user.value = _user.value?.copy(name = name)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
     fun updateDailyTarget(target: Double) {
         updateField { it.copy(dailyTarget = target) }
     }
@@ -151,6 +180,10 @@ class SettingsViewModel @Inject constructor(
         updateField { it.copy(defaultHourlyRate = rate) }
     }
 
+    fun updateDefaultAlertMinutes(minutes: Int) {
+        updateField { it.copy(defaultAlertMinutes = if (minutes == 0) null else minutes) }
+    }
+
     fun updateAverageDeductionPercentage(percentage: Double) {
         updateField { it.copy(averageDeductionPercentage = percentage) }
     }
@@ -169,6 +202,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateWeekStartDay(weekStart: Int) {
         updateField { it.copy(weekStartDay = weekStart) }
+    }
+
+    fun updateDefaultEmployer(employerId: String?) {
+        updateField { it.copy(defaultEmployerId = employerId) }
     }
 
     fun toggleMultipleEmployers() {
@@ -207,9 +244,19 @@ class SettingsViewModel @Inject constructor(
         updateField { it.copy(autoLockMinutes = minutes) }
     }
 
-    fun updateLanguage(language: String) {
-        updateField { it.copy(language = language) }
-        preferencesManager.setLanguage(language)
+    fun updateLanguage(languageCode: String) {
+        // Find the SupportedLanguage enum from the code
+        val supportedLanguage = when (languageCode) {
+            "fr" -> SupportedLanguage.FRENCH
+            "es" -> SupportedLanguage.SPANISH
+            else -> SupportedLanguage.ENGLISH
+        }
+
+        // Update local state
+        updateField { it.copy(language = languageCode) }
+
+        // Update through LocalizationManager which handles both preferences and UI updates
+        localizationManager.setLanguage(supportedLanguage)
     }
 
     fun updateCurrency(currency: String) {
@@ -218,6 +265,14 @@ class SettingsViewModel @Inject constructor(
 
     fun updateDateFormat(format: String) {
         updateField { it.copy(dateFormat = format) }
+    }
+
+    fun updateMultipleEmployers(enabled: Boolean) {
+        updateField { it.copy(useMultipleEmployers = enabled) }
+        // Save immediately as this affects navigation
+        viewModelScope.launch {
+            preferencesManager.saveSettings(_state.value.copy(useMultipleEmployers = enabled))
+        }
     }
 
     fun toggleDarkMode() {
@@ -288,6 +343,7 @@ class SettingsViewModel @Inject constructor(
 
             // Basic settings
             updates["default_hourly_rate"] = currentState.defaultHourlyRate
+            updates["default_alert_minutes"] = currentState.defaultAlertMinutes
             updates["use_multiple_employers"] = currentState.useMultipleEmployers
             updates["preferred_language"] = currentState.language
 
@@ -305,9 +361,15 @@ class SettingsViewModel @Inject constructor(
             metadata["reminder_time"] = currentState.reminderTime
             metadata["currency"] = currentState.currency
             metadata["date_format"] = currentState.dateFormat
+            metadata["has_variable_schedule"] = currentState.hasVariableSchedule
 
             userRepository.updateUserProfile(updates)
             userRepository.updateUserMetadata(metadata)
+
+            // Save variable schedule preference locally
+            if (currentState.hasVariableSchedule != originalState?.hasVariableSchedule) {
+                preferencesManager.setVariableSchedule(currentState.hasVariableSchedule)
+            }
 
             // Save security settings locally
             if (currentState.biometricEnabled != originalState?.biometricEnabled) {
@@ -351,7 +413,8 @@ class SettingsViewModel @Inject constructor(
         // Show confirmation for critical changes
         return current.useMultipleEmployers != original.useMultipleEmployers ||
                current.weekStartsMonday != original.weekStartsMonday ||
-               current.language != original.language
+               current.language != original.language ||
+               current.hasVariableSchedule != original.hasVariableSchedule
     }
 
     private fun getConfirmationMessage(): String {
@@ -369,6 +432,11 @@ class SettingsViewModel @Inject constructor(
         if (current.language != original.language) {
             changes.add("Change language to ${current.language.uppercase()}")
         }
+        if (current.hasVariableSchedule != original.hasVariableSchedule) {
+            changes.add(if (current.hasVariableSchedule)
+                "Enable variable schedule (weekly/monthly targets will be hidden)"
+                else "Disable variable schedule (weekly/monthly targets will be shown)")
+        }
 
         return "The following changes will be applied:\n${changes.joinToString("\n")}"
     }
@@ -380,14 +448,13 @@ class SettingsViewModel @Inject constructor(
             val user = _user.value ?: return@launch
 
             try {
-                // Get all data
-                val shifts = shiftRepository.getShifts(user.userId)
-                val entries = shiftRepository.getEntries(user.userId)
+                // Get all completed shift data
+                val completedShifts = completedShiftRepository.getCompletedShifts(user.userId)
 
                 val content = when (format) {
-                    ExportFormat.CSV -> generateCSV(shifts, entries)
-                    ExportFormat.PDF -> generatePDF(shifts, entries)
-                    ExportFormat.JSON -> generateJSON(shifts, entries)
+                    ExportFormat.CSV -> "CSV export not implemented yet"
+                    ExportFormat.PDF -> "PDF export not implemented yet"
+                    ExportFormat.JSON -> "JSON export not implemented yet"
                 }
 
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd-HHmmss", Locale.US)
@@ -515,10 +582,13 @@ data class SettingsState(
     val defaultHourlyRate: Double = 15.0,
     val averageDeductionPercentage: Double = 30.0,
     val defaultTipPercentage: Double = 20.0,
+    val defaultAlertMinutes: Int? = 60,
     val useMultipleEmployers: Boolean = false,
     val hasVariableSchedule: Boolean = false,
     val weekStartDay: Int = 1, // 0 = Sunday, 1 = Monday, etc.
     val weekStartsMonday: Boolean = false,
+    val defaultEmployerId: String? = null,
+    val employers: List<Employer> = emptyList(),
 
     // Features
     val trackCashOut: Boolean = true,

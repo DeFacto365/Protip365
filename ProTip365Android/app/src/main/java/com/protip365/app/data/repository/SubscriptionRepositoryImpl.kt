@@ -25,11 +25,9 @@ class SubscriptionRepositoryImpl @Inject constructor(
     private val _subscriptionStatus = MutableStateFlow(SubscriptionTier.NONE)
     private lateinit var billingClient: BillingClient
     private val productIds = mapOf(
-        "com.protip365.parttime.monthly" to SubscriptionTier.PART_TIME,
-        "com.protip365.parttime.annual" to SubscriptionTier.PART_TIME,
-        "com.protip365.monthly" to SubscriptionTier.FULL_ACCESS,
-        "com.protip365.annual" to SubscriptionTier.FULL_ACCESS
+        "protip365_premium_monthly" to SubscriptionTier.PREMIUM
     )
+    private val TRIAL_OFFER_ID = "freetrial7days"
 
     init {
         initializeBillingClient()
@@ -146,9 +144,9 @@ class SubscriptionRepositoryImpl @Inject constructor(
         val startOfWeek = today.minus(today.dayOfWeek.ordinal - weekStart, DateTimeUnit.DAY)
         val endOfWeek = startOfWeek.plus(6, DateTimeUnit.DAY)
 
-        // Count shifts and entries for this week
-        val shifts = supabaseClient
-            .from("shifts")
+        // Count expected shifts and shift entries for this week
+        val expectedShifts = supabaseClient
+            .from("expected_shifts")
             .select {
                 filter {
                     eq("user_id", userId)
@@ -156,21 +154,24 @@ class SubscriptionRepositoryImpl @Inject constructor(
                     lte("shift_date", endOfWeek.toString())
                 }
             }
-            .decodeList<com.protip365.app.data.models.Shift>()
+            .decodeList<com.protip365.app.data.models.ExpectedShift>()
 
-        val entries = supabaseClient
-            .from("entries")
+        val shiftEntries = supabaseClient
+            .from("shift_entries")
             .select {
                 filter {
                     eq("user_id", userId)
-                    gte("entry_date", startOfWeek.toString())
-                    lte("entry_date", endOfWeek.toString())
+                    // Join with expected_shifts to filter by date
                 }
             }
-            .decodeList<com.protip365.app.data.models.Entry>()
+            .decodeList<com.protip365.app.data.models.ShiftEntry>()
+            // Filter by week in memory since shift_entries doesn't have date directly
+            .filter { entry ->
+                expectedShifts.any { shift -> shift.id == entry.shiftId }
+            }
 
-        val shiftsUsed = shifts.size
-        val entriesUsed = entries.size
+        val shiftsUsed = expectedShifts.size
+        val entriesUsed = shiftEntries.size
 
         return WeeklyLimits(
             shiftsUsed = shiftsUsed,

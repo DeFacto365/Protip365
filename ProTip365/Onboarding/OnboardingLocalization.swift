@@ -347,9 +347,33 @@ struct OnboardingLocalization {
         }
     }
 
+    var averageDeductionPercentageLabel: String {
+        switch language {
+        case "fr": return "Taux d'impôt moyen"
+        case "es": return "Tasa de impuestos promedio"
+        default: return "Average Income Tax Rate"
+        }
+    }
+
+    var averageDeductionPercentageNoteTitle: String {
+        switch language {
+        case "fr": return "Impôt sur le revenu"
+        case "es": return "Impuesto sobre la renta"
+        default: return "Income Tax"
+        }
+    }
+
+    var averageDeductionPercentageNoteMessage: String {
+        switch language {
+        case "fr": return "Taux d'impôt moyen sur votre revenu total. Utilisé pour calculer votre revenu net estimé après impôts."
+        case "es": return "Tasa promedio de impuestos sobre sus ingresos totales. Se usa para calcular sus ingresos netos estimados después de impuestos."
+        default: return "Average income tax rate on your total income. Used to calculate your estimated net income after taxes."
+        }
+    }
+
     var dailySalesTargetLabel: String {
         switch language {
-        case "fr": return "Ventes quotidiennes"
+        case "fr": return "Ventes prévue/jour"
         case "es": return "Ventas diarias"
         default: return "Daily Sales"
         }
@@ -373,7 +397,7 @@ struct OnboardingLocalization {
 
     var dailyHoursTargetLabel: String {
         switch language {
-        case "fr": return "Heures quotidiennes"
+        case "fr": return "# d'heures/jour"
         case "es": return "Horas diarias"
         default: return "Daily Hours"
         }
@@ -521,6 +545,22 @@ struct OnboardingLocalization {
         case 6: return salesAndTipTargetsStepDescription
         case 7: return howToUseStepDescription
         default: return ""
+        }
+    }
+
+    var defaultEmployerLabel: String {
+        switch language {
+        case "fr": return "Employeur par défaut"
+        case "es": return "Empleador predeterminado"
+        default: return "Default Employer"
+        }
+    }
+
+    var selectEmployerPlaceholder: String {
+        switch language {
+        case "fr": return "Sélectionner un employeur"
+        case "es": return "Seleccionar empleador"
+        default: return "Select Employer"
         }
     }
 }

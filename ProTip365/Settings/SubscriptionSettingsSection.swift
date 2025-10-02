@@ -37,102 +37,100 @@ struct SubscriptionSettingsSection: View {
                         .foregroundStyle(planColor)
                 }
 
-                // Show limits for part-time tier
-                if subscriptionManager.currentTier == .partTime {
-                    VStack(spacing: 8) {
-                        // Weekly limits
-                        HStack {
-                            Label(localization.weeklyLimitsLabel, systemImage: "calendar.badge.clock")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                        }
+                // Show trial status if in trial
+                if subscriptionManager.isInTrialPeriod {
+                    HStack {
+                        Image(systemName: "clock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                        Text(localization.trialDaysRemaining(subscriptionManager.trialDaysRemaining))
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
 
-                        HStack(spacing: 20) {
-                            // Shifts limit
-                            HStack(spacing: 4) {
-                                Text("\(subscriptionManager.currentWeekShifts)/3")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                Text(localization.shiftsText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            // Entries limit
-                            HStack(spacing: 4) {
-                                Text("\(subscriptionManager.currentWeekEntries)/3")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                Text(localization.entriesText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                // Show benefits for premium subscribers
+                if subscriptionManager.currentTier == .premium && !subscriptionManager.isInTrialPeriod {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label(localization.unlimitedTracking, systemImage: "infinity")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                        Label(localization.allFeaturesUnlocked, systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 12)
-                    .background(Color(.systemGroupedBackground))
+                    .background(Color.green.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
 
                 // Action button
                 if subscriptionManager.currentTier == .none {
-                    // Subscribe button
+                    // Subscribe button with trial info
+                    Button(action: {
+                        HapticFeedback.selection()
+                        showSubscriptionView = true
+                    }) {
+                        VStack(spacing: 4) {
+                            HStack {
+                                Text(localization.startFreeTrialButton)
+                                    .foregroundStyle(.white)
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .foregroundStyle(.white)
+                                    .font(.body)
+                            }
+                            Text(localization.trialInfoText)
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue, Color.purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else if subscriptionManager.isInTrialPeriod {
+                    // View subscription button during trial
                     Button(action: {
                         HapticFeedback.selection()
                         showSubscriptionView = true
                     }) {
                         HStack {
-                            Text(localization.subscribeButton)
-                                .foregroundStyle(.white)
+                            Text(localization.viewSubscriptionButton)
+                                .foregroundStyle(.primary)
                                 .font(.body)
-                                .fontWeight(.medium)
                             Spacer()
+                            Text(localization.priceText)
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
                             Image(systemName: IconNames.Form.next)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.secondary)
                                 .font(.caption)
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                } else if subscriptionManager.currentTier == .partTime {
-                    // Upgrade button
-                    Button(action: {
-                        HapticFeedback.selection()
-                        showSubscriptionView = true
-                    }) {
-                        HStack {
-                            Text(localization.upgradeButton)
-                                .foregroundStyle(.white)
-                                .font(.body)
-                                .fontWeight(.medium)
-                            Spacer()
-                            Image(systemName: "arrow.up.circle.fill")
-                                .foregroundStyle(.white)
-                                .font(.body)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(LinearGradient(
-                        colors: [Color.blue, Color.purple],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .buttonStyle(PlainButtonStyle())
                 } else {
-                    // Manage subscription button
+                    // Manage subscription button for active subscribers - now shows in-app management
                     Button(action: {
                         HapticFeedback.selection()
-                        if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                            UIApplication.shared.open(url)
-                        }
+                        // Navigate to in-app subscription management
+                        NotificationCenter.default.post(name: NSNotification.Name("ShowSubscriptionManagement"), object: nil)
                     }) {
                         HStack {
-                            Text(localization.manageButton)
+                            Text("Manage Subscription")
                                 .foregroundStyle(.primary)
                                 .font(.body)
                             Spacer()
@@ -159,14 +157,14 @@ struct SubscriptionSettingsSection: View {
         switch subscriptionManager.currentTier {
         case .none:
             return localization.noPlanText
-        case .partTime:
-            return localization.partTimePlanText
-        case .fullAccess:
+        case .premium:
             if subscriptionManager.isInTrialPeriod {
-                return localization.fullAccessTrialText
+                return localization.premiumTrialText
             } else {
-                return localization.fullAccessPlanText
+                return localization.premiumPlanText
             }
+        case .free:
+            return localization.noPlanText
         }
     }
 
@@ -174,10 +172,10 @@ struct SubscriptionSettingsSection: View {
         switch subscriptionManager.currentTier {
         case .none:
             return .secondary
-        case .partTime:
-            return .blue
-        case .fullAccess:
-            return .green
+        case .premium:
+            return subscriptionManager.isInTrialPeriod ? .blue : .green
+        case .free:
+            return .secondary
         }
     }
 }
@@ -203,43 +201,35 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    var weeklyLimitsLabel: String {
+    var startFreeTrialButton: String {
         switch language {
-        case "fr": return "Limites hebdomadaires"
-        case "es": return "Límites semanales"
-        default: return "Weekly Limits"
+        case "fr": return "Commencer l'essai gratuit"
+        case "es": return "Comenzar prueba gratis"
+        default: return "Start Free Trial"
         }
     }
 
-    var shiftsText: String {
+    var trialInfoText: String {
         switch language {
-        case "fr": return "quarts"
-        case "es": return "turnos"
-        default: return "shifts"
+        case "fr": return "7 jours gratuits, puis 3,99$/mois"
+        case "es": return "7 días gratis, luego $3.99/mes"
+        default: return "7 days free, then $3.99/month"
         }
     }
 
-    var entriesText: String {
+    var viewSubscriptionButton: String {
         switch language {
-        case "fr": return "entrées"
-        case "es": return "entradas"
-        default: return "entries"
+        case "fr": return "Voir l'abonnement"
+        case "es": return "Ver suscripción"
+        default: return "View Subscription"
         }
     }
 
-    var subscribeButton: String {
+    var priceText: String {
         switch language {
-        case "fr": return "S'abonner"
-        case "es": return "Suscribirse"
-        default: return "Subscribe"
-        }
-    }
-
-    var upgradeButton: String {
-        switch language {
-        case "fr": return "Passer à l'accès complet"
-        case "es": return "Actualizar a acceso completo"
-        default: return "Upgrade to Full Access"
+        case "fr": return "3,99$/mois"
+        case "es": return "$3.99/mes"
+        default: return "$3.99/mo"
         }
     }
 
@@ -259,27 +249,43 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    var partTimePlanText: String {
+    var premiumPlanText: String {
         switch language {
-        case "fr": return "Temps partiel"
-        case "es": return "Tiempo parcial"
-        default: return "Part-time"
+        case "fr": return "Premium"
+        case "es": return "Premium"
+        default: return "Premium"
         }
     }
 
-    var fullAccessPlanText: String {
+    var premiumTrialText: String {
         switch language {
-        case "fr": return "Accès complet"
-        case "es": return "Acceso completo"
-        default: return "Full Access"
+        case "fr": return "Premium (Essai)"
+        case "es": return "Premium (Prueba)"
+        default: return "Premium (Trial)"
         }
     }
 
-    var fullAccessTrialText: String {
+    func trialDaysRemaining(_ days: Int) -> String {
         switch language {
-        case "fr": return "Accès complet (Essai)"
-        case "es": return "Acceso completo (Prueba)"
-        default: return "Full Access (Trial)"
+        case "fr": return "\(days) jours restants"
+        case "es": return "\(days) días restantes"
+        default: return "\(days) days remaining"
+        }
+    }
+
+    var unlimitedTracking: String {
+        switch language {
+        case "fr": return "Suivi illimité"
+        case "es": return "Seguimiento ilimitado"
+        default: return "Unlimited tracking"
+        }
+    }
+
+    var allFeaturesUnlocked: String {
+        switch language {
+        case "fr": return "Toutes les fonctionnalités débloquées"
+        case "es": return "Todas las funciones desbloqueadas"
+        default: return "All features unlocked"
         }
     }
 }

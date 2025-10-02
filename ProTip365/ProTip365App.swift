@@ -12,7 +12,7 @@ import UserNotifications
 struct ProTip365App: App {
     @AppStorage("language") private var language = "en"
     @AppStorage("hasInitializedLanguage") private var hasInitializedLanguage = false
-    @StateObject private var alertManager = AlertManager.shared
+    @State private var showSplash = true
 
     init() {
         // Initialize language from iOS settings on first launch
@@ -27,27 +27,31 @@ struct ProTip365App: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(alertManager)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    // Clear app badge when app becomes active
-                    NotificationManager.shared.clearAppBadge()
+            if showSplash {
+                SplashScreenView(isActive: $showSplash)
+                    .transition(.opacity)
+            } else {
+                ContentView()
+                    .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                        // Clear app badge when app becomes active
+                        NotificationManager.shared.clearAppBadge()
 
-                    // Re-sync when app becomes active in case user changed language in iOS Settings
-                    syncWithSystemLanguage()
+                        // Re-sync when app becomes active in case user changed language in iOS Settings
+                        syncWithSystemLanguage()
 
-                    // Check for missing shift entries when app becomes active
-                    Task {
-                        await alertManager.checkYesterdayShifts()
+                        // Check for missing shift entries when app becomes active
+                        Task {
+                            await AlertManager.shared.checkYesterdayShifts()
+                        }
                     }
-                }
-                .onAppear {
-                    // Clear app badge on app launch
-                    NotificationManager.shared.clearAppBadge()
+                    .onAppear {
+                        // Clear app badge on app launch
+                        NotificationManager.shared.clearAppBadge()
 
-                    // Request notification permissions on first launch
-                    alertManager.requestNotificationPermission()
-                }
+                        // Request notification permissions on first launch
+                        AlertManager.shared.requestNotificationPermission()
+                    }
+            }
         }
     }
 

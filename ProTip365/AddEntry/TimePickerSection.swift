@@ -14,7 +14,7 @@ struct TimePickerSection: View {
     @Binding var showLunchBreakPicker: Bool
 
     // MARK: - Parameters
-    let editingShift: ShiftIncome?
+    let editingShift: ShiftWithEntry?
     let lunchBreakOptions: [String]
     let startsText: String
     let endsText: String

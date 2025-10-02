@@ -14,7 +14,39 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "3.99",
+      "familyShareable" : false,
+      "groupNumber" : 1,
+      "internalID" : "6751758595",
+      "introductoryOffer" : {
+        "internalID" : "6751758596",
+        "paymentMode" : "free",
+        "subscriptionPeriod" : "P1W"
+      },
+      "localizations" : [
+        {
+          "description" : "Unlock all features: unlimited shifts, multiple employers, advanced analytics, and data export",
+          "displayName" : "ProTip365 Premium",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Débloquez toutes les fonctionnalités: shifts illimités, employeurs multiples, analyses avancées et export de données",
+          "displayName" : "ProTip365 Premium",
+          "locale" : "fr"
+        },
+        {
+          "description" : "Desbloquea todas las funciones: turnos ilimitados, múltiples empleadores, análisis avanzados y exportación de datos",
+          "displayName" : "ProTip365 Premium",
+          "locale" : "es"
+        }
+      ],
+      "productID" : "com.protip365.premium.monthly",
+      "recurringSubscriptionPeriod" : "P1M",
+      "referenceName" : "ProTip365 Premium Monthly",
+      "subscriptionGroupID" : "21769428",
+      "type" : "RecurringSubscription"
+    }
   ],
   "settings" : {
     "_applicationInternalID" : "6751753292",
@@ -77,11 +109,11 @@
       "localizations" : [
         {
           "description" : "ProTip365 Premium Subscription",
-          "displayName" : "ProTip365",
+          "displayName" : "ProTip365 Premium",
           "locale" : "en_US"
         }
       ],
-      "name" : "Protip365",
+      "name" : "ProTip365 Premium",
       "subscriptions" : [
         {
           "adHocOffers" : [
@@ -90,121 +122,35 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "4.99",
+          "displayPrice" : "3.99",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "6751758587",
+          "internalID" : "6751758595",
           "introductoryOffer" : {
-            "internalID" : "6751758588",
+            "internalID" : "6751758596",
             "paymentMode" : "free",
             "subscriptionPeriod" : "P1W"
           },
           "localizations" : [
             {
-              "description" : "Full access to all ProTip365 features including unlimited tracking, advanced analytics, and cloud sync.",
-              "displayName" : "ProTip365 - Full Access - Monthly",
+              "description" : "Unlock all features: unlimited shifts, multiple employers, advanced analytics, and data export",
+              "displayName" : "ProTip365 Premium",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Débloquez toutes les fonctionnalités: shifts illimités, employeurs multiples, analyses avancées et export de données",
+              "displayName" : "ProTip365 Premium",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Desbloquea todas las funciones: turnos ilimitados, múltiples empleadores, análisis avanzados y exportación de datos",
+              "displayName" : "ProTip365 Premium",
+              "locale" : "es"
             }
           ],
-          "productID" : "com.protip365.monthly",
+          "productID" : "com.protip365.premium.monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "ProTip365 - Full Access - Monthly",
-          "subscriptionGroupID" : "21769428",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "49.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "6751758589",
-          "introductoryOffer" : {
-            "internalID" : "6751758590",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
-          },
-          "localizations" : [
-            {
-              "description" : "Full access to all ProTip365 features with annual savings. Includes unlimited tracking, advanced analytics, and cloud sync.",
-              "displayName" : "Protip365 - Full Access Annual",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "com.protip365.annual",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Protip365 - Full Access Annual",
-          "subscriptionGroupID" : "21769428",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "2.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "6751758591",
-          "introductoryOffer" : {
-            "internalID" : "6751758592",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
-          },
-          "localizations" : [
-            {
-              "description" : "Part-time access to ProTip365 with limited tracking. Perfect for occasional users.",
-              "displayName" : "ProTip365 - Part Time Monthly",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "com.protip365.parttime.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "ProTip365 - Part Time Monthly",
-          "subscriptionGroupID" : "21769428",
-          "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
-        },
-        {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "29.99",
-          "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "6751758593",
-          "introductoryOffer" : {
-            "internalID" : "6751758594",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
-          },
-          "localizations" : [
-            {
-              "description" : "Part-time access to ProTip365 with annual savings. Perfect for occasional users with limited tracking.",
-              "displayName" : "ProTip365 - Part Time access - Annual",
-              "locale" : "en_US"
-            }
-          ],
-          "productID" : "com.protip365.parttime.Annual",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "ProTip365 - Part Time access - Annual",
+          "referenceName" : "ProTip365 Premium Monthly",
           "subscriptionGroupID" : "21769428",
           "type" : "RecurringSubscription",
           "winbackOffers" : [

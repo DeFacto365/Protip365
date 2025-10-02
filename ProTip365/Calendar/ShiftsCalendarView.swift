@@ -3,13 +3,13 @@ import Supabase
 
 struct ShiftsCalendarView: View {
     @State private var selectedDate = Date()
-    @State private var allShifts: [ShiftIncome] = []
-    @State private var dailyShifts: [ShiftIncome] = []
+    @State private var allShifts: [ShiftWithEntry] = []
+    @State private var dailyShifts: [ShiftWithEntry] = []
     @State private var showDeleteAlert = false
     @State private var showAddEntryView = false
     @State private var showAddShiftView = false
-    @State private var selectedShiftForEditing: ShiftIncome? = nil
-    @State private var shiftToDelete: ShiftIncome? = nil
+    @State private var selectedShiftForEditing: ShiftWithEntry? = nil
+    @State private var shiftToDelete: ShiftWithEntry? = nil
     
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
@@ -155,10 +155,10 @@ struct ShiftsCalendarView: View {
             
             Divider()
             
-            ForEach(dailyShifts.sorted(by: { $0.start_time ?? "" < $1.start_time ?? "" }), id: \.id) { shift in
+            ForEach(dailyShifts.sorted(by: { $0.expected_shift.start_time < $1.expected_shift.start_time }), id: \.id) { shift in
                 shiftRowView(shift: shift)
-                
-                if shift.id != dailyShifts.sorted(by: { $0.start_time ?? "" < $1.start_time ?? "" }).last?.id {
+
+                if shift.id != dailyShifts.sorted(by: { $0.expected_shift.start_time < $1.expected_shift.start_time }).last?.id {
                     Divider()
                 }
             }
@@ -168,28 +168,28 @@ struct ShiftsCalendarView: View {
     }
     
     // MARK: - Shift Row View
-    func shiftRowView(shift: ShiftIncome) -> some View {
-        let _ = print("📝 Displaying shift \(shift.id) with notes: \(shift.notes ?? "none")")
+    func shiftRowView(shift: ShiftWithEntry) -> some View {
+        let _ = print("📝 Displaying shift \(shift.id) with notes: \(shift.expected_shift.notes ?? "none")")
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                // Time range if available
-                if let startTimeStr = shift.start_time, let endTimeStr = shift.end_time {
-                    Text(formatTimeRange(startTimeStr, endTimeStr))
+                // Time range - prioritize actual times over expected times
+                if let entry = shift.entry {
+                    Text(formatTimeRange(entry.actual_start_time, entry.actual_end_time))
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                 } else {
-                    Text("\(shift.hours ?? 0, specifier: "%.1f") hours")
+                    Text(formatTimeRange(shift.expected_shift.start_time, shift.expected_shift.end_time))
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                 }
-                
+
                 Spacer()
-                
+
                 // Check if this is a future shift (expected vs actual)
-                let isFutureShift = isShiftInFuture(shift.shift_date)
-                
+                let isFutureShift = isShiftInFuture(shift.expected_shift.shift_date)
+
                 if isFutureShift {
                     // Future shift - show expected hours only
                     Text(expectedText)
@@ -201,11 +201,18 @@ struct ShiftsCalendarView: View {
                         .background(Color.blue.opacity(0.1))
                         .cornerRadius(6)
                 } else {
-                    // Past/today shift - show actual earnings
-                    Text(formatCurrency(shift.total_income ?? 0))
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
+                    // Past/today shift - show actual earnings if entry exists
+                    if let entry = shift.entry {
+                        let totalIncome = (entry.actual_hours * shift.expected_shift.hourly_rate) + entry.tips + entry.sales - entry.cash_out + entry.other
+                        Text(formatCurrency(totalIncome))
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
+                    } else {
+                        Text("No Entry")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
                 }
             }
             
@@ -224,7 +231,7 @@ struct ShiftsCalendarView: View {
             }
 
             // Notes preview if available
-            if let notes = shift.notes, !notes.isEmpty {
+            if let notes = shift.expected_shift.notes, !notes.isEmpty {
                 HStack {
                     Image(systemName: "note.text")
                         .font(.subheadline)  // Made icon bigger
@@ -239,53 +246,53 @@ struct ShiftsCalendarView: View {
             }
 
             // Details row - only show for actual shifts (past/today)
-            let isFutureShift = isShiftInFuture(shift.shift_date)
+            let isFutureShift = isShiftInFuture(shift.expected_shift.shift_date)
             
-            if !isFutureShift {
+            if !isFutureShift, let entry = shift.entry {
                 HStack(spacing: 20) {
                     VStack(alignment: .leading) {
                         Text("Sales")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text(formatCurrency(shift.sales ?? 0))
+                        Text(formatCurrency(entry.sales))
                             .font(.caption)
                             .fontWeight(.medium)
                     }
-                    
+
                     VStack(alignment: .leading) {
                         Text("Tips")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text(formatCurrency(shift.tips ?? 0))
+                        Text(formatCurrency(entry.tips))
                             .font(.caption)
                             .fontWeight(.medium)
                     }
-                    
-                    if (shift.cash_out ?? 0) > 0 {
+
+                    if entry.cash_out > 0 {
                         VStack(alignment: .leading) {
                             Text("Tip Out")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(formatCurrency(shift.cash_out ?? 0))
+                            Text(formatCurrency(entry.cash_out))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.red)
                         }
                     }
                 }
-            } else {
+            } else if isFutureShift {
                 // Future shift - show expected hours only
                 HStack {
                     Text(expectedHoursText)
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("\(shift.hours ?? 0, specifier: "%.1f")h")
+                    Text("\(shift.expected_shift.expected_hours, specifier: "%.1f")h")
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.blue)
-                    }
                 }
+            }
             
             // Action buttons - made even bigger
             HStack(spacing: 16) {
@@ -440,10 +447,10 @@ struct ShiftsCalendarView: View {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
 
-        dailyShifts = allShifts.filter { $0.shift_date == dateString }
+        dailyShifts = allShifts.filter { $0.expected_shift.shift_date == dateString }
         print("📝 Loaded \(dailyShifts.count) shifts for date \(dateString)")
         for shift in dailyShifts {
-            print("  - Shift \(shift.id) has notes: \(shift.notes ?? "none")")
+            print("  - Shift \(shift.id) has notes: \(shift.expected_shift.notes ?? "none")")
         }
     }
     
@@ -451,9 +458,6 @@ struct ShiftsCalendarView: View {
     func loadShifts() async {
         print("🔄 ShiftsCalendarView - Starting to load shifts...")
         do {
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            print("🔄 ShiftsCalendarView - User ID: \(userId)")
-
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
 
@@ -464,19 +468,12 @@ struct ShiftsCalendarView: View {
 
             print("🔄 ShiftsCalendarView - Loading shifts from \(dateFormatter.string(from: startDate)) to \(dateFormatter.string(from: endDate))")
 
-            allShifts = try await SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId)
-                .gte("shift_date", value: dateFormatter.string(from: startDate))
-                .lte("shift_date", value: dateFormatter.string(from: endDate))
-                .execute()
-                .value
+            allShifts = try await SupabaseManager.shared.fetchShiftsWithEntries(
+                from: startDate,
+                to: endDate
+            )
 
             print("🔄 ShiftsCalendarView - Loaded \(allShifts.count) shifts from database")
-
-            // Load notes for all shifts
-            await loadNotesForShifts()
 
             loadShiftsForDate(selectedDate)
         } catch {
@@ -484,98 +481,29 @@ struct ShiftsCalendarView: View {
         }
     }
 
-    // MARK: - Load Notes for Shifts
-    func loadNotesForShifts() async {
-        // Create a simple struct for notes
-        struct ShiftNote: Decodable {
-            let id: UUID
-            let notes: String?
-        }
-
-        do {
-            // Use shift_id instead of id since that's the actual shifts table ID
-            let shiftIds = allShifts.compactMap { $0.shift_id ?? $0.id }
-            print("📝 Loading notes for \(shiftIds.count) shifts")
-
-            if !shiftIds.isEmpty {
-                let notes: [ShiftNote] = try await SupabaseManager.shared.client
-                    .from("shifts")
-                    .select("id, notes")
-                    .in("id", values: shiftIds)
-                    .execute()
-                    .value
-
-                print("📝 Loaded \(notes.count) notes from database")
-                for note in notes {
-                    print("  - Note for ID \(note.id): \(note.notes ?? "nil")")
-                }
-
-                // Update shifts with notes
-                for i in 0..<allShifts.count {
-                    // Match using shift_id or id
-                    let shiftId = allShifts[i].shift_id ?? allShifts[i].id
-                    print("📝 Checking shift \(i) with ID \(shiftId)")
-                    if let note = notes.first(where: { $0.id == shiftId }) {
-                        print("📝 Found note for shift \(shiftId): \(note.notes ?? "nil")")
-                        // Create a new ShiftIncome with notes
-                        let updatedShift = allShifts[i]
-                        // Since ShiftIncome has notes field now, we can set it
-                        // But we need to create a new instance with all fields
-                        allShifts[i] = ShiftIncome(
-                            income_id: updatedShift.income_id,
-                            shift_id: updatedShift.shift_id,
-                            user_id: updatedShift.user_id,
-                            employer_id: updatedShift.employer_id,
-                            employer_name: updatedShift.employer_name,
-                            shift_date: updatedShift.shift_date,
-                            expected_hours: updatedShift.expected_hours,
-                            lunch_break_minutes: updatedShift.lunch_break_minutes,
-                            net_expected_hours: updatedShift.net_expected_hours,
-                            hours: updatedShift.hours,
-                            hourly_rate: updatedShift.hourly_rate,
-                            sales: updatedShift.sales,
-                            tips: updatedShift.tips,
-                            cash_out: updatedShift.cash_out,
-                            other: updatedShift.other,
-                            base_income: updatedShift.base_income,
-                            net_tips: updatedShift.net_tips,
-                            total_income: updatedShift.total_income,
-                            tip_percentage: updatedShift.tip_percentage,
-                            start_time: updatedShift.start_time,
-                            end_time: updatedShift.end_time,
-                            shift_status: updatedShift.shift_status,
-                            has_earnings: updatedShift.has_earnings,
-                            shift_created_at: updatedShift.shift_created_at,
-                            earnings_created_at: updatedShift.earnings_created_at,
-                            notes: note.notes
-                        )
-                    }
-                }
-            }
-        } catch {
-            print("Error loading notes: \(error)")
-        }
-    }
     
     // MARK: - Delete Shift
     func deleteShift() {
         guard let shift = shiftToDelete else { return }
-        
+
         Task {
             do {
-                try await SupabaseManager.shared.client
-                    .from("shifts")
-                    .delete()
-                    .eq("id", value: shift.id)
-                    .execute()
-                
+                // Delete shift entry if it exists
+                if let entry = shift.entry {
+                    try await SupabaseManager.shared.deleteShiftEntry(id: entry.id)
+                    DashboardCharts.invalidateCache()
+                }
+
+                // Delete expected shift
+                try await SupabaseManager.shared.deleteExpectedShift(id: shift.id)
+
                 await loadShifts()
-                
+
                 await MainActor.run {
                     shiftToDelete = nil
                     HapticFeedback.success()
                 }
-                
+
             } catch {
                 print("Error deleting shift: \(error)")
                 HapticFeedback.error()

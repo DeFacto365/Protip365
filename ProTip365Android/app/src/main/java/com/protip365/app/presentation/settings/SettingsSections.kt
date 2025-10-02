@@ -130,150 +130,188 @@ fun TargetsSettingsSection(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text(
-                text = when (currentLanguage) {
-                    "fr" -> "Objectifs"
-                    "es" -> "Objetivos"
-                    else -> "Targets"
-                },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+            // "Set Your Goals" section at top (iOS-style)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = when (currentLanguage) {
+                        "fr" -> "Définissez vos objectifs"
+                        "es" -> "Establece tus metas"
+                        else -> "Set Your Goals"
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-            // Tip percentage target
-            OutlinedTextField(
-                value = tipTargetPercentage,
-                onValueChange = onTipTargetChange,
-                label = {
-                    Text(when (currentLanguage) {
-                        "fr" -> "Objectif pourboire (%)"
-                        "es" -> "Objetivo propina (%)"
-                        else -> "Tip Target (%)"
-                    })
-                },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                trailingIcon = { Text("%") }
-            )
+                Text(
+                    text = when (currentLanguage) {
+                        "fr" -> "Définissez des objectifs quotidiens, hebdomadaires et mensuels pour suivre vos progrès."
+                        "es" -> "Establece metas diarias, semanales y mensuales para rastrear tu progreso."
+                        else -> "Set daily, weekly, and monthly targets to track your progress."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-            // Sales targets
-            Text(
-                text = when (currentLanguage) {
-                    "fr" -> "Objectifs de ventes"
-                    "es" -> "Objetivos de ventas"
-                    else -> "Sales Targets"
-                },
-                style = MaterialTheme.typography.labelLarge
-            )
+            HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Tip Targets section
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = when (currentLanguage) {
+                        "fr" -> "Objectifs de pourboires"
+                        "es" -> "Objetivos de propinas"
+                        else -> "Tip Targets"
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+
+                // Tip percentage target
                 OutlinedTextField(
-                    value = targetSalesDaily,
-                    onValueChange = onSalesDailyChange,
-                    label = { Text(when (currentLanguage) {
-                        "fr" -> "Quotidien"
-                        "es" -> "Diario"
-                        else -> "Daily"
-                    }) },
-                    modifier = Modifier.weight(1f),
+                    value = tipTargetPercentage,
+                    onValueChange = onTipTargetChange,
+                    label = {
+                        Text(when (currentLanguage) {
+                            "fr" -> "Objectif pourboire (%)"
+                            "es" -> "Objetivo propina (%)"
+                            else -> "Tip Target (%)"
+                        })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    leadingIcon = { Text("$") }
+                    trailingIcon = { Text("%") }
                 )
+            }
+
+            HorizontalDivider()
+
+            // Sales targets section
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = when (currentLanguage) {
+                        "fr" -> "Objectifs de ventes"
+                        "es" -> "Objetivos de ventas"
+                        else -> "Sales Targets"
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = targetSalesDaily,
+                        onValueChange = onSalesDailyChange,
+                        label = { Text(when (currentLanguage) {
+                            "fr" -> "Quotidien"
+                            "es" -> "Diario"
+                            else -> "Daily"
+                        }) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        leadingIcon = { Text("$") }
+                    )
+                    OutlinedTextField(
+                        value = targetSalesWeekly,
+                        onValueChange = onSalesWeeklyChange,
+                        label = { Text(when (currentLanguage) {
+                            "fr" -> "Hebdomadaire"
+                            "es" -> "Semanal"
+                            else -> "Weekly"
+                        }) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        leadingIcon = { Text("$") }
+                    )
+                }
+
                 OutlinedTextField(
-                    value = targetSalesWeekly,
-                    onValueChange = onSalesWeeklyChange,
-                    label = { Text(when (currentLanguage) {
-                        "fr" -> "Hebdomadaire"
-                        "es" -> "Semanal"
-                        else -> "Weekly"
-                    }) },
-                    modifier = Modifier.weight(1f),
+                    value = targetSalesMonthly,
+                    onValueChange = onSalesMonthlyChange,
+                    label = {
+                        Text(when (currentLanguage) {
+                            "fr" -> "Mensuel"
+                            "es" -> "Mensual"
+                            else -> "Monthly"
+                        })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     leadingIcon = { Text("$") }
                 )
             }
 
-            OutlinedTextField(
-                value = targetSalesMonthly,
-                onValueChange = onSalesMonthlyChange,
-                label = {
-                    Text(when (currentLanguage) {
-                        "fr" -> "Mensuel"
-                        "es" -> "Mensual"
-                        else -> "Monthly"
-                    })
-                },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                leadingIcon = { Text("$") }
-            )
+            HorizontalDivider()
 
-            // Hours targets
-            Text(
-                text = when (currentLanguage) {
-                    "fr" -> "Objectifs d'heures"
-                    "es" -> "Objetivos de horas"
-                    else -> "Hours Targets"
-                },
-                style = MaterialTheme.typography.labelLarge
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = targetHoursDaily,
-                    onValueChange = onHoursDailyChange,
-                    label = { Text(when (currentLanguage) {
-                        "fr" -> "Quotidien"
-                        "es" -> "Diario"
-                        else -> "Daily"
-                    }) },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    trailingIcon = { Text("h") }
+            // Hours targets section
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = when (currentLanguage) {
+                        "fr" -> "Objectifs d'heures"
+                        "es" -> "Objetivos de horas"
+                        else -> "Hours Targets"
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = targetHoursDaily,
+                        onValueChange = onHoursDailyChange,
+                        label = { Text(when (currentLanguage) {
+                            "fr" -> "Quotidien"
+                            "es" -> "Diario"
+                            else -> "Daily"
+                        }) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        trailingIcon = { Text("h") }
+                    )
+                    OutlinedTextField(
+                        value = targetHoursWeekly,
+                        onValueChange = onHoursWeeklyChange,
+                        label = { Text(when (currentLanguage) {
+                            "fr" -> "Hebdomadaire"
+                            "es" -> "Semanal"
+                            else -> "Weekly"
+                        }) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        trailingIcon = { Text("h") }
+                    )
+                }
+
                 OutlinedTextField(
-                    value = targetHoursWeekly,
-                    onValueChange = onHoursWeeklyChange,
-                    label = { Text(when (currentLanguage) {
-                        "fr" -> "Hebdomadaire"
-                        "es" -> "Semanal"
-                        else -> "Weekly"
-                    }) },
-                    modifier = Modifier.weight(1f),
+                    value = targetHoursMonthly,
+                    onValueChange = onHoursMonthlyChange,
+                    label = {
+                        Text(when (currentLanguage) {
+                            "fr" -> "Mensuel"
+                            "es" -> "Mensual"
+                            else -> "Monthly"
+                        })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     trailingIcon = { Text("h") }
                 )
             }
-
-            OutlinedTextField(
-                value = targetHoursMonthly,
-                onValueChange = onHoursMonthlyChange,
-                label = {
-                    Text(when (currentLanguage) {
-                        "fr" -> "Mensuel"
-                        "es" -> "Mensual"
-                        else -> "Monthly"
-                    })
-                },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                trailingIcon = { Text("h") }
-            )
         }
     }
 }

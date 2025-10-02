@@ -58,9 +58,6 @@ fun AuthView(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    // Language selector state
-    var selectedLanguage by remember { mutableStateOf("en") }
-
     // Form validation
     val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid = password.length >= 6
@@ -69,20 +66,37 @@ fun AuthView(
     val isFormValid = isEmailValid && isPasswordValid && isPasswordMatch && isNameValid && !authState.isLoading
     
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier = Modifier.fillMaxSize()
     ) {
+        // Base background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        )
+
+        // Gradient overlay (iOS-style)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0x99, 0xCC, 0xFF).copy(alpha = 0.2f),  // Light Blue
+                            Color(0xFF, 0xB2, 0xE6).copy(alpha = 0.2f),  // Light Pink
+                            Color(0xCC, 0xB2, 0xFF).copy(alpha = 0.2f)   // Light Purple
+                        ),
+                        start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                        end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                    )
+                )
+        )
+
         // Language selector at top right (matching iOS)
         LanguageSelector(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp),
-            currentLanguage = selectedLanguage,
-            onLanguageSelected = { language ->
-                selectedLanguage = language
-                // Language update handled through preferences
-            }
+                .padding(16.dp)
         )
 
         Column(
@@ -121,11 +135,7 @@ fun AuthView(
             
             // Welcome Text (localized based on selected language)
             Text(
-                text = when (selectedLanguage) {
-                    "fr" -> "Suivez vos pourboires facilement"
-                    "es" -> "Rastrea tus propinas fácilmente"
-                    else -> "Track your tips easily"
-                },
+                text = stringResource(R.string.start_tracking_tips),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -229,13 +239,7 @@ fun AuthView(
                 value = email,
                 onValueChange = { email = it },
                 label = {
-                    Text(
-                        when (selectedLanguage) {
-                            "fr" -> "Courriel"
-                            "es" -> "Correo electrónico"
-                            else -> "Email"
-                        }
-                    )
+                    Text(stringResource(R.string.email_hint))
                 },
                 leadingIcon = { 
                     Icon(
@@ -268,13 +272,7 @@ fun AuthView(
                 value = password,
                 onValueChange = { password = it },
                 label = {
-                    Text(
-                        when (selectedLanguage) {
-                            "fr" -> "Mot de passe"
-                            "es" -> "Contraseña"
-                            else -> "Password"
-                        }
-                    )
+                    Text(stringResource(R.string.password_hint))
                 },
                 leadingIcon = { 
                     Icon(
@@ -353,13 +351,7 @@ fun AuthView(
                     onClick = { navController.navigate("forgot_password") },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text(
-                        when (selectedLanguage) {
-                            "fr" -> "Mot de passe oublié?"
-                            "es" -> "¿Olvidaste tu contraseña?"
-                            else -> "Forgot Password?"
-                        }
-                    )
+                    Text(stringResource(R.string.forgot_password))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -403,17 +395,9 @@ fun AuthView(
                 } else {
                     Text(
                         text = if (isSignUpMode) {
-                            when (selectedLanguage) {
-                                "fr" -> "Créer un compte"
-                                "es" -> "Crear cuenta"
-                                else -> "Create Account"
-                            }
+                            stringResource(R.string.signup_button)
                         } else {
-                            when (selectedLanguage) {
-                                "fr" -> "Se connecter"
-                                "es" -> "Iniciar sesión"
-                                else -> "Sign In"
-                            }
+                            stringResource(R.string.login_button)
                         },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
@@ -430,17 +414,9 @@ fun AuthView(
             ) {
                 Text(
                     text = if (isSignUpMode) {
-                        when (selectedLanguage) {
-                            "fr" -> "Déjà un compte? Se connecter"
-                            "es" -> "¿Ya tienes cuenta? Iniciar sesión"
-                            else -> "Have an account? Sign in"
-                        }
+                        stringResource(R.string.already_have_account)
                     } else {
-                        when (selectedLanguage) {
-                            "fr" -> "Pas de compte? Créer un compte"
-                            "es" -> "¿Sin cuenta? Crear cuenta"
-                            else -> "No account? Create one"
-                        }
+                        stringResource(R.string.dont_have_account)
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )

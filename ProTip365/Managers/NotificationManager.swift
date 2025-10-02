@@ -412,7 +412,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
 // MARK: - Notification Error
 
-enum NotificationError: LocalizedError {
+enum NotificationError: LocalizedError, Sendable {
     case notAuthorized
     case invalidDate
 

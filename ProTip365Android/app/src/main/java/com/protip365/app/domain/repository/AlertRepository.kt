@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AlertRepository {
     fun getAlerts(): Flow<List<Alert>>
+    fun getUnreadAlerts(): Flow<List<Alert>>
     suspend fun getUnreadCount(): Int
     suspend fun markAsRead(alertId: String)
     suspend fun markAllAsRead()

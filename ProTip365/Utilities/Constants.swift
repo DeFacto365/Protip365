@@ -142,6 +142,7 @@ struct Constants {
     }
 }
 
+
 // MARK: - Notification Names
 extension Notification.Name {
     static let navigateToCalendar = Notification.Name("navigateToCalendar")

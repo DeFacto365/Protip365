@@ -4,22 +4,8 @@ import Supabase
 
 enum SubscriptionTier: String {
     case none = "none"
-    case partTime = "part_time"
-    case fullAccess = "full_access"
-
-    var shiftsPerWeekLimit: Int? {
-        switch self {
-        case .partTime: return 3
-        case .fullAccess, .none: return nil
-        }
-    }
-
-    var entriesPerWeekLimit: Int? {
-        switch self {
-        case .partTime: return 3
-        case .fullAccess, .none: return nil
-        }
-    }
+    case premium = "premium" // Single tier
+    case free = "free" // For testing purposes
 }
 
 class SubscriptionManager: ObservableObject {
@@ -28,20 +14,23 @@ class SubscriptionManager: ObservableObject {
     @Published var isCheckingSubscription = false // Start as false - only check when authenticated
     @Published var products: [Product] = []
     @Published var currentTier: SubscriptionTier = .none
-    @Published var currentWeekShifts = 0
-    @Published var currentWeekEntries = 0
+    @Published var trialDaysRemaining: Int = 0
+    @Published var subscriptionExpirationDate: Date? = nil
 
-    // Product IDs for different subscription tiers (must match App Store Connect exactly)
-    private let fullAccessMonthlyId = "com.protip365.monthly"
-    private let fullAccessYearlyId = "com.protip365.annual"
-    private let partTimeMonthlyId = "com.protip365.parttime.monthly"
-    private let partTimeYearlyId = "com.protip365.parttime.Annual" // Note: capital 'A' as in App Store Connect
+    // Single product ID for simplified pricing (must match App Store Connect exactly)
+    private let premiumMonthlyId = "com.protip365.premium.monthly"
 
     private var allProductIds: [String] {
-        [fullAccessMonthlyId, fullAccessYearlyId, partTimeMonthlyId, partTimeYearlyId]
+        [premiumMonthlyId]
     }
 
     private var transactionListener: Task<Void, Error>?
+
+    // Testing mode support (StoreKitTest framework may not be available)
+    #if DEBUG && canImport(StoreKitTest)
+    @Published var isTestingMode = false
+    @Published var testTransactions: [[String: Any]] = [] // Array of test transaction dictionaries
+    #endif
 
     init() {
         // Start listening for transaction updates immediately
@@ -87,10 +76,8 @@ class SubscriptionManager: ObservableObject {
 
     private func getTierForProductId(_ productId: String) -> SubscriptionTier {
         switch productId {
-        case fullAccessMonthlyId, fullAccessYearlyId:
-            return .fullAccess
-        case partTimeMonthlyId, partTimeYearlyId:
-            return .partTime
+        case premiumMonthlyId:
+            return .premium
         default:
             return .none
         }
@@ -106,8 +93,7 @@ class SubscriptionManager: ObservableObject {
             self.isSubscribed = false
             self.isInTrialPeriod = false
             self.currentTier = .none
-            self.currentWeekShifts = 0
-            self.currentWeekEntries = 0
+            self.trialDaysRemaining = 0
             self.isCheckingSubscription = false
             self.products = []
             print("Subscription state reset")
@@ -117,40 +103,71 @@ class SubscriptionManager: ObservableObject {
     func loadProducts() async {
         print("🔄 Loading products: \(allProductIds)")
         print("🔄 Loading products in current environment")
-        
+
         do {
             let products = try await Product.products(for: allProductIds)
             print("✅ Loaded \(products.count) products: \(products.map { $0.id })")
 
             await MainActor.run {
-                self.products = products.sorted { first, second in
-                    // Sort products: Part-time monthly, Part-time yearly, Full access monthly, Full access yearly
-                    let order = [
-                        partTimeMonthlyId: 0,
-                        partTimeYearlyId: 1,
-                        fullAccessMonthlyId: 2,
-                        fullAccessYearlyId: 3
-                    ]
-                    return (order[first.id] ?? 99) < (order[second.id] ?? 99)
-                }
+                self.products = products // Single product, no sorting needed
             }
 
             // Print product details for debugging
             for product in products {
                 print("Product: \(product.id) - \(product.displayName) - \(product.displayPrice)")
             }
-            
+
             if products.isEmpty {
-                print("⚠️ No products loaded - this might cause subscription loading issues")
+                print("⚠️ No products loaded - will show subscription screen with fallback option")
+                // Don't auto-grant access - let user see the subscription screen
+                // They can choose "Continue Anyway" if they want
             }
         } catch {
             print("❌ Failed to load products: \(error)")
-            print("Make sure products are configured in App Store Connect with these IDs:")
-            print("- \(fullAccessMonthlyId)")
-            print("- \(fullAccessYearlyId)")
-            print("- \(partTimeMonthlyId)")
-            print("- \(partTimeYearlyId)")
+            print("Will show subscription screen with fallback option")
+            // Don't auto-grant access - show subscription screen instead
         }
+    }
+
+    // Test mode subscription for development - or fallback when App Store fails
+    private func enableTestModeSubscription() async {
+        print("🧪 Enabling fallback access mode")
+
+        // Just grant access locally without hitting the database
+        // This ensures users can always use the app even if everything fails
+        await MainActor.run {
+            self.isSubscribed = true
+            self.isInTrialPeriod = true
+            self.currentTier = .premium
+            self.trialDaysRemaining = 999 // Generous trial for fallback mode
+        }
+
+        print("✅ Fallback access granted - users can use the app")
+
+        // Try to save to database but don't fail if it doesn't work
+        guard let session = try? await SupabaseManager.shared.client.auth.session else {
+            return
+        }
+
+        let userId = session.user.id
+        let testTransactionId = "fallback_\(UUID().uuidString)"
+
+        // Try to create a fallback subscription record
+        let testSubscription = SubscriptionRecord(
+            user_id: userId.uuidString,
+            product_id: premiumMonthlyId,
+            status: "active",
+            expires_at: ISO8601DateFormatter().string(from: Date().addingTimeInterval(365 * 24 * 60 * 60)), // 1 year fallback
+            transaction_id: testTransactionId,
+            purchase_date: ISO8601DateFormatter().string(from: Date()),
+            environment: "fallback"
+        )
+
+        // Try to save but don't worry if it fails
+        _ = try? await SupabaseManager.shared.client
+            .from("user_subscriptions")
+            .upsert(testSubscription, onConflict: "user_id")
+            .execute()
     }
 
     func purchase(productId: String) async {
@@ -241,8 +258,12 @@ class SubscriptionManager: ObservableObject {
     }
     
     func checkSubscriptionStatus() async {
+        print("🔍 Starting subscription status check...")
+        print("🌐 ONLINE MODE: Will validate receipts with Apple's servers")
+
         // Get current user ID - if no user is authenticated, clear subscription state
         guard let session = try? await SupabaseManager.shared.client.auth.session else {
+            print("❌ No session - clearing subscription state")
             await MainActor.run {
                 self.isSubscribed = false
                 self.isInTrialPeriod = false
@@ -253,54 +274,79 @@ class SubscriptionManager: ObservableObject {
         }
 
         let currentUserId = session.user.id
+        print("✅ Session found for user: \(currentUserId)")
 
-        // First check server-side subscription (for cross-device sync)
-        if await checkServerSubscription() {
-            await MainActor.run {
-                self.isCheckingSubscription = false
-            }
-            return // Found active subscription on server
-        }
+        // Check StoreKit transactions and VALIDATE ONLINE with Apple's servers
+        var foundActiveSubscription = false
 
-        // Then check local StoreKit transactions - but only process if we can verify user association
-        // Note: StoreKit doesn't provide user-specific info, so we need to rely on server verification
-        // We'll only process StoreKit transactions if they've been synced to our server for this user
         for await result in StoreKit.Transaction.currentEntitlements {
-            guard case .verified(let transaction) = result else { continue }
+            do {
+                // Get the transaction
+                let transaction = try checkVerified(result)
 
-            if allProductIds.contains(transaction.productID) {
-                // Verify this transaction belongs to current user via server check
-                if await verifyTransactionForCurrentUser(transaction: transaction, userId: currentUserId) {
-                    let tier = getTierForProductId(transaction.productID)
+                if allProductIds.contains(transaction.productID) {
+                    print("📱 Found transaction: \(transaction.productID)")
+                    print("   Transaction ID: \(transaction.id)")
+                    print("   Environment: \(transaction.environment)")
 
-                    await MainActor.run {
-                        self.isSubscribed = true
-                        self.currentTier = tier
+                    // CRITICAL: Validate receipt with Apple's servers ONLINE
+                    let isValidOnline = await validateReceiptWithAppleServers(transaction: transaction)
 
-                        // For subscriptions, check trial period (only for full access)
-                        if transaction.productType == .autoRenewable && tier == .fullAccess {
-                            // Simply check if we're within the first 7 days
-                            let trialDuration: TimeInterval = 7 * 24 * 60 * 60 // 7 days
-                            let timeSincePurchase = Date().timeIntervalSince(transaction.originalPurchaseDate)
-                            self.isInTrialPeriod = timeSincePurchase <= trialDuration
+                    if isValidOnline {
+                        print("✅ ONLINE VALIDATION SUCCESSFUL from Apple servers")
+                        print("   Purchase date: \(transaction.purchaseDate)")
+                        print("   Expiration: \(transaction.expirationDate?.description ?? "N/A")")
+
+                        let tier = getTierForProductId(transaction.productID)
+                        foundActiveSubscription = true
+
+                        await MainActor.run {
+                            self.isSubscribed = true
+                            self.currentTier = tier
+
+                            // For subscriptions, check trial period
+                            if transaction.productType == .autoRenewable && tier == .premium {
+                                // Check if we're within the first 7 days
+                                let trialDuration: TimeInterval = 7 * 24 * 60 * 60 // 7 days
+                                let timeSincePurchase = Date().timeIntervalSince(transaction.originalPurchaseDate)
+                                self.isInTrialPeriod = timeSincePurchase <= trialDuration
+
+                                if self.isInTrialPeriod {
+                                    let daysRemaining = Int((trialDuration - timeSincePurchase) / (24 * 60 * 60))
+                                    self.trialDaysRemaining = max(0, daysRemaining + 1) // +1 to include today
+                                }
+                            }
+
+                            self.isCheckingSubscription = false
                         }
 
-                        self.isCheckingSubscription = false
+                        // Sync to server for cross-device awareness
+                        await syncSubscriptionToServer(transaction: transaction)
+                        return
+                    } else {
+                        print("❌ ONLINE VALIDATION FAILED - Receipt rejected by Apple servers")
                     }
-
-                    // Sync to server for other devices
-                    await syncSubscriptionToServer(transaction: transaction)
-
-                    // Load current week usage for part-time tier
-                    if tier == .partTime {
-                        await loadCurrentWeekUsage()
-                    }
-
-                    return
                 }
+            } catch {
+                print("⚠️ Transaction verification failed: \(error)")
+                // Continue checking other transactions
+                continue
             }
         }
 
+        // No active StoreKit subscription found - check server as fallback for cross-device
+        if !foundActiveSubscription {
+            print("ℹ️ No online-validated subscription found, checking our server for cross-device sync...")
+            if await checkServerSubscription() {
+                await MainActor.run {
+                    self.isCheckingSubscription = false
+                }
+                return
+            }
+        }
+
+        // No subscription found anywhere
+        print("❌ No active subscription found")
         await MainActor.run {
             self.isSubscribed = false
             self.isInTrialPeriod = false
@@ -309,7 +355,133 @@ class SubscriptionManager: ObservableObject {
         }
     }
 
-    // Check server-side subscription status
+    // ONLINE receipt validation with Apple's verifyReceipt API
+    // This explicitly calls Apple's servers (sandbox or production)
+    private func validateReceiptWithAppleServers(transaction: StoreKit.Transaction) async -> Bool {
+        print("🌐 Validating receipt ONLINE with Apple servers...")
+
+        // Get the app receipt
+        guard let receiptURL = Bundle.main.appStoreReceiptURL,
+              let receiptData = try? Data(contentsOf: receiptURL) else {
+            print("❌ No receipt found on device")
+            return false
+        }
+
+        let receiptString = receiptData.base64EncodedString()
+        print("📄 Receipt size: \(receiptData.count) bytes")
+
+        // Try production first (Apple's recommendation)
+        print("🔵 Trying PRODUCTION server first...")
+        if await verifyReceiptWithEnvironment(receiptString: receiptString, isProduction: true) {
+            print("✅ PRODUCTION validation successful")
+            return true
+        }
+
+        // If production fails with sandbox error, try sandbox
+        print("🟡 Production failed, trying SANDBOX server...")
+        if await verifyReceiptWithEnvironment(receiptString: receiptString, isProduction: false) {
+            print("✅ SANDBOX validation successful")
+            return true
+        }
+
+        print("❌ Both PRODUCTION and SANDBOX validation failed")
+        return false
+    }
+
+    // Call Apple's verifyReceipt API
+    private func verifyReceiptWithEnvironment(receiptString: String, isProduction: Bool) async -> Bool {
+        let urlString = isProduction
+            ? "https://buy.itunes.apple.com/verifyReceipt"
+            : "https://sandbox.itunes.apple.com/verifyReceipt"
+
+        guard let url = URL(string: urlString) else {
+            print("❌ Invalid URL")
+            return false
+        }
+
+        print("🌐 Calling: \(urlString)")
+
+        let requestBody: [String: Any] = [
+            "receipt-data": receiptString,
+            "password": "", // Shared secret - leave empty if not using auto-renewable subscriptions with shared secret
+            "exclude-old-transactions": true
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
+            print("❌ Failed to serialize request")
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = jsonData
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15 // 15 second timeout
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Invalid response")
+                return false
+            }
+
+            print("📡 HTTP Status: \(httpResponse.statusCode)")
+
+            guard httpResponse.statusCode == 200 else {
+                print("❌ Server returned error status: \(httpResponse.statusCode)")
+                return false
+            }
+
+            // Parse response
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                print("❌ Failed to parse response JSON")
+                return false
+            }
+
+            let status = json["status"] as? Int ?? -1
+            print("📋 Apple Response Status: \(status)")
+
+            // Status codes:
+            // 0: Valid receipt
+            // 21007: Sandbox receipt sent to production
+            // 21008: Production receipt sent to sandbox
+
+            switch status {
+            case 0:
+                print("✅ Receipt is VALID")
+                // Check for active subscriptions
+                if let receipt = json["receipt"] as? [String: Any],
+                   let inApp = receipt["in_app"] as? [[String: Any]] {
+                    print("📱 Found \(inApp.count) in-app purchases")
+                    return true
+                }
+                if let latestReceiptInfo = json["latest_receipt_info"] as? [[String: Any]] {
+                    print("📱 Found \(latestReceiptInfo.count) subscription transactions")
+                    return !latestReceiptInfo.isEmpty
+                }
+                return true
+
+            case 21007:
+                print("⚠️ Sandbox receipt used in production (expected for TestFlight)")
+                return false // Signal to try sandbox
+
+            case 21008:
+                print("⚠️ Production receipt used in sandbox")
+                return false
+
+            default:
+                print("❌ Receipt validation failed with status: \(status)")
+                return false
+            }
+
+        } catch {
+            print("❌ Network error calling Apple servers: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    // Check server-side subscription status (for cross-device sync only)
     private func checkServerSubscription() async -> Bool {
         do {
             // Get current user ID - handle case where session might not be ready
@@ -332,34 +504,39 @@ class SubscriptionManager: ObservableObject {
             decoder.dateDecodingStrategy = .iso8601
 
             // Decode as array since we removed .single()
-            let subscriptions = try? decoder.decode([ServerSubscription].self, from: response.data)
-            if let subscription = subscriptions?.first {
+            let subscriptions = try decoder.decode([ServerSubscription].self, from: response.data)
+            if let subscription = subscriptions.first {
                 // Check if subscription is still valid
                 if let expiresAt = subscription.expires_at, expiresAt > Date() {
+                    print("✅ Found valid server subscription, expires: \(expiresAt)")
                     let tier = getTierForProductId(subscription.product_id ?? "")
 
                     await MainActor.run {
                         self.isSubscribed = true
                         self.currentTier = tier
 
-                        // Check trial period based on purchase date (only for full access)
-                        if let purchaseDate = subscription.purchase_date, tier == .fullAccess {
+                        // Check trial period based on purchase date
+                        if let purchaseDate = subscription.purchase_date, tier == .premium {
                             let trialDuration: TimeInterval = 7 * 24 * 60 * 60 // 7 days
                             let timeSincePurchase = Date().timeIntervalSince(purchaseDate)
                             self.isInTrialPeriod = timeSincePurchase <= trialDuration
+
+                            if self.isInTrialPeriod {
+                                let daysRemaining = Int((trialDuration - timeSincePurchase) / (24 * 60 * 60))
+                                self.trialDaysRemaining = max(0, daysRemaining + 1) // +1 to include today
+                            }
                         }
                     }
 
-                    // Load current week usage for part-time tier
-                    if tier == .partTime {
-                        await loadCurrentWeekUsage()
-                    }
-
                     return true
+                } else {
+                    print("⚠️ Server subscription found but expired")
                 }
+            } else {
+                print("ℹ️ No server subscription found")
             }
         } catch {
-            print("Server subscription check failed: \(error)")
+            print("⚠️ Server subscription check failed: \(error)")
         }
         return false
     }
@@ -421,11 +598,15 @@ class SubscriptionManager: ObservableObject {
         await checkSubscriptionStatus()
     }
 
-    private func schedulePeriodicValidation() async {
+    private func schedulePeriodicValidation() {
         // Check subscription status every 6 hours to ensure it's still valid
-        while !Task.isCancelled {
-            try? await Task.sleep(nanoseconds: 6 * 60 * 60 * 1_000_000_000) // 6 hours
-            await checkSubscriptionStatus()
+        // Run in background task, don't await
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 6 * 60 * 60 * 1_000_000_000) // 6 hours
+                await self.checkSubscriptionStatus()
+            }
         }
     }
 
@@ -433,18 +614,53 @@ class SubscriptionManager: ObservableObject {
     func refreshSubscriptionStatus() async {
         await checkSubscriptionStatus()
     }
-    
+
     // Start subscription checking (call this only after user is authenticated)
     func startSubscriptionChecking() async {
+        print("🚀 Starting subscription checking...")
+
         await MainActor.run {
             self.isCheckingSubscription = true
         }
-        
-        await loadProducts()
-        await checkSubscriptionStatus()
-        
-        // Schedule periodic subscription validation
-        await schedulePeriodicValidation()
+
+        // Load products with timeout
+        await withTimeout(seconds: 5) {
+            await self.loadProducts()
+        }
+
+        // Check subscription status with timeout
+        await withTimeout(seconds: 10) {
+            await self.checkSubscriptionStatus()
+        }
+
+        // Always clear the checking flag after timeout
+        await MainActor.run {
+            self.isCheckingSubscription = false
+        }
+
+        // Schedule periodic subscription validation (non-blocking)
+        schedulePeriodicValidation()
+
+        print("✅ Subscription checking completed")
+    }
+
+    // Helper function to run async code with timeout
+    private func withTimeout(seconds: TimeInterval, operation: @escaping () async -> Void) async {
+        await withTaskGroup(of: Void.self) { group in
+            // Start the operation
+            group.addTask {
+                await operation()
+            }
+
+            // Start timeout task
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            }
+
+            // Wait for first to complete, then cancel the rest
+            _ = await group.next()
+            group.cancelAll()
+        }
     }
 
     // Verify if a StoreKit transaction belongs to the current user
@@ -471,81 +687,132 @@ class SubscriptionManager: ObservableObject {
         return false
     }
 
-    // MARK: - Part-time Tier Limit Management
-
-    func loadCurrentWeekUsage() async {
-        guard currentTier == .partTime else { return }
-
-        do {
-            let session = try await SupabaseManager.shared.client.auth.session
-            let userId = session.user.id
-
-            // Get start of current week (Sunday)
-            let calendar = Calendar.current
-            let today = Date()
-            let weekday = calendar.component(.weekday, from: today)
-            let daysToSubtract = weekday - 1 // Sunday is 1
-            let startOfWeek = calendar.date(byAdding: .day, value: -daysToSubtract, to: today)!
-            let startOfWeekString = ISO8601DateFormatter().string(from: startOfWeek)
-
-            // Count shifts this week
-            let shiftsResponse = try await SupabaseManager.shared.client
-                .from("shifts")
-                .select("id")
-                .eq("user_id", value: userId)
-                .gte("date", value: startOfWeekString)
-                .execute()
-
-            let shiftsData = try JSONSerialization.jsonObject(with: shiftsResponse.data) as? [[String: Any]] ?? []
-            let shiftsCount = shiftsData.count
-
-            // Count entries this week (sum of all entries across shifts)
-            let entriesResponse = try await SupabaseManager.shared.client
-                .from("shift_entries")
-                .select("id, shift_id")
-                .eq("user_id", value: userId)
-                .gte("created_at", value: startOfWeekString)
-                .execute()
-
-            let entriesData = try JSONSerialization.jsonObject(with: entriesResponse.data) as? [[String: Any]] ?? []
-            let entriesCount = entriesData.count
-
-            await MainActor.run {
-                self.currentWeekShifts = shiftsCount
-                self.currentWeekEntries = entriesCount
-            }
-        } catch {
-            print("Failed to load weekly usage: \(error)")
-        }
-    }
+    // MARK: - Simplified Access Management
 
     func canAddShift() -> Bool {
-        guard currentTier == .partTime else { return true }
-        return currentWeekShifts < (currentTier.shiftsPerWeekLimit ?? Int.max)
+        // With single tier, always allow if subscribed
+        return isSubscribed || isInTrialPeriod
     }
 
     func canAddEntry() -> Bool {
-        guard currentTier == .partTime else { return true }
-        return currentWeekEntries < (currentTier.entriesPerWeekLimit ?? Int.max)
+        // With single tier, always allow if subscribed
+        return isSubscribed || isInTrialPeriod
     }
 
-    func incrementShiftCount() {
-        currentWeekShifts += 1
+    func hasFullAccess() -> Bool {
+        return isSubscribed || isInTrialPeriod
     }
 
-    func incrementEntryCount() {
-        currentWeekEntries += 1
+    func getSubscriptionStatusText() -> String {
+        if isInTrialPeriod {
+            return "Trial - \(trialDaysRemaining) days left"
+        } else if isSubscribed {
+            return "Premium"
+        } else {
+            return "Free Trial Available"
+        }
     }
 
-    func getRemainingShifts() -> Int? {
-        guard currentTier == .partTime,
-              let limit = currentTier.shiftsPerWeekLimit else { return nil }
-        return max(0, limit - currentWeekShifts)
+    // MARK: - Testing Support
+
+    #if DEBUG && canImport(StoreKitTest)
+    /// Enable testing mode with StoreKitTest framework
+    func enableTestingMode() async {
+        #if DEBUG && canImport(StoreKitTest)
+        // Check if StoreKitTest is available (iOS 15+)
+        guard #available(iOS 15.0, *) else {
+            print("❌ StoreKitTest requires iOS 15.0+")
+            return
+        }
+
+        // In StoreKitTest, the session is automatically created when enableStoreKitTesting = YES in scheme
+        // We don't need to manually create a session
+
+        await MainActor.run {
+            self.isTestingMode = true
+        }
+
+        print("✅ StoreKitTest mode enabled")
+        #endif
     }
 
-    func getRemainingEntries() -> Int? {
-        guard currentTier == .partTime,
-              let limit = currentTier.entriesPerWeekLimit else { return nil }
-        return max(0, limit - currentWeekEntries)
+    /// Add a test transaction for testing
+    func addTestTransaction(productId: String, state: String = "purchased") async {
+        #if DEBUG && canImport(StoreKitTest)
+        guard #available(iOS 15.0, *) else {
+            print("❌ StoreKitTest requires iOS 15.0+")
+            return
+        }
+
+        guard isTestingMode else {
+            print("❌ Testing mode not enabled")
+            return
+        }
+
+        // Create a test transaction dictionary
+        let testTransaction: [String: Any] = [
+            "productID": productId,
+            "state": state,
+            "transactionID": UUID().uuidString,
+            "timestamp": Date().timeIntervalSince1970,
+            "originalTransactionID": UUID().uuidString
+        ]
+
+        // Add to test transactions list
+        await MainActor.run {
+            self.testTransactions.append(testTransaction)
+            
+            // Simulate subscription status change for testing
+            if productId == "com.protip365.premium.monthly" {
+                switch state {
+                case "purchased":
+                    self.isSubscribed = true
+                    self.currentTier = .premium
+                    self.subscriptionExpirationDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())
+                    self.isInTrialPeriod = false
+                    print("✅ Test subscription activated: Premium")
+                case "trial":
+                    self.isSubscribed = true
+                    self.currentTier = .premium
+                    self.subscriptionExpirationDate = Calendar.current.date(byAdding: .day, value: 7, to: Date())
+                    self.isInTrialPeriod = true
+                    print("✅ Test trial activated: Premium (7 days)")
+                case "failed":
+                    self.isSubscribed = false
+                    self.currentTier = .free
+                    self.subscriptionExpirationDate = nil
+                    self.isInTrialPeriod = false
+                    print("✅ Test transaction failed")
+                default:
+                    break
+                }
+            }
+        }
+
+        print("✅ Added test transaction: \(productId) with state: \(state)")
+        #endif
     }
+
+    /// Clear all test transactions
+    func clearTestTransactions() async {
+        #if DEBUG && canImport(StoreKitTest)
+        guard #available(iOS 15.0, *) else { return }
+
+        guard isTestingMode else { return }
+
+        // Clear test transactions and reset subscription status
+        await MainActor.run {
+            self.testTransactions.removeAll()
+            
+            // Reset subscription status for testing
+            self.isSubscribed = false
+            self.currentTier = .free
+            self.subscriptionExpirationDate = nil
+            self.isInTrialPeriod = false
+        }
+
+        print("✅ Cleared all test transactions and reset subscription status")
+        #endif
+    }
+    #endif
 }

@@ -5,7 +5,7 @@ struct AddShiftView: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     // MARK: - Parameters
-    let editingShift: ShiftIncome?
+    let editingShift: ShiftWithEntry?
     let initialDate: Date?
 
 
@@ -23,7 +23,7 @@ struct AddShiftView: View {
     @AppStorage("language") private var language = "en"
 
     // MARK: - Initializer with StateObject
-    init(editingShift: ShiftIncome? = nil, initialDate: Date? = nil) {
+    init(editingShift: ShiftWithEntry? = nil, initialDate: Date? = nil) {
         self.editingShift = editingShift
         self.initialDate = initialDate
         self._dataManager = StateObject(wrappedValue: AddShiftDataManager(editingShift: editingShift, initialDate: initialDate))
@@ -36,14 +36,17 @@ struct AddShiftView: View {
     
     // MARK: - Delete Function
     private func deleteShift() async {
-        guard let shift = editingShift, let shiftId = shift.shift_id else { return }
+        guard let shift = editingShift else { return }
 
         do {
-            try await SupabaseManager.shared.client
-                .from("shifts")
-                .delete()
-                .eq("id", value: shiftId)
-                .execute()
+            // Delete shift entry if it exists
+            if let entry = shift.entry {
+                try await SupabaseManager.shared.deleteShiftEntry(id: entry.id)
+                DashboardCharts.invalidateCache()
+            }
+
+            // Delete expected shift
+            try await SupabaseManager.shared.deleteExpectedShift(id: shift.id)
 
             dismiss()
         } catch {
@@ -184,6 +187,7 @@ struct AddShiftView: View {
             ShiftDetailsSection(
                 selectedEmployer: $dataManager.selectedEmployer,
                 comments: $dataManager.comments,
+                salesTarget: $dataManager.salesTarget,
                 showEmployerPicker: $showEmployerPicker,
                 showStartDatePicker: $showStartDatePicker,
                 showEndDatePicker: $showEndDatePicker,
@@ -191,12 +195,14 @@ struct AddShiftView: View {
                 showEndTimePicker: $showEndTimePicker,
                 showLunchBreakPicker: $showLunchBreakPicker,
                 employers: dataManager.employers,
-                localization: localization
+                localization: localization,
+                defaultSalesTarget: dataManager.defaultDailySalesTarget
             )
 
             // Time Selection Section
             ShiftTimeSection(
                 selectedDate: $dataManager.selectedDate,
+                endDate: $dataManager.endDate,
                 startTime: $dataManager.startTime,
                 endTime: $dataManager.endTime,
                 selectedLunchBreak: $dataManager.selectedLunchBreak,

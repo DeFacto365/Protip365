@@ -8,6 +8,8 @@ struct DetailStatsSection: View {
     let targetTips: Double
     let targetSales: Double
     let targetHours: Double
+    let periodStartDate: Date?
+    let periodEndDate: Date?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
@@ -18,7 +20,9 @@ struct DetailStatsSection: View {
                 localization: localization,
                 averageDeductionPercentage: averageDeductionPercentage,
                 targetIncome: targetIncome,
-                targetTips: targetTips
+                targetTips: targetTips,
+                periodStartDate: periodStartDate,
+                periodEndDate: periodEndDate
             )
 
             // Performance metrics card

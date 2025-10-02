@@ -24,7 +24,7 @@ import java.util.*
 @Composable
 fun CustomCalendarView(
     selectedDate: LocalDate,
-    shiftsForDate: (LocalDate) -> List<com.protip365.app.data.models.Shift>,
+    shiftsForDate: (LocalDate) -> List<com.protip365.app.data.models.CompletedShift>,
     onDateTapped: (LocalDate) -> Unit,
     language: String = "en"
 ) {
@@ -136,7 +136,7 @@ fun CalendarGrid(
     currentMonth: LocalDate,
     selectedDate: LocalDate,
     today: LocalDate,
-    shiftsForDate: (LocalDate) -> List<com.protip365.app.data.models.Shift>,
+    shiftsForDate: (LocalDate) -> List<com.protip365.app.data.models.CompletedShift>,
     onDateTapped: (LocalDate) -> Unit
 ) {
     val weeks = generateWeeks(firstDayToShow, lastDayToShow)
@@ -171,7 +171,7 @@ fun CalendarDayCell(
     isCurrentMonth: Boolean,
     isSelected: Boolean,
     isToday: Boolean,
-    shifts: List<com.protip365.app.data.models.Shift>,
+    shifts: List<com.protip365.app.data.models.CompletedShift>,
     onDateTapped: (LocalDate) -> Unit
 ) {
     Box(
@@ -218,7 +218,7 @@ fun CalendarDayCell(
 }
 
 @Composable
-fun ShiftIndicators(shifts: List<com.protip365.app.data.models.Shift>) {
+fun ShiftIndicators(shifts: List<com.protip365.app.data.models.CompletedShift>) {
     if (shifts.isEmpty()) {
         // Empty space to maintain consistent height
         Spacer(modifier = Modifier.height(6.dp))
@@ -254,7 +254,7 @@ fun ShiftIndicators(shifts: List<com.protip365.app.data.models.Shift>) {
     }
 }
 
-private fun colorForShift(shift: com.protip365.app.data.models.Shift, index: Int): Color {
+private fun colorForShift(shift: com.protip365.app.data.models.CompletedShift, index: Int): Color {
     // Use different colors based on shift status and earnings (matching iOS logic)
     val hasEarnings = shift.totalEarnings > 0
     

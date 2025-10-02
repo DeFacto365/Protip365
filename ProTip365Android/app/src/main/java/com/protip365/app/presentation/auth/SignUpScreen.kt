@@ -12,14 +12,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,14 +39,15 @@ fun SignUpScreen(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var acceptTerms by remember { mutableStateOf(false) }
     val authState by viewModel.state.collectAsState()
+    val nameFocusRequester = remember { FocusRequester() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Account") },
+                title = { Text(stringResource(R.string.signup_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -76,13 +81,15 @@ fun SignUpScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.name)) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 ),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(nameFocusRequester)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -90,14 +97,37 @@ fun SignUpScreen(
             // Email field
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
+                onValueChange = {
+                    email = it
+                    viewModel.updateEmail(it)
+                    // Check email availability when user stops typing (debounced)
+                    if (it.contains("@") && it.contains(".")) {
+                        viewModel.validateEmailAvailability(it)
+                    }
+                },
+                label = { Text(stringResource(R.string.email_hint)) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = authState.emailError != null,
+                supportingText = {
+                    if (authState.isCheckingEmail) {
+                        Text("Checking email availability...")
+                    } else if (authState.emailError != null) {
+                        Text(authState.emailError ?: "")
+                    }
+                },
+                trailingIcon = {
+                    if (authState.isCheckingEmail) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -106,7 +136,7 @@ fun SignUpScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password_hint)) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -116,7 +146,7 @@ fun SignUpScreen(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                         )
                     }
                 },
@@ -131,7 +161,7 @@ fun SignUpScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.confirm_password_hint)) },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -141,7 +171,7 @@ fun SignUpScreen(
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Icon(
                             imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                            contentDescription = if (confirmPasswordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                         )
                     }
                 },
@@ -150,7 +180,7 @@ fun SignUpScreen(
                 isError = confirmPassword.isNotEmpty() && password != confirmPassword,
                 supportingText = {
                     if (confirmPassword.isNotEmpty() && password != confirmPassword) {
-                        Text("Passwords do not match")
+                        Text(stringResource(R.string.passwords_dont_match))
                     }
                 }
             )
@@ -191,7 +221,9 @@ fun SignUpScreen(
                          password.length >= 6 &&
                          password == confirmPassword &&
                          acceptTerms &&
-                         !authState.isLoading
+                         !authState.isLoading &&
+                         !authState.isCheckingEmail &&
+                         authState.emailError == null
             ) {
                 if (authState.isLoading) {
                     CircularProgressIndicator(
@@ -199,7 +231,24 @@ fun SignUpScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Create Account", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.signup_button), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+
+            // Success message
+            authState.successMessage?.let { message ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
 
@@ -231,5 +280,10 @@ fun SignUpScreen(
                 popUpTo("login") { inclusive = true }
             }
         }
+    }
+
+    // Request focus on the name field when the screen is first displayed
+    LaunchedEffect(Unit) {
+        nameFocusRequester.requestFocus()
     }
 }

@@ -1,188 +1,292 @@
 import SwiftUI
 import StoreKit
 
+// Helper struct for decoding onboarding status
+private struct OnboardingCheck: Decodable {
+    let onboarding_completed: Bool?
+}
+
 struct SubscriptionView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
+    @Binding var showOnboarding: Bool
     @AppStorage("language") private var language = "en"
     @State private var isLoading = false
-    @State private var showOnboarding = false
     
     var body: some View {
-        VStack(spacing: 30) {
-            // Header with glass effects
-            VStack(spacing: 20) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.yellow)
-                    .modifier(GlassEffectModifier())
-                    .frame(width: 100, height: 100)
-                
-                Text("ProTip365 Premium")
-                    .font(.largeTitle)
-                    .bold()
-                    .modifier(GlassEffectRoundedModifier(cornerRadius: 8))
-                    .padding(.horizontal, 8)
-            }
-            .padding(.top, 40)
-            
-            // Features
-            VStack(alignment: .leading, spacing: 20) {
-                FeatureRow(icon: "chart.line.uptrend.xyaxis", text: unlimitedTracking)
-                FeatureRow(icon: "dollarsign.circle.fill", text: advancedAnalytics)
-                FeatureRow(icon: "calendar", text: fullHistory)
-                FeatureRow(icon: "building.2.fill", text: multipleEmployers)
-                FeatureRow(icon: "cloud", text: cloudSync)
-            }
-            .padding(.horizontal, 30)
-            
-            Spacer()
-            
-            // Pricing
-            VStack(spacing: 10) {
-                Text(trialText)
-                    .font(.headline)
-                Text(priceText)
-                    .foregroundColor(.secondary)
-            }
-            
-            // Purchase Button
-            Button(action: {
-                isLoading = true
-                Task {
-                    await subscriptionManager.purchase(productId: "com.protip365.monthly")
-                    await MainActor.run {
-                        isLoading = false
-                        // Show onboarding after successful subscription
-                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
-                            showOnboarding = true
-                        }
-                    }
-                }
-            }) {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else {
-                    Text(startTrialButton)
-                        .bold()
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(12)
-            .padding(.horizontal, 30)
-            .disabled(isLoading)
-            
-            // Restore Button - More prominent for Sandbox testing
-            Button(action: {
-                Task {
-                    isLoading = true
-                    await subscriptionManager.restorePurchases()
-                    isLoading = false
+        ZStack {
+            // Background color
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
 
-                    // If subscription restored, dismiss view
-                    if subscriptionManager.isSubscribed {
-                        // View will auto-dismiss based on subscription status
-                        HapticFeedback.success()
+            // Gradient overlay
+            LinearGradient(
+                colors: [
+                    Color(red: 0.6, green: 0.8, blue: 1.0),     // Light blue
+                    Color(red: 1.0, green: 0.7, blue: 0.9),     // Light pink
+                    Color(red: 0.8, green: 0.7, blue: 1.0)      // Light purple
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .opacity(0.2)
+            .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Logo and Branding
+                    VStack(spacing: 20) {
+                        Image("Logo2")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                            .shadow(radius: 8)
+
+                        HStack(spacing: 0) {
+                            Text("ProTip")
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                            Text("365")
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(.blue)
+                        }
+
+                        Text(valueProposition)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    .padding(.top, 60)
+                    .padding(.bottom, 30)
+
+                    // Value Description (replacing icon)
+                    VStack(spacing: 20) {
+                        Text(detailedDescription)
+                            .font(.system(size: 13))
+                            .foregroundColor(.black)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(3)
+                            .padding(.horizontal, 50)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        // Page indicators
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color.primary)
+                                .frame(width: 8, height: 8)
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                        }
+                        .padding(.top, 10)
+                    }
+                    .padding(.vertical, 40)
+
+                    Spacer()
+
+                    // Bottom Section
+                    VStack(spacing: 16) {
+                        // Trial text (discrete, like Ocean Journal)
+                        Text(trialText)
+                            .font(.body)
+                            .foregroundColor(.blue)
+
+                        // Subscribe Button
+                        Button(action: {
+                            isLoading = true
+                            Task {
+                                await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                                await MainActor.run {
+                                    isLoading = false
+                                    if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                                        checkOnboardingStatus()
+                                    }
+                                }
+                            }
+                        }) {
+                            Group {
+                                if isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text(subscribeButton)
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                        }
+                        .disabled(isLoading)
+                        .padding(.horizontal, 30)
+
+                        // Terms and Privacy (inline)
+                        HStack(spacing: 6) {
+                            Button(action: {
+                                if let url = URL(string: "https://www.protip365.com/terms") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(termsLink)
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
+
+                            Text("and")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            Button(action: {
+                                if let url = URL(string: "https://www.protip365.com/privacy") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(privacyLink)
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding(.top, 4)
+
+                        // Sign In Button
+                        Button(action: {
+                            // Handle sign in - dismiss to show auth screen
+                            // This will be handled by ContentView navigation
+                        }) {
+                            Text(signInButton)
+                                .font(.body)
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.top, 20)
+
+                        // Restore Purchases
+                        Button(action: {
+                            Task {
+                                isLoading = true
+                                await subscriptionManager.restorePurchases()
+                                isLoading = false
+                                if subscriptionManager.isSubscribed {
+                                    HapticFeedback.success()
+                                }
+                            }
+                        }) {
+                            Text(restoreButton)
+                                .font(.body)
+                                .foregroundColor(.blue)
+                        }
+                        .disabled(isLoading)
+                        .padding(.top, 8)
+                    }
+                    .padding(.bottom, 40)
+
+                    // Skip button for testing (DEBUG only)
+                    #if DEBUG
+                    Button(action: {
+                        subscriptionManager.isSubscribed = true
+                        checkOnboardingStatus()
+                    }) {
+                        Text(skipButtonText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .underline()
+                    }
+                    .padding(.bottom, 20)
+                    #endif
+                }
+            }
+        }
+    }
+
+    private func checkOnboardingStatus() {
+        Task {
+            do {
+                let userId = try await SupabaseManager.shared.client.auth.session.user.id
+                let response = try await SupabaseManager.shared.client
+                    .from("users_profile")
+                    .select("onboarding_completed")
+                    .eq("user_id", value: userId)
+                    .single()
+                    .execute()
+
+                let decoder = JSONDecoder()
+                if let profileData = try? decoder.decode(OnboardingCheck.self, from: response.data) {
+                    await MainActor.run {
+                        showOnboarding = !(profileData.onboarding_completed ?? false)
                     }
                 }
-            }) {
-                HStack {
-                    Image(systemName: "arrow.clockwise.circle.fill")
-                        .font(.body)
-                    Text(restoreButton)
-                        .fontWeight(.medium)
+            } catch {
+                await MainActor.run {
+                    showOnboarding = true
                 }
-                .foregroundStyle(.tint)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(8)
             }
-            .disabled(isLoading)
-            
-            // Terms
-            Text(termsText)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-                .padding(.bottom, 20)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
-        .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
         }
     }
     
-    // Localization
-    var unlimitedTracking: String {
+    // MARK: - Localization
+
+    var valueProposition: String {
         switch language {
-        case "fr": return "Suivi illimité des quarts"
-        case "es": return "Seguimiento ilimitado de turnos"
-        default: return "Unlimited shift tracking"
+        case "fr": return "Accès Complet Premium"
+        case "es": return "Acceso Premium Completo"
+        default: return "Unlock All Access"
         }
     }
-    
-    var advancedAnalytics: String {
+
+    var detailedDescription: String {
         switch language {
-        case "fr": return "Analyses avancées"
-        case "es": return "Análisis avanzado"
-        default: return "Advanced analytics"
+        case "fr": return "ProTip365 transforme la gestion des données de pourboires pour serveurs, barmans, livreurs et professionnels du service. Remplacez les papiers éparpillés et fichiers Excel obsolètes par une gestion en temps réel des pourboires, planification des quarts et rapports complets quotidiens/hebdomadaires/mensuels/annuels accessibles depuis iPhone, Android, tablette ou iPad, n'importe où."
+        case "es": return "ProTip365 transforma cómo meseros, cantineros, repartidores y profesionales del servicio gestionan sus datos de propinas. Reemplace papeles dispersos y archivos Excel obsoletos con gestión de propinas en tiempo real, programación de turnos e informes completos diarios/semanales/mensuales/anuales accesibles desde iPhone, Android, tableta o iPad en cualquier lugar."
+        default: return "ProTip365 transforms how servers, bartenders, delivery drivers, and service professionals manage their tip data. Replace scattered paper slips and outdated Excel files with real-time tip management, shift scheduling, and comprehensive daily/weekly/monthly/yearly reports accessible from iPhone, Android, tablet, or iPad anywhere."
         }
     }
-    
-    var fullHistory: String {
-        switch language {
-        case "fr": return "Accès à l'historique complet"
-        case "es": return "Acceso al historial completo"
-        default: return "Full history access"
-        }
-    }
-    
-    var multipleEmployers: String {
-        switch language {
-        case "fr": return "Plusieurs employeurs"
-        case "es": return "Múltiples empleadores"
-        default: return "Multiple employers"
-        }
-    }
-    
-    var cloudSync: String {
-        switch language {
-        case "fr": return "Synchronisation cloud"
-        case "es": return "Sincronización en la nube"
-        default: return "Cloud sync"
-        }
-    }
-    
+
     var trialText: String {
         switch language {
-        case "fr": return "Essai gratuit de 7 jours"
-        case "es": return "Prueba gratuita de 7 días"
-        default: return "7-day free trial"
+        case "fr": return "Commencez avec 1 mois d'essai gratuit."
+        case "es": return "Comienza con 1 mes de prueba gratis."
+        default: return "Start with a 1 month free trial."
         }
     }
-    
-    var priceText: String {
+
+    var subscribeButton: String {
         switch language {
-        case "fr": return "Puis 4,99$/mois"
-        case "es": return "Luego $4.99/mes"
-        default: return "Then $4.99/month"
+        case "fr": return "S'abonner pour 3,99 $/mois"
+        case "es": return "Suscribirse por $3.99/mes"
+        default: return "Subscribe for $3.99 / month"
         }
     }
-    
-    var startTrialButton: String {
+
+    var termsLink: String {
         switch language {
-        case "fr": return "Commencer l'essai gratuit"
-        case "es": return "Comenzar prueba gratis"
-        default: return "Start Free Trial"
+        case "fr": return "Conditions d'utilisation"
+        case "es": return "Términos de servicio"
+        default: return "Terms of Service"
         }
     }
-    
+
+    var privacyLink: String {
+        switch language {
+        case "fr": return "Politique de confidentialité"
+        case "es": return "Política de privacidad"
+        default: return "Privacy Policy"
+        }
+    }
+
+    var signInButton: String {
+        switch language {
+        case "fr": return "Se connecter"
+        case "es": return "Iniciar sesión"
+        default: return "Sign In"
+        }
+    }
+
     var restoreButton: String {
         switch language {
         case "fr": return "Restaurer les achats"
@@ -190,37 +294,14 @@ struct SubscriptionView: View {
         default: return "Restore Purchases"
         }
     }
-    
-    var termsText: String {
+
+    var skipButtonText: String {
         switch language {
-        case "fr": return "L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
-        case "es": return "La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
-        default: return "Subscription auto-renews. Cancel anytime in App Store settings."
+        case "fr": return "Passer (Test uniquement)"
+        case "es": return "Omitir (Solo prueba)"
+        default: return "Skip (Testing Only)"
         }
     }
 }
 
-struct FeatureRow: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: icon)
-                .frame(width: 30)
-                .foregroundStyle(.tint)
-                .font(.title3)
-                .modifier(GlassEffectModifier())
-                .frame(width: 40, height: 40)
-            
-            Text(text)
-                .font(.body)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .modifier(GlassEffectRoundedModifier(cornerRadius: 12))
-        .shadow(color: .blue.opacity(0.1), radius: 4, x: 0, y: 2)
-    }
-}
+

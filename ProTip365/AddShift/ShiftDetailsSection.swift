@@ -4,6 +4,7 @@ import SwiftUI
 struct ShiftDetailsSection: View {
     @Binding var selectedEmployer: Employer?
     @Binding var comments: String
+    @Binding var salesTarget: String
     @Binding var showEmployerPicker: Bool
     @Binding var showStartDatePicker: Bool
     @Binding var showEndDatePicker: Bool
@@ -13,6 +14,7 @@ struct ShiftDetailsSection: View {
 
     let employers: [Employer]
     let localization: AddShiftLocalization
+    let defaultSalesTarget: Double
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,6 +75,34 @@ struct ShiftDetailsSection: View {
             Divider()
                 .padding(.horizontal, 16)
 
+            // Sales Target Row
+            HStack {
+                Text(localization.salesTargetText)
+                    .font(.body)
+                    .foregroundColor(.primary)
+
+                Spacer()
+
+                TextField(
+                    defaultSalesTarget > 0 ? String(format: "%.0f", defaultSalesTarget) : "0",
+                    text: $salesTarget
+                )
+                .font(.body)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.systemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .frame(maxWidth: 150)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            // Divider
+            Divider()
+                .padding(.horizontal, 16)
+
             // Comments Row
             VStack(alignment: .leading, spacing: 8) {
                 Text(localization.commentsText)
@@ -98,6 +128,7 @@ struct ShiftDetailsSection: View {
 #Preview {
     @Previewable @State var selectedEmployer: Employer? = nil
     @Previewable @State var comments = ""
+    @Previewable @State var salesTarget = ""
     @Previewable @State var showEmployerPicker = false
     @Previewable @State var showStartDatePicker = false
     @Previewable @State var showEndDatePicker = false
@@ -114,6 +145,7 @@ struct ShiftDetailsSection: View {
         ShiftDetailsSection(
             selectedEmployer: $selectedEmployer,
             comments: $comments,
+            salesTarget: $salesTarget,
             showEmployerPicker: $showEmployerPicker,
             showStartDatePicker: $showStartDatePicker,
             showEndDatePicker: $showEndDatePicker,
@@ -121,7 +153,8 @@ struct ShiftDetailsSection: View {
             showEndTimePicker: $showEndTimePicker,
             showLunchBreakPicker: $showLunchBreakPicker,
             employers: sampleEmployers,
-            localization: AddShiftLocalization()
+            localization: AddShiftLocalization(),
+            defaultSalesTarget: 500.0
         )
         Spacer()
     }

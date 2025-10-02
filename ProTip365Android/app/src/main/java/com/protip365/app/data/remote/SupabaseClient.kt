@@ -2,6 +2,7 @@ package com.protip365.app.data.remote
 
 import io.github.jan.supabase.SupabaseClient as JanSupabaseClient
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.Postgrest
@@ -34,6 +35,9 @@ val supabaseClient = createSupabaseClient(
     }
     install(Storage) {
         // Configure Storage if needed
+    }
+    install(Functions) {
+        // Configure Functions if needed
     }
 
     httpEngine = Android.create {

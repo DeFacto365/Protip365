@@ -4,6 +4,7 @@ import Supabase
 struct ContentView: View {
     @State private var isAuthenticated = false
     @State private var showOnboarding = false
+    @State private var isCheckingSubscription = true
     @StateObject private var securityManager = SecurityManager()
     @StateObject private var subscriptionManager = SubscriptionManager()
     @StateObject private var alertManager = AlertManager.shared
@@ -19,15 +20,21 @@ struct ContentView: View {
                 .ignoresSafeArea(.all)
 
             Group {
-                // Check security lock first
-                if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+                // Only check security lock AFTER user is authenticated
+                if isAuthenticated && securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
                     EnhancedLockScreenView(securityManager: securityManager)
                 } else if isAuthenticated {
-                    if showOnboarding {
+                    if isCheckingSubscription {
+                        // Show loading while checking subscription (with timeout safeguard)
+                        SubscriptionCheckingView(isCheckingSubscription: $isCheckingSubscription)
+                    } else if !subscriptionManager.isSubscribed && !subscriptionManager.isInTrialPeriod {
+                        // Show subscription screen - subscription required to access app
+                        SubscriptionView(subscriptionManager: subscriptionManager, showOnboarding: $showOnboarding)
+                    } else if showOnboarding {
+                        // Has valid subscription but needs onboarding
                         OnboardingView(isAuthenticated: $isAuthenticated, showOnboarding: $showOnboarding)
                     } else {
-                        // TEMPORARILY DISABLED: Skip subscription checks for testing
-                        // Show main app directly without subscription validation
+                        // Has valid subscription and completed onboarding - show main app
                         mainAppView
                     }
                 } else {
@@ -37,7 +44,8 @@ struct ContentView: View {
         }
         .task {
             await checkAuth()
-            if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+            // Only trigger security authentication AFTER user is authenticated
+            if isAuthenticated && securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
                 securityManager.authenticate()
             }
         }
@@ -55,44 +63,42 @@ struct ContentView: View {
             // Reset subscription state to ensure clean slate for new accounts
             subscriptionManager.resetSubscriptionState()
         }
-        .onAppear {
-            // Force check authentication state on app appear
-            Task {
-                await checkAuth()
-            }
-        }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .active:
-                // If security is enabled and app is locked, trigger authentication
-                if securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
+                // If user is authenticated and security is enabled and app is locked, trigger authentication
+                if isAuthenticated && securityManager.currentSecurityType != .none && !securityManager.isUnlocked {
                     securityManager.authenticate()
                 }
 
-                // Refresh subscription status when app becomes active
-                Task {
-                    await subscriptionManager.refreshSubscriptionStatus()
+                // Refresh subscription status when app becomes active (only if authenticated)
+                if isAuthenticated {
+                    Task {
+                        // Sync with Apple to detect any subscription changes made outside the app
+                        await subscriptionManager.checkAndSyncExistingSubscription()
+                        await subscriptionManager.refreshSubscriptionStatus()
 
-                    // Also reload language preference when app becomes active
-                    if let session = try? await SupabaseManager.shared.client.auth.session {
-                        await loadUserLanguage(userId: session.user.id)
+                        // Also reload language preference when app becomes active
+                        if let session = try? await SupabaseManager.shared.client.auth.session {
+                            await loadUserLanguage(userId: session.user.id)
+                        }
+
+                        // Refresh alerts from database (only if authenticated)
+                        await alertManager.refreshAlerts()
+
+                        // Update app badge using recommended iOS 17+ method
+                        alertManager.updateAppBadge()
                     }
-
-                    // Refresh alerts from database
-                    await alertManager.refreshAlerts()
-
-                    // Update app badge using recommended iOS 17+ method
-                    alertManager.updateAppBadge()
                 }
             case .inactive:
-                // Lock the app when it becomes inactive
-                if securityManager.currentSecurityType != .none {
+                // Lock the app when it becomes inactive (only if user is authenticated)
+                if isAuthenticated && securityManager.currentSecurityType != .none {
                     securityManager.isUnlocked = false
                     securityManager.showPINEntry = false
                 }
             case .background:
-                // Also lock when entering background
-                if securityManager.currentSecurityType != .none {
+                // Also lock when entering background (only if user is authenticated)
+                if isAuthenticated && securityManager.currentSecurityType != .none {
                     securityManager.isUnlocked = false
                     securityManager.showPINEntry = false
                 }
@@ -179,6 +185,7 @@ struct ContentView: View {
             } else {
                 // iPhone Layout - Use Liquid Glass Navigation
                 iOS26LiquidGlassMainView()
+                    .environmentObject(subscriptionManager)
             }
         }
         .environmentObject(subscriptionManager)
@@ -244,19 +251,59 @@ struct ContentView: View {
         do {
             let session = try await SupabaseManager.shared.client.auth.session
             print("🔍 Auth check - Session found: \(session.user.id), expires: \(session.expiresAt)")
-            
+
             // Additional check: ensure session is valid and not expired
             if Date(timeIntervalSince1970: session.expiresAt) > Date() {
-                await MainActor.run {
-                    isAuthenticated = true
+                // Verify that the user actually exists in the database
+                // This catches cases where user was deleted but session is cached
+                do {
+                    _ = try await SupabaseManager.shared.client
+                        .from("users_profile")
+                        .select("user_id")
+                        .eq("user_id", value: session.user.id)
+                        .single()
+                        .execute()
+
+                    // User exists - proceed with authentication
+                    await MainActor.run {
+                        isAuthenticated = true
+                    }
+                    print("✅ User authenticated successfully")
+                    // Load user's language preference from database
+                    await loadUserLanguage(userId: session.user.id)
+                    // Check if user needs onboarding
+                    await checkIfOnboardingNeeded(userId: session.user.id)
+
+                    // Start subscription checking and sync with Apple
+                    await MainActor.run {
+                        isCheckingSubscription = true
+                    }
+
+                    // Sync with Apple and check subscription status
+                    await subscriptionManager.startSubscriptionChecking()
+                    await subscriptionManager.checkAndSyncExistingSubscription()
+
+                    // Wait a moment for subscription status to settle
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+                    await MainActor.run {
+                        isCheckingSubscription = false
+
+                        // In DEBUG mode, if no subscription and products didn't load, show a helpful message
+                        #if DEBUG
+                        if !subscriptionManager.isSubscribed && subscriptionManager.products.isEmpty {
+                            print("⚠️ No subscription and no products loaded - showing subscription screen with test mode option")
+                        }
+                        #endif
+                    }
+                } catch {
+                    // User profile doesn't exist - session is invalid, sign out
+                    print("❌ User profile not found in database - signing out cached session: \(error)")
+                    try? await SupabaseManager.shared.client.auth.signOut()
+                    await MainActor.run {
+                        isAuthenticated = false
+                    }
                 }
-                print("✅ User authenticated successfully")
-                // Load user's language preference from database
-                await loadUserLanguage(userId: session.user.id)
-                // Check if user needs onboarding
-                await checkIfOnboardingNeeded(userId: session.user.id)
-                // TEMPORARILY DISABLED: Skip subscription checking for testing
-                // await subscriptionManager.startSubscriptionChecking()
             } else {
                 // Session is invalid or expired
                 await MainActor.run {
@@ -274,19 +321,57 @@ struct ContentView: View {
 
         // Listen for auth state changes
         for await state in SupabaseManager.shared.client.auth.authStateChanges {
-            await MainActor.run {
-                // Only set authenticated if we have a valid, non-expired session
-                isAuthenticated = state.session != nil && 
-                                (state.session?.expiresAt).map { Date(timeIntervalSince1970: $0) > Date() } ?? false
-            }
-
-            // Reload language preference when auth state changes to authenticated
+            // Check if we have a valid, non-expired session
             if let session = state.session, Date(timeIntervalSince1970: session.expiresAt) > Date() {
-                await loadUserLanguage(userId: session.user.id)
-                // Check if user needs onboarding when auth state changes
-                await checkIfOnboardingNeeded(userId: session.user.id)
-                // TEMPORARILY DISABLED: Skip subscription checking for testing
-                // await subscriptionManager.startSubscriptionChecking()
+                // Verify that the user actually exists in the database
+                do {
+                    _ = try await SupabaseManager.shared.client
+                        .from("users_profile")
+                        .select("user_id")
+                        .eq("user_id", value: session.user.id)
+                        .single()
+                        .execute()
+
+                    // User exists - proceed with authentication
+                    await MainActor.run {
+                        isAuthenticated = true
+                    }
+
+                    await loadUserLanguage(userId: session.user.id)
+                    // Check if user needs onboarding when auth state changes
+                    await checkIfOnboardingNeeded(userId: session.user.id)
+
+                    // Only check subscription if not already checking
+                    let shouldCheck = await MainActor.run {
+                        return !isCheckingSubscription
+                    }
+
+                    if shouldCheck {
+                        await MainActor.run {
+                            isCheckingSubscription = true
+                        }
+
+                        await subscriptionManager.checkAndSyncExistingSubscription()
+
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+
+                        await MainActor.run {
+                            isCheckingSubscription = false
+                        }
+                    }
+                } catch {
+                    // User profile doesn't exist - session is invalid, sign out
+                    print("❌ Auth state change: User profile not found - signing out: \(error)")
+                    try? await SupabaseManager.shared.client.auth.signOut()
+                    await MainActor.run {
+                        isAuthenticated = false
+                    }
+                }
+            } else {
+                // No session or expired session
+                await MainActor.run {
+                    isAuthenticated = false
+                }
             }
         }
     }
@@ -321,24 +406,23 @@ struct ContentView: View {
     }
     
     func checkIfOnboardingNeeded(userId: UUID) async {
-        // Check if user has completed onboarding by looking for key profile fields
+        // Check if user has completed onboarding using explicit flag
         do {
             let response = try await SupabaseManager.shared.client
                 .from("users_profile")
-                .select("tip_target_percentage, target_sales_daily, target_hours_daily")
+                .select("onboarding_completed")
                 .eq("user_id", value: userId)
                 .single()
                 .execute()
-            
-            // If we get here, profile exists - check if onboarding fields are set
+
+            print("🔍 DEBUG: Raw response data: \(String(data: response.data, encoding: .utf8) ?? "nil")")
+
+            // If we get here, profile exists - check onboarding_completed flag
             let decoder = JSONDecoder()
             if let profileData = try? decoder.decode(OnboardingCheck.self, from: response.data) {
-                // If key onboarding fields are missing or default, show onboarding
-                let needsOnboarding = profileData.tip_target_percentage == nil || 
-                                    profileData.tip_target_percentage == 0 ||
-                                    profileData.target_sales_daily == nil ||
-                                    profileData.target_hours_daily == nil
-                
+                print("🔍 DEBUG: Decoded onboarding_completed = \(profileData.onboarding_completed ?? false)")
+                let needsOnboarding = !(profileData.onboarding_completed ?? false)
+
                 await MainActor.run {
                     showOnboarding = needsOnboarding
                     if needsOnboarding {
@@ -347,29 +431,87 @@ struct ContentView: View {
                         print("✅ User has completed onboarding")
                     }
                 }
+            } else {
+                print("❌ DEBUG: Failed to decode OnboardingCheck from response")
+                await MainActor.run {
+                    showOnboarding = true
+                }
             }
         } catch {
             // Profile doesn't exist or error - show onboarding
             await MainActor.run {
                 showOnboarding = true
-                print("🎯 New user detected - showing onboarding flow")
+                print("🎯 New user detected - showing onboarding flow: \(error.localizedDescription)")
             }
         }
     }
-    
+
     struct OnboardingCheck: Decodable {
-        let tip_target_percentage: Double?
-        let target_sales_daily: Double?
-        let target_hours_daily: Double?
+        let onboarding_completed: Bool?
     }
 }
 
 // Wrapper for SettingsView on iPad that doesn't need selectedTab
 struct SettingsViewWrapper: View {
     @State private var dummySelectedTab = "settings"
+    @StateObject private var subscriptionManager = SubscriptionManager()
 
     var body: some View {
         SettingsView(selectedTab: $dummySelectedTab)
+            .environmentObject(subscriptionManager)
+    }
+}
+
+// Loading view with automatic timeout
+struct SubscriptionCheckingView: View {
+    @Binding var isCheckingSubscription: Bool
+    @State private var timeoutReached = false
+
+    var body: some View {
+        VStack(spacing: 20) {
+            if !timeoutReached {
+                ProgressView()
+                    .scaleEffect(1.5)
+                Text("Verifying subscription...")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+            } else {
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 50))
+                        .foregroundColor(.orange)
+
+                    Text("Verification Taking Too Long")
+                        .font(.headline)
+
+                    Text("Subscription verification is taking longer than expected. You can continue without waiting.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    Button {
+                        isCheckingSubscription = false
+                    } label: {
+                        Text("Continue Anyway")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+        .task {
+            // Set timeout after 15 seconds
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            timeoutReached = true
+        }
     }
 }
 

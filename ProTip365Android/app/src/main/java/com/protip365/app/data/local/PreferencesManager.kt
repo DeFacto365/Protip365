@@ -3,10 +3,13 @@ package com.protip365.app.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 import com.protip365.app.presentation.settings.SettingsState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import com.google.gson.Gson
 import javax.inject.Inject
@@ -16,12 +19,14 @@ import javax.inject.Singleton
 class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val masterKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
 
     private val encryptedPrefs: SharedPreferences = EncryptedSharedPreferences.create(
+        context,
         "secure_prefs",
         masterKey,
-        context,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -42,9 +47,17 @@ class PreferencesManager @Inject constructor(
         private const val KEY_LAST_ACTIVE_TIME = "last_active_time"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_EMAIL = "user_email"
+        private const val KEY_MULTIPLE_EMPLOYERS = "multiple_employers"
+        private const val KEY_VARIABLE_SCHEDULE = "variable_schedule"
+        private const val KEY_WEEK_STARTS_MONDAY = "week_starts_monday"
+        private const val KEY_DAILY_TARGET = "daily_target"
+        private const val KEY_WEEKLY_TARGET = "weekly_target"
+        private const val KEY_MONTHLY_TARGET = "monthly_target"
     }
 
     private val gson = Gson()
+
+    private val _settingsFlow = MutableStateFlow<SettingsState?>(null)
 
     suspend fun saveSettings(settings: SettingsState) = withContext(Dispatchers.IO) {
         try {
@@ -52,6 +65,8 @@ class PreferencesManager @Inject constructor(
             regularPrefs.edit()
                 .putString(KEY_SETTINGS, json)
                 .apply()
+            // Update the flow
+            _settingsFlow.value = settings
         } catch (e: Exception) {
             // Handle serialization error
         }
@@ -60,12 +75,16 @@ class PreferencesManager @Inject constructor(
     suspend fun getSettings(): SettingsState? = withContext(Dispatchers.IO) {
         return@withContext try {
             regularPrefs.getString(KEY_SETTINGS, null)?.let {
-                gson.fromJson(it, SettingsState::class.java)
+                val settings = gson.fromJson(it, SettingsState::class.java)
+                _settingsFlow.value = settings
+                settings
             }
         } catch (e: Exception) {
             null
         }
     }
+
+    fun observeSettings(): Flow<SettingsState?> = _settingsFlow.asStateFlow()
 
     fun setPin(pin: String) {
         encryptedPrefs.edit()
@@ -101,6 +120,22 @@ class PreferencesManager @Inject constructor(
 
     fun isBiometricEnabled(): Boolean {
         return encryptedPrefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+    }
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        encryptedPrefs.edit()
+            .putBoolean(KEY_BIOMETRIC_ENABLED, enabled)
+            .apply()
+    }
+
+    fun setSecurityEnabled(enabled: Boolean) {
+        // If disabling security, clear the PIN
+        if (!enabled) {
+            encryptedPrefs.edit()
+                .remove(KEY_PIN)
+                .putBoolean(KEY_BIOMETRIC_ENABLED, false)
+                .apply()
+        }
     }
 
     fun setAutoLockMinutes(minutes: Int) {
@@ -184,5 +219,69 @@ class PreferencesManager @Inject constructor(
             .remove(KEY_USER_EMAIL)
             .remove(KEY_PIN)
             .apply()
+    }
+
+    // Multiple Employers
+    fun setMultipleEmployers(enabled: Boolean) {
+        regularPrefs.edit()
+            .putBoolean(KEY_MULTIPLE_EMPLOYERS, enabled)
+            .apply()
+    }
+
+    fun getMultipleEmployers(): Boolean {
+        return regularPrefs.getBoolean(KEY_MULTIPLE_EMPLOYERS, false)
+    }
+
+    // Variable Schedule
+    fun setVariableSchedule(enabled: Boolean) {
+        regularPrefs.edit()
+            .putBoolean(KEY_VARIABLE_SCHEDULE, enabled)
+            .apply()
+    }
+
+    fun getVariableSchedule(): Boolean {
+        return regularPrefs.getBoolean(KEY_VARIABLE_SCHEDULE, false)
+    }
+
+    // Week Start
+    fun setWeekStartsMonday(startsMonday: Boolean) {
+        regularPrefs.edit()
+            .putBoolean(KEY_WEEK_STARTS_MONDAY, startsMonday)
+            .apply()
+    }
+
+    fun getWeekStartsMonday(): Boolean {
+        return regularPrefs.getBoolean(KEY_WEEK_STARTS_MONDAY, false)
+    }
+
+    // Targets
+    fun setDailyTarget(target: Float) {
+        regularPrefs.edit()
+            .putFloat(KEY_DAILY_TARGET, target)
+            .apply()
+    }
+
+    fun getDailyTarget(): Float {
+        return regularPrefs.getFloat(KEY_DAILY_TARGET, 500f)
+    }
+
+    fun setWeeklyTarget(target: Float) {
+        regularPrefs.edit()
+            .putFloat(KEY_WEEKLY_TARGET, target)
+            .apply()
+    }
+
+    fun getWeeklyTarget(): Float {
+        return regularPrefs.getFloat(KEY_WEEKLY_TARGET, 2500f)
+    }
+
+    fun setMonthlyTarget(target: Float) {
+        regularPrefs.edit()
+            .putFloat(KEY_MONTHLY_TARGET, target)
+            .apply()
+    }
+
+    fun getMonthlyTarget(): Float {
+        return regularPrefs.getFloat(KEY_MONTHLY_TARGET, 10000f)
     }
 }

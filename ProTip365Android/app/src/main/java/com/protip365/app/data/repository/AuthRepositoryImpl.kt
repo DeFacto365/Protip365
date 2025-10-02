@@ -7,12 +7,17 @@ import androidx.datastore.preferences.core.edit
 import com.protip365.app.data.models.UserProfile
 import com.protip365.app.domain.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -31,29 +36,19 @@ class AuthRepositoryImpl @Inject constructor(
                 this.password = password
             }
 
-            // Create user profile after successful signup (upsert to handle existing users)
+            // Create user profile after successful signup
             val userId = supabaseClient.auth.currentUserOrNull()?.id
-            userId?.let {
+            if (userId != null) {
                 val userProfile = UserProfile(
-                    userId = it,
+                    userId = userId,
                     name = null // Let user set their own name later
                 )
-                // Use upsert to handle existing users gracefully
+                // Try to create profile, but don't fail the signup if it doesn't work
                 try {
-                    supabaseClient.from("users_profile").upsert(userProfile)
+                    supabaseClient.from("users_profile").insert(userProfile)
                 } catch (e: Exception) {
-                    // If upsert fails, try to get existing profile
-                    val existingProfile = supabaseClient
-                        .from("users_profile")
-                        .select { filter { eq("user_id", it) } }
-                        .decodeSingleOrNull<UserProfile>()
-                    
-                    if (existingProfile == null) {
-                        // Only insert if no existing profile found
-                        supabaseClient.from("users_profile").insert(userProfile)
-                    } else {
-                        // Profile already exists, nothing to do
-                    }
+                    // Log the error but continue - profile can be created later
+                    println("Note: User profile creation deferred: ${e.message}")
                 }
             }
 
@@ -165,10 +160,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAccount(): Result<Unit> {
         return try {
-            // Call the delete_account function in the database
-            supabaseClient.from("delete_account").select()
+            // Get current user
+            val currentUser = supabaseClient.auth.currentUserOrNull()
+            if (currentUser == null) {
+                return Result.failure(Exception("No authenticated user"))
+            }
 
-            // Sign out after deletion
+            // Call the delete-account Edge Function
+            supabaseClient.functions.invoke("delete-account")
+
+            // Sign out after successful deletion
             signOut()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -176,16 +177,34 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun checkEmailExists(email: String): Boolean {
+        return try {
+            // Call the Supabase RPC function to check if email exists in auth.users
+            val params = buildJsonObject {
+                put("check_email", email)
+            }
+
+            val response = supabaseClient.postgrest.rpc("check_email_exists", params)
+                .decodeAs<Boolean>()
+
+            response // true = exists, false = available
+        } catch (e: Exception) {
+            // On error, return false (fail open) - will be caught during actual signup
+            println("Error checking email: ${e.message}")
+            false
+        }
+    }
+
     private suspend fun ensureUserProfileExists() {
         val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return
-        
+
         try {
             // Check if profile already exists
             val existingProfile = supabaseClient
                 .from("users_profile")
                 .select { filter { eq("user_id", userId) } }
                 .decodeSingleOrNull<UserProfile>()
-            
+
             if (existingProfile == null) {
                 // Create profile if it doesn't exist
                 val userProfile = UserProfile(

@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
+	<string>1.1.31</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>31</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 
@@ -58,8 +58,6 @@
 	<string>ProTip365 uses Face ID to protect your sensitive financial data and ensure only you can access your tip tracking information.</string>
 
 	<!-- Privacy Usage Descriptions -->
-	<key>NSUserTrackingUsageDescription</key>
-	<string>ProTip365 does not track users across other apps or websites.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>ProTip365 sends reminders to add entries for yesterday's shifts and other important updates about your earnings.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -85,8 +83,6 @@
 				<dict>
 					<key>UISceneConfigurationName</key>
 					<string>Default Configuration</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 				</dict>
 			</array>
 		</dict>
@@ -94,7 +90,10 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<false/>
+	</dict>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>

@@ -59,25 +59,20 @@ struct SupportSettingsSection: View {
             }
 
             VStack(spacing: 0) {
-            // Export Data
-            Button(action: {
-                showingExportOptions = true
-            }) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(localization.exportData)
-                            .foregroundStyle(.primary)
-                        Text(localization.exportDataDescription)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: IconNames.Form.next)
+            // Export Data - Coming Soon
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(localization.exportData)
+                        .foregroundStyle(.secondary)
+                    Text("Coming soon")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
+                Spacer()
+                Image(systemName: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(PlainButtonStyle())
             .padding()
 
             Rectangle()

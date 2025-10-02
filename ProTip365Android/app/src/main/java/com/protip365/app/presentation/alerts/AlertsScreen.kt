@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.protip365.app.R
+import com.protip365.app.presentation.localization.LocalizationManager
 import com.protip365.app.data.models.Alert
 import com.protip365.app.data.models.AlertType
 import kotlinx.datetime.Instant
@@ -37,10 +43,10 @@ fun AlertsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notifications") },
+                title = { Text(stringResource(R.string.notifications_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -48,7 +54,7 @@ fun AlertsScreen(
                         TextButton(
                             onClick = { viewModel.markAllAsRead() }
                         ) {
-                            Text("Mark All Read")
+                            Text(stringResource(R.string.mark_all_read))
                         }
                     }
                 }
@@ -210,13 +216,13 @@ fun EmptyAlertsState(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No Notifications",
+            text = stringResource(R.string.no_notifications),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "You're all caught up!",
+            text = stringResource(R.string.youre_all_caught_up),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
@@ -225,9 +231,12 @@ fun EmptyAlertsState(modifier: Modifier = Modifier) {
 
 fun getAlertIcon(alertType: String): androidx.compose.ui.graphics.vector.ImageVector {
     return when (AlertType.fromValue(alertType)) {
+        AlertType.SHIFT_REMINDER -> Icons.Outlined.Schedule
         AlertType.MISSING_SHIFT -> Icons.Default.Warning
+        AlertType.INCOMPLETE_SHIFT -> Icons.Outlined.ErrorOutline
         AlertType.TARGET_ACHIEVED -> Icons.Default.Star
-        AlertType.NEW_PERSONAL_BEST -> Icons.Default.TrendingUp
+        AlertType.PERSONAL_BEST -> Icons.Default.TrendingUp
+        AlertType.REMINDER -> Icons.Default.Notifications
         AlertType.SUBSCRIPTION_LIMIT -> Icons.Default.Info
         AlertType.WEEKLY_SUMMARY -> Icons.Default.BarChart
         AlertType.ACHIEVEMENT_UNLOCKED -> Icons.Default.EmojiEvents
@@ -237,9 +246,12 @@ fun getAlertIcon(alertType: String): androidx.compose.ui.graphics.vector.ImageVe
 
 fun getAlertColor(alertType: String): androidx.compose.ui.graphics.Color {
     return when (AlertType.fromValue(alertType)) {
+        AlertType.SHIFT_REMINDER -> androidx.compose.ui.graphics.Color(0xFF2196F3)
         AlertType.MISSING_SHIFT -> androidx.compose.ui.graphics.Color(0xFFFFA726)
+        AlertType.INCOMPLETE_SHIFT -> androidx.compose.ui.graphics.Color(0xFFEF5350)
         AlertType.TARGET_ACHIEVED -> androidx.compose.ui.graphics.Color(0xFF66BB6A)
-        AlertType.NEW_PERSONAL_BEST -> androidx.compose.ui.graphics.Color(0xFF42A5F5)
+        AlertType.PERSONAL_BEST -> androidx.compose.ui.graphics.Color(0xFF9C27B0)
+        AlertType.REMINDER -> androidx.compose.ui.graphics.Color(0xFF42A5F5)
         AlertType.SUBSCRIPTION_LIMIT -> androidx.compose.ui.graphics.Color(0xFFEF5350)
         AlertType.WEEKLY_SUMMARY -> androidx.compose.ui.graphics.Color(0xFF9C27B0)
         AlertType.ACHIEVEMENT_UNLOCKED -> androidx.compose.ui.graphics.Color(0xFFFFD54F)
@@ -247,25 +259,43 @@ fun getAlertColor(alertType: String): androidx.compose.ui.graphics.Color {
     }
 }
 
+@Composable
 fun formatRelativeTime(dateTimeString: String): String {
-    return try {
-        val instant = Instant.parse(dateTimeString)
-        val now = kotlinx.datetime.Clock.System.now()
-        val duration = now - instant
+    val context = LocalContext.current
 
+    // Parse the datetime safely first
+    val timeInfo = remember(dateTimeString) {
+        try {
+            val instant = Instant.parse(dateTimeString)
+            val now = kotlinx.datetime.Clock.System.now()
+            val duration = now - instant
+            TimeInfo(instant, duration, true)
+        } catch (e: Exception) {
+            TimeInfo(null, null, false)
+        }
+    }
+
+    return if (!timeInfo.isValid) {
+        "Unknown"
+    } else {
+        val duration = timeInfo.duration!!
         when {
-            duration.inWholeMinutes < 1 -> "Just now"
-            duration.inWholeMinutes < 60 -> "${duration.inWholeMinutes}m ago"
-            duration.inWholeHours < 24 -> "${duration.inWholeHours}h ago"
-            duration.inWholeDays < 7 -> "${duration.inWholeDays}d ago"
+            duration.inWholeMinutes < 1 -> stringResource(R.string.just_now)
+            duration.inWholeMinutes < 60 -> stringResource(R.string.minutes_ago, duration.inWholeMinutes.toInt())
+            duration.inWholeHours < 24 -> stringResource(R.string.hours_ago, duration.inWholeHours.toInt())
+            duration.inWholeDays < 7 -> stringResource(R.string.days_ago, duration.inWholeDays.toInt())
             else -> {
-                val date = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+                val date = timeInfo.instant!!.toLocalDateTime(TimeZone.currentSystemDefault())
                 SimpleDateFormat("MMM dd", Locale.getDefault()).format(
-                    Date(instant.toEpochMilliseconds())
+                    Date(timeInfo.instant.toEpochMilliseconds())
                 )
             }
         }
-    } catch (e: Exception) {
-        "Unknown"
     }
 }
+
+private data class TimeInfo(
+    val instant: Instant?,
+    val duration: kotlin.time.Duration?,
+    val isValid: Boolean
+)

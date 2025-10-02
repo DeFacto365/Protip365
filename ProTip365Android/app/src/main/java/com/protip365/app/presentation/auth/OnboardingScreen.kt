@@ -28,7 +28,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.protip365.app.R
+import com.protip365.app.presentation.localization.LocalizationManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -43,11 +46,11 @@ fun OnboardingScreen(
 
     var currentStep by remember { mutableStateOf(0) }
     val steps = listOf(
-        OnboardingStep("Welcome", Icons.Default.WavingHand),
-        OnboardingStep("Work Settings", Icons.Default.Work),
-        OnboardingStep("Security", Icons.Default.Security),
-        OnboardingStep("Subscription", Icons.Default.CreditCard),
-        OnboardingStep("Complete", Icons.Default.CheckCircle)
+        OnboardingStep(stringResource(R.string.welcome), Icons.Default.WavingHand),
+        OnboardingStep(stringResource(R.string.work_settings), Icons.Default.Work),
+        OnboardingStep(stringResource(R.string.security), Icons.Default.Security),
+        OnboardingStep(stringResource(R.string.subscription), Icons.Default.CreditCard),
+        OnboardingStep(stringResource(R.string.complete), Icons.Default.CheckCircle)
     )
 
     // Handle completion
@@ -188,7 +191,7 @@ fun OnboardingScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Back")
+                            Text(stringResource(R.string.back))
                         }
                     }
 
@@ -218,9 +221,9 @@ fun OnboardingScreen(
                         } else {
                             Text(
                                 text = when (currentStep) {
-                                    0 -> "Get Started"
-                                    steps.size - 1 -> "Complete Setup"
-                                    else -> "Next"
+                                    0 -> stringResource(R.string.get_started)
+                                    steps.size - 1 -> stringResource(R.string.complete_setup)
+                                    else -> stringResource(R.string.next)
                                 }
                             )
                             if (currentStep < steps.size - 1) {
@@ -276,7 +279,7 @@ fun OnboardingScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Dismiss",
+                                contentDescription = stringResource(R.string.cancel),
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
@@ -298,7 +301,7 @@ fun WelcomeStep(state: OnboardingState, viewModel: OnboardingViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to ProTip365!",
+            text = stringResource(R.string.welcome_to_protip365),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -307,7 +310,7 @@ fun WelcomeStep(state: OnboardingState, viewModel: OnboardingViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Track your tips, manage earnings, and reach your financial goals.",
+            text = stringResource(R.string.welcome_description),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -315,8 +318,32 @@ fun WelcomeStep(state: OnboardingState, viewModel: OnboardingViewModel) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Name field
         Text(
-            text = "Choose your language:",
+            text = "What's your name?",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.align(Alignment.Start)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = state.name,
+            onValueChange = { viewModel.setName(it) },
+            label = { Text("Full Name") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Enter your name") }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = stringResource(R.string.choose_your_language),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.align(Alignment.Start)
         )
@@ -324,9 +351,9 @@ fun WelcomeStep(state: OnboardingState, viewModel: OnboardingViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         val languages = listOf(
-            "en" to "English",
-            "fr" to "Français",
-            "es" to "Español"
+            "en" to stringResource(R.string.english),
+            "fr" to stringResource(R.string.french),
+            "es" to stringResource(R.string.spanish)
         )
 
         languages.forEach { (code, name) ->
@@ -345,9 +372,15 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
     var hourlyRateError by remember { mutableStateOf<String?>(null) }
     var tipTargetError by remember { mutableStateOf<String?>(null) }
 
+    // Pre-load string resources outside lambdas
+    val errorRequiredField = stringResource(R.string.error_required_field)
+    val invalidNumber = stringResource(R.string.invalid_number)
+    val mustBePositive = stringResource(R.string.must_be_positive)
+    val mustBe0To100 = stringResource(R.string.must_be_0_100)
+
     Column {
         Text(
-            text = "Set up your work preferences",
+            text = stringResource(R.string.set_up_work_preferences),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -358,8 +391,8 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
         OutlinedTextField(
             value = state.employerName,
             onValueChange = { viewModel.setEmployerName(it) },
-            label = { Text("Employer Name") },
-            placeholder = { Text("e.g., Restaurant Name") },
+            label = { Text(stringResource(R.string.employer_name)) },
+            placeholder = { Text(stringResource(R.string.eg_restaurant_name)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Business,
@@ -378,14 +411,14 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
             onValueChange = {
                 viewModel.setHourlyRate(it)
                 hourlyRateError = when {
-                    it.isEmpty() -> "Hourly rate is required"
-                    it.toDoubleOrNull() == null -> "Invalid number"
-                    it.toDouble() < 0 -> "Must be positive"
+                    it.isEmpty() -> errorRequiredField
+                    it.toDoubleOrNull() == null -> invalidNumber
+                    it.toDouble() < 0 -> mustBePositive
                     else -> null
                 }
             },
-            label = { Text("Default Hourly Rate") },
-            prefix = { Text("$") },
+            label = { Text(stringResource(R.string.default_hourly_rate)) },
+            prefix = { Text(stringResource(R.string.currency_symbol)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.AttachMoney,
@@ -410,14 +443,14 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
             onValueChange = {
                 viewModel.setTipTarget(it)
                 tipTargetError = when {
-                    it.isEmpty() -> "Tip target is required"
-                    it.toDoubleOrNull() == null -> "Invalid number"
-                    it.toDouble() < 0 || it.toDouble() > 100 -> "Must be 0-100"
+                    it.isEmpty() -> errorRequiredField
+                    it.toDoubleOrNull() == null -> invalidNumber
+                    it.toDouble() < 0 || it.toDouble() > 100 -> mustBe0To100
                     else -> null
                 }
             },
-            label = { Text("Daily Tip Target") },
-            suffix = { Text("%") },
+            label = { Text(stringResource(R.string.tip_percentage_target)) },
+            suffix = { Text(stringResource(R.string.percentage_symbol)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.TrendingUp,
@@ -436,43 +469,147 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Week Start
-        Text(
-            text = "Week starts on",
-            style = MaterialTheme.typography.bodyMedium
+        // Week Start Day Dropdown
+        var weekStartExpanded by remember { mutableStateOf(false) }
+
+        val weekDays = listOf(
+            0 to stringResource(R.string.sunday),
+            1 to stringResource(R.string.monday),
+            2 to stringResource(R.string.tuesday),
+            3 to stringResource(R.string.wednesday),
+            4 to stringResource(R.string.thursday),
+            5 to stringResource(R.string.friday),
+            6 to stringResource(R.string.saturday)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Convert boolean weekStartsMonday to day index (0-6)
+        val selectedDayIndex = if (state.weekStartsMonday == true) 1 else 0
+        val selectedDayName = weekDays.find { it.first == selectedDayIndex }?.second ?: weekDays[0].second
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+        ExposedDropdownMenuBox(
+            expanded = weekStartExpanded,
+            onExpandedChange = { weekStartExpanded = it },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            FilterChip(
-                selected = state.weekStartsMonday == false,
-                onClick = { viewModel.setWeekStart(false) },
-                label = { Text("Sunday") },
-                leadingIcon = if (state.weekStartsMonday == false) {{
+            OutlinedTextField(
+                value = selectedDayName,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.week_start_day)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = weekStartExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                leadingIcon = {
                     Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = null
                     )
-                }} else null
+                }
             )
 
-            FilterChip(
-                selected = state.weekStartsMonday == true,
-                onClick = { viewModel.setWeekStart(true) },
-                label = { Text("Monday") },
-                leadingIcon = if (state.weekStartsMonday == true) {{
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+            ExposedDropdownMenu(
+                expanded = weekStartExpanded,
+                onDismissRequest = { weekStartExpanded = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                weekDays.forEach { (dayIndex, dayName) ->
+                    DropdownMenuItem(
+                        text = { Text(dayName) },
+                        onClick = {
+                            // For now, only support Sunday (0) and Monday (1) in the backend
+                            // but show all days in UI for better UX
+                            viewModel.setWeekStart(dayIndex == 1)
+                            weekStartExpanded = false
+                        },
+                        leadingIcon = if (dayIndex == selectedDayIndex) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else null
                     )
-                }} else null
-            )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Multiple Employers Toggle
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { viewModel.setUseMultipleEmployers(!state.useMultipleEmployers) }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Business,
+                    contentDescription = null,
+                    tint = if (state.useMultipleEmployers) MaterialTheme.colorScheme.primary
+                           else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.multiple_employers),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.work_for_multiple_employers),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = state.useMultipleEmployers,
+                    onCheckedChange = { viewModel.setUseMultipleEmployers(it) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Variable Schedule Toggle
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { viewModel.setVariableSchedule(!state.hasVariableSchedule) }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = if (state.hasVariableSchedule) MaterialTheme.colorScheme.primary
+                           else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.variable_schedule),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.work_irregular_hours),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = state.hasVariableSchedule,
+                    onCheckedChange = { viewModel.setVariableSchedule(it) }
+                )
+            }
         }
     }
 }
@@ -484,15 +621,20 @@ fun SecurityStep(state: OnboardingState, viewModel: OnboardingViewModel) {
     var pinError by remember { mutableStateOf<String?>(null) }
     var confirmPinError by remember { mutableStateOf<String?>(null) }
 
+    // Pre-load string resources for PIN validation
+    val pinMustBe4Digits = stringResource(R.string.pin_must_be_4_digits)
+    val pleaseConfirmPin = stringResource(R.string.please_confirm_pin)
+    val pinMismatch = stringResource(R.string.pin_mismatch)
+
     Column {
         Text(
-            text = "Secure your data",
+            text = stringResource(R.string.secure_your_data),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Text(
-            text = "Optional: Add a PIN for extra security",
+            text = stringResource(R.string.optional_pin_security),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
@@ -520,12 +662,12 @@ fun SecurityStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (state.usePin) "PIN Security Enabled" else "No PIN Security",
+                        text = if (state.usePin) stringResource(R.string.pin_security_enabled) else stringResource(R.string.no_pin_security),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
-                        text = if (state.usePin) "Your data will be protected"
-                               else "Quick access without PIN",
+                        text = if (state.usePin) stringResource(R.string.data_will_be_protected)
+                               else stringResource(R.string.quick_access_without_pin),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -552,13 +694,13 @@ fun SecurityStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                         if (value.length <= 4 && value.all { it.isDigit() }) {
                             viewModel.setPin(value)
                             pinError = when {
-                                value.length < 4 -> "PIN must be 4 digits"
+                                value.length < 4 -> pinMustBe4Digits
                                 else -> null
                             }
                         }
                     },
-                    label = { Text("Create 4-digit PIN") },
-                    placeholder = { Text("••••") },
+                    label = { Text(stringResource(R.string.create_4_digit_pin)) },
+                    placeholder = { Text(stringResource(R.string.placeholder_dots)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Pin,
@@ -583,14 +725,14 @@ fun SecurityStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                         if (value.length <= 4 && value.all { it.isDigit() }) {
                             confirmPin = value
                             confirmPinError = when {
-                                value.isEmpty() -> "Please confirm PIN"
-                                value != state.pin -> "PINs do not match"
+                                value.isEmpty() -> pleaseConfirmPin
+                                value != state.pin -> pinMismatch
                                 else -> null
                             }
                         }
                     },
-                    label = { Text("Confirm PIN") },
-                    placeholder = { Text("••••") },
+                    label = { Text(stringResource(R.string.confirm_pin)) },
+                    placeholder = { Text(stringResource(R.string.placeholder_dots)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Lock,
@@ -629,11 +771,11 @@ fun SecurityStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Use Fingerprint/Face ID",
+                                text = stringResource(R.string.use_fingerprint_face_id),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = "Quick and secure access",
+                                text = stringResource(R.string.quick_and_secure_access),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -659,14 +801,14 @@ fun SubscriptionStep(state: OnboardingState, viewModel: OnboardingViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Choose your plan",
+                text = stringResource(R.string.choose_your_plan),
                 style = MaterialTheme.typography.bodyLarge
             )
             Badge(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    text = "7-DAY FREE TRIAL",
+                    text = stringResource(R.string.free_trial).uppercase(),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -676,14 +818,14 @@ fun SubscriptionStep(state: OnboardingState, viewModel: OnboardingViewModel) {
 
         // Part-Time Card
         SubscriptionCard(
-            title = "Part-Time",
+            title = stringResource(R.string.part_time),
             price = "$2.99",
-            period = "month",
+            period = stringResource(R.string.month),
             features = listOf(
-                "3 shifts per week",
-                "3 entries per shift",
-                "Basic analytics",
-                "Single employer"
+                stringResource(R.string.three_shifts_per_week),
+                stringResource(R.string.three_entries_per_shift),
+                stringResource(R.string.basic_analytics),
+                stringResource(R.string.single_employer)
             ),
             selected = state.selectedSubscription == "parttime",
             onClick = { viewModel.selectSubscription("parttime") }
@@ -693,15 +835,15 @@ fun SubscriptionStep(state: OnboardingState, viewModel: OnboardingViewModel) {
 
         // Full Access Card
         SubscriptionCard(
-            title = "Full Access",
+            title = stringResource(R.string.full_access),
             price = "$4.99",
-            period = "month",
+            period = stringResource(R.string.month),
             features = listOf(
-                "Unlimited shifts & entries",
-                "Multiple employers",
-                "Advanced analytics",
-                "Export to CSV/PDF",
-                "Priority support"
+                stringResource(R.string.unlimited_everything),
+                stringResource(R.string.multiple_employers),
+                stringResource(R.string.advanced_analytics),
+                stringResource(R.string.export_to_csv),
+                stringResource(R.string.priority_support)
             ),
             selected = state.selectedSubscription == "full",
             recommended = true,
@@ -721,7 +863,7 @@ fun SubscriptionStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Decide later")
+            Text(stringResource(R.string.decide_later))
         }
 
         // Info card
@@ -745,7 +887,7 @@ fun SubscriptionStep(state: OnboardingState, viewModel: OnboardingViewModel) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "You can change or cancel your subscription anytime",
+                    text = stringResource(R.string.subscription_cancel_anytime),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
@@ -783,7 +925,7 @@ fun CompletionStep(state: OnboardingState) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "All Set!",
+            text = stringResource(R.string.all_set),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -791,7 +933,7 @@ fun CompletionStep(state: OnboardingState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Your ProTip365 account is ready.",
+            text = stringResource(R.string.protip365_account_ready),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -799,7 +941,7 @@ fun CompletionStep(state: OnboardingState) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Start tracking your tips and reach your financial goals.",
+            text = stringResource(R.string.start_tracking_tips),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -818,7 +960,7 @@ fun CompletionStep(state: OnboardingState) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Your Settings",
+                    text = stringResource(R.string.your_settings),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -826,33 +968,45 @@ fun CompletionStep(state: OnboardingState) {
 
                 SummaryItem(
                     icon = Icons.Default.Language,
-                    label = "Language",
+                    label = stringResource(R.string.language),
                     value = when(state.language) {
-                        "fr" -> "Français"
-                        "es" -> "Español"
-                        else -> "English"
+                        "fr" -> stringResource(R.string.french)
+                        "es" -> stringResource(R.string.spanish)
+                        else -> stringResource(R.string.english)
                     }
                 )
 
                 SummaryItem(
                     icon = Icons.Default.Business,
-                    label = "Employer",
-                    value = state.employerName.ifEmpty { "Not set" }
+                    label = stringResource(R.string.employer),
+                    value = state.employerName.ifEmpty { stringResource(R.string.not_set) }
                 )
 
                 SummaryItem(
                     icon = Icons.Default.Security,
-                    label = "Security",
-                    value = if (state.usePin) "PIN enabled" else "No PIN"
+                    label = stringResource(R.string.security),
+                    value = if (state.usePin) stringResource(R.string.pin_enabled) else stringResource(R.string.no_pin)
+                )
+
+                SummaryItem(
+                    icon = Icons.Default.Work,
+                    label = stringResource(R.string.multiple_employers),
+                    value = if (state.useMultipleEmployers) stringResource(R.string.yes) else stringResource(R.string.no)
+                )
+
+                SummaryItem(
+                    icon = Icons.Default.Schedule,
+                    label = stringResource(R.string.variable_schedule),
+                    value = if (state.hasVariableSchedule) stringResource(R.string.yes) else stringResource(R.string.no)
                 )
 
                 SummaryItem(
                     icon = Icons.Default.CreditCard,
-                    label = "Subscription",
+                    label = stringResource(R.string.subscription),
                     value = when(state.selectedSubscription) {
-                        "parttime" -> "Part-Time"
-                        "full" -> "Full Access"
-                        else -> "Free Trial"
+                        "parttime" -> stringResource(R.string.part_time)
+                        "full" -> stringResource(R.string.full_access)
+                        else -> stringResource(R.string.free_trial)
                     }
                 )
             }
@@ -953,7 +1107,7 @@ fun SubscriptionCard(
                     Badge(
                         containerColor = MaterialTheme.colorScheme.tertiary
                     ) {
-                        Text("RECOMMENDED")
+                        Text(stringResource(R.string.recommended))
                     }
                 }
             }
@@ -1010,7 +1164,7 @@ fun SubscriptionCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Selected",
+                        text = stringResource(R.string.selected),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold

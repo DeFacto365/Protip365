@@ -3,6 +3,7 @@ import SwiftUI
 struct EmployerCard: View {
     let employer: Employer
     let shiftCount: Int
+    let entryCount: Int
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -34,12 +35,24 @@ struct EmployerCard: View {
                         .foregroundColor(employer.active ? .secondary : Color(.tertiaryLabel))
                 }
 
-                if shiftCount > 0 {
+                // Display both shifts and entries counts
+                VStack(alignment: .leading, spacing: 2) {
+                    // Always show shifts count
                     HStack(spacing: 4) {
                         Image(systemName: "calendar.badge.clock")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(shiftCount == 1 ? localization.shiftCountSingular : String(format: localization.shiftCountPlural, shiftCount))
+                        Text("\(localization.shiftsCountLabel) \(shiftCount == 1 ? localization.shiftsCountSingular : String(format: localization.shiftsCountPlural, shiftCount))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    // Always show entries count
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(entryCount > 0 ? .green : .gray)
+                        Text("\(localization.entriesCountLabel) \(entryCount == 1 ? localization.entriesCountSingular : String(format: localization.entriesCountPlural, entryCount))")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -65,11 +78,11 @@ struct EmployerCard: View {
                 }) {
                     Image(systemName: "trash.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(shiftCount > 0 ? .gray : .red)
+                        .foregroundStyle((shiftCount > 0 || entryCount > 0) ? .gray : .red)
                         .symbolRenderingMode(.hierarchical)
                 }
-                .disabled(shiftCount > 0)
-                .opacity(shiftCount > 0 ? 0.5 : 1.0)
+                .disabled(shiftCount > 0 || entryCount > 0)
+                .opacity((shiftCount > 0 || entryCount > 0) ? 0.5 : 1.0)
             }
         }
         .padding()

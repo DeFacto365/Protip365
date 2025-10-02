@@ -4,20 +4,37 @@ import Supabase
 /// Chart and data loading components for Dashboard view
 struct DashboardCharts {
 
+    // MARK: - Caching for Performance
+
+    private static var cachedData: (data: [ShiftIncome], cacheTime: Date)? = nil
+    private static let cacheValiditySeconds: TimeInterval = 300 // 5 minutes
+
+    private static func isCacheValid() -> Bool {
+        guard let cache = cachedData else { return false }
+        return Date().timeIntervalSince(cache.cacheTime) < cacheValiditySeconds
+    }
+
+    static func invalidateCache() {
+        print("📊 Dashboard - Cache invalidated")
+        cachedData = nil
+    }
+
     // MARK: - Helper Functions
 
-    /// Converts Shift array to ShiftIncome array for compatibility
-    private static func convertShiftsToShiftIncome(_ shifts: [Shift]) -> [ShiftIncome] {
-        return shifts.map { shift in
-            let hours = shift.hours ?? shift.expected_hours ?? 0
-            let hourlyRate = shift.hourly_rate ?? 0
-            let sales = shift.sales ?? 0
-            let tips = shift.tips ?? 0
-            let cashOut = shift.cash_out ?? 0
-            let other = shift.other ?? 0
+    /// Converts ShiftWithEntry array to ShiftIncome array for compatibility with existing DashboardMetrics
+    private static func convertShiftWithEntriesToShiftIncome(_ shiftsWithEntries: [ShiftWithEntry]) -> [ShiftIncome] {
+        return shiftsWithEntries.map { shiftWithEntry in
+            let shift = shiftWithEntry.expected_shift
+            let entry = shiftWithEntry.entry
+
+            let hours = entry?.actual_hours ?? shift.expected_hours
+            let sales = entry?.sales ?? 0
+            let tips = entry?.tips ?? 0
+            let cashOut = entry?.cash_out ?? 0
+            let other = entry?.other ?? 0
 
             // Calculate base income (hours * hourly rate)
-            let baseIncome = hours * hourlyRate
+            let baseIncome = hours * shift.hourly_rate
 
             // Calculate net tips (tips - cash_out)
             let netTips = tips - cashOut
@@ -29,11 +46,11 @@ struct DashboardCharts {
             let tipPercentage = sales > 0 ? (tips / sales) * 100 : 0
 
             return ShiftIncome(
-                income_id: nil,
+                income_id: entry?.id,
                 shift_id: shift.id,
                 user_id: shift.user_id,
                 employer_id: shift.employer_id,
-                employer_name: nil, // We don't have employer name in shifts table
+                employer_name: shiftWithEntry.employer_name,
                 shift_date: shift.shift_date,
                 expected_hours: shift.expected_hours,
                 lunch_break_minutes: shift.lunch_break_minutes,
@@ -48,13 +65,15 @@ struct DashboardCharts {
                 net_tips: netTips,
                 total_income: totalIncome,
                 tip_percentage: tipPercentage,
+                sales_target: shift.sales_target,
                 start_time: shift.start_time,
                 end_time: shift.end_time,
+                actual_start_time: entry?.actual_start_time,
+                actual_end_time: entry?.actual_end_time,
                 shift_status: shift.status,
-                has_earnings: shift.status == "completed" || tips > 0 || sales > 0,
-                shift_created_at: nil,
-                earnings_created_at: nil,
-                notes: shift.notes
+                shift_created_at: shift.created_at,
+                earnings_created_at: entry?.created_at,
+                notes: entry?.notes ?? shift.notes
             )
         }
     }
@@ -112,7 +131,7 @@ struct DashboardCharts {
         return (targets, hourlyRate, deductionPercentage)
     }
 
-    /// Loads all statistics for different time periods
+    /// Loads all statistics for different time periods with optimized single query
     static func loadAllStats(forceRefresh: Bool = false, defaultHourlyRate: Double, averageDeductionPercentage: Double) async -> (
         todayStats: DashboardMetrics.Stats,
         weekStats: DashboardMetrics.Stats,
@@ -143,96 +162,79 @@ struct DashboardCharts {
             let weekStartDay = profiles.first?.week_start ?? 0
 
             let today = Date()
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let calendar = Calendar.current
 
-            // Add delay on force refresh to ensure data is synced
-            if forceRefresh {
-                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
+            // Calculate all date ranges
+            let yearStart = calendar.dateInterval(of: .year, for: today)?.start ?? today
+            let weekStart = DashboardMetrics.getStartOfWeek(for: today, weekStartDay: weekStartDay)
+            let fourWeeksStart = calendar.date(byAdding: .weekOfYear, value: -3, to: weekStart) ?? weekStart
+
+            // PERFORMANCE OPTIMIZATION: Use cache if valid, otherwise single query for entire year of data
+            let allShifts: [ShiftIncome]
+            if !forceRefresh && isCacheValid() {
+                print("📊 Dashboard - Using cached data")
+                allShifts = cachedData!.data
+            } else {
+                print("📊 Dashboard - Loading year data with single query...")
+                let allShiftsWithEntries = try await SupabaseManager.shared.fetchShiftsWithEntries(from: yearStart, to: today)
+                let convertedShifts = convertShiftWithEntriesToShiftIncome(allShiftsWithEntries)
+
+                // Cache the data
+                cachedData = (data: convertedShifts, cacheTime: Date())
+                allShifts = convertedShifts
             }
 
-            // Load Today's data from v_shift_income view
-            let todayQuery = SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .eq("shift_date", value: dateFormatter.string(from: today))
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let todayString = dateFormatter.string(from: today)
 
-            let todayShifts: [ShiftIncome] = try await todayQuery.execute().value
+            // Filter data for each time period from the single dataset
+            let todayShifts = allShifts.filter { $0.shift_date == todayString }
             todayStats = DashboardMetrics.calculateStats(
                 for: todayShifts,
                 averageDeductionPercentage: averageDeductionPercentage,
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Week's data from v_shift_income view
-            let weekStart = DashboardMetrics.getStartOfWeek(for: today, weekStartDay: weekStartDay)
-            let weekEnd = Calendar.current.date(byAdding: .day, value: 6, to: weekStart)!
-            let weekQuery = SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .gte("shift_date", value: dateFormatter.string(from: weekStart))
-                .lte("shift_date", value: dateFormatter.string(from: weekEnd))
-
-            let weekShifts: [ShiftIncome] = try await weekQuery.execute().value
+            // Week data
+            let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart)!
+            let weekStartString = dateFormatter.string(from: weekStart)
+            let weekEndString = dateFormatter.string(from: weekEnd)
+            let weekShifts = allShifts.filter {
+                $0.shift_date >= weekStartString && $0.shift_date <= weekEndString
+            }
             weekStats = DashboardMetrics.calculateStats(
                 for: weekShifts,
                 averageDeductionPercentage: averageDeductionPercentage,
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Month's data (current calendar month) from v_shift_income view
-            let calendar = Calendar.current
+            // Month data
             let monthStart = calendar.dateInterval(of: .month, for: today)?.start ?? today
             let monthEnd = calendar.dateInterval(of: .month, for: today)?.end ?? today
-            let monthQuery = SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .gte("shift_date", value: dateFormatter.string(from: monthStart))
-                .lt("shift_date", value: dateFormatter.string(from: monthEnd))
-
-            let monthShifts: [ShiftIncome] = try await monthQuery.execute().value
+            let monthStartString = dateFormatter.string(from: monthStart)
+            let monthEndString = dateFormatter.string(from: monthEnd)
+            let monthShifts = allShifts.filter {
+                $0.shift_date >= monthStartString && $0.shift_date < monthEndString
+            }
             monthStats = DashboardMetrics.calculateStats(
                 for: monthShifts,
                 averageDeductionPercentage: averageDeductionPercentage,
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load Year's data (since January 1st) from v_shift_income view
-            let yearStart = calendar.dateInterval(of: .year, for: today)?.start ?? today
-            let yearQuery = SupabaseManager.shared.client
-                .from("v_shift_income")
-                .select()
-                .eq("user_id", value: userId.uuidString)
-                .gte("shift_date", value: dateFormatter.string(from: yearStart))
-                .lte("shift_date", value: dateFormatter.string(from: today))
-
-            let yearShifts: [ShiftIncome] = try await yearQuery.execute().value
+            // Year data (already have all shifts from yearStart)
             yearStats = DashboardMetrics.calculateStats(
-                for: yearShifts,
+                for: allShifts,
                 averageDeductionPercentage: averageDeductionPercentage,
                 defaultHourlyRate: defaultHourlyRate
             )
 
-            // Load 4 Weeks Pay data (last 4 complete weeks based on week start)
-            var fourWeeksShifts: [ShiftIncome] = []
-            var currentWeekStart = weekStart
-            for _ in 0..<4 {
-                let weekEndDate = calendar.date(byAdding: .day, value: 6, to: currentWeekStart)!
-                let weekQuery = SupabaseManager.shared.client
-                    .from("v_shift_income")
-                    .select()
-                    .eq("user_id", value: userId.uuidString)
-                    .gte("shift_date", value: dateFormatter.string(from: currentWeekStart))
-                    .lte("shift_date", value: dateFormatter.string(from: weekEndDate))
-
-                let shifts: [ShiftIncome] = try await weekQuery.execute().value
-                fourWeeksShifts.append(contentsOf: shifts)
-
-                // Move to previous week
-                currentWeekStart = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeekStart)!
+            // 4 Weeks data
+            let fourWeeksStartString = dateFormatter.string(from: fourWeeksStart)
+            let fourWeeksEndString = dateFormatter.string(from: weekEnd)
+            let fourWeeksShifts = allShifts.filter {
+                $0.shift_date >= fourWeeksStartString && $0.shift_date <= fourWeeksEndString
             }
             fourWeeksStats = DashboardMetrics.calculateStats(
                 for: fourWeeksShifts,

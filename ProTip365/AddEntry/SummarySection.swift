@@ -148,18 +148,7 @@ struct SummarySection: View {
 
                 Divider()
 
-                // Total Earnings
-                HStack {
-                    Text(totalEarningsText)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(String(format: "$%.2f", totalEarnings))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                }
-
-                // Expected Net Salary (after deductions)
+                // Expected Net Salary (after deductions) - Main total line
                 HStack {
                     Text(expectedNetSalaryText)
                         .font(.headline)

@@ -1,610 +1,809 @@
 package com.protip365.app.presentation.calendar
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.protip365.app.data.models.Entry
-import com.protip365.app.data.models.Shift
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.protip365.app.R
+import com.protip365.app.data.local.PreferencesManager
+import com.protip365.app.data.models.CompletedShift
+import kotlinx.datetime.*
+import java.util.TimeZone
 import java.text.NumberFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle as JavaTextStyle
-import java.time.DayOfWeek
+import java.text.SimpleDateFormat
 import java.util.*
-import com.kizitonwose.calendar.compose.CalendarState
-import com.kizitonwose.calendar.core.CalendarDay
-import com.kizitonwose.calendar.core.DayPosition
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
-    navController: NavController,
+    onNavigateToAddShift: () -> Unit,
+    onNavigateToAddEntry: (LocalDate) -> Unit,
+    onNavigateToEditShift: (String) -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
-    val scope = rememberCoroutineScope()
-    val state by viewModel.state.collectAsState()
-    val selectedDate by viewModel.selectedDate.collectAsState()
-    val currentLanguage by viewModel.currentLanguage.collectAsState()
-    // Subscription features disabled for testing
-    // val subscriptionTier by viewModel.subscriptionTier.collectAsState()
-    // val weeklyLimits by viewModel.weeklyLimits.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val shifts by viewModel.shifts.collectAsState()
 
-    var isRefreshing by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val preferencesManager = remember { PreferencesManager(context) }
+    val language = preferencesManager.getLanguage()
+    val weekStartsMonday = preferencesManager.getWeekStartsMonday()
 
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
-        onRefresh = {
-            scope.launch {
-                isRefreshing = true
-                viewModel.refreshData()
-                delay(1000)
-                isRefreshing = false
-            }
-        }
-    )
+    // Dialog states for Add Shift/Entry flows
+    var showAddShiftDialog by remember { mutableStateOf(false) }
+    var showAddEntryDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = when (currentLanguage) {
+                        text = when (language) {
                             "fr" -> "Calendrier"
                             "es" -> "Calendario"
                             else -> "Calendar"
                         }
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
+        },
+        floatingActionButton = {
+            val today = Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+            val isPastOrToday = uiState.selectedDate <= today
+            val isTodayOrFuture = uiState.selectedDate >= today
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                // Add Entry button - only visible for today or past dates
+                if (isPastOrToday) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            val existingShifts = shifts.filter {
+                                it.shiftDate == uiState.selectedDate.toString()
+                            }
+                            if (existingShifts.isNotEmpty()) {
+                                showAddEntryDialog = true
+                            } else {
+                                onNavigateToAddEntry(uiState.selectedDate)
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        icon = {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = when (language) {
+                                    "fr" -> "Ajouter Entrée"
+                                    "es" -> "Agregar Entrada"
+                                    else -> "Add Entry"
+                                }
+                            )
+                        }
+                    )
+                }
+
+                // Add Shift button - only visible for today or future dates
+                if (isTodayOrFuture) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            val existingShifts = shifts.filter {
+                                it.shiftDate == uiState.selectedDate.toString()
+                            }
+                            if (existingShifts.isNotEmpty()) {
+                                showAddShiftDialog = true
+                            } else {
+                                onNavigateToAddShift()
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        icon = {
+                            Icon(
+                                Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = when (language) {
+                                    "fr" -> "Ajouter Quart"
+                                    "es" -> "Agregar Turno"
+                                    else -> "Add Shift"
+                                }
+                            )
+                        }
+                    )
+                }
+            }
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .pullRefresh(pullRefreshState)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(vertical = 12.dp)
-            ) {
-                // Custom Calendar matching iOS style
-                CustomCalendarView(
-                    selectedDate = selectedDate ?: LocalDate.now(),
-                    shiftsForDate = { date ->
-                        val shiftData = state.shiftsDataMap[date]
-                        shiftData?.shifts ?: emptyList()
-                    },
-                    onDateTapped = { date ->
-                        viewModel.selectDate(date)
-                    },
-                    language = currentLanguage
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Calendar legend
-                CustomCalendarLegend(
-                    language = currentLanguage
-                )
-
-                // Part-time limits indicator - DISABLED FOR TESTING
-                /*
-                if (subscriptionTier == "part_time") {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    PartTimeLimitsIndicator(
-                        shiftsUsed = weeklyLimits.shiftsUsed,
-                        entriesUsed = weeklyLimits.entriesUsed,
-                        currentLanguage = currentLanguage
-                    )
-                }
-                */
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Action buttons with date validation
-                CalendarActionButtons(
-                    selectedDate = selectedDate ?: LocalDate.now(),
-                    onAddShift = {
-                        navController.navigate("add_shift?date=$selectedDate")
-                    },
-                    onQuickEntry = {
-                        navController.navigate("add_entry?date=$selectedDate")
-                    },
-                    canAddMore = true, // Subscription limits disabled for testing
-                    currentLanguage = currentLanguage
-                )
-
-                // Selected date shifts/entries
-                if (state.selectedDateShifts.isNotEmpty() || state.selectedDateEntries.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    SelectedDateSection(
-                        date = selectedDate ?: LocalDate.now(),
-                        shifts = state.selectedDateShifts,
-                        entries = state.selectedDateEntries,
-                        onEditShift = { shift ->
-                            navController.navigate("edit_shift/${shift.id}")
-                        },
-                        onEditEntry = { entry ->
-                            navController.navigate("edit_entry/${entry.id}")
-                        },
-                        onDeleteShift = { shift ->
-                            viewModel.deleteShift(shift)
-                        },
-                        onDeleteEntry = { entry ->
-                            viewModel.deleteEntry(entry)
-                        },
-                        currentLanguage = currentLanguage
-                    )
-                }
-
-                // Bottom padding for scrolling
-                Spacer(modifier = Modifier.height(100.dp))
-            }
-
-            // Pull refresh indicator
-            PullRefreshIndicator(
-                refreshing = isRefreshing,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
+            // Month Navigation
+            MonthNavigationHeader(
+                currentMonth = uiState.currentMonth,
+                currentYear = uiState.currentYear,
+                onPreviousMonth = { viewModel.navigateToPreviousMonth() },
+                onNextMonth = { viewModel.navigateToNextMonth() },
+                language = language
             )
 
-            // Loading overlay
-            if (isLoading && !isRefreshing) {
-                Box(
+            // Calendar Grid
+            CalendarGrid(
+                currentMonth = uiState.currentMonth,
+                currentYear = uiState.currentYear,
+                selectedDate = uiState.selectedDate,
+                shifts = shifts,
+                onDateSelected = { viewModel.selectDate(it) },
+                language = language,
+                weekStartsOnSunday = !weekStartsMonday
+            )
+
+            // Legend
+            ShiftLegend(language = language)
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Shifts List for selected date (header removed per iOS update)
+            val selectedDateShifts = shifts.filter { it.shiftDate == uiState.selectedDate.toString() }
+
+            if (selectedDateShifts.isEmpty()) {
+                EmptyShiftsState(
+                    selectedDate = uiState.selectedDate,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    CircularProgressIndicator()
+                    items(
+                        items = selectedDateShifts,
+                        key = { it.expectedShift.id }
+                    ) { shift ->
+                        ShiftCard(
+                            shift = shift,
+                            onClick = { onNavigateToEditShift(shift.expectedShift.id) },
+                            language = language
+                        )
+                    }
                 }
             }
+        }
+    }
+
+    // Add Shift Dialog
+    if (showAddShiftDialog) {
+        val selectedDateShifts = shifts.filter { it.shiftDate == uiState.selectedDate.toString() }
+        val existingShift = selectedDateShifts.firstOrNull()
+
+        AlertDialog(
+            onDismissRequest = { showAddShiftDialog = false },
+            title = { Text(stringResource(R.string.existing_shift_found)) },
+            text = { Text(stringResource(R.string.existing_shift_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        existingShift?.let { onNavigateToEditShift(it.expectedShift.id) }
+                        showAddShiftDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.modify_existing_shift))
+                }
+            },
+            dismissButton = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            onNavigateToAddShift()
+                            showAddShiftDialog = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.add_new_shift))
+                    }
+                    TextButton(
+                        onClick = { showAddShiftDialog = false }
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        )
+    }
+
+    // Add Entry Dialog
+    if (showAddEntryDialog) {
+        val selectedDateShifts = shifts.filter { it.shiftDate == uiState.selectedDate.toString() }
+        val existingShift = selectedDateShifts.firstOrNull()
+        val hasEntry = existingShift?.isWorked == true
+
+        AlertDialog(
+            onDismissRequest = { showAddEntryDialog = false },
+            title = { Text(stringResource(R.string.existing_shift_found)) },
+            text = {
+                Text(
+                    if (hasEntry) {
+                        stringResource(R.string.existing_shift_with_entry_message)
+                    } else {
+                        stringResource(R.string.existing_shift_no_entry_message)
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (hasEntry) {
+                            // Edit existing entry
+                            existingShift?.let { onNavigateToEditShift(it.expectedShift.id) }
+                        } else {
+                            // Add entry to existing shift (navigate to add entry with preselected shift)
+                            onNavigateToAddEntry(uiState.selectedDate)
+                        }
+                        showAddEntryDialog = false
+                    }
+                ) {
+                    Text(
+                        if (hasEntry) {
+                            stringResource(R.string.edit_existing_entry)
+                        } else {
+                            stringResource(R.string.add_entry_to_existing_shift)
+                        }
+                    )
+                }
+            },
+            dismissButton = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            // Create new shift and entry
+                            onNavigateToAddEntry(uiState.selectedDate)
+                            showAddEntryDialog = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.create_new_shift_and_entry))
+                    }
+                    TextButton(
+                        onClick = { showAddEntryDialog = false }
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MonthNavigationHeader(
+    currentMonth: Int,
+    currentYear: Int,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    language: String
+) {
+    val monthName = when (language) {
+        "fr" -> listOf("Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre")[currentMonth - 1]
+        "es" -> listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                       "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")[currentMonth - 1]
+        else -> listOf("January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December")[currentMonth - 1]
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPreviousMonth) {
+            Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.previous_month))
+        }
+
+        Text(
+            text = "$monthName $currentYear",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+
+        IconButton(onClick = onNextMonth) {
+            Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.next_month))
         }
     }
 }
 
 @Composable
-fun SelectedDateSection(
-    date: LocalDate,
-    shifts: List<Shift>,
-    entries: List<Entry>,
-    onEditShift: (Shift) -> Unit,
-    onEditEntry: (Entry) -> Unit,
-    onDeleteShift: (Shift) -> Unit,
-    onDeleteEntry: (Entry) -> Unit,
-    currentLanguage: String
+fun CalendarGrid(
+    currentMonth: Int,
+    currentYear: Int,
+    selectedDate: LocalDate,
+    shifts: List<CompletedShift>,
+    onDateSelected: (LocalDate) -> Unit,
+    language: String,
+    weekStartsOnSunday: Boolean
 ) {
+    val daysOfWeek = if (weekStartsOnSunday) {
+        when (language) {
+            "fr" -> listOf("Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam")
+            "es" -> listOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb")
+            else -> listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+        }
+    } else {
+        when (language) {
+            "fr" -> listOf("Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim")
+            "es" -> listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+            else -> listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Date header
-        Card(
+        // Week day headers
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            )
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            daysOfWeek.forEach { day ->
                 Text(
-                    text = date.format(
-                        DateTimeFormatter.ofPattern(
-                            when (currentLanguage) {
-                                "fr" -> "EEEE d MMMM"
-                                "es" -> "EEEE d 'de' MMMM"
-                                else -> "EEEE, MMMM d"
-                            },
-                            when (currentLanguage) {
-                                "fr" -> Locale.FRENCH
-                                "es" -> Locale("es", "ES")
-                                else -> Locale.ENGLISH
-                            }
-                        )
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    text = day,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                val totalEarnings = shifts.sumOf { it.totalEarnings } +
-                                   entries.sumOf { it.totalEarnings }
-                if (totalEarnings > 0) {
-                    Text(
-                        text = formatCurrency(totalEarnings),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Shifts
-        shifts.forEach { shift ->
-            SwipeableShiftCard(
-                shift = ShiftData(
-                    shifts = listOf(shift),
-                    entries = emptyList(),
-                    totalEarnings = shift.totalEarnings,
-                    totalHours = shift.hours
-                ),
-                employerName = shift.employerName,
-                onEdit = { onEditShift(shift) },
-                onDelete = { onDeleteShift(shift) },
-                currentLanguage = currentLanguage
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        // Calendar days grid
+        val firstDayOfMonth = LocalDate(currentYear, currentMonth, 1)
+        val lastDayOfMonth = firstDayOfMonth.plus(DatePeriod(months = 1)).minus(DatePeriod(days = 1))
+
+        val daysInMonth = lastDayOfMonth.dayOfMonth
+        val startDayOfWeek = firstDayOfMonth.dayOfWeek
+        val startOffset = if (weekStartsOnSunday) {
+            startDayOfWeek.value % 7
+        } else {
+            (startDayOfWeek.value - 1) % 7
         }
 
-        // Entries
-        entries.forEach { entry ->
-            SwipeableShiftCard(
-                shift = ShiftData(
-                    shifts = emptyList(),
-                    entries = listOf(entry),
-                    totalEarnings = entry.totalEarnings,
-                    totalHours = 0.0
-                ),
-                employerName = when (currentLanguage) {
-                    "fr" -> "Entrée rapide"
-                    "es" -> "Entrada rápida"
-                    else -> "Quick Entry"
-                },
-                onEdit = { onEditEntry(entry) },
-                onDelete = { onDeleteEntry(entry) },
-                currentLanguage = currentLanguage
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        val totalCells = startOffset + daysInMonth
+        val weeks = (totalCells + 6) / 7
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(7),
+            modifier = Modifier.height((weeks * 60).dp),
+            userScrollEnabled = false
+        ) {
+            // Empty cells before month starts
+            items(startOffset) {
+                Box(modifier = Modifier.size(48.dp))
+            }
+
+            // Days of the month
+            items(daysInMonth) { dayIndex ->
+                val day = dayIndex + 1
+                val date = LocalDate(currentYear, currentMonth, day)
+                val isToday = date == Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+                val isSelected = date == selectedDate
+                val dayShifts = shifts.filter { it.shiftDate == date.toString() }
+
+                CalendarDay(
+                    day = day,
+                    isToday = isToday,
+                    isSelected = isSelected,
+                    shifts = dayShifts,
+                    onClick = { onDateSelected(date) }
+                )
+            }
         }
     }
 }
 
-// Keep existing helper components but update them
 @Composable
-private fun Day(
-    day: CalendarDay,
+fun CalendarDay(
+    day: Int,
+    isToday: Boolean,
     isSelected: Boolean,
-    hasShift: Boolean,
-    earnings: Double,
+    shifts: List<CompletedShift>,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
-            .aspectRatio(1f)
-            .clip(CircleShape)
+            .size(48.dp)
+            .padding(2.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(
-                color = when {
+                when {
                     isSelected -> MaterialTheme.colorScheme.primary
-                    day.date == LocalDate.now() -> MaterialTheme.colorScheme.primaryContainer
+                    isToday -> MaterialTheme.colorScheme.primaryContainer
                     else -> Color.Transparent
                 }
             )
-            .clickable(enabled = day.position == DayPosition.MonthDate) { onClick() },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = day.date.dayOfMonth.toString(),
+                text = day.toString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = when {
                     isSelected -> MaterialTheme.colorScheme.onPrimary
-                    day.position != DayPosition.MonthDate -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    isToday -> MaterialTheme.colorScheme.onPrimaryContainer
                     else -> MaterialTheme.colorScheme.onSurface
-                }
+                },
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
             )
 
-            if (hasShift && day.position == DayPosition.MonthDate) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(
-                            color = when {
-                                earnings >= 500 -> MaterialTheme.colorScheme.tertiary
-                                earnings >= 300 -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.secondary
-                            }
+            // Shift status indicators
+            if (shifts.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    shifts.take(3).forEach { shift ->
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .background(
+                                    color = when (shift.status) {
+                                        "completed" -> Color(0xFF4CAF50) // Green
+                                        "planned" -> Color(0xFF9C27B0) // Purple
+                                        "missed" -> Color(0xFFF44336) // Red
+                                        else -> Color.Gray
+                                    },
+                                    shape = CircleShape
+                                )
                         )
-                )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun MonthHeader(daysOfWeek: List<DayOfWeek>) {
+fun ShiftLegend(language: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        for (dayOfWeek in daysOfWeek) {
-            Text(
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                text = dayOfWeek.getDisplayName(JavaTextStyle.SHORT, Locale.getDefault()),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        LegendItem(
+            color = Color(0xFF9C27B0),
+            label = when (language) {
+                "fr" -> "Planifié"
+                "es" -> "Planificado"
+                else -> "Planned"
+            }
+        )
+        LegendItem(
+            color = Color(0xFF4CAF50),
+            label = when (language) {
+                "fr" -> "Complété"
+                "es" -> "Completado"
+                else -> "Completed"
+            }
+        )
+        LegendItem(
+            color = Color(0xFFF44336),
+            label = when (language) {
+                "fr" -> "Manqué"
+                "es" -> "Perdido"
+                else -> "Missed"
+            }
+        )
     }
 }
 
 @Composable
-fun SelectedDateHeader(
-    date: LocalDate,
-    totalEarnings: Double
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant
+fun LegendItem(color: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                if (totalEarnings > 0) {
-                    Text(
-                        text = "Total: ${formatCurrency(totalEarnings)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
+                .size(12.dp)
+                .background(color = color, shape = RoundedCornerShape(2.dp))
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftCard(
-    shift: Shift,
-    onClick: () -> Unit
+    shift: CompletedShift,
+    onClick: () -> Unit,
+    language: String
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${shift.startTime ?: "?"} - ${shift.endTime ?: "?"}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${shift.hours}h",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (shift.sales > 0) {
-                        Text(
-                            text = "Sales: ${formatCurrency(shift.sales)}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (shift.tips > 0) {
-                        Text(
-                            text = "Tips: ${formatCurrency(shift.tips)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatCurrency(shift.totalEarnings),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (shift.tipPercentage > 0) {
-                    Text(
-                        text = "${shift.tipPercentage.format(1)}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            shift.tipPercentage >= 20 -> MaterialTheme.colorScheme.tertiary
-                            shift.tipPercentage >= 15 -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.error
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EntryCard(
-    entry: Entry,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.AttachMoney,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Quick Entry",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (entry.sales > 0) {
-                        Text(
-                            text = "Sales: ${formatCurrency(entry.sales)}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (entry.tips > 0) {
-                        Text(
-                            text = "Tips: ${formatCurrency(entry.tips)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatCurrency(entry.totalEarnings),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (entry.tipPercentage > 0) {
-                    Text(
-                        text = "${entry.tipPercentage.format(1)}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            entry.tipPercentage >= 20 -> MaterialTheme.colorScheme.tertiary
-                            entry.tipPercentage >= 15 -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.error
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyDateCard(
-    date: LocalDate,
-    onAddShift: () -> Unit
-) {
-    Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
-            Icon(
-                Icons.Default.EventBusy,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "No shifts or entries",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onAddShift) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Shift")
+            // Header with employer name and status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Employer name
+                Text(
+                    text = shift.employerName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Status badge (if completed)
+                if (shift.isWorked) {
+                    Surface(
+                        color = Color(0xFF4CAF50),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text(
+                            text = when (language) {
+                                "fr" -> "Complété"
+                                "es" -> "Completado"
+                                else -> "Completed"
+                            },
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Expected shift information
+            Column {
+                Text(
+                    text = when (language) {
+                        "fr" -> "Prévu:"
+                        "es" -> "Esperado:"
+                        else -> "Expected:"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    text = "${formatTime(shift.expectedShift.startTime)} - ${formatTime(shift.expectedShift.endTime)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = "${calculateHours(shift.expectedShift.startTime, shift.expectedShift.endTime)} ${
+                        when (language) {
+                            "fr" -> "heures"
+                            "es" -> "horas"
+                            else -> "hours"
+                        }
+                    }",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Actual shift information (if worked)
+            if (shift.isWorked && shift.shiftEntry != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column {
+                    Text(
+                        text = when (language) {
+                            "fr" -> "Réel:"
+                            "es" -> "Actual:"
+                            else -> "Actual:"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "${formatTime(shift.shiftEntry.actualStartTime)} - ${formatTime(shift.shiftEntry.actualEndTime)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "${calculateHours(shift.shiftEntry.actualStartTime, shift.shiftEntry.actualEndTime)} ${
+                            when (language) {
+                                "fr" -> "heures"
+                                "es" -> "horas"
+                                else -> "hours"
+                            }
+                        }",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Entry note if exists
+            val notes = shift.notes
+            if (!notes.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
 }
 
-private fun formatCurrency(amount: Double): String {
-    return NumberFormat.getCurrencyInstance(Locale.US).format(amount)
+@Composable
+fun EmptyShiftsState(
+    selectedDate: LocalDate,
+    modifier: Modifier = Modifier
+) {
+    val formatter = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+    val date = Date(selectedDate.toEpochDays() * 24 * 60 * 60 * 1000L)
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.EventAvailable,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.no_shifts),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Text(
+            text = formatter.format(date),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+    }
 }
 
-private fun Double.format(decimals: Int) = "%.${decimals}f".format(this)
+private fun formatTime(timeString: String): String {
+    return try {
+        val parts = timeString.split(":")
+        if (parts.size >= 2) {
+            val hour = parts[0].toIntOrNull() ?: 0
+            val minute = parts[1].toIntOrNull() ?: 0
+            val isPM = hour >= 12
+            val displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            String.format("%d:%02d %s", displayHour, minute, if (isPM) "PM" else "AM")
+        } else timeString
+    } catch (e: Exception) {
+        timeString
+    }
+}
 
-// Extensions for models (temporary until proper models are updated)
-private val Shift.employerName: String?
-    get() = null // TODO: Implement proper employer name from employer ID
+private fun formatCurrency(amount: Double): String {
+    val formatter = NumberFormat.getCurrencyInstance(Locale.getDefault())
+    return formatter.format(amount)
+}
 
-private val Shift.totalEarnings: Double
-    get() = (hourlyRate ?: 0.0) * hours + tips + other - cashOut
+private fun calculateHours(startTime: String, endTime: String): String {
+    return try {
+        val startParts = startTime.split(":")
+        val endParts = endTime.split(":")
 
-private val Entry.totalEarnings: Double
-    get() = tips + other - cashOut
+        if (startParts.size >= 2 && endParts.size >= 2) {
+            val startHour = startParts[0].toIntOrNull() ?: 0
+            val startMinute = startParts[1].toIntOrNull() ?: 0
+            val endHour = endParts[0].toIntOrNull() ?: 0
+            val endMinute = endParts[1].toIntOrNull() ?: 0
+
+            var totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute)
+
+            // Handle overnight shifts
+            if (totalMinutes < 0) {
+                totalMinutes += 24 * 60
+            }
+
+            val hours = totalMinutes / 60
+            val minutes = totalMinutes % 60
+
+            if (minutes == 0) {
+                "$hours.0"
+            } else {
+                String.format("%.1f", hours + minutes / 60.0)
+            }
+        } else {
+            "0.0"
+        }
+    } catch (e: Exception) {
+        "0.0"
+    }
+}
+
+private fun formatDateForHeader(date: LocalDate): String {
+    val formatter = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+    val calendar = Calendar.getInstance()
+    calendar.set(date.year, date.monthNumber - 1, date.dayOfMonth)
+    return formatter.format(calendar.time)
+}

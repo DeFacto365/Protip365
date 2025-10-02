@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.protip365.app.domain.repository.AuthRepository
 import com.protip365.app.domain.repository.UserRepository
+import com.protip365.app.presentation.localization.LocalizationManager
+import com.protip365.app.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val localizationManager: LocalizationManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -37,9 +40,13 @@ class AuthViewModel @Inject constructor(
                 val isLoggedIn = authRepository.isLoggedIn()
                 if (isLoggedIn) {
                     val user = authRepository.getCurrentUser()
+                    // ✅ NEW: Check onboarding_completed flag from database
+                    val profile = user?.userId?.let { userRepository.getUserProfile(it) }
+                    val needsOnboarding = !(profile?.onboardingCompleted ?: false)
+
                     _state.value = _state.value.copy(
                         isAuthenticated = true,
-                        isNewUser = user?.metadata?.get("is_new_user") as? Boolean ?: false,
+                        isNewUser = needsOnboarding, // true if onboarding not completed
                         isLoading = false,
                         loadingMessage = null
                     )
@@ -54,7 +61,7 @@ class AuthViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     loadingMessage = null,
-                    generalError = "Failed to check authentication status"
+                    generalError = localizationManager.getString(R.string.error_load_failed)
                 )
             }
         }
@@ -89,7 +96,7 @@ class AuthViewModel @Inject constructor(
         _state.value = _state.value.copy(
             confirmPassword = confirmPassword,
             confirmPasswordError = if (confirmPassword != _state.value.password) {
-                "Passwords do not match"
+                localizationManager.getString(R.string.passwords_dont_match)
             } else null
         )
     }
@@ -107,9 +114,13 @@ class AuthViewModel @Inject constructor(
             try {
                 authRepository.signIn(_state.value.email, _state.value.password)
                     .onSuccess { user ->
+                        // ✅ NEW: Check onboarding_completed flag from database
+                        val profile = userRepository.getUserProfile(user.userId)
+                        val needsOnboarding = !(profile?.onboardingCompleted ?: false)
+
                         _state.value = _state.value.copy(
                             isAuthenticated = true,
-                            isNewUser = false,
+                            isNewUser = needsOnboarding, // true if onboarding not completed
                             isLoading = false,
                             loadingMessage = null,
                             successMessage = "Successfully signed in!"
@@ -118,14 +129,14 @@ class AuthViewModel @Inject constructor(
                     .onFailure { exception ->
                         val errorMessage = when {
                             exception.message?.contains("Invalid login") == true ->
-                                "Invalid email or password"
+                                localizationManager.getString(R.string.invalid_credentials)
                             exception.message?.contains("Email not confirmed") == true ->
                                 "Please verify your email before signing in"
                             exception.message?.contains("Too many requests") == true ->
                                 "Too many attempts. Please wait a moment and try again"
                             exception.message?.contains("Network") == true ->
-                                "Network error. Please check your connection"
-                            else -> exception.message ?: "Sign in failed"
+                                localizationManager.getString(R.string.network_error)
+                            else -> exception.message ?: localizationManager.getString(R.string.error_login_failed)
                         }
 
                         _state.value = _state.value.copy(
@@ -138,7 +149,7 @@ class AuthViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     loadingMessage = null,
-                    generalError = "An unexpected error occurred"
+                    generalError = localizationManager.getString(R.string.unexpected_error)
                 )
             }
         }
@@ -157,31 +168,37 @@ class AuthViewModel @Inject constructor(
             try {
                 authRepository.signUp(_state.value.email, _state.value.password)
                     .onSuccess { user ->
-                        // Mark user as new for onboarding
+                        // Mark user as new for onboarding and save the name
                         userRepository.updateUserMetadata(mapOf("is_new_user" to true))
 
+                        // Save the name to user profile if provided
+                        if (_state.value.name.isNotBlank()) {
+                            userRepository.updateUserProfile(mapOf("name" to _state.value.name))
+                        }
+
                         _state.value = _state.value.copy(
-                            successMessage = "Account created! Please check your email to verify your account.",
+                            isAuthenticated = true,  // Set authenticated to true
+                            isNewUser = true,  // Mark as new user for onboarding
+                            successMessage = "Account created successfully!",
                             isLoading = false,
-                            loadingMessage = null,
-                            authMode = AuthMode.SIGN_IN // Switch to sign in mode
+                            loadingMessage = null
                         )
 
                         // Clear success message after delay
-                        delay(5000)
+                        delay(2000)
                         _state.value = _state.value.copy(successMessage = null)
                     }
                     .onFailure { exception ->
                         val errorMessage = when {
                             exception.message?.contains("already registered") == true ->
-                                "An account with this email already exists"
+                                localizationManager.getString(R.string.email_already_exists)
                             exception.message?.contains("weak password") == true ->
-                                "Password is too weak. Please use at least 6 characters"
+                                localizationManager.getString(R.string.weak_password)
                             exception.message?.contains("invalid email") == true ->
-                                "Please enter a valid email address"
+                                localizationManager.getString(R.string.error_invalid_email)
                             exception.message?.contains("Network") == true ->
-                                "Network error. Please check your connection"
-                            else -> exception.message ?: "Sign up failed"
+                                localizationManager.getString(R.string.network_error)
+                            else -> exception.message ?: localizationManager.getString(R.string.error_signup_failed)
                         }
 
                         _state.value = _state.value.copy(
@@ -194,7 +211,7 @@ class AuthViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     loadingMessage = null,
-                    generalError = "An unexpected error occurred"
+                    generalError = localizationManager.getString(R.string.unexpected_error)
                 )
             }
         }
@@ -239,6 +256,45 @@ class AuthViewModel @Inject constructor(
             email = email,
             emailError = null
         )
+    }
+
+    // Validate email availability for signup
+    fun validateEmailAvailability(email: String) {
+        // Only check during signup mode
+        if (_state.value.authMode != AuthMode.SIGN_UP) return
+
+        // First check format
+        if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            return // Don't check availability if format is invalid
+        }
+
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isCheckingEmail = true)
+
+            try {
+                val emailExists = authRepository.checkEmailExists(email)
+                _state.value = _state.value.copy(
+                    isCheckingEmail = false,
+                    emailError = if (emailExists) {
+                        "This email is already in use"
+                    } else null
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isCheckingEmail = false,
+                    emailError = null // On error, allow to proceed (fail open)
+                )
+            }
+        }
+    }
+
+    // Public function for checking email exists (for WelcomeSignUpScreen)
+    suspend fun checkEmailExists(email: String): Boolean {
+        return try {
+            authRepository.checkEmailExists(email)
+        } catch (e: Exception) {
+            false // On error, allow to proceed (fail open)
+        }
     }
 
     fun updatePassword(password: String) {
@@ -299,7 +355,7 @@ class AuthViewModel @Inject constructor(
     fun resetPassword(email: String) {
         if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             _state.value = _state.value.copy(
-                generalError = "Please enter a valid email address"
+                generalError = localizationManager.getString(R.string.error_invalid_email)
             )
             return
         }
@@ -335,7 +391,7 @@ class AuthViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     loadingMessage = null,
-                    generalError = "An unexpected error occurred"
+                    generalError = localizationManager.getString(R.string.unexpected_error)
                 )
             }
         }
@@ -368,9 +424,9 @@ class AuthViewModel @Inject constructor(
         val passwordError = validatePassword(_state.value.password)
         val confirmPasswordError = if (_state.value.authMode == AuthMode.SIGN_UP) {
             if (_state.value.confirmPassword != _state.value.password) {
-                "Passwords do not match"
+                localizationManager.getString(R.string.passwords_dont_match)
             } else if (_state.value.confirmPassword.isEmpty()) {
-                "Please confirm your password"
+                localizationManager.getString(R.string.confirm_password_hint)
             } else null
         } else null
 
@@ -385,16 +441,16 @@ class AuthViewModel @Inject constructor(
 
     private fun validateEmail(email: String): String? {
         return when {
-            email.isBlank() -> "Email is required"
-            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format"
+            email.isBlank() -> localizationManager.getString(R.string.error_required_field)
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> localizationManager.getString(R.string.error_invalid_email)
             else -> null
         }
     }
 
     private fun validatePassword(password: String): String? {
         return when {
-            password.isBlank() -> "Password is required"
-            password.length < 6 -> "Password must be at least 6 characters"
+            password.isBlank() -> localizationManager.getString(R.string.error_required_field)
+            password.length < 6 -> localizationManager.getString(R.string.error_password_too_short)
             _state.value.authMode == AuthMode.SIGN_UP && !password.any { it.isDigit() } ->
                 "Password must contain at least one number"
             _state.value.authMode == AuthMode.SIGN_UP && !password.any { it.isLetter() } ->
@@ -419,5 +475,6 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val loadingMessage: String? = null,
     val isAuthenticated: Boolean = false,
-    val isNewUser: Boolean = false
+    val isNewUser: Boolean = false,
+    val isCheckingEmail: Boolean = false
 )

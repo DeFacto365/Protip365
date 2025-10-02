@@ -1,5 +1,72 @@
 import SwiftUI
 
+// MARK: - Select-On-Focus TextField
+struct SelectOnFocusTextField: UIViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var focusField: Field?
+    let focusedField: FocusState<Field?>.Binding
+    var keyboardType: UIKeyboardType = .decimalPad
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        textField.delegate = context.coordinator
+        textField.placeholder = placeholder
+        textField.keyboardType = keyboardType
+        textField.textAlignment = .right
+        textField.textColor = .systemBlue
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldDidChange), for: .editingChanged)
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        uiView.text = text
+
+        // Handle focus
+        if focusField == focusedField.wrappedValue {
+            if !uiView.isFirstResponder {
+                uiView.becomeFirstResponder()
+                // Select all text when focused
+                DispatchQueue.main.async {
+                    uiView.selectedTextRange = uiView.textRange(from: uiView.beginningOfDocument, to: uiView.endOfDocument)
+                }
+            }
+        } else {
+            if uiView.isFirstResponder {
+                uiView.resignFirstResponder()
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: SelectOnFocusTextField
+
+        init(_ parent: SelectOnFocusTextField) {
+            self.parent = parent
+        }
+
+        @objc func textFieldDidChange(_ textField: UITextField) {
+            parent.text = textField.text ?? ""
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            parent.focusedField.wrappedValue = parent.focusField
+            // Select all text when editing begins
+            DispatchQueue.main.async {
+                textField.selectedTextRange = textField.textRange(from: textField.beginningOfDocument, to: textField.endOfDocument)
+            }
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            // Don't clear focus here, let SwiftUI handle it
+        }
+    }
+}
+
 // MARK: - Completion Step View
 
 struct CompletionStep: View {
@@ -38,28 +105,69 @@ struct CompletionStep: View {
                     .foregroundColor(.primary)
 
                 // Tip Target Section
-                HStack {
-                    Label(localization.tipPercentageTargetLabel, systemImage: "percent")
-                        .foregroundColor(.primary)
-                    Spacer()
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        TextField("15", text: $state.tipTargetPercentage, onEditingChanged: { editing in
-                            if editing && (state.tipTargetPercentage == "15" || state.tipTargetPercentage == "0") {
-                                state.tipTargetPercentage = ""
-                            }
-                            HapticFeedback.selection()
-                        })
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .foregroundColor(.blue)
-                        .focused($focusedField, equals: .tipPercentage)
-                        Text("%")
-                            .foregroundColor(.secondary)
+                        Label(localization.tipPercentageTargetLabel, systemImage: "percent")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        HStack(spacing: 4) {
+                            SelectOnFocusTextField(
+                                text: $state.tipTargetPercentage,
+                                placeholder: "15",
+                                focusField: .tipPercentage,
+                                focusedField: $focusedField
+                            )
+                            .frame(width: 60)
+                            Text("%")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .onTapGesture {
+                            focusedField = .tipPercentage
+                        }
                     }
-                    .frame(width: 100)
-                    .padding(8)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    InfoBox(
+                        title: localization.tipPercentageNoteTitle,
+                        message: localization.tipPercentageNoteMessage,
+                        color: .blue
+                    )
+                }
+
+                // Average Deduction Percentage Section
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label(localization.averageDeductionPercentageLabel, systemImage: "minus.circle.fill")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        HStack(spacing: 4) {
+                            SelectOnFocusTextField(
+                                text: $state.averageDeductionPercentage,
+                                placeholder: "30",
+                                focusField: .averageDeductionPercentage,
+                                focusedField: $focusedField
+                            )
+                            .frame(width: 60)
+                            Text("%")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .onTapGesture {
+                            focusedField = .averageDeductionPercentage
+                        }
+                    }
+
+                    InfoBox(
+                        title: localization.averageDeductionPercentageNoteTitle,
+                        message: localization.averageDeductionPercentageNoteMessage,
+                        color: .orange
+                    )
                 }
 
                 // Sales Targets Section
@@ -138,12 +246,6 @@ struct CompletionStep: View {
                         color: .blue
                     )
                 }
-
-                InfoBox(
-                    title: localization.tipPercentageNoteTitle,
-                    message: localization.tipPercentageNoteMessage,
-                    color: .blue
-                )
             }
             .padding()
             .background(Color(.systemBackground))

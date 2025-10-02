@@ -8,11 +8,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.LocalTextStyle
+import com.protip365.app.R
 import com.protip365.app.presentation.design.IconMapping
 import java.text.NumberFormat
 import java.util.*
@@ -37,18 +40,11 @@ fun CalculatorScreen() {
                 text = { Text("Tip-out") },
                 icon = { Icon(IconMapping.Actions.share, contentDescription = null) }
             )
-            Tab(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                text = { Text("Hourly Rate") },
-                icon = { Icon(IconMapping.Financial.hours, contentDescription = null) }
-            )
         }
 
         when (selectedTab) {
             0 -> TipCalculator()
             1 -> TipOutCalculator()
-            2 -> HourlyRateCalculator()
         }
     }
 }
@@ -197,12 +193,22 @@ fun TipOutCalculator() {
             singleLine = true
         )
 
-        // Tip-out percentages
-        Text(
-            text = "Tip-out Distribution",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium
-        )
+        // Tip-out percentages section
+        Column {
+            Text(
+                text = stringResource(R.string.tip_out_distribution),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium
+            )
+
+            // Explanation text (matching iOS)
+            Text(
+                text = stringResource(R.string.tip_out_explanation),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
         TipOutField(
             label = "Bar",
@@ -260,144 +266,6 @@ fun TipOutCalculator() {
 }
 
 @Composable
-fun HourlyRateCalculator() {
-    var totalEarnings by remember { mutableStateOf("") }
-    var hoursWorked by remember { mutableStateOf("") }
-    var includeBreaks by remember { mutableStateOf(false) }
-    var breakMinutes by remember { mutableStateOf("30") }
-
-    val earnings = totalEarnings.toDoubleOrNull() ?: 0.0
-    val hours = hoursWorked.toDoubleOrNull() ?: 0.0
-    val breaks = if (includeBreaks) (breakMinutes.toDoubleOrNull() ?: 0.0) / 60 else 0.0
-    val effectiveHours = (hours - breaks).coerceAtLeast(0.0)
-
-    val hourlyRate = if (effectiveHours > 0) earnings / effectiveHours else 0.0
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Total earnings input
-        OutlinedTextField(
-            value = totalEarnings,
-            onValueChange = { totalEarnings = it },
-            label = { Text("Total Earnings") },
-            leadingIcon = { Text("$", style = MaterialTheme.typography.bodyLarge) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Next
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        // Hours worked
-        OutlinedTextField(
-            value = hoursWorked,
-            onValueChange = { hoursWorked = it },
-            label = { Text("Hours Worked") },
-            leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
-                imeAction = if (includeBreaks) ImeAction.Next else ImeAction.Done
-            ),
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        // Break time
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = includeBreaks,
-                onCheckedChange = { includeBreaks = it }
-            )
-            Text("Subtract break time")
-        }
-
-        if (includeBreaks) {
-            OutlinedTextField(
-                value = breakMinutes,
-                onValueChange = { breakMinutes = it },
-                label = { Text("Break Minutes") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        }
-
-        Divider()
-
-        // Results
-        ResultCard(
-            title = "Effective Hourly Rate",
-            amount = hourlyRate,
-            isHighlighted = true,
-            suffix = "/hr"
-        )
-
-        if (effectiveHours > 0) {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Breakdown",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Effective hours")
-                        Text("${effectiveHours.format(2)}h")
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Daily (8h)")
-                        Text(formatCurrency(hourlyRate * 8))
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Weekly (40h)")
-                        Text(formatCurrency(hourlyRate * 40))
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Monthly (160h)")
-                        Text(formatCurrency(hourlyRate * 160))
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Yearly (2080h)")
-                        Text(formatCurrency(hourlyRate * 2080))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun TipOutField(
     label: String,
     percentage: String,
@@ -405,27 +273,52 @@ fun TipOutField(
     onPercentageChange: (String) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
-            value = percentage,
-            onValueChange = onPercentageChange,
-            label = { Text(label) },
-            suffix = { Text("%") },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next
-            ),
-            modifier = Modifier.weight(1f),
-            singleLine = true
+        // Label
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(80.dp)
         )
+
+        // Input field + % symbol
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = percentage,
+                onValueChange = onPercentageChange,
+                placeholder = { Text("0") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                modifier = Modifier.width(70.dp),
+                singleLine = true
+            )
+
+            // % symbol OUTSIDE the field (iOS-style)
+            Text(
+                text = "%",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Amount display
         Text(
             text = formatCurrency(amount),
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End
+            fontWeight = FontWeight.Medium
         )
     }
 }

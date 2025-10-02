@@ -6,6 +6,7 @@ struct AccountSettingsSection: View {
     @Binding var showSignOutAlert: Bool
     @Binding var showDeleteAccountAlert: Bool
     @Binding var isDeletingAccount: Bool
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     let language: String
     private let localization: SettingsLocalization
@@ -25,8 +26,9 @@ struct AccountSettingsSection: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Cancel Subscription Card
-            VStack(spacing: 0) {
+            // Cancel Subscription Card - only show if user has active subscription
+            if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 12) {
                         Image(systemName: "creditcard.circle")
@@ -74,6 +76,7 @@ struct AccountSettingsSection: View {
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
             .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+            }
 
             // Sign Out & Delete Account Card
             VStack(spacing: 0) {
@@ -227,15 +230,15 @@ struct AccountSettingsSection: View {
                         // Fallback to manual deletion
                         let userId = session.user.id
 
-                        // Delete all user data manually
+                        // Delete all user data manually using new simplified structure
                         _ = try? await SupabaseManager.shared.client
-                            .from("shift_income")
+                            .from("shift_entries")
                             .delete()
                             .eq("user_id", value: userId)
                             .execute()
 
                         _ = try? await SupabaseManager.shared.client
-                            .from("shifts")
+                            .from("expected_shifts")
                             .delete()
                             .eq("user_id", value: userId)
                             .execute()

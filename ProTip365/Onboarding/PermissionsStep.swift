@@ -63,6 +63,39 @@ struct PermissionsStep: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
+                // Show default employer picker if multiple employers enabled and employers exist
+                if state.useMultipleEmployers && !state.employers.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localization.defaultEmployerLabel)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Menu {
+                            ForEach(state.employers) { employer in
+                                Button(employer.name) {
+                                    state.defaultEmployerId = employer.id
+                                    HapticFeedback.selection()
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text(selectedEmployerName)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                    .padding(.top, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 InfoBox(
                     title: localization.multipleEmployersExplanationTitle,
                     message: localization.multipleEmployersExplanation,
@@ -88,6 +121,55 @@ struct PermissionsStep: View {
                         }
                     }
             }
+        }
+        .onAppear {
+            // Load employers when step appears
+            if state.useMultipleEmployers {
+                Task {
+                    await loadEmployers()
+                }
+            }
+        }
+        .onChange(of: state.showEmployersPage) { _, isShowing in
+            // Reload employers when employer page is dismissed
+            if !isShowing && state.useMultipleEmployers {
+                Task {
+                    await loadEmployers()
+                }
+            }
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private var selectedEmployerName: String {
+        if let defaultEmployerId = state.defaultEmployerId,
+           let employer = state.employers.first(where: { $0.id == defaultEmployerId }) {
+            return employer.name
+        }
+        return localization.selectEmployerPlaceholder
+    }
+
+    private func loadEmployers() async {
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            let employers: [Employer] = try await SupabaseManager.shared.client
+                .from("employers")
+                .select()
+                .eq("user_id", value: userId)
+                .order("name")
+                .execute()
+                .value
+
+            await MainActor.run {
+                state.employers = employers
+                // Auto-select first employer if none selected
+                if state.defaultEmployerId == nil && !employers.isEmpty {
+                    state.defaultEmployerId = employers.first?.id
+                }
+            }
+        } catch {
+            print("❌ Error loading employers: \(error)")
         }
     }
 

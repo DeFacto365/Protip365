@@ -11,26 +11,36 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.protip365.app.R
+import com.protip365.app.data.local.PreferencesManager
 import com.protip365.app.presentation.localization.LocalizationManager
+import com.protip365.app.presentation.localization.SupportedLanguage
 import kotlinx.coroutines.launch
 
 @Composable
 fun LanguageSelector(
     modifier: Modifier = Modifier,
-    currentLanguage: String = "en",
-    onLanguageSelected: (String) -> Unit = {}
+    localizationManager: LocalizationManager? = null
 ) {
+    val context = LocalContext.current
+    val preferencesManager = remember { PreferencesManager(context) }
+    val manager = localizationManager ?: remember {
+        LocalizationManager(context, preferencesManager)
+    }
+
     var showMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val state by manager.state.collectAsState()
 
-    // Language options
-    val languages = listOf(
-        "en" to "EN",
-        "fr" to "FR",
-        "es" to "ES"
+    val supportedLanguages = listOf(
+        SupportedLanguage.ENGLISH,
+        SupportedLanguage.FRENCH,
+        SupportedLanguage.SPANISH
     )
 
     Box(modifier = modifier) {
@@ -46,13 +56,13 @@ fun LanguageSelector(
         ) {
             Icon(
                 imageVector = Icons.Default.Language,
-                contentDescription = "Language",
+                contentDescription = manager.getString(R.string.preferred_language),
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = languages.find { it.first == currentLanguage }?.second ?: "EN",
+                text = state.currentLanguage.shortCode,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.primary
@@ -64,27 +74,33 @@ fun LanguageSelector(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
         ) {
-            DropdownMenuItem(
-                text = { Text("English") },
-                onClick = {
-                    showMenu = false
-                    onLanguageSelected("en")
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Français") },
-                onClick = {
-                    showMenu = false
-                    onLanguageSelected("fr")
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Español") },
-                onClick = {
-                    showMenu = false
-                    onLanguageSelected("es")
-                }
-            )
+            supportedLanguages.forEach { language ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = language.displayName,
+                            fontWeight = if (language == state.currentLanguage) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Normal
+                            },
+                            color = if (language == state.currentLanguage) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    },
+                    onClick = {
+                        showMenu = false
+                        scope.launch {
+                            manager.setLanguage(language)
+                            // Restart activity to apply language change
+                            (context as? android.app.Activity)?.recreate()
+                        }
+                    }
+                )
+            }
         }
     }
 }

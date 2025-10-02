@@ -6,6 +6,7 @@ import com.protip365.app.data.remote.SupabaseClient
 import com.protip365.app.domain.repository.AlertRepository
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.postgresListDataFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,8 +23,43 @@ class AlertRepositoryImpl @Inject constructor(
 ) : AlertRepository {
 
     override fun getAlerts(): Flow<List<Alert>> {
+        val userId = supabase.getCurrentUserId() ?: return flow { emit(emptyList()) }
+
         return flow {
-            emit(emptyList())
+            try {
+                val alerts = supabase.client.postgrest["alerts"]
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                        }
+                        order("created_at", Order.DESCENDING)
+                    }
+                    .decodeList<Alert>()
+                emit(alerts)
+            } catch (e: Exception) {
+                emit(emptyList())
+            }
+        }
+    }
+
+    override fun getUnreadAlerts(): Flow<List<Alert>> {
+        val userId = supabase.getCurrentUserId() ?: return flow { emit(emptyList()) }
+
+        return flow {
+            try {
+                val alerts = supabase.client.postgrest["alerts"]
+                    .select {
+                        filter {
+                            eq("user_id", userId)
+                            eq("is_read", false)
+                        }
+                        order("created_at", Order.DESCENDING)
+                    }
+                    .decodeList<Alert>()
+                emit(alerts)
+            } catch (e: Exception) {
+                emit(emptyList())
+            }
         }
     }
 
@@ -118,8 +154,8 @@ class AlertRepositoryImpl @Inject constructor(
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
 
-        // Check if there's a shift for yesterday
-        val shiftsYesterday = supabase.client.postgrest["shifts"]
+        // Check if there's an expected shift for yesterday
+        val shiftsYesterday = supabase.client.postgrest["expected_shifts"]
             .select {
                 filter {
                     eq("user_id", userId)

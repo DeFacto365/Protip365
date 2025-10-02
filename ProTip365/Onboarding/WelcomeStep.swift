@@ -196,11 +196,7 @@ struct TargetRow: View {
             Label(label, systemImage: icon)
                 .foregroundColor(color)
             Spacer()
-            TextField(placeholder, text: $value, onEditingChanged: { editing in
-                if editing && (value == "0" || value == "0.00" || value == "0.0" || value == placeholder) {
-                    value = ""
-                }
-            })
+            TextField(placeholder, text: $value)
             .keyboardType(.decimalPad)
             .multilineTextAlignment(.trailing)
             .foregroundColor(.blue)

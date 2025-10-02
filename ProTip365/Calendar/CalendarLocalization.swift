@@ -8,7 +8,7 @@ struct CalendarLocalization {
         self.language = language
     }
 
-    // MARK: - Part-time Limits
+    // MARK: - General Terms
     var shiftsText: String {
         switch language {
         case "fr": return "quarts"

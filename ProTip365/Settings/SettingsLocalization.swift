@@ -61,6 +61,22 @@ struct SettingsLocalization {
         }
     }
 
+    var nameLabel: String {
+        switch language {
+        case "fr": return "Nom"
+        case "es": return "Nombre"
+        default: return "Name"
+        }
+    }
+
+    var emailLabel: String {
+        switch language {
+        case "fr": return "Courriel"
+        case "es": return "Correo electrónico"
+        default: return "Email"
+        }
+    }
+
     var defaultHourlyRate: String {
         switch language {
         case "fr": return "Taux horaire par défaut"

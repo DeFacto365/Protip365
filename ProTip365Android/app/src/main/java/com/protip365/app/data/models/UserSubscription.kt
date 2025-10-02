@@ -69,18 +69,20 @@ enum class SubscriptionEnvironment(val value: String) {
     }
 }
 
-// Subscription tiers matching iOS
+// Subscription tiers matching iOS - simplified to single tier
 enum class SubscriptionTier(
     val id: String,
     val displayName: String,
-    val price: Double,
-    val priceAnnual: Double,
-    val shiftsPerWeek: Int?,
-    val entriesPerWeek: Int?
+    val monthlyPrice: Double,
+    val hasFullAccess: Boolean,
+    val trialDays: Int = 7,
+    val shiftsPerWeek: Int? = null,
+    val entriesPerWeek: Int? = null
 ) {
-    NONE("none", "Free", 0.0, 0.0, null, null),
-    PART_TIME("parttime", "Part-Time", 2.99, 30.0, 3, 3),
-    FULL_ACCESS("full", "Full Access", 4.99, 49.99, null, null);
+    NONE("none", "Free", 0.0, false, 0, 3, 10),
+    PART_TIME("part_time", "Part Time", 0.0, false, 0, 5, 20),
+    FULL_ACCESS("full_access", "Full Access", 0.0, true, 0, null, null),
+    PREMIUM("premium", "ProTip365 Premium", 3.99, true, 7, null, null);
 
     companion object {
         fun fromId(id: String): SubscriptionTier = values().find { it.id == id } ?: NONE

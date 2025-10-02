@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.protip365.app.R
+import com.protip365.app.utils.localizedString
 
 @Composable
 fun DashboardPeriodSelector(
@@ -41,41 +43,25 @@ fun DashboardPeriodSelector(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 PeriodTab(
-                    text = when (currentLanguage) {
-                        "fr" -> "Aujourd'hui"
-                        "es" -> "Hoy"
-                        else -> "Today"
-                    },
+                    text = localizedString(R.string.today),
                     isSelected = selectedPeriod == 0,
                     onClick = { onPeriodSelected(0) },
                     modifier = Modifier.weight(1f)
                 )
                 PeriodTab(
-                    text = when (currentLanguage) {
-                        "fr" -> "Semaine"
-                        "es" -> "Semana"
-                        else -> "Week"
-                    },
+                    text = localizedString(R.string.week),
                     isSelected = selectedPeriod == 1,
                     onClick = { onPeriodSelected(1) },
                     modifier = Modifier.weight(1f)
                 )
                 PeriodTab(
-                    text = when (currentLanguage) {
-                        "fr" -> "Mois"
-                        "es" -> "Mes"
-                        else -> "Month"
-                    },
+                    text = localizedString(R.string.month),
                     isSelected = selectedPeriod == 2,
                     onClick = { onPeriodSelected(2) },
                     modifier = Modifier.weight(1f)
                 )
                 PeriodTab(
-                    text = when (currentLanguage) {
-                        "fr" -> "Année"
-                        "es" -> "Año"
-                        else -> "Year"
-                    },
+                    text = localizedString(R.string.year),
                     isSelected = selectedPeriod == 3,
                     onClick = { onPeriodSelected(3) },
                     modifier = Modifier.weight(1f)
@@ -143,21 +129,13 @@ private fun MonthViewTypeSelector(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             MonthViewTab(
-                text = when (currentLanguage) {
-                    "fr" -> "Mois calendaire"
-                    "es" -> "Mes calendario"
-                    else -> "Calendar Month"
-                },
+                text = localizedString(R.string.calendar_month),
                 isSelected = monthViewType == 0,
                 onClick = { onViewTypeChanged(0) },
                 modifier = Modifier.weight(1f)
             )
             MonthViewTab(
-                text = when (currentLanguage) {
-                    "fr" -> "4 semaines"
-                    "es" -> "4 semanas"
-                    else -> "4 Weeks Pay"
-                },
+                text = localizedString(R.string.four_weeks_pay),
                 isSelected = monthViewType == 1,
                 onClick = { onViewTypeChanged(1) },
                 modifier = Modifier.weight(1f)

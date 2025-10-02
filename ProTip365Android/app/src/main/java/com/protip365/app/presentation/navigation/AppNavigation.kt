@@ -13,7 +13,10 @@ import com.protip365.app.presentation.auth.*
 import com.protip365.app.presentation.main.MainScreen
 import com.protip365.app.presentation.main.AddShiftScreen
 import com.protip365.app.presentation.settings.*
+import com.protip365.app.presentation.achievements.AchievementsScreen
 import com.protip365.app.presentation.employers.EmployersScreen
+import com.protip365.app.presentation.employers.EditEmployerScreen
+import com.protip365.app.presentation.entries.EditEntryScreen
 import com.protip365.app.presentation.onboarding.OnboardingScreen
 
 @Composable
@@ -91,7 +94,7 @@ fun AppNavigation(
         
         composable("edit_entry/{entryId}") { backStackEntry ->
             val entryId = backStackEntry.arguments?.getString("entryId") ?: ""
-            // TODO: Implement EditEntryScreen
+            EditEntryScreen(navController = navController, entryId = entryId)
         }
         
         // Settings routes
@@ -112,35 +115,43 @@ fun AppNavigation(
         }
         
         // Employer routes
+        composable("employers") {
+            EmployersScreen(navController = navController)
+        }
+        
         composable("edit_employer/{employerId}") { backStackEntry ->
             val employerId = backStackEntry.arguments?.getString("employerId") ?: ""
-            // TODO: Implement EditEmployerScreen
+            EditEmployerScreen(navController = navController, employerId = employerId)
         }
         
         // Support routes
         composable("help") {
-            // TODO: Implement HelpScreen
+            HelpScreen(navController = navController)
         }
         
         composable("contact") {
-            // TODO: Implement ContactScreen
+            ContactScreen(navController = navController)
         }
         
         composable("privacy") {
-            // TODO: Implement PrivacyScreen
+            PrivacyScreen(navController = navController)
         }
         
         composable("terms") {
-            // TODO: Implement TermsScreen
+            TermsAndConditionsScreen(navController)
         }
         
         // Account routes
+        composable("achievements") {
+            AchievementsScreen(navController = navController)
+        }
+        
         composable("change_password") {
-            // TODO: Implement ChangePasswordScreen
+            ChangePasswordScreen(navController = navController)
         }
         
         composable("delete_account") {
-            // TODO: Implement DeleteAccountScreen
+            DeleteAccountScreen(navController = navController)
         }
     }
 }

@@ -26,7 +26,7 @@ struct ShiftAlertSection: View {
 
                     Text(localizedAlertText(selectedAlert))
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
 
                     Image(systemName: "chevron.right")
                         .font(.caption)

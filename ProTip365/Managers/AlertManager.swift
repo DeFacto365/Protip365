@@ -21,7 +21,7 @@ class AlertManager: ObservableObject {
         }
     }
 
-    func checkForMissingShiftEntries(shifts: [Shift]) {
+    func checkForMissingShiftEntries(shifts: [ShiftWithEntry]) {
         let calendar = Calendar.current
         let today = Date()
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
@@ -31,18 +31,17 @@ class AlertManager: ObservableObject {
         let yesterdayString = dateFormatter.string(from: yesterday)
 
         // Check for shifts from yesterday that are planned but have no earnings data
-        let yesterdayPlannedShifts = shifts.filter { shift in
-            shift.shift_date == yesterdayString &&
-            (shift.status == "planned" || shift.status == nil) &&
-            shift.tips == nil &&
-            shift.sales == nil
+        let yesterdayPlannedShifts = shifts.filter { shiftWithEntry in
+            shiftWithEntry.shift_date == yesterdayString &&
+            shiftWithEntry.status == "planned" &&
+            shiftWithEntry.entry == nil
         }
 
         if !yesterdayPlannedShifts.isEmpty {
             for shift in yesterdayPlannedShifts {
                 Task {
                     let shiftData: [String: Any] = [
-                        "shiftId": shift.id?.uuidString ?? ""
+                        "shiftId": shift.id.uuidString
                     ]
 
                     await createAlert(
@@ -58,7 +57,7 @@ class AlertManager: ObservableObject {
                 scheduleLocalNotification(
                     title: localizedString(key: "incompleteShiftTitle"),
                     body: localizedString(key: "incompleteShiftMessage"),
-                    identifier: "missing-entry-\(shift.id?.uuidString ?? UUID().uuidString)"
+                    identifier: "missing-entry-\(shift.id.uuidString)"
                 )
             }
         }
@@ -147,7 +146,11 @@ class AlertManager: ObservableObject {
 
     func checkYesterdayShifts() async {
         // This method will be called from the app delegate or when app becomes active
-        guard let shifts = try? await SupabaseManager.shared.fetchShifts() else { return }
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        let today = Date()
+
+        guard let shifts = try? await SupabaseManager.shared.fetchShiftsWithEntries(from: yesterday, to: today) else { return }
         checkForMissingShiftEntries(shifts: shifts)
     }
 
@@ -317,6 +320,13 @@ class AlertManager: ObservableObject {
         updateAppBadgeCount()
     }
 
+    @available(iOS, deprecated: 17.0, message: "Use setBadgeCount for iOS 17+")
+    private func setLegacyBadgeCount(_ count: Int) {
+        // This is intentionally using the deprecated API for iOS 16 compatibility
+        // The warning is expected and can be ignored
+        UIApplication.shared.applicationIconBadgeNumber = count
+    }
+
     private func updateAppBadgeCount() {
         let badgeCount = alerts.count
 
@@ -330,8 +340,8 @@ class AlertManager: ObservableObject {
             }
         } else {
             // Fallback for iOS 16 and earlier
-            DispatchQueue.main.async {
-                UIApplication.shared.applicationIconBadgeNumber = badgeCount
+            DispatchQueue.main.async { [weak self] in
+                self?.setLegacyBadgeCount(badgeCount)
                 print("🔔 App badge updated to \(badgeCount) via UIApplication")
             }
         }

@@ -115,8 +115,31 @@ fun WelcomeSignUpScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
         ) {
+            // Base background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            )
+
+            // Gradient overlay (iOS-style)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(
+                                Color(0x99, 0xCC, 0xFF).copy(alpha = 0.2f),  // Light Blue
+                                Color(0xFF, 0xB2, 0xE6).copy(alpha = 0.2f),  // Light Pink
+                                Color(0xCC, 0xB2, 0xFF).copy(alpha = 0.2f)   // Light Purple
+                            ),
+                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                        )
+                    )
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -130,21 +153,56 @@ fun WelcomeSignUpScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 
                 // Logo and welcome
-                Card(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .shadow(10.dp, RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // App Logo
                     Image(
                         painter = painterResource(id = R.drawable.protip365_logo),
                         contentDescription = "ProTip365 Logo",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .shadow(10.dp, RoundedCornerShape(20.dp))
+                    )
+
+                    // App Name
+                    Text(
+                        text = "ProTip365",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    // Primary message
+                    Text(
+                        text = when (selectedLanguage) {
+                            "fr" -> "Suivez vos pourboires"
+                            "es" -> "Rastrea tus propinas"
+                            else -> "Track Your Tips"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    // Multi-line catchphrase
+                    Text(
+                        text = when (selectedLanguage) {
+                            "fr" -> "Suivez chaque pourboire.\nGérez chaque quart.\nAccédez à vos données partout."
+                            "es" -> "Rastrea cada propina.\nGestiona cada turno.\nAccede a tus datos en cualquier lugar."
+                            else -> "Track Every Tip.\nManage Every Shift.\nAccess Your Data Anywhere."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
                     text = when (selectedLanguage) {
                         "fr" -> "Bienvenue à ProTip365"
@@ -197,7 +255,7 @@ fun WelcomeSignUpScreen(
                             emailError = ""
                             emailIsValid = false
                             emailAlreadyExists = false
-                            
+
                             if (!isEmailValid) {
                                 emailError = when (selectedLanguage) {
                                     "fr" -> "Format de courriel invalide"
@@ -206,13 +264,29 @@ fun WelcomeSignUpScreen(
                                 }
                                 return@EmailStep
                             }
-                            
+
                             isCheckingEmail = true
-                            // TODO: Implement actual email validation
+                            // Check if email exists using Supabase RPC function
                             scope.launch {
-                                kotlinx.coroutines.delay(1000) // Simulate API call
-                                emailIsValid = true
-                                emailAlreadyExists = false
+                                try {
+                                    val emailExists = viewModel.checkEmailExists(email)
+                                    if (emailExists) {
+                                        emailError = when (selectedLanguage) {
+                                            "fr" -> "Cette adresse courriel est déjà utilisée"
+                                            "es" -> "Este correo electrónico ya está en uso"
+                                            else -> "This email is already in use"
+                                        }
+                                        emailAlreadyExists = true
+                                        emailIsValid = false
+                                    } else {
+                                        emailIsValid = true
+                                        emailAlreadyExists = false
+                                    }
+                                } catch (e: Exception) {
+                                    // On error, allow to proceed (fail open)
+                                    emailIsValid = true
+                                    emailAlreadyExists = false
+                                }
                                 isCheckingEmail = false
                             }
                         }
@@ -811,5 +885,7 @@ fun ProfileStep(
         }
     }
 }
+
+
 
 

@@ -254,4 +254,99 @@ class SecurityManager @Inject constructor(
             false
         }
     }
+
+    // Additional methods for SecurityRepositoryImpl
+    fun clearPin(): Boolean {
+        return removePIN()
+    }
+
+    fun isPinSet(): Boolean {
+        return prefs.getBoolean("pin_setup", false)
+    }
+
+    fun enableBiometric(): Boolean {
+        return try {
+            prefs.edit()
+                .putBoolean("biometric_enabled", true)
+                .apply()
+            true
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = e.message)
+            false
+        }
+    }
+
+    fun disableBiometric(): Boolean {
+        return try {
+            prefs.edit()
+                .putBoolean("biometric_enabled", false)
+                .apply()
+            true
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = e.message)
+            false
+        }
+    }
+
+    fun isBiometricEnabled(): Boolean {
+        return prefs.getBoolean("biometric_enabled", false)
+    }
+
+    fun setAutoLockMinutes(minutes: Int): Boolean {
+        return try {
+            prefs.edit()
+                .putInt("auto_lock_minutes", minutes)
+                .apply()
+            true
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = e.message)
+            false
+        }
+    }
+
+    fun getAutoLockMinutes(): Int {
+        return prefs.getInt("auto_lock_minutes", 5) // Default 5 minutes
+    }
+
+    fun setLastActiveTime(timestamp: Long): Boolean {
+        return try {
+            prefs.edit()
+                .putLong("last_active_time", timestamp)
+                .apply()
+            true
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = e.message)
+            false
+        }
+    }
+
+    fun getLastActiveTime(): Long {
+        return prefs.getLong("last_active_time", System.currentTimeMillis())
+    }
+
+    fun shouldShowLockScreen(): Boolean {
+        val autoLockMinutes = getAutoLockMinutes()
+        if (autoLockMinutes == 0) return false // Never lock
+        
+        val lastActiveTime = getLastActiveTime()
+        val currentTime = System.currentTimeMillis()
+        val timeDifference = currentTime - lastActiveTime
+        val lockThreshold = autoLockMinutes * 60 * 1000L // Convert to milliseconds
+        
+        return timeDifference > lockThreshold
+    }
+
+    fun resetSecuritySettings(): Boolean {
+        return try {
+            prefs.edit()
+                .clear()
+                .apply()
+            
+            _state.value = SecurityState()
+            true
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = e.message)
+            false
+        }
+    }
 }

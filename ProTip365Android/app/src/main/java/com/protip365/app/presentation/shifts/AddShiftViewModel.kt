@@ -3,8 +3,8 @@ package com.protip365.app.presentation.shifts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.protip365.app.data.models.Employer
-import com.protip365.app.data.models.Entry
-import com.protip365.app.data.models.Shift
+import com.protip365.app.data.models.ExpectedShift
+import com.protip365.app.data.models.ShiftEntry
 import com.protip365.app.domain.repository.*
 import com.protip365.app.presentation.notifications.ShiftAlertNotificationManager
 import com.protip365.app.presentation.localization.LocalizationManager
@@ -19,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddShiftViewModel @Inject constructor(
-    private val shiftRepository: ShiftRepository,
+    private val expectedShiftRepository: ExpectedShiftRepository,
+    private val shiftEntryRepository: ShiftEntryRepository,
     private val employerRepository: EmployerRepository,
     private val authRepository: AuthRepository,
     private val subscriptionRepository: SubscriptionRepository,
@@ -98,7 +99,7 @@ class AddShiftViewModel @Inject constructor(
         currentShiftId = shiftId
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
-            val shift = shiftRepository.getShift(shiftId)
+            val shift = expectedShiftRepository.getExpectedShift(shiftId)
             shift?.let {
                 _state.value = _state.value.copy(
                     isLoading = false,
@@ -145,63 +146,57 @@ class AddShiftViewModel @Inject constructor(
                 return@launch
             }
 
-            val shift = Shift(
+            val shift = ExpectedShift(
                 id = currentShiftId ?: UUID.randomUUID().toString(),
                 userId = userId,
                 shiftDate = date.toString(),
                 startTime = startTime,
                 endTime = endTime,
-                hours = hours,
-                sales = sales,
-                tips = tips,
+                expectedHours = hours,
                 hourlyRate = hourlyRate,
-                cashOut = cashOut,
-                other = other,
-                notes = notes,
                 employerId = employerId,
                 alertMinutes = alertMinutes ?: when(selectedAlert.value) {
                     "None" -> null
                     else -> selectedAlert.value.toIntOrNull()
-                }
+                },
+                notes = notes
             )
 
             val result = if (currentShiftId != null) {
-                shiftRepository.updateShift(shift)
+                expectedShiftRepository.updateExpectedShift(shift)
             } else {
-                shiftRepository.createShift(shift)
+                expectedShiftRepository.createExpectedShift(shift)
             }
 
             result.fold(
-                onSuccess = { savedShift ->
+                onSuccess = { savedShift: ExpectedShift ->
                     // Schedule notification if alert is set
                     val finalAlertMinutes = alertMinutes ?: when(selectedAlert.value) {
                         "None" -> null
                         else -> selectedAlert.value.toIntOrNull()
                     }
-                    
+
                     finalAlertMinutes?.let { minutes ->
-                        savedShift.id?.let { shiftId ->
-                            try {
-                                val employerName = _employers.value.find { it.id == employerId }?.name ?: localizationManager.getString("default_employer_name")
-                                notificationManager.scheduleShiftAlert(
-                                    shiftId = shiftId,
-                                    shiftDate = date,
-                                    startTime = kotlinx.datetime.LocalTime.parse(startTime),
-                                    employerName = employerName,
-                                    alertMinutes = minutes
-                                )
-                            } catch (e: Exception) {
-                                // Handle notification scheduling error silently
-                            }
+                        try {
+                            val employerName = _employers.value.find { it.id == employerId }?.name ?: localizationManager.getString("default_employer_name")
+                            notificationManager.scheduleShiftAlert(
+                                shiftId = savedShift.id,
+                                shiftDate = date,
+                                startTime = kotlinx.datetime.LocalTime.parse(startTime),
+                                employerName = employerName,
+                                alertMinutes = minutes
+                            )
+                        } catch (e: Exception) {
+                            // Handle notification scheduling error silently
                         }
                     }
-                    
+
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isSaved = true
                     )
                 },
-                onFailure = { exception ->
+                onFailure = { exception: Throwable ->
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = exception.message ?: localizationManager.getString("error_failed_to_save_shift")
@@ -213,6 +208,9 @@ class AddShiftViewModel @Inject constructor(
 
     fun saveEntry(
         date: LocalDate,
+        startTime: String,
+        endTime: String,
+        actualHours: Double,
         sales: Double,
         tips: Double,
         cashOut: Double,
@@ -238,26 +236,54 @@ class AddShiftViewModel @Inject constructor(
                 return@launch
             }
 
-            val entry = Entry(
+            // First create an expected shift for this entry
+            val expectedShift = ExpectedShift(
                 id = UUID.randomUUID().toString(),
                 userId = userId,
-                entryDate = date.toString(),
-                sales = sales,
-                tips = tips,
-                cashOut = cashOut,
-                other = other,
-                notes = notes,
-                employerId = employerId
+                shiftDate = date.toString(),
+                startTime = startTime,
+                endTime = endTime,
+                expectedHours = actualHours, // Use actual hours as expected for standalone entries
+                hourlyRate = 0.0, // Default for entry-only mode
+                employerId = employerId,
+                status = "completed", // Mark as completed since we're adding actual data
+                notes = notes
             )
 
-            shiftRepository.createEntry(entry).fold(
-                onSuccess = {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        isSaved = true
+            // Create the expected shift first
+            expectedShiftRepository.createExpectedShift(expectedShift).fold(
+                onSuccess = { savedShift: ExpectedShift ->
+                    // Now create the shift entry
+                    val entry = ShiftEntry(
+                        id = UUID.randomUUID().toString(),
+                        shiftId = savedShift.id,
+                        userId = userId,
+                        actualStartTime = startTime,
+                        actualEndTime = endTime,
+                        actualHours = actualHours,
+                        sales = sales,
+                        tips = tips,
+                        cashOut = cashOut,
+                        other = other,
+                        notes = notes
+                    )
+
+                    shiftEntryRepository.createShiftEntry(entry).fold(
+                        onSuccess = { _: ShiftEntry ->
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                isSaved = true
+                            )
+                        },
+                        onFailure = { exception: Throwable ->
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = exception.message ?: localizationManager.getString("error_failed_to_save_entry")
+                            )
+                        }
                     )
                 },
-                onFailure = { exception ->
+                onFailure = { exception: Throwable ->
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = exception.message ?: localizationManager.getString("error_failed_to_save_entry")
@@ -275,14 +301,14 @@ class AddShiftViewModel @Inject constructor(
         currentShiftId?.let { id ->
             viewModelScope.launch {
                 _state.value = _state.value.copy(isLoading = true)
-                shiftRepository.deleteShift(id).fold(
-                    onSuccess = {
+                expectedShiftRepository.deleteExpectedShift(id).fold(
+                    onSuccess = { _: Unit ->
                         _state.value = _state.value.copy(
                             isLoading = false,
                             isDeleted = true
                         )
                     },
-                    onFailure = { exception ->
+                    onFailure = { exception: Throwable ->
                         _state.value = _state.value.copy(
                             isLoading = false,
                             error = exception.message ?: localizationManager.getString("error_failed_to_delete_shift")

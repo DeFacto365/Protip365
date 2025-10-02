@@ -102,7 +102,33 @@ struct EmployersLocalization {
         }
     }
 
-    var shiftCountSingular: String {
+    // MARK: - Shifts Count Strings
+    var shiftsCountSingular: String {
+        switch language {
+        case "fr": return "1 quart"
+        case "es": return "1 turno"
+        default: return "1 shift"
+        }
+    }
+
+    var shiftsCountPlural: String {
+        switch language {
+        case "fr": return "%d quarts"
+        case "es": return "%d turnos"
+        default: return "%d shifts"
+        }
+    }
+
+    var shiftsCountLabel: String {
+        switch language {
+        case "fr": return "# de quarts:"
+        case "es": return "# de turnos:"
+        default: return "# of Shifts:"
+        }
+    }
+
+    // MARK: - Entries Count Strings
+    var entriesCountSingular: String {
         switch language {
         case "fr": return "1 entrée"
         case "es": return "1 entrada"
@@ -110,12 +136,29 @@ struct EmployersLocalization {
         }
     }
 
-    var shiftCountPlural: String {
+    var entriesCountPlural: String {
         switch language {
         case "fr": return "%d entrées"
         case "es": return "%d entradas"
         default: return "%d entries"
         }
+    }
+
+    var entriesCountLabel: String {
+        switch language {
+        case "fr": return "# d'entrées:"
+        case "es": return "# de entradas:"
+        default: return "# of Entries:"
+        }
+    }
+
+    // MARK: - Legacy Compatibility (kept for backward compatibility)
+    var shiftCountSingular: String {
+        return entriesCountSingular
+    }
+
+    var shiftCountPlural: String {
+        return entriesCountPlural
     }
 
     // MARK: - Sheet Form Strings

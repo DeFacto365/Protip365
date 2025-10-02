@@ -63,9 +63,10 @@ class ShiftAlertNotificationManager @Inject constructor(
 
         // Calculate alert time
         val shiftDateTime = LocalDateTime(shiftDate, startTime)
-        val alertDateTime = shiftDateTime.minus(kotlinx.datetime.DateTimeUnit.MINUTE, alertMinutes.toLong())
-        val alertInstant = alertDateTime.toInstant(TimeZone.currentSystemDefault())
-        val alertMillis = alertInstant.toEpochMilli()
+        val alertInstant = shiftDateTime.toInstant(TimeZone.currentSystemDefault())
+        val duration = kotlin.time.Duration.parse("${alertMinutes}m")
+        val alertTime = alertInstant.minus(duration)
+        val alertMillis = alertTime.toEpochMilliseconds()
 
         // Don't schedule if in the past
         if (alertMillis <= System.currentTimeMillis()) {
@@ -137,7 +138,7 @@ class ShiftAlertReceiver : BroadcastReceiver() {
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val notification = NotificationCompat.Builder(context, ShiftAlertNotificationManager.CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, "shift_alerts")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(
@@ -154,4 +155,6 @@ class ShiftAlertReceiver : BroadcastReceiver() {
         notificationManager.notify(shiftId.hashCode(), notification)
     }
 }
+
+
 

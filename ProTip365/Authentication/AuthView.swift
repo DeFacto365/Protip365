@@ -23,7 +23,25 @@ struct AuthView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            ZStack {
+                // Background
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+
+                // Gradient overlay
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.6, green: 0.8, blue: 1.0),     // Light blue
+                        Color(red: 1.0, green: 0.7, blue: 0.9),     // Light pink
+                        Color(red: 0.8, green: 0.7, blue: 1.0)      // Light purple
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .opacity(0.2)
+                .ignoresSafeArea()
+
+                VStack(spacing: 0) {
                 // Language selector at top
                 HStack {
                     Spacer()
@@ -58,15 +76,22 @@ struct AuthView: View {
                         .frame(width: 100, height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .shadow(radius: 10)
-                    
+
                     VStack(spacing: 8) {
                         Text("ProTip365")
                             .font(.largeTitle)
                             .fontWeight(.bold)
-                        
+
                         Text(welcomeText)
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+
+                        Text(taglineText)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     }
                 }
                 .padding(.bottom, 30)
@@ -187,10 +212,10 @@ struct AuthView: View {
                 
                 Spacer()
                 Spacer()
-            }
-            .background(Color(.systemBackground))
-            .onTapGesture {
-                focusedField = nil
+                }
+                .onTapGesture {
+                    focusedField = nil
+                }
             }
         }
         .alert(errorText, isPresented: $showError) {
@@ -392,9 +417,17 @@ struct AuthView: View {
     
     var welcomeText: String {
         switch language {
-        case "fr": return "Suivez vos pourboires facilement"
-        case "es": return "Rastrea tus propinas fácilmente"
-        default: return "Track your tips easily"
+        case "fr": return "Suivez vos pourboires"
+        case "es": return "Rastrea tus propinas"
+        default: return "Track Your Tips"
+        }
+    }
+
+    var taglineText: String {
+        switch language {
+        case "fr": return "Suivez chaque pourboire.\nGérez chaque quart.\nAccédez à vos données partout."
+        case "es": return "Rastrea cada propina.\nGestiona cada turno.\nAccede a tus datos en cualquier lugar."
+        default: return "Track Every Tip.\nManage Every Shift.\nAccess Your Data Anywhere."
         }
     }
     

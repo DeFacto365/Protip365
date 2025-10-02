@@ -6,6 +6,10 @@ struct DetailIncomeCard: View {
     let averageDeductionPercentage: Double
     let targetIncome: Double
     let targetTips: Double
+    let periodStartDate: Date?
+    let periodEndDate: Date?
+
+    @AppStorage("language") private var language = "en"
 
     // Calculations
     var totalSalary: Double {
@@ -13,7 +17,7 @@ struct DetailIncomeCard: View {
             if let baseIncome = shift.base_income {
                 return total + baseIncome
             }
-            return total + ((shift.hours ?? 0) * (shift.hourly_rate ?? 15.0))
+            return total + ((shift.hours ?? 0) * shift.hourly_rate)
         }
     }
 
@@ -38,8 +42,40 @@ struct DetailIncomeCard: View {
         shifts.reduce(0) { $0 + ($1.hours ?? 0) }
     }
 
+    var periodDateRange: String? {
+        guard let startDate = periodStartDate, let endDate = periodEndDate else {
+            return nil
+        }
+
+        let formatter = DateFormatter()
+        // Use abbreviated month format for compact display
+        formatter.dateFormat = "MMM d"
+
+        let startString = formatter.string(from: startDate)
+        let endString = formatter.string(from: endDate)
+
+        // Get localized "to" separator
+        let toText: String
+        switch language {
+        case "fr": toText = "au"
+        case "es": toText = "al"
+        default: toText = "to"
+        }
+
+        return "\(startString) \(toText) \(endString)"
+    }
+
     var body: some View {
         VStack(spacing: 12) {
+            // Period date range (if available for weekly view)
+            if let dateRange = periodDateRange {
+                Text(dateRange)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             Text(localization.incomeBreakdownText)
                 .font(.caption)
                 .fontWeight(.semibold)

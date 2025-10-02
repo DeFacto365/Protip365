@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - ShiftTimeSection Component
 struct ShiftTimeSection: View {
     @Binding var selectedDate: Date
+    @Binding var endDate: Date
     @Binding var startTime: Date
     @Binding var endTime: Date
     @Binding var selectedLunchBreak: String
@@ -113,7 +114,7 @@ struct ShiftTimeSection: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    // Date Button (same as start date)
+                    // End Date Button (separate from start date)
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showEndDatePicker.toggle()
@@ -124,7 +125,7 @@ struct ShiftTimeSection: View {
                             showLunchBreakPicker = false
                         }
                     }) {
-                        Text(dateFormatter.string(from: selectedDate))
+                        Text(dateFormatter.string(from: endDate))
                             .font(.body)
                             .foregroundColor(.primary)
                             .padding(.horizontal, 12)
@@ -168,7 +169,7 @@ struct ShiftTimeSection: View {
 
             // Inline End Date Picker
             if showEndDatePicker {
-                DatePicker(localization.selectDateText, selection: $selectedDate, displayedComponents: .date)
+                DatePicker(localization.selectDateText, selection: $endDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
@@ -236,6 +237,7 @@ struct ShiftTimeSection: View {
 // MARK: - Preview
 #Preview {
     @Previewable @State var selectedDate = Date()
+    @Previewable @State var endDate = Date()
     @Previewable @State var startTime = Date()
     @Previewable @State var endTime = Date()
     @Previewable @State var selectedLunchBreak = "None"
@@ -248,6 +250,7 @@ struct ShiftTimeSection: View {
     VStack {
         ShiftTimeSection(
             selectedDate: $selectedDate,
+            endDate: $endDate,
             startTime: $startTime,
             endTime: $endTime,
             selectedLunchBreak: $selectedLunchBreak,

@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.protip365.app.R
+import com.protip365.app.utils.localizedString
 
 enum class AuthMode {
     SIGN_IN,
@@ -82,7 +84,17 @@ fun AuthScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            // Language selector at top
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                LanguageSelector()
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Logo and App Name
             LogoSection()
@@ -127,6 +139,7 @@ fun AuthScreen(
                         onPasswordChange = viewModel::setPassword,
                         error = state.passwordError,
                         enabled = !state.isLoading,
+                        label = localizedString(R.string.password_hint),
                         onDone = {
                             keyboardController?.hide()
                             if (state.authMode == AuthMode.SIGN_IN) {
@@ -150,7 +163,7 @@ fun AuthScreen(
                                 onPasswordChange = viewModel::setConfirmPassword,
                                 error = state.confirmPasswordError,
                                 enabled = !state.isLoading,
-                                label = "Confirm Password",
+                                label = localizedString(R.string.confirm_password_hint),
                                 onDone = {
                                     keyboardController?.hide()
                                     viewModel.signUp()
@@ -173,7 +186,7 @@ fun AuthScreen(
                             enabled = !state.isLoading
                         ) {
                             Text(
-                                text = "Forgot Password?",
+                                text = localizedString(R.string.forgot_password),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -184,7 +197,7 @@ fun AuthScreen(
 
                     // Submit Button
                     AuthButton(
-                        text = if (state.authMode == AuthMode.SIGN_IN) "Sign In" else "Create Account",
+                        text = if (state.authMode == AuthMode.SIGN_IN) localizedString(R.string.login_button) else localizedString(R.string.signup_button),
                         onClick = {
                             if (state.authMode == AuthMode.SIGN_IN) {
                                 viewModel.signIn()
@@ -327,34 +340,48 @@ fun AuthScreen(
 @Composable
 private fun LogoSection() {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Box(
+        // App Logo
+        Image(
+            painter = painterResource(id = R.drawable.protip365_logo),
+            contentDescription = "ProTip365 Logo",
             modifier = Modifier
                 .size(100.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
+                .clip(RoundedCornerShape(20.dp))
+        )
+
+        // Branding text section
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.TipsAndUpdates,
-                contentDescription = null,
-                modifier = Modifier.size(60.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            // App Name
+            Text(
+                text = localizedString(R.string.app_name_title),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            // Primary message
+            Text(
+                text = localizedString(R.string.auth_welcome_text),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            // Multi-line catchphrase
+            Text(
+                text = localizedString(R.string.auth_tagline),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "ProTip365",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = "Track your tips & earnings",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-        )
     }
 }
 
@@ -386,7 +413,7 @@ private fun AuthModeToggle(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (mode == AuthMode.SIGN_IN) "Sign In" else "Sign Up",
+                    text = if (mode == AuthMode.SIGN_IN) localizedString(R.string.login_button) else localizedString(R.string.signup_button),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary
@@ -409,7 +436,7 @@ private fun EmailField(
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
-        label = { Text("Email") },
+        label = { Text(localizedString(R.string.email_hint)) },
         placeholder = { Text("your@email.com") },
         leadingIcon = {
             Icon(
@@ -439,7 +466,7 @@ private fun PasswordField(
     onPasswordChange: (String) -> Unit,
     error: String?,
     enabled: Boolean,
-    label: String = "Password",
+    label: String,
     onDone: () -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
@@ -576,6 +603,65 @@ private fun SocialSignInSection(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Apple")
             }
+        }
+    }
+}
+
+@Composable
+private fun LanguageSelector() {
+    var showMenu by remember { mutableStateOf(false) }
+    var selectedLanguage by remember { mutableStateOf("EN") }
+
+    Box {
+        Surface(
+            onClick = { showMenu = true },
+            modifier = Modifier.clip(RoundedCornerShape(20.dp)),
+            color = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = "Language",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = selectedLanguage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("English") },
+                onClick = {
+                    selectedLanguage = "EN"
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Français") },
+                onClick = {
+                    selectedLanguage = "FR"
+                    showMenu = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Español") },
+                onClick = {
+                    selectedLanguage = "ES"
+                    showMenu = false
+                }
+            )
         }
     }
 }

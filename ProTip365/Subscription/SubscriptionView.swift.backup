@@ -1,0 +1,395 @@
+import SwiftUI
+import StoreKit
+
+struct SubscriptionView: View {
+    @ObservedObject var subscriptionManager: SubscriptionManager
+    @AppStorage("language") private var language = "en"
+    @State private var isLoading = false
+    @State private var showOnboarding = false
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 30) {
+                // Header - Value Proposition First (HIG 3.1.2)
+                VStack(spacing: 20) {
+                    Text(valueProposition)
+                        .font(.largeTitle)
+                        .bold()
+                        .multilineTextAlignment(.center)
+
+                    Text(valueDescription)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .padding(.top, 40)
+
+                // Feature Comparison Table (HIG Best Practice)
+                VStack(spacing: 20) {
+                    Text(comparisonTitle)
+                        .font(.headline)
+                        .bold()
+
+                    ComparisonTable(language: language)
+                }
+                .padding(.horizontal)
+
+                // Social Proof
+                VStack(spacing: 15) {
+                    Text(rating)
+                        .font(.title2)
+
+                    Text(socialProof)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                // Pricing Section (After Value Proposition)
+                VStack(spacing: 15) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.blue.opacity(0.1))
+                            .frame(height: 80)
+
+                        VStack(spacing: 5) {
+                            Text(trialText)
+                                .font(.headline)
+                                .foregroundColor(.blue)
+                            Text(priceText)
+                                .font(.title2)
+                                .bold()
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                // Purchase Button (One-Click Subscribe)
+                Button(action: {
+                    isLoading = true
+                    Task {
+                        await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                        await MainActor.run {
+                            isLoading = false
+                            // Show onboarding after successful subscription
+                            if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                            showOnboarding = true
+                        }
+                    }
+                }
+            }) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Text(startTrialButton)
+                        .bold()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .padding(.horizontal, 30)
+            .disabled(isLoading)
+            
+            // Restore Button - More prominent for Sandbox testing
+            Button(action: {
+                Task {
+                    isLoading = true
+                    await subscriptionManager.restorePurchases()
+                    isLoading = false
+
+                    // If subscription restored, dismiss view
+                    if subscriptionManager.isSubscribed {
+                        // View will auto-dismiss based on subscription status
+                        HapticFeedback.success()
+                    }
+                }
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .font(.body)
+                    Text(restoreButton)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(.tint)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
+            }
+            .disabled(isLoading)
+            
+            // Terms
+            Text(termsText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 20)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
+        }
+    }
+    
+    // Localization
+    var unlimitedTracking: String {
+        switch language {
+        case "fr": return "Suivi illimité des quarts"
+        case "es": return "Seguimiento ilimitado de turnos"
+        default: return "Unlimited shift tracking"
+        }
+    }
+    
+    var advancedAnalytics: String {
+        switch language {
+        case "fr": return "Analyses avancées"
+        case "es": return "Análisis avanzado"
+        default: return "Advanced analytics"
+        }
+    }
+    
+    var fullHistory: String {
+        switch language {
+        case "fr": return "Accès à l'historique complet"
+        case "es": return "Acceso al historial completo"
+        default: return "Full history access"
+        }
+    }
+    
+    var multipleEmployers: String {
+        switch language {
+        case "fr": return "Plusieurs employeurs"
+        case "es": return "Múltiples empleadores"
+        default: return "Multiple employers"
+        }
+    }
+    
+    var cloudSync: String {
+        switch language {
+        case "fr": return "Synchronisation cloud"
+        case "es": return "Sincronización en la nube"
+        default: return "Cloud sync"
+        }
+    }
+    
+    var trialText: String {
+        switch language {
+        case "fr": return "Essai gratuit de 7 jours"
+        case "es": return "Prueba gratuita de 7 días"
+        default: return "7-day free trial"
+        }
+    }
+    
+    var priceText: String {
+        switch language {
+        case "fr": return "Puis 3,99$/mois"
+        case "es": return "Luego $3.99/mes"
+        default: return "Then $3.99/month"
+        }
+    }
+    
+    var startTrialButton: String {
+        switch language {
+        case "fr": return "Commencer l'essai gratuit"
+        case "es": return "Comenzar prueba gratis"
+        default: return "Start Free Trial"
+        }
+    }
+    
+    var restoreButton: String {
+        switch language {
+        case "fr": return "Restaurer les achats"
+        case "es": return "Restaurar compras"
+        default: return "Restore Purchases"
+        }
+    }
+    
+    var termsText: String {
+        switch language {
+        case "fr": return "L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+        case "es": return "La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+        default: return "Subscription auto-renews. Cancel anytime in App Store settings."
+        }
+    }
+
+    // New localized strings for enhanced subscription page
+    var valueProposition: String {
+        switch language {
+        case "fr": return "Maximisez vos revenus"
+        case "es": return "Maximiza tus ingresos"
+        default: return "Maximize Your Earnings"
+        }
+    }
+
+    var valueDescription: String {
+        switch language {
+        case "fr": return "Suivez des quarts illimités, gérez plusieurs emplois et optimisez vos revenus avec des analyses avancées"
+        case "es": return "Realiza un seguimiento de turnos ilimitados, gestiona múltiples trabajos y optimiza tus ingresos con análisis avanzados"
+        default: return "Track unlimited shifts, manage multiple jobs, and optimize your income with advanced analytics"
+        }
+    }
+
+    var comparisonTitle: String {
+        switch language {
+        case "fr": return "Gratuit vs Premium"
+        case "es": return "Gratis vs Premium"
+        default: return "Free vs Premium"
+        }
+    }
+
+    var rating: String {
+        switch language {
+        case "fr": return "⭐⭐⭐⭐⭐"
+        case "es": return "⭐⭐⭐⭐⭐"
+        default: return "⭐⭐⭐⭐⭐"
+        }
+    }
+
+    var socialProof: String {
+        switch language {
+        case "fr": return "Rejoignez des milliers de professionnels du service qui maximisent déjà leurs revenus"
+        case "es": return "Únete a miles de profesionales del servicio que ya están maximizando sus ingresos"
+        default: return "Join thousands of service professionals already maximizing their earnings"
+        }
+    }
+}
+
+// MARK: - Supporting Views
+
+struct FeatureRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 15) {
+            Image(systemName: icon)
+                .frame(width: 30)
+                .foregroundStyle(.tint)
+                .font(.title3)
+                .modifier(GlassEffectModifier())
+                .frame(width: 40, height: 40)
+
+            Text(text)
+                .font(.body)
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .modifier(GlassEffectRoundedModifier(cornerRadius: 12))
+        .shadow(color: .blue.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+struct ComparisonTable: View {
+    let language: String
+
+    var body: some View {
+        VStack(spacing: 15) {
+            // Header
+            HStack {
+                Text("Feature")
+                    .font(.headline)
+                    .frame(width: 120, alignment: .leading)
+                Text("Free")
+                    .font(.headline)
+                    .frame(width: 60)
+                Text("Premium")
+                    .font(.headline)
+                    .frame(width: 80)
+            }
+            .padding(.bottom, 5)
+
+            Divider()
+
+            // Feature rows
+            ComparisonRow(feature: getLocalizedFeature("shifts", language),
+                         free: getLocalizedValue("3", language),
+                         premium: getLocalizedValue("unlimited", language))
+            ComparisonRow(feature: getLocalizedFeature("employers", language),
+                         free: getLocalizedValue("1", language),
+                         premium: getLocalizedValue("unlimited", language))
+            ComparisonRow(feature: getLocalizedFeature("analytics", language),
+                         free: getLocalizedValue("basic", language),
+                         premium: getLocalizedValue("advanced", language))
+            ComparisonRow(feature: getLocalizedFeature("export", language),
+                         free: getLocalizedValue("no", language),
+                         premium: getLocalizedValue("yes", language))
+            ComparisonRow(feature: getLocalizedFeature("sync", language),
+                         free: getLocalizedValue("no", language),
+                         premium: getLocalizedValue("yes", language))
+            ComparisonRow(feature: getLocalizedFeature("support", language),
+                         free: getLocalizedValue("email", language),
+                         premium: getLocalizedValue("priority", language))
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+
+    private func getLocalizedFeature(_ feature: String, _ language: String) -> String {
+        switch (feature, language) {
+        case ("shifts", "fr"): return "Quarts par jour"
+        case ("shifts", "es"): return "Turnos por día"
+        case ("employers", "fr"): return "Employeurs multiples"
+        case ("employers", "es"): return "Múltiples empleadores"
+        case ("analytics", "fr"): return "Analytiques"
+        case ("analytics", "es"): return "Análisis"
+        case ("export", "fr"): return "Export de données"
+        case ("export", "es"): return "Exportar datos"
+        case ("sync", "fr"): return "Synchronisation cloud"
+        case ("sync", "es"): return "Sincronización en la nube"
+        case ("support", "fr"): return "Support"
+        case ("support", "es"): return "Soporte"
+        default: return feature
+        }
+    }
+
+    private func getLocalizedValue(_ value: String, _ language: String) -> String {
+        switch (value, language) {
+        case ("unlimited", "fr"): return "∞"
+        case ("unlimited", "es"): return "∞"
+        case ("basic", "fr"): return "Basique"
+        case ("basic", "es"): return "Básico"
+        case ("advanced", "fr"): return "Avancé"
+        case ("advanced", "es"): return "Avanzado"
+        case ("yes", "fr"): return "Oui"
+        case ("yes", "es"): return "Sí"
+        case ("no", "fr"): return "Non"
+        case ("no", "es"): return "No"
+        case ("email", "fr"): return "Email"
+        case ("email", "es"): return "Correo"
+        case ("priority", "fr"): return "Prioritaire"
+        case ("priority", "es"): return "Prioritario"
+        default: return value
+        }
+    }
+}
+
+struct ComparisonRow: View {
+    let feature: String
+    let free: String
+    let premium: String
+
+    var body: some View {
+        HStack {
+            Text(feature)
+                .frame(width: 120, alignment: .leading)
+            Text(free)
+                .frame(width: 60)
+                .foregroundColor(.secondary)
+            Text(premium)
+                .frame(width: 80)
+                .foregroundColor(.blue)
+                .bold()
+        }
+        .font(.subheadline)
+    }
+}

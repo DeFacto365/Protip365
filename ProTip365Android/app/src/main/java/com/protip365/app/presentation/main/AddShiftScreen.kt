@@ -81,6 +81,9 @@ fun AddShiftScreen(
                             } else {
                                 viewModel.saveEntry(
                                     date = date,
+                                    startTime = startTime,
+                                    endTime = endTime,
+                                    actualHours = hours.toDoubleOrNull() ?: 0.0,
                                     sales = sales.toDoubleOrNull() ?: 0.0,
                                     tips = tips.toDoubleOrNull() ?: 0.0,
                                     cashOut = cashOut.toDoubleOrNull() ?: 0.0,

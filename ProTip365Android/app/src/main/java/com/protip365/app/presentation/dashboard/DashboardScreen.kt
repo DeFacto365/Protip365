@@ -1,5 +1,6 @@
 package com.protip365.app.presentation.dashboard
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,9 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
+import com.protip365.app.presentation.localization.DashboardLocalization
+import com.protip365.app.utils.localizedString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -30,7 +35,12 @@ fun DashboardScreen(
     val monthViewType by viewModel.monthViewType.collectAsState()
     val userTargets by viewModel.userTargets.collectAsState()
     val currentLanguage by viewModel.currentLanguage.collectAsState()
+    val hasVariableSchedule by viewModel.hasVariableSchedule.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    val localization = remember(currentLanguage) {
+        DashboardLocalization(currentLanguage)
+    }
 
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -57,39 +67,51 @@ fun DashboardScreen(
                 .pullRefresh(pullRefreshState)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Logo at the top
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.protip365_logo),
+                    contentDescription = "ProTip365 Logo",
+                    modifier = Modifier.size(80.dp)
+                )
+            }
+
             // Period selector with localization
             DashboardPeriodSelector(
                 selectedPeriod = selectedPeriod.ordinal,
-                monthViewType = if (monthViewType == "grid") 0 else 1,
+                monthViewType = if (monthViewType == MonthViewType.CALENDAR_MONTH) 0 else 1,
                 onPeriodSelected = { viewModel.selectPeriod(DashboardPeriod.values()[it]) },
-                onMonthViewTypeChanged = { /* Not implemented in ViewModel */ },
+                onMonthViewTypeChanged = {
+                    viewModel.setMonthViewType(
+                        if (it == 0) MonthViewType.CALENDAR_MONTH else MonthViewType.FOUR_WEEKS
+                    )
+                },
                 currentLanguage = currentLanguage
+            )
+
+            // Performance Card - NEW
+            DashboardPerformanceCard(
+                currentStats = dashboardState,
+                userTargets = userTargets,
+                selectedPeriod = selectedPeriod,
+                monthViewType = monthViewType,
+                hasVariableSchedule = hasVariableSchedule,
+                localization = localization,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             // Stats cards with all features
             DashboardStatsCards(
-                currentStats = DashboardStats(
-                    totalRevenue = dashboardState.totalRevenue,
-                    totalWages = dashboardState.totalWages,
-                    totalTips = dashboardState.totalTips,
-                    totalSales = dashboardState.totalSales,
-                    totalHours = dashboardState.totalHours,
-                    totalTipOut = dashboardState.totalTipOut,
-                    otherIncome = dashboardState.otherIncome,
-                    averageTipPercentage = dashboardState.averageTipPercentage,
-                    hourlyRate = dashboardState.hourlyRate,
-                    revenueChange = dashboardState.revenueChange,
-                    wagesChange = dashboardState.wagesChange,
-                    tipsChange = dashboardState.tipsChange,
-                    hoursChange = dashboardState.hoursChange,
-                    salesChange = dashboardState.salesChange,
-                    tipOutChange = dashboardState.tipOutChange,
-                    otherChange = dashboardState.otherChange
-                ),
+                currentStats = dashboardState,
                 userTargets = userTargets,
                 selectedPeriod = selectedPeriod.ordinal,
-                monthViewType = if (monthViewType == "grid") 0 else 1,
-                averageDeductionPercentage = 0.0,
+                monthViewType = if (monthViewType == MonthViewType.CALENDAR_MONTH) 0 else 1,
+                averageDeductionPercentage = 30.0,
                 defaultHourlyRate = 15.0,
                 currentLanguage = currentLanguage,
                 onDetailClick = { statType ->
@@ -144,21 +166,13 @@ fun EmptyDashboardState(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
         Text(
-            text = when (currentLanguage) {
-                "fr" -> "Aucune donnée encore"
-                "es" -> "Sin datos aún"
-                else -> "No data yet"
-            },
+            text = localizedString(R.string.no_data_yet),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = when (currentLanguage) {
-                "fr" -> "Commencez par ajouter votre premier quart de travail"
-                "es" -> "Comience agregando su primer turno"
-                else -> "Start by adding your first shift"
-            },
+            text = localizedString(R.string.add_first_shift),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
@@ -168,11 +182,7 @@ fun EmptyDashboardState(
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
             Text(
-                text = when (currentLanguage) {
-                    "fr" -> "Ajouter un quart"
-                    "es" -> "Agregar turno"
-                    else -> "Add Shift"
-                }
+                text = localizedString(R.string.add_shift_title)
             )
         }
     }

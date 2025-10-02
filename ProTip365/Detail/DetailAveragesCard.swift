@@ -11,7 +11,7 @@ struct DetailAveragesCard: View {
             if let baseIncome = shift.base_income {
                 return total + baseIncome
             }
-            return total + ((shift.hours ?? 0) * (shift.hourly_rate ?? 15.0))
+            return total + ((shift.hours ?? 0) * shift.hourly_rate)
         }
     }
 

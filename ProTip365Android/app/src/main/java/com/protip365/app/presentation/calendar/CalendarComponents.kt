@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
 import java.util.Locale
-import com.protip365.app.presentation.calendar.ShiftData
+import com.protip365.app.data.models.CompletedShift
 
 @Composable
 fun CalendarLegend(
@@ -40,7 +40,7 @@ fun CalendarLegend(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            LegendItem(
+            CalendarLegendItem(
                 color = Color(0xFF4CAF50),
                 label = when (currentLanguage) {
                     "fr" -> "500$+"
@@ -48,7 +48,7 @@ fun CalendarLegend(
                     else -> "$500+"
                 }
             )
-            LegendItem(
+            CalendarLegendItem(
                 color = Color(0xFF2196F3),
                 label = when (currentLanguage) {
                     "fr" -> "300-499$"
@@ -56,7 +56,7 @@ fun CalendarLegend(
                     else -> "$300-499"
                 }
             )
-            LegendItem(
+            CalendarLegendItem(
                 color = Color(0xFFFFC107),
                 label = when (currentLanguage) {
                     "fr" -> "100-299$"
@@ -64,7 +64,7 @@ fun CalendarLegend(
                     else -> "$100-299"
                 }
             )
-            LegendItem(
+            CalendarLegendItem(
                 color = Color(0xFF9E9E9E),
                 label = when (currentLanguage) {
                     "fr" -> "<100$"
@@ -77,7 +77,7 @@ fun CalendarLegend(
 }
 
 @Composable
-private fun LegendItem(
+private fun CalendarLegendItem(
     color: Color,
     label: String
 ) {
@@ -248,7 +248,7 @@ fun CalendarActionButtons(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeableShiftCard(
-    shift: ShiftData,
+    shift: CompletedShift,
     employerName: String?,
     onEdit: () -> Unit,
     onDelete: () -> Unit,

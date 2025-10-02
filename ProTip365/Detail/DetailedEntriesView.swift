@@ -2,10 +2,10 @@ import SwiftUI
 
 struct DetailedEntriesView: View {
     let date: Date
-    let entries: [ShiftIncome]
+    let entries: [ShiftWithEntry]
     @Environment(\.dismiss) private var dismiss
     @State private var showAddEntryView = false
-    @State private var selectedShiftForEditing: ShiftIncome? = nil
+    @State private var selectedShiftForEditing: ShiftWithEntry? = nil
     @AppStorage("language") private var language = "en"
     
     private var dateFormatter: DateFormatter {
@@ -21,23 +21,30 @@ struct DetailedEntriesView: View {
     }
     
     private var totalSalary: Double {
-        entries.reduce(0.0) { $0 + ($1.base_income ?? 0) }
+        entries.reduce(0.0) { total, entry in
+            let actualHours = entry.entry?.actual_hours ?? 0
+            return total + (actualHours * entry.expected_shift.hourly_rate)
+        }
     }
-    
+
     private var totalSales: Double {
-        entries.reduce(0.0) { $0 + ($1.sales ?? 0) }
+        entries.reduce(0.0) { $0 + ($1.entry?.sales ?? 0) }
     }
-    
+
     private var totalTips: Double {
-        entries.reduce(0.0) { $0 + ($1.tips ?? 0) }
+        entries.reduce(0.0) { $0 + ($1.entry?.tips ?? 0) }
     }
-    
+
     private var totalIncome: Double {
-        entries.reduce(0.0) { $0 + ($1.total_income ?? 0) }
+        entries.reduce(0.0) { total, entry in
+            let salary = (entry.entry?.actual_hours ?? 0) * entry.expected_shift.hourly_rate
+            let tips = entry.entry?.tips ?? 0
+            return total + salary + tips
+        }
     }
-    
+
     private var totalHours: Double {
-        entries.reduce(0.0) { $0 + ($1.hours ?? 0) }
+        entries.reduce(0.0) { $0 + ($1.entry?.actual_hours ?? 0) }
     }
 
     // MARK: - Translation Properties
@@ -193,7 +200,7 @@ struct DetailedEntriesView: View {
         }
     }
     
-    private func entryCard(_ entry: ShiftIncome) -> some View {
+    private func entryCard(_ entry: ShiftWithEntry) -> some View {
         Button(action: {
             selectedShiftForEditing = entry
             showAddEntryView = true
@@ -204,7 +211,7 @@ struct DetailedEntriesView: View {
                 HStack {
                     Image(systemName: "clock")
                         .foregroundColor(.gray)
-                    Text("\(String(format: "%.1f", entry.hours ?? 0)) \(hoursText) • \(timeFormatter.string(from: date))")
+                    Text("\(String(format: "%.1f", entry.actual_hours ?? 0)) \(hoursText) • \(formatEntryTimes(entry: entry))")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -212,7 +219,8 @@ struct DetailedEntriesView: View {
                 // Financial breakdown
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(salaryText): $\(String(format: "%.2f", entry.base_income ?? 0))")
+                        let basePay = (entry.actual_hours ?? 0) * entry.hourly_rate
+                        Text("\(salaryText): $\(String(format: "%.2f", basePay))")
                         Text("\(salesText): $\(String(format: "%.2f", entry.sales ?? 0))")
                         Text("\(tipsText): $\(String(format: "%.2f", entry.tips ?? 0))")
                         Text("\(totalText): $\(String(format: "%.2f", entry.total_income ?? 0))")
@@ -256,40 +264,100 @@ struct DetailedEntriesView: View {
         .padding()
         .liquidGlassCard()
     }
+
+    // Helper function to format entry times - use actual times if available, otherwise expected times
+    private func formatEntryTimes(entry: ShiftWithEntry) -> String {
+        // Prioritize actual times from entry, otherwise use expected times from shift
+        if let actualStart = entry.entry?.actual_start_time,
+           let actualEnd = entry.entry?.actual_end_time {
+            return "\(formatTimeWithoutSeconds(actualStart)) - \(formatTimeWithoutSeconds(actualEnd))"
+        } else {
+            // Use expected times from shift
+            return "\(formatTimeWithoutSeconds(entry.expected_shift.start_time)) - \(formatTimeWithoutSeconds(entry.expected_shift.end_time))"
+        }
+    }
+
+    // Helper function to format time without seconds
+    private func formatTimeWithoutSeconds(_ timeString: String) -> String {
+        // Input format is "HH:mm:ss", we want "HH:mm AM/PM"
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "HH:mm:ss"
+
+        guard let date = inputFormatter.date(from: timeString) else {
+            // If parsing fails, return the original without seconds
+            let components = timeString.components(separatedBy: ":")
+            if components.count >= 2 {
+                return "\(components[0]):\(components[1])"
+            }
+            return timeString
+        }
+
+        let outputFormatter = DateFormatter()
+        outputFormatter.timeStyle = .short
+        outputFormatter.dateStyle = .none
+
+        // Set locale based on language for proper time formatting
+        switch language {
+        case "fr":
+            outputFormatter.locale = Locale(identifier: "fr_FR")
+        case "es":
+            outputFormatter.locale = Locale(identifier: "es_ES")
+        default:
+            outputFormatter.locale = Locale(identifier: "en_US")
+        }
+
+        return outputFormatter.string(from: date)
+    }
 }
 
 #Preview {
+    let sampleShift = ExpectedShift(
+        id: UUID(),
+        user_id: UUID(),
+        employer_id: UUID(),
+        shift_date: "2025-09-11",
+        start_time: "08:00:00",
+        end_time: "17:00:00",
+        expected_hours: 8.0,
+        hourly_rate: 15.0,
+        lunch_break_minutes: 30,
+        sales_target: nil,
+        status: "completed",
+        alert_minutes: nil,
+        notes: nil,
+        created_at: Date(),
+        updated_at: Date()
+    )
+
+    let sampleEntry = ShiftEntry(
+        id: UUID(),
+        shift_id: sampleShift.id,
+        user_id: UUID(),
+        actual_start_time: "08:05:00",
+        actual_end_time: "17:10:00",
+        actual_hours: 8.2,
+        sales: 250.0,
+        tips: 125.0,
+        cash_out: 0.0,
+        other: 0.0,
+        hourly_rate: 15.0,
+        gross_income: 123.0,
+        total_income: 248.0,
+        net_income: 173.6,
+        deduction_percentage: 30.0,
+        notes: nil,
+        created_at: Date(),
+        updated_at: Date()
+    )
+
+    let sampleShiftWithEntry = ShiftWithEntry(
+        expected_shift: sampleShift,
+        entry: sampleEntry,
+        employer_name: "Big John Bar"
+    )
+
     DetailedEntriesView(
         date: Date(),
-        entries: [
-            ShiftIncome(
-                income_id: UUID(),
-                shift_id: UUID(),
-                user_id: UUID(),
-                employer_id: UUID(),
-                employer_name: "Big John Bar",
-                shift_date: "2025-09-11",
-                expected_hours: 8.0,
-                lunch_break_minutes: 30,
-                net_expected_hours: 7.5,
-                hours: 8.0,
-                hourly_rate: 15.0,
-                sales: 250.0,
-                tips: 125.0,
-                cash_out: 0.0,
-                other: 0.0,
-                base_income: 90.0,
-                net_tips: 125.0,
-                total_income: 215.0,
-                tip_percentage: 50.0,
-                start_time: "08:00",
-                end_time: "17:00",
-                shift_status: "completed",
-                has_earnings: true,
-                shift_created_at: "2025-09-11T08:00:00Z",
-                earnings_created_at: "2025-09-11T17:00:00Z",
-                notes: nil
-            )
-        ]
+        entries: [sampleShiftWithEntry]
     )
 }

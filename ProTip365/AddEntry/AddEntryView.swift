@@ -9,14 +9,15 @@ struct AddEntryView: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     // MARK: - Parameters
-    let editingShift: ShiftIncome?
+    let editingShift: ShiftWithEntry?
     let initialDate: Date?
-    let preselectedShift: ShiftIncome?
+    let preselectedShift: ShiftWithEntry?
 
     // MARK: - State
     @State private var state = AddEntryState()
     @State private var employers: [Employer] = []
     @State private var showDeleteConfirmation = false
+    @State private var preselectedShiftId: UUID? = nil
 
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
@@ -28,7 +29,7 @@ struct AddEntryView: View {
     }
     
     // MARK: - Initializer
-    init(editingShift: ShiftIncome? = nil, initialDate: Date? = nil, preselectedShift: ShiftIncome? = nil) {
+    init(editingShift: ShiftWithEntry? = nil, initialDate: Date? = nil, preselectedShift: ShiftWithEntry? = nil) {
         self.editingShift = editingShift
         self.initialDate = initialDate
         self.preselectedShift = preselectedShift
@@ -194,6 +195,8 @@ struct AddEntryView: View {
             totalHoursText: localizedStrings.totalHoursText,
             hoursUnit: localizedStrings.hoursUnit,
             showDidntWorkOption: editingShift == nil,  // Only show for new entries
+            totalEarnings: computeTotalEarnings(),
+            defaultHourlyRate: defaultHourlyRate,
             closeOtherPickers: closeOtherPickers
         )
         .background(Color(.systemBackground))
@@ -335,68 +338,65 @@ struct AddEntryView: View {
         }
     }
     
-    private func populateFieldsForEditing(shift: ShiftIncome) {
+    private func populateFieldsForEditing(shift: ShiftWithEntry) {
         // Set the date
         state.selectedDate = dateStringToDate(shift.shift_date) ?? Date()
         state.selectedEndDate = state.selectedDate  // Default to same date initially
 
-        // Parse times
-        if let startTimeStr = shift.start_time,
-           let endTimeStr = shift.end_time {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "HH:mm:ss"
+        // Parse times - Use ACTUAL times if available (from shift_entry), otherwise use expected times
+        let startTimeToUse = shift.entry?.actual_start_time ?? shift.expected_shift.start_time
+        let endTimeToUse = shift.entry?.actual_end_time ?? shift.expected_shift.end_time
 
-            var startHour = 0
-            var startMinute = 0
-            var endHour = 0
-            var endMinute = 0
+        let startTimeStr = startTimeToUse
+        let endTimeStr = endTimeToUse
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm:ss"
 
-            if let parsedStartTime = timeFormatter.date(from: startTimeStr) {
-                let calendar = Calendar.current
-                let components = calendar.dateComponents([.hour, .minute], from: parsedStartTime)
-                startHour = components.hour ?? 0
-                startMinute = components.minute ?? 0
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
-                dateComponents.hour = startHour
-                dateComponents.minute = startMinute
-                state.startTime = calendar.date(from: dateComponents) ?? Date()
-            }
+        var startHour = 0
+        var startMinute = 0
+        var endHour = 0
+        var endMinute = 0
 
-            if let parsedEndTime = timeFormatter.date(from: endTimeStr) {
-                let calendar = Calendar.current
-                let components = calendar.dateComponents([.hour, .minute], from: parsedEndTime)
-                endHour = components.hour ?? 0
-                endMinute = components.minute ?? 0
-
-                // Check if shift crosses midnight (end time is before start time)
-                if endHour < startHour || (endHour == startHour && endMinute <= startMinute) {
-                    // Shift crosses midnight, set end date to next day
-                    state.selectedEndDate = calendar.date(byAdding: .day, value: 1, to: state.selectedDate) ?? state.selectedDate
-                }
-
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedEndDate)
-                dateComponents.hour = endHour
-                dateComponents.minute = endMinute
-                state.endTime = calendar.date(from: dateComponents) ?? Date()
-            }
-        } else {
-            // If no times stored, use default times
-            setupDefaultTimes()
+        if let parsedStartTime = timeFormatter.date(from: startTimeStr) {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: parsedStartTime)
+            startHour = components.hour ?? 0
+            startMinute = components.minute ?? 0
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
+            dateComponents.hour = startHour
+            dateComponents.minute = startMinute
+            state.startTime = calendar.date(from: dateComponents) ?? Date()
         }
 
-        // Set the values from the shift
-        state.sales = (shift.sales ?? 0) > 0 ? String(format: "%.2f", shift.sales ?? 0) : ""
-        state.tips = (shift.tips ?? 0) > 0 ? String(format: "%.2f", shift.tips ?? 0) : ""
-        state.tipOut = (shift.cash_out ?? 0) > 0 ? String(format: "%.2f", shift.cash_out ?? 0) : ""
-        state.other = (shift.other ?? 0) > 0 ? String(format: "%.2f", shift.other ?? 0) : ""
+        if let parsedEndTime = timeFormatter.date(from: endTimeStr) {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: parsedEndTime)
+            endHour = components.hour ?? 0
+            endMinute = components.minute ?? 0
 
-        // Set lunch break from shift data
+            // Check if shift crosses midnight (end time is before start time)
+            if endHour < startHour || (endHour == startHour && endMinute <= startMinute) {
+                // Shift crosses midnight, set end date to next day
+                state.selectedEndDate = calendar.date(byAdding: .day, value: 1, to: state.selectedDate) ?? state.selectedDate
+            }
+
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedEndDate)
+            dateComponents.hour = endHour
+            dateComponents.minute = endMinute
+            state.endTime = calendar.date(from: dateComponents) ?? Date()
+        }
+
+        // Set the values from the entry (if it exists)
+        if let entry = shift.entry {
+            state.sales = entry.sales > 0 ? String(format: "%.2f", entry.sales) : ""
+            state.tips = entry.tips > 0 ? String(format: "%.2f", entry.tips) : ""
+            state.tipOut = entry.cash_out > 0 ? String(format: "%.2f", entry.cash_out) : ""
+            state.other = entry.other > 0 ? String(format: "%.2f", entry.other) : ""
+            state.comments = entry.notes ?? ""
+        }
+
+        // Set lunch break from expected shift data
         state.selectedLunchBreak = AddEntryConstants.lunchBreakSelection(from: shift.lunch_break_minutes)
-
-        // Load notes separately from shifts table
-        Task {
-            await loadNotesForShift(shiftId: shift.id)
-        }
 
         // Find employer - this will be set after employers are loaded
         if let employerId = shift.employer_id {
@@ -404,38 +404,40 @@ struct AddEntryView: View {
         }
     }
 
-    private func populateFieldsForPreselectedShift(shift: ShiftIncome) {
+    private func populateFieldsForPreselectedShift(shift: ShiftWithEntry) {
         // Similar to populateFieldsForEditing but for new entries with preselected shift
+        // Store the shift ID so we can update its status later
+        preselectedShiftId = shift.id
+
         // Set the date
         state.selectedDate = dateStringToDate(shift.shift_date) ?? Date()
         state.selectedEndDate = state.selectedDate
 
-        // Set shift info
-        if let startTimeStr = shift.start_time,
-           let endTimeStr = shift.end_time {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "HH:mm:ss"
+        // Set shift info from expected shift - use expected times for preselected shift
+        let startTimeStr = shift.expected_shift.start_time
+        let endTimeStr = shift.expected_shift.end_time
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm:ss"
 
-            if let parsedStartTime = timeFormatter.date(from: startTimeStr) {
-                let calendar = Calendar.current
-                let components = calendar.dateComponents([.hour, .minute], from: parsedStartTime)
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
-                dateComponents.hour = components.hour ?? 0
-                dateComponents.minute = components.minute ?? 0
-                state.startTime = calendar.date(from: dateComponents) ?? Date()
-            }
-
-            if let parsedEndTime = timeFormatter.date(from: endTimeStr) {
-                let calendar = Calendar.current
-                let components = calendar.dateComponents([.hour, .minute], from: parsedEndTime)
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
-                dateComponents.hour = components.hour ?? 0
-                dateComponents.minute = components.minute ?? 0
-                state.endTime = calendar.date(from: dateComponents) ?? Date()
-            }
+        if let parsedStartTime = timeFormatter.date(from: startTimeStr) {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: parsedStartTime)
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
+            dateComponents.hour = components.hour ?? 0
+            dateComponents.minute = components.minute ?? 0
+            state.startTime = calendar.date(from: dateComponents) ?? Date()
         }
 
-        // Set lunch break (convert minutes to selection string)
+        if let parsedEndTime = timeFormatter.date(from: endTimeStr) {
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: parsedEndTime)
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: state.selectedDate)
+            dateComponents.hour = components.hour ?? 0
+            dateComponents.minute = components.minute ?? 0
+            state.endTime = calendar.date(from: dateComponents) ?? Date()
+        }
+
+        // Set lunch break from expected shift
         state.selectedLunchBreak = AddEntryConstants.lunchBreakSelection(from: shift.lunch_break_minutes)
 
         // Find employer - this will be set after employers are loaded
@@ -443,37 +445,10 @@ struct AddEntryView: View {
             state.selectedEmployer = employers.first { $0.id == employerId }
         }
 
-        // For preselected shift, we want to create a NEW entry, so don't set editingEntry
+        // For preselected shift, we're adding entry data to an existing shift
         // Leave financial fields empty for user to fill
     }
 
-    private func loadNotesForShift(shiftId: UUID) async {
-        do {
-            // Create a simple struct just for notes
-            struct NoteOnly: Decodable {
-                let notes: String?
-            }
-
-            let result: NoteOnly = try await supabaseManager.client
-                .from("shifts")
-                .select("notes")
-                .eq("id", value: shiftId)
-                .single()
-                .execute()
-                .value
-
-            if let notes = result.notes {
-                await MainActor.run {
-                    state.comments = notes
-                    print("📝 Loaded notes: \(notes)")
-                }
-            } else {
-                print("📝 No notes found for shift")
-            }
-        } catch {
-            print("Error loading notes: \(error)")
-        }
-    }
     
     private func dateStringToDate(_ dateString: String) -> Date? {
         let formatter = DateFormatter()
@@ -482,16 +457,11 @@ struct AddEntryView: View {
     }
     
     private func saveEntry() {
-        // Check subscription limits for part-time tier (only for new entries)
-        if subscriptionManager.currentTier == .partTime && editingShift == nil {
-            if !subscriptionManager.canAddEntry() {
-                state.errorMessage = "You've reached your weekly limit of 3 entries."
-                if let remaining = subscriptionManager.getRemainingEntries() {
-                    state.errorMessage += " \(remaining) entries remaining this week."
-                }
-                state.showErrorAlert = true
-                return
-            }
+        // Check subscription status (only for new entries)
+        if !subscriptionManager.hasFullAccess() && editingShift == nil {
+            state.errorMessage = "Please subscribe to ProTip365 Premium to add entries."
+            state.showErrorAlert = true
+            return
         }
 
         Task {
@@ -509,193 +479,162 @@ struct AddEntryView: View {
                 let startTimeStr = timeFormatter.string(from: state.startTime)
                 let endTimeStr = timeFormatter.string(from: state.endTime)
 
-                // NEW ARCHITECTURE:
-                // 1. Find or create expected shift in 'shifts' table
-                // 2. Create/update actual earnings in 'shift_income' table
-
                 let shiftId: UUID
 
-                // If we're editing an existing shift, use its shift_id directly
-                if let editingShift = editingShift, let existingShiftId = editingShift.shift_id {
-                    shiftId = existingShiftId
+                // If we're editing an existing shift
+                if let editingShift = editingShift {
+                    shiftId = editingShift.id
 
-                    // Update the shift's date if it has changed
-                    struct ShiftDateUpdate: Encodable {
-                        let shift_date: String
-                    }
-
-                    try await supabaseManager.client
-                        .from("shifts")
-                        .update(ShiftDateUpdate(shift_date: shiftDate))
-                        .eq("id", value: shiftId)
-                        .execute()
-                } else {
-                    // For new entries, ALWAYS create a new shift (don't reuse existing ones)
-                    // This allows multiple shifts per day
-                    // Create new shift record (this happens when entering actual data without pre-planning)
-                    struct ShiftInsert: Encodable {
-                        let user_id: UUID
-                        let shift_date: String
-                        let expected_hours: Double
-                        let hours: Double  // Required field
-                        let start_time: String
-                        let end_time: String
-                        let hourly_rate: Double
-                        let employer_id: UUID?
-                        let sales: Double
-                        let tips: Double
-                        let cash_out: Double
-                        let other: Double
-                        let status: String
-                        let notes: String?
-                    }
-
-                    let shiftData = ShiftInsert(
+                    // Update the expected shift if date changed
+                    let updatedExpectedShift = ExpectedShift(
+                        id: editingShift.id,
                         user_id: userId,
-                        shift_date: shiftDate,
-                        expected_hours: state.calculatedHours, // Use actual as expected since not pre-planned
-                        hours: state.calculatedHours,  // Set the required hours field
-                        start_time: startTimeStr,
-                        end_time: endTimeStr,
-                        hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
                         employer_id: state.selectedEmployer?.id,
-                        sales: Double(state.sales) ?? 0,
-                        tips: Double(state.tips) ?? 0,
-                        cash_out: Double(state.tipOut) ?? 0,
-                        other: Double(state.other) ?? 0,
-                        status: "completed",
-                        notes: state.comments.isEmpty ? nil : state.comments
+                        shift_date: shiftDate,
+                        start_time: editingShift.expected_shift.start_time, // Keep original expected times
+                        end_time: editingShift.expected_shift.end_time,
+                        expected_hours: editingShift.expected_hours, // Keep original expected hours
+                        hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
+                        lunch_break_minutes: AddEntryConstants.lunchBreakMinutes(from: state.selectedLunchBreak),
+                        sales_target: editingShift.expected_shift.sales_target, // Preserve existing target
+                        status: state.didntWork ? "missed" : "completed",
+                        alert_minutes: editingShift.expected_shift.alert_minutes,
+                        notes: state.didntWork ? state.missedReason : editingShift.expected_shift.notes,
+                        created_at: editingShift.expected_shift.created_at,
+                        updated_at: Date()
                     )
 
-                    struct ShiftResponse: Decodable {
-                        let id: UUID
+                    _ = try await SupabaseManager.shared.updateExpectedShift(updatedExpectedShift)
+
+                } else if let preselectedId = preselectedShiftId {
+                    // We're adding entry data to a preselected shift
+                    shiftId = preselectedId
+
+                    // Update the expected shift status to completed
+                    if let preselectedShift = try await SupabaseManager.shared.fetchExpectedShifts(
+                        from: state.selectedDate,
+                        to: state.selectedDate
+                    ).first(where: { $0.id == preselectedId }) {
+
+                        let updatedShift = ExpectedShift(
+                            id: preselectedShift.id,
+                            user_id: preselectedShift.user_id,
+                            employer_id: preselectedShift.employer_id,
+                            shift_date: preselectedShift.shift_date,
+                            start_time: preselectedShift.start_time,
+                            end_time: preselectedShift.end_time,
+                            expected_hours: preselectedShift.expected_hours,
+                            hourly_rate: preselectedShift.hourly_rate,
+                            lunch_break_minutes: preselectedShift.lunch_break_minutes,
+                            sales_target: preselectedShift.sales_target, // Preserve target
+                            status: "completed",
+                            alert_minutes: preselectedShift.alert_minutes,
+                            notes: preselectedShift.notes,
+                            created_at: preselectedShift.created_at,
+                            updated_at: Date()
+                        )
+
+                        _ = try await SupabaseManager.shared.updateExpectedShift(updatedShift)
                     }
 
-                    let response: [ShiftResponse] = try await supabaseManager.client
-                        .from("shifts")
-                        .insert(shiftData)
-                        .select("id")
-                        .execute()
-                        .value
-
-                    guard let newShiftId = response.first?.id else {
-                        throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to create shift"])
-                    }
-
-                    shiftId = newShiftId
-                }
-
-                // Now handle the actual earnings data in shift_income table (only if worked)
-                // Skip income record if didn't work
-                if !state.didntWork {
-                // Check if we already have an income record (when editing)
-                let incomeId: UUID?
-                if let editingShift = editingShift, let existingIncomeId = editingShift.income_id {
-                    // We're editing an existing entry that already has income data
-                    incomeId = existingIncomeId
                 } else {
-                    // Check if income record already exists for this shift
-                    struct IncomeCheck: Decodable {
-                        let id: UUID
-                    }
-
-                    let incomeResults: [IncomeCheck] = try await supabaseManager.client
-                        .from("shift_income")
-                        .select("id")
-                        .eq("shift_id", value: shiftId)
-                        .execute()
-                        .value
-                    incomeId = incomeResults.first?.id
-                }
-
-                if let incomeId = incomeId {
-                    // Update existing income record
-                    struct IncomeUpdate: Encodable {
-                        let actual_hours: Double
-                        let sales: Double
-                        let tips: Double
-                        let cash_out: Double
-                        let other: Double
-                        let actual_start_time: String
-                        let actual_end_time: String
-                        let notes: String?
-                        let updated_at: String
-                    }
-
-                    let updateData = IncomeUpdate(
-                        actual_hours: state.calculatedHours,
-                        sales: Double(state.sales) ?? 0,
-                        tips: Double(state.tips) ?? 0,
-                        cash_out: Double(state.tipOut) ?? 0,
-                        other: Double(state.other) ?? 0,
-                        actual_start_time: startTimeStr,
-                        actual_end_time: endTimeStr,
-                        notes: state.comments.isEmpty ? nil : state.comments,
-                        updated_at: ISO8601DateFormatter().string(from: Date())
-                    )
-
-                    try await supabaseManager.client
-                        .from("shift_income")
-                        .update(updateData)
-                        .eq("id", value: incomeId)
-                        .execute()
-                } else {
-                    // Create new income record
-                    struct IncomeInsert: Encodable {
-                        let shift_id: UUID
-                        let user_id: UUID
-                        let actual_hours: Double
-                        let sales: Double
-                        let tips: Double
-                        let cash_out: Double
-                        let other: Double
-                        let actual_start_time: String
-                        let actual_end_time: String
-                        let notes: String?
-                    }
-
-                    let incomeData = IncomeInsert(
-                        shift_id: shiftId,
+                    // Create new expected shift for this entry
+                    let newExpectedShift = ExpectedShift(
+                        id: UUID(),
                         user_id: userId,
-                        actual_hours: state.calculatedHours,
-                        sales: Double(state.sales) ?? 0,
-                        tips: Double(state.tips) ?? 0,
-                        cash_out: Double(state.tipOut) ?? 0,
-                        other: Double(state.other) ?? 0,
-                        actual_start_time: startTimeStr,
-                        actual_end_time: endTimeStr,
-                        notes: state.comments.isEmpty ? nil : state.comments
+                        employer_id: state.selectedEmployer?.id,
+                        shift_date: shiftDate,
+                        start_time: startTimeStr, // Use actual times as expected for ad-hoc entries
+                        end_time: endTimeStr,
+                        expected_hours: state.calculatedHours,
+                        hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
+                        lunch_break_minutes: AddEntryConstants.lunchBreakMinutes(from: state.selectedLunchBreak),
+                        sales_target: nil, // No custom target for ad-hoc entries
+                        status: state.didntWork ? "missed" : "completed",
+                        alert_minutes: nil,
+                        notes: state.didntWork ? state.missedReason : nil,
+                        created_at: Date(),
+                        updated_at: Date()
                     )
 
-                    try await supabaseManager.client
-                        .from("shift_income")
-                        .insert(incomeData)
-                        .execute()
+                    let createdShift = try await SupabaseManager.shared.createExpectedShift(newExpectedShift)
+                    shiftId = createdShift.id
                 }
-                } // End of if !state.didntWork
 
-                // Update shift record with actual times and lunch break
-                let shiftUpdate = ShiftUpdate(
-                    start_time: startTimeStr,
-                    end_time: endTimeStr,
-                    lunch_break_minutes: AddEntryConstants.lunchBreakMinutes(from: state.selectedLunchBreak),
-                    expected_hours: state.calculatedHours, // Use actual hours as expected for completed shifts
-                    status: state.didntWork ? "missed" : "completed",
-                    employer_id: state.selectedEmployer?.id,
-                    hourly_rate: state.selectedEmployer?.hourly_rate ?? defaultHourlyRate,
-                    notes: state.didntWork ? state.missedReason : (state.comments.isEmpty ? nil : state.comments)
-                )
+                // Handle shift entry (actual work data) - only if worked
+                if !state.didntWork {
+                    // Calculate snapshot values
+                    let hourlyRate = state.selectedEmployer?.hourly_rate ?? defaultHourlyRate
+                    let grossIncome = state.calculatedHours * hourlyRate
+                    let tipsAmount = Double(state.tips) ?? 0
+                    let tipOutAmount = Double(state.tipOut) ?? 0
+                    let otherAmount = Double(state.other) ?? 0
+                    let totalIncome = grossIncome + tipsAmount + otherAmount - tipOutAmount
 
-                try await supabaseManager.client
-                    .from("shifts")
-                    .update(shiftUpdate)
-                    .eq("id", value: shiftId)
-                    .execute()
+                    // Get deduction percentage from AppStorage
+                    let deductionPct = UserDefaults.standard.double(forKey: "averageDeductionPercentage")
+                    let finalDeductionPct = deductionPct > 0 ? deductionPct : 30.0 // Default to 30% if not set
+                    let netIncome = totalIncome * (1.0 - finalDeductionPct / 100.0)
 
-                // Increment entry count for part-time tier (only for new entries)
-                if subscriptionManager.currentTier == .partTime && editingShift == nil {
-                    subscriptionManager.incrementEntryCount()
+                    if let existingEntry = editingShift?.entry {
+                        // Update existing entry
+                        let updatedEntry = ShiftEntry(
+                            id: existingEntry.id,
+                            shift_id: shiftId,
+                            user_id: userId,
+                            actual_start_time: startTimeStr,
+                            actual_end_time: endTimeStr,
+                            actual_hours: state.calculatedHours,
+                            sales: Double(state.sales) ?? 0,
+                            tips: tipsAmount,
+                            cash_out: tipOutAmount,
+                            other: otherAmount,
+                            hourly_rate: hourlyRate,
+                            gross_income: grossIncome,
+                            total_income: totalIncome,
+                            net_income: netIncome,
+                            deduction_percentage: finalDeductionPct,
+                            notes: state.comments.isEmpty ? nil : state.comments,
+                            created_at: existingEntry.created_at,
+                            updated_at: Date()
+                        )
+
+                        _ = try await SupabaseManager.shared.updateShiftEntry(updatedEntry)
+
+                        // Invalidate dashboard cache when entry is updated
+                        DashboardCharts.invalidateCache()
+
+                    } else {
+                        // Create new entry
+                        let newEntry = ShiftEntry(
+                            id: UUID(),
+                            shift_id: shiftId,
+                            user_id: userId,
+                            actual_start_time: startTimeStr,
+                            actual_end_time: endTimeStr,
+                            actual_hours: state.calculatedHours,
+                            sales: Double(state.sales) ?? 0,
+                            tips: tipsAmount,
+                            cash_out: tipOutAmount,
+                            other: otherAmount,
+                            hourly_rate: hourlyRate,
+                            gross_income: grossIncome,
+                            total_income: totalIncome,
+                            net_income: netIncome,
+                            deduction_percentage: finalDeductionPct,
+                            notes: state.comments.isEmpty ? nil : state.comments,
+                            created_at: Date(),
+                            updated_at: Date()
+                        )
+
+                        _ = try await SupabaseManager.shared.createShiftEntry(newEntry)
+
+                        // Invalidate dashboard cache when new entry is added
+                        DashboardCharts.invalidateCache()
+                    }
                 }
+
+                // Entry saved successfully
 
                 await MainActor.run {
                     dismiss()
@@ -720,27 +659,16 @@ struct AddEntryView: View {
 
         Task {
             do {
-                let userId = try await supabaseManager.client.auth.session.user.id
+                // Delete shift entry if it exists
+                if let entry = shiftToDelete.entry {
+                    try await SupabaseManager.shared.deleteShiftEntry(id: entry.id)
 
-                // Delete from shift_income if it exists
-                if let incomeId = shiftToDelete.income_id {
-                    try await supabaseManager.client
-                        .from("shift_income")
-                        .delete()
-                        .eq("id", value: incomeId.uuidString)
-                        .eq("user_id", value: userId.uuidString)
-                        .execute()
+                    // Invalidate dashboard cache when entry is deleted
+                    DashboardCharts.invalidateCache()
                 }
 
-                // Delete from shifts table
-                if let shiftId = shiftToDelete.shift_id {
-                    try await supabaseManager.client
-                        .from("shifts")
-                        .delete()
-                        .eq("id", value: shiftId.uuidString)
-                        .eq("user_id", value: userId.uuidString)
-                        .execute()
-                }
+                // Delete expected shift
+                try await SupabaseManager.shared.deleteExpectedShift(id: shiftToDelete.id)
 
                 await MainActor.run {
                     dismiss()

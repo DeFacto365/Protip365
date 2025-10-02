@@ -261,4 +261,62 @@ struct DashboardLocalization {
         default: return "Target"
         }
     }
+
+    // MARK: - Performance Card
+
+    var performanceText: String {
+        switch language {
+        case "fr": return "Performance"
+        case "es": return "Rendimiento"
+        default: return "Performance"
+        }
+    }
+
+    var overallText: String {
+        switch language {
+        case "fr": return "Global"
+        case "es": return "General"
+        default: return "Overall"
+        }
+    }
+
+    var setTargetsPromptText: String {
+        switch language {
+        case "fr": return "Définissez des objectifs dans les paramètres pour suivre vos performances"
+        case "es": return "Establece objetivos en Configuración para rastrear tu rendimiento"
+        default: return "Set targets in Settings to track your performance"
+        }
+    }
+
+    var goToSettingsText: String {
+        switch language {
+        case "fr": return "Aller aux paramètres →"
+        case "es": return "Ir a Configuración →"
+        default: return "Go to Settings →"
+        }
+    }
+
+    var tipPercentageText: String {
+        switch language {
+        case "fr": return "% Pourboires"
+        case "es": return "% Propinas"
+        default: return "Tip %"
+        }
+    }
+
+    var hoursShortText: String {
+        switch language {
+        case "fr": return "hrs"
+        case "es": return "hrs"
+        default: return "hrs"
+        }
+    }
+
+    var ofTargetText: String {
+        switch language {
+        case "fr": return "de l'objectif"
+        case "es": return "del objetivo"
+        default: return "of target"
+        }
+    }
 }
