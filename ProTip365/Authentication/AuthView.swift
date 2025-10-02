@@ -13,7 +13,9 @@ struct AuthView: View {
     @State private var resetEmail = ""
     @State private var showResetSuccess = false
     @State private var showWelcomeSignUp = false
+    @State private var keepMeSignedIn = true // Default to true for convenience
     @AppStorage("language") private var language = "en"
+    @AppStorage("keepMeSignedIn") private var persistedKeepMeSignedIn = true
     @FocusState private var focusedField: Field?
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -129,7 +131,7 @@ struct AuthView: View {
                         Text(passwordPlaceholder)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+
                         SecureField(passwordPlaceholder, text: $password)
                             .textFieldStyle(.plain)
                             .font(.body)
@@ -147,7 +149,20 @@ struct AuthView: View {
                                 authenticate()
                             }
                     }
-                    
+
+                    // Keep me signed in - Only show when signing in
+                    if !isSignUp {
+                        HStack(spacing: 8) {
+                            Toggle(isOn: $keepMeSignedIn) {
+                                Text(keepMeSignedInText)
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                            }
+                            .toggleStyle(CheckboxToggleStyle())
+                        }
+                        .padding(.top, 4)
+                    }
+
                     // Forgot Password - Only show when signing in
                     if !isSignUp {
                         HStack {
@@ -359,9 +374,11 @@ struct AuthView: View {
                     print("✅ Sign in successful")
 
                     await MainActor.run {
+                        // Save the "keep me signed in" preference
+                        persistedKeepMeSignedIn = keepMeSignedIn
                         isAuthenticated = true
                         isLoading = false
-                        print("🎉 User authenticated successfully!")
+                        print("🎉 User authenticated successfully! Keep signed in: \(keepMeSignedIn)")
                     }
                 }
             } catch {
@@ -540,6 +557,30 @@ struct AuthView: View {
         case "fr": return "Si un compte existe avec cette adresse e-mail, vous recevrez un lien de réinitialisation."
         case "es": return "Si existe una cuenta con este correo, recibirá un enlace de restablecimiento."
         default: return "If an account exists with this email, you'll receive a reset link."
+        }
+    }
+
+    var keepMeSignedInText: String {
+        switch language {
+        case "fr": return "Rester connecté"
+        case "es": return "Mantenerme conectado"
+        default: return "Keep me signed in"
+        }
+    }
+}
+
+// Custom checkbox toggle style
+struct CheckboxToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                .font(.system(size: 20))
+                .foregroundColor(configuration.isOn ? .blue : .gray)
+                .onTapGesture {
+                    configuration.isOn.toggle()
+                }
+
+            configuration.label
         }
     }
 }

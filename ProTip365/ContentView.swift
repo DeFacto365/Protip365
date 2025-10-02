@@ -10,6 +10,7 @@ struct ContentView: View {
     @StateObject private var alertManager = AlertManager.shared
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false // Added to check setting
+    @AppStorage("keepMeSignedIn") private var keepMeSignedIn = true
     @Environment(\.horizontalSizeClass) var sizeClass
     @Environment(\.scenePhase) var scenePhase
 
@@ -78,8 +79,7 @@ struct ContentView: View {
                 // Refresh subscription status when app becomes active (only if authenticated)
                 if isAuthenticated {
                     Task {
-                        // Sync with Apple to detect any subscription changes made outside the app
-                        await subscriptionManager.checkAndSyncExistingSubscription()
+                        // Refresh subscription status from server
                         await subscriptionManager.refreshSubscriptionStatus()
 
                         // Also reload language preference when app becomes active
@@ -105,6 +105,21 @@ struct ContentView: View {
                 if isAuthenticated && securityManager.currentSecurityType != .none {
                     securityManager.isUnlocked = false
                     securityManager.showPINEntry = false
+                }
+
+                // Sign out if "Keep me signed in" is disabled
+                if isAuthenticated && !keepMeSignedIn {
+                    Task {
+                        print("🚪 Signing out: Keep me signed in is disabled")
+                        try? await SupabaseManager.shared.client.auth.signOut()
+                        await MainActor.run {
+                            isAuthenticated = false
+                            showOnboarding = false
+                            securityManager.isUnlocked = false
+                            securityManager.clearSecuritySettings()
+                            subscriptionManager.resetSubscriptionState()
+                        }
+                    }
                 }
             @unknown default:
                 break
@@ -280,27 +295,16 @@ struct ContentView: View {
                     // Check if user needs onboarding
                     await checkIfOnboardingNeeded(userId: session.user.id)
 
-                    // Start subscription checking and sync with Apple
+                    // Start subscription checking in background (non-blocking)
+                    // This allows user to access the app immediately while we validate
                     await MainActor.run {
-                        isCheckingSubscription = true
+                        isCheckingSubscription = false // Don't block the UI
                     }
 
-                    // Sync with Apple and check subscription status
-                    await subscriptionManager.startSubscriptionChecking()
-                    await subscriptionManager.checkAndSyncExistingSubscription()
-
-                    // Wait a moment for subscription status to settle
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
-                    await MainActor.run {
-                        isCheckingSubscription = false
-
-                        // In DEBUG mode, if no subscription and products didn't load, show a helpful message
-                        #if DEBUG
-                        if !subscriptionManager.isSubscribed && subscriptionManager.products.isEmpty {
-                            print("⚠️ No subscription and no products loaded - showing subscription screen with test mode option")
-                        }
-                        #endif
+                    // Check subscription status in background
+                    Task {
+                        await subscriptionManager.loadProducts()
+                        await subscriptionManager.checkSubscriptionStatus()
                     }
                 } catch {
                     // User profile doesn't exist - session is invalid, sign out
@@ -349,23 +353,14 @@ struct ContentView: View {
                     // Check if user needs onboarding when auth state changes
                     await checkIfOnboardingNeeded(userId: session.user.id)
 
-                    // Only check subscription if not already checking
-                    let shouldCheck = await MainActor.run {
-                        return !isCheckingSubscription
+                    // Check subscription status in background (non-blocking)
+                    await MainActor.run {
+                        isCheckingSubscription = false
                     }
 
-                    if shouldCheck {
-                        await MainActor.run {
-                            isCheckingSubscription = true
-                        }
-
-                        await subscriptionManager.checkAndSyncExistingSubscription()
-
-                        try? await Task.sleep(nanoseconds: 500_000_000)
-
-                        await MainActor.run {
-                            isCheckingSubscription = false
-                        }
+                    Task {
+                        await subscriptionManager.loadProducts()
+                        await subscriptionManager.checkSubscriptionStatus()
                     }
                 } catch {
                     // User profile doesn't exist - session is invalid, sign out

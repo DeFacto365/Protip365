@@ -189,8 +189,7 @@ class SubscriptionManager: ObservableObject {
             case .success(let verification):
                 switch verification {
                 case .verified(let transaction):
-                    // Important: For a new user with an existing device subscription,
-                    // we need to sync this transaction to THEIR user account
+                    // Sync this new purchase to the user's account
                     await syncSubscriptionToServer(transaction: transaction)
                     await transaction.finish()
                     await checkSubscriptionStatus()
@@ -199,8 +198,8 @@ class SubscriptionManager: ObservableObject {
                 }
             case .userCancelled:
                 print("User cancelled purchase")
-                // Check if there's an existing subscription that needs to be synced
-                await checkAndSyncExistingSubscription()
+                // User cancelled - don't auto-sync device subscriptions
+                // They can use "Restore Purchases" if needed
             case .pending:
                 print("Purchase pending")
                 break
@@ -209,12 +208,11 @@ class SubscriptionManager: ObservableObject {
             }
         } catch {
             print("Purchase failed: \(error)")
-            // If purchase fails because user already has subscription,
-            // sync existing subscription to new user account
             if let storeKitError = error as? StoreKitError {
                 print("StoreKit error: \(storeKitError)")
             }
-            await checkAndSyncExistingSubscription()
+            // Don't auto-sync on purchase failure
+            // User can use "Restore Purchases" if they already have a subscription
         }
     }
 
@@ -259,7 +257,7 @@ class SubscriptionManager: ObservableObject {
     
     func checkSubscriptionStatus() async {
         print("🔍 Starting subscription status check...")
-        print("🌐 ONLINE MODE: Will validate receipts with Apple's servers")
+        print("🌐 SERVER-ONLY MODE: Checking user's subscription from our database")
 
         // Get current user ID - if no user is authenticated, clear subscription state
         guard let session = try? await SupabaseManager.shared.client.auth.session else {
@@ -276,77 +274,18 @@ class SubscriptionManager: ObservableObject {
         let currentUserId = session.user.id
         print("✅ Session found for user: \(currentUserId)")
 
-        // Check StoreKit transactions and VALIDATE ONLINE with Apple's servers
-        var foundActiveSubscription = false
-
-        for await result in StoreKit.Transaction.currentEntitlements {
-            do {
-                // Get the transaction
-                let transaction = try checkVerified(result)
-
-                if allProductIds.contains(transaction.productID) {
-                    print("📱 Found transaction: \(transaction.productID)")
-                    print("   Transaction ID: \(transaction.id)")
-                    print("   Environment: \(transaction.environment)")
-
-                    // CRITICAL: Validate receipt with Apple's servers ONLINE
-                    let isValidOnline = await validateReceiptWithAppleServers(transaction: transaction)
-
-                    if isValidOnline {
-                        print("✅ ONLINE VALIDATION SUCCESSFUL from Apple servers")
-                        print("   Purchase date: \(transaction.purchaseDate)")
-                        print("   Expiration: \(transaction.expirationDate?.description ?? "N/A")")
-
-                        let tier = getTierForProductId(transaction.productID)
-                        foundActiveSubscription = true
-
-                        await MainActor.run {
-                            self.isSubscribed = true
-                            self.currentTier = tier
-
-                            // For subscriptions, check trial period
-                            if transaction.productType == .autoRenewable && tier == .premium {
-                                // Check if we're within the first 7 days
-                                let trialDuration: TimeInterval = 7 * 24 * 60 * 60 // 7 days
-                                let timeSincePurchase = Date().timeIntervalSince(transaction.originalPurchaseDate)
-                                self.isInTrialPeriod = timeSincePurchase <= trialDuration
-
-                                if self.isInTrialPeriod {
-                                    let daysRemaining = Int((trialDuration - timeSincePurchase) / (24 * 60 * 60))
-                                    self.trialDaysRemaining = max(0, daysRemaining + 1) // +1 to include today
-                                }
-                            }
-
-                            self.isCheckingSubscription = false
-                        }
-
-                        // Sync to server for cross-device awareness
-                        await syncSubscriptionToServer(transaction: transaction)
-                        return
-                    } else {
-                        print("❌ ONLINE VALIDATION FAILED - Receipt rejected by Apple servers")
-                    }
-                }
-            } catch {
-                print("⚠️ Transaction verification failed: \(error)")
-                // Continue checking other transactions
-                continue
+        // Check server subscription for this specific user
+        // This ensures subscriptions are tied to app users, not device/Apple ID
+        if await checkServerSubscription() {
+            print("✅ Active subscription found for user")
+            await MainActor.run {
+                self.isCheckingSubscription = false
             }
+            return
         }
 
-        // No active StoreKit subscription found - check server as fallback for cross-device
-        if !foundActiveSubscription {
-            print("ℹ️ No online-validated subscription found, checking our server for cross-device sync...")
-            if await checkServerSubscription() {
-                await MainActor.run {
-                    self.isCheckingSubscription = false
-                }
-                return
-            }
-        }
-
-        // No subscription found anywhere
-        print("❌ No active subscription found")
+        // No subscription found for this user
+        print("❌ No active subscription found for user: \(currentUserId)")
         await MainActor.run {
             self.isSubscribed = false
             self.isInTrialPeriod = false
@@ -595,7 +534,48 @@ class SubscriptionManager: ObservableObject {
     }
     
     func restorePurchases() async {
-        await checkSubscriptionStatus()
+        print("🔄 Restore Purchases: Checking device for existing subscriptions...")
+
+        // Get current user
+        guard let session = try? await SupabaseManager.shared.client.auth.session else {
+            print("❌ No authenticated user, cannot restore purchases")
+            return
+        }
+
+        let currentUserId = session.user.id
+        print("✅ Restoring purchases for user: \(currentUserId)")
+
+        // Check for any active StoreKit transactions on this device
+        var foundSubscription = false
+
+        for await result in StoreKit.Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+
+            if allProductIds.contains(transaction.productID) {
+                print("📱 Found device subscription: \(transaction.productID)")
+                print("   Transaction ID: \(transaction.id)")
+
+                // Validate with Apple servers before syncing
+                let isValid = await validateReceiptWithAppleServers(transaction: transaction)
+
+                if isValid {
+                    print("✅ Subscription validated with Apple - syncing to user account")
+                    // Sync this subscription to the current user
+                    await syncSubscriptionToServer(transaction: transaction)
+                    foundSubscription = true
+                } else {
+                    print("❌ Subscription validation failed - not syncing")
+                }
+            }
+        }
+
+        if foundSubscription {
+            // Refresh subscription status after restoring
+            await checkSubscriptionStatus()
+            print("✅ Restore complete - subscription synced")
+        } else {
+            print("ℹ️ No device subscriptions found to restore")
+        }
     }
 
     private func schedulePeriodicValidation() {
