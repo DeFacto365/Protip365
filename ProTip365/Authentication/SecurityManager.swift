@@ -1,6 +1,7 @@
 import LocalAuthentication
 import SwiftUI
 import CryptoKit
+import Supabase
 
 enum SecurityType: String {
     case none = "none"
@@ -13,12 +14,92 @@ class SecurityManager: ObservableObject {
     @Published var isUnlocked = false
     @Published var showPINEntry = false
 
-    @AppStorage("securityType") private var securityType = SecurityType.none.rawValue
-    @AppStorage("pinCodeHash") var pinCodeHash = ""
-    @AppStorage("biometricEnabled") var biometricEnabled = false
+    // CRITICAL SECURITY FIX: Store per-user in database, not per-device in AppStorage!
+    private var securityType = SecurityType.none.rawValue
+    private var pinCodeHash = ""
+    private var biometricEnabled = false
+    private var currentUserId: UUID?
 
     var currentSecurityType: SecurityType {
         SecurityType(rawValue: securityType) ?? .none
+    }
+
+    // MARK: - User Session Management
+
+    /// Load security settings from database for the current user
+    func loadSecuritySettings(for userId: UUID) async {
+        print("🔐 Loading security settings for user: \(userId)")
+        self.currentUserId = userId
+
+        do {
+            let profile: UserProfile = try await SupabaseManager.shared.client
+                .from("users_profile")
+                .select("security_type, pin_code_hash, biometric_enabled")
+                .eq("user_id", value: userId)
+                .single()
+                .execute()
+                .value
+
+            await MainActor.run {
+                self.securityType = profile.security_type ?? "none"
+                self.pinCodeHash = profile.pin_code_hash ?? ""
+                self.biometricEnabled = profile.biometric_enabled ?? false
+                print("✅ Security settings loaded: \(self.securityType)")
+            }
+        } catch {
+            print("❌ Failed to load security settings: \(error)")
+            // Default to no security if load fails
+            await MainActor.run {
+                self.securityType = "none"
+                self.pinCodeHash = ""
+                self.biometricEnabled = false
+            }
+        }
+    }
+
+    /// Save security settings to database for the current user
+    private func saveSecuritySettings() async {
+        guard let userId = currentUserId else {
+            print("❌ Cannot save security settings - no user ID")
+            return
+        }
+
+        print("💾 Saving security settings for user: \(userId)")
+
+        do {
+            struct SecurityUpdate: Encodable {
+                let security_type: String
+                let pin_code_hash: String?
+                let biometric_enabled: Bool
+            }
+
+            let update = SecurityUpdate(
+                security_type: securityType,
+                pin_code_hash: pinCodeHash.isEmpty ? nil : pinCodeHash,
+                biometric_enabled: biometricEnabled
+            )
+
+            try await SupabaseManager.shared.client
+                .from("users_profile")
+                .update(update)
+                .eq("user_id", value: userId)
+                .execute()
+
+            print("✅ Security settings saved successfully")
+        } catch {
+            print("❌ Failed to save security settings: \(error)")
+        }
+    }
+
+    /// Clear all security settings (call on sign out)
+    func clearSecuritySettings() {
+        print("🧹 Clearing security settings")
+        securityType = "none"
+        pinCodeHash = ""
+        biometricEnabled = false
+        currentUserId = nil
+        isUnlocked = false
+        showPINEntry = false
     }
 
     // MARK: - Authentication
@@ -74,6 +155,12 @@ class SecurityManager: ObservableObject {
         if let data = pin.data(using: .utf8) {
             let hashed = SHA256.hash(data: data)
             pinCodeHash = hashed.compactMap { String(format: "%02x", $0) }.joined()
+
+            // Save to database
+            Task {
+                await saveSecuritySettings()
+            }
+
             return true
         }
         return false
@@ -114,6 +201,11 @@ class SecurityManager: ObservableObject {
             isUnlocked = true
             pinCodeHash = ""
         }
+
+        // Save to database
+        Task {
+            await saveSecuritySettings()
+        }
     }
 
     func disableAllSecurity() {
@@ -122,6 +214,11 @@ class SecurityManager: ObservableObject {
         pinCodeHash = ""
         isUnlocked = true
         showPINEntry = false
+
+        // Save to database
+        Task {
+            await saveSecuritySettings()
+        }
     }
 
     // MARK: - Lock Management

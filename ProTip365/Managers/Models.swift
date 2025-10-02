@@ -460,6 +460,9 @@ struct UserProfile: Codable {
     let name: String?  // Changed from user_name to name
     let default_employer_id: UUID?
     let default_alert_minutes: Int? // Default alert time for new shifts
+    let security_type: String? // 'none', 'biometric', 'pin', 'both'
+    let pin_code_hash: String?
+    let biometric_enabled: Bool?
 }
 
 // Database Alert Model

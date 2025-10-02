@@ -53,6 +53,8 @@ struct ContentView: View {
             isAuthenticated = false
             showOnboarding = false
             securityManager.isUnlocked = false
+            // CRITICAL: Clear security settings on sign out
+            securityManager.clearSecuritySettings()
             // Reset subscription state when user signs out to prevent subscription carryover
             subscriptionManager.resetSubscriptionState()
         }
@@ -60,6 +62,8 @@ struct ContentView: View {
             isAuthenticated = false
             showOnboarding = false
             securityManager.isUnlocked = false
+            // CRITICAL: Clear security settings on account deletion
+            securityManager.clearSecuritySettings()
             // Reset subscription state to ensure clean slate for new accounts
             subscriptionManager.resetSubscriptionState()
         }
@@ -271,6 +275,8 @@ struct ContentView: View {
                     print("✅ User authenticated successfully")
                     // Load user's language preference from database
                     await loadUserLanguage(userId: session.user.id)
+                    // CRITICAL: Load user's security settings from database
+                    await securityManager.loadSecuritySettings(for: session.user.id)
                     // Check if user needs onboarding
                     await checkIfOnboardingNeeded(userId: session.user.id)
 
@@ -338,6 +344,8 @@ struct ContentView: View {
                     }
 
                     await loadUserLanguage(userId: session.user.id)
+                    // CRITICAL: Load user's security settings from database
+                    await securityManager.loadSecuritySettings(for: session.user.id)
                     // Check if user needs onboarding when auth state changes
                     await checkIfOnboardingNeeded(userId: session.user.id)
 
