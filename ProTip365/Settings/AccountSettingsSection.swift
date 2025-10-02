@@ -57,9 +57,7 @@ struct AccountSettingsSection: View {
 
                     Button(action: {
                         HapticFeedback.selection()
-                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(settingsUrl)
-                        }
+                        openSubscriptionSettings()
                     }) {
                         HStack {
                             Image(systemName: IconNames.Navigation.settings)
