@@ -95,8 +95,37 @@ struct SubscriptionView: View {
                             .font(.body)
                             .foregroundColor(.blue)
 
+                        // Debug info (only show if products failed to load)
+                        if subscriptionManager.products.isEmpty {
+                            VStack(spacing: 12) {
+                                Text("⚠️ Unable to load subscription products")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+
+                                Button(action: {
+                                    Task {
+                                        await subscriptionManager.loadProducts()
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: "arrow.clockwise")
+                                        Text("Retry Loading Products")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                }
+                                .padding(.bottom, 8)
+                            }
+                        }
+
                         // Subscribe Button
                         Button(action: {
+                            // Check if products are loaded first
+                            if subscriptionManager.products.isEmpty {
+                                print("❌ Cannot purchase - no products loaded")
+                                return
+                            }
+
                             isLoading = true
                             Task {
                                 await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
