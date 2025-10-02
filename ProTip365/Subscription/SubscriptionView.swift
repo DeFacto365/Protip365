@@ -220,20 +220,6 @@ struct SubscriptionView: View {
                         .padding(.top, 8)
                     }
                     .padding(.bottom, 40)
-
-                    // Skip button for testing (DEBUG only)
-                    #if DEBUG
-                    Button(action: {
-                        subscriptionManager.isSubscribed = true
-                        checkOnboardingStatus()
-                    }) {
-                        Text(skipButtonText)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .underline()
-                    }
-                    .padding(.bottom, 20)
-                    #endif
                 }
             }
         }
@@ -327,14 +313,6 @@ struct SubscriptionView: View {
         case "fr": return "Restaurer les achats"
         case "es": return "Restaurar compras"
         default: return "Restore Purchases"
-        }
-    }
-
-    var skipButtonText: String {
-        switch language {
-        case "fr": return "Passer (Test uniquement)"
-        case "es": return "Omitir (Solo prueba)"
-        default: return "Skip (Testing Only)"
         }
     }
 }

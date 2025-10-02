@@ -278,53 +278,6 @@ struct SettingsView: View {
                 language: language
             )
 
-            #if DEBUG
-            // Debug Section - Only visible in DEBUG builds
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 12) {
-                    Image(systemName: "hammer.fill")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.orange)
-                        .frame(width: 28, height: 28)
-                    Text("Developer Tools")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-
-                NavigationLink {
-                    SubscriptionDebugView(subscriptionManager: subscriptionManager)
-                } label: {
-                    HStack {
-                        Text("Subscription Debug")
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: IconNames.Form.next)
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                }
-
-                NavigationLink {
-                    StoreKitTestDebugView()
-                } label: {
-                    HStack {
-                        Text("StoreKit Debug")
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: IconNames.Form.next)
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-            #endif
-
             Spacer()
                 .frame(height: 30)
         }
