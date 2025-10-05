@@ -17,8 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.presentation.shifts.AddShiftViewModel
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.text.NumberFormat
 import java.util.*
 
@@ -27,23 +30,30 @@ import java.util.*
 fun AddShiftScreen(
     navController: NavController,
     shiftId: String? = null,
+    initialDate: String? = null,
     viewModel: AddShiftViewModel = hiltViewModel()
 ) {
-    var isShiftType by remember { mutableStateOf(true) } // true = Shift, false = Entry
-    var date by remember { mutableStateOf(LocalDate.parse("2025-09-16")) } // Today's date
+    val isShiftType = true // This is Add Shift screen, always a shift
+    val todayDate = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    var startDate by remember {
+        mutableStateOf(
+            if (initialDate != null && initialDate.isNotEmpty()) {
+                try { LocalDate.parse(initialDate) } catch (e: Exception) { todayDate }
+            } else {
+                todayDate
+            }
+        )
+    }
+    var endDate by remember { mutableStateOf(startDate) }
     var startTime by remember { mutableStateOf("09:00") }
     var endTime by remember { mutableStateOf("17:00") }
     var hours by remember { mutableStateOf("8.0") }
-    var sales by remember { mutableStateOf("") }
-    var tips by remember { mutableStateOf("") }
-    var hourlyRate by remember { mutableStateOf("15.00") }
-    var cashOut by remember { mutableStateOf("") }
-    var other by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
-    var selectedEmployerId by remember { mutableStateOf<String?>(null) }
 
     val state by viewModel.state.collectAsState()
     val employers by viewModel.employers.collectAsState()
+    val selectedEmployerId by viewModel.selectedEmployerId.collectAsState()
+    val hourlyRate by viewModel.hourlyRate.collectAsState()
 
     // Load shift if editing
     LaunchedEffect(shiftId) {
@@ -64,34 +74,19 @@ fun AddShiftScreen(
                 actions = {
                     TextButton(
                         onClick = {
-                            if (isShiftType) {
-                                viewModel.saveShift(
-                                    date = date,
-                                    startTime = startTime,
-                                    endTime = endTime,
-                                    hours = hours.toDoubleOrNull() ?: 0.0,
-                                    sales = sales.toDoubleOrNull() ?: 0.0,
-                                    tips = tips.toDoubleOrNull() ?: 0.0,
-                                    hourlyRate = hourlyRate.toDoubleOrNull() ?: 0.0,
-                                    cashOut = cashOut.toDoubleOrNull() ?: 0.0,
-                                    other = other.toDoubleOrNull() ?: 0.0,
-                                    notes = notes,
-                                    employerId = selectedEmployerId
-                                )
-                            } else {
-                                viewModel.saveEntry(
-                                    date = date,
-                                    startTime = startTime,
-                                    endTime = endTime,
-                                    actualHours = hours.toDoubleOrNull() ?: 0.0,
-                                    sales = sales.toDoubleOrNull() ?: 0.0,
-                                    tips = tips.toDoubleOrNull() ?: 0.0,
-                                    cashOut = cashOut.toDoubleOrNull() ?: 0.0,
-                                    other = other.toDoubleOrNull() ?: 0.0,
-                                    notes = notes,
-                                    employerId = selectedEmployerId
-                                )
-                            }
+                            viewModel.saveShift(
+                                date = startDate,
+                                startTime = startTime,
+                                endTime = endTime,
+                                hours = hours.toDoubleOrNull() ?: 0.0,
+                                sales = 0.0,  // No financial data in Add Shift
+                                tips = 0.0,
+                                hourlyRate = hourlyRate.toDoubleOrNull() ?: 0.0,
+                                cashOut = 0.0,
+                                other = 0.0,
+                                notes = notes,
+                                employerId = selectedEmployerId
+                            )
                             navController.navigateUp()
                         },
                         enabled = !state.isLoading
@@ -109,19 +104,51 @@ fun AddShiftScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Type selector
-            SegmentedButton(
-                isShiftType = isShiftType,
-                onTypeChange = { isShiftType = it }
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Start Date + Start Time
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                DateField(
+                    date = startDate,
+                    onDateChange = { startDate = it },
+                    modifier = Modifier.weight(1f),
+                    label = "Start Date"
+                )
+                OutlinedTextField(
+                    value = startTime,
+                    onValueChange = { startTime = it },
+                    label = { Text("Start Time") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) }
+                )
+            }
 
-            // Date picker
-            DateField(
-                date = date,
-                onDateChange = { date = it }
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // End Date + End Time
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                DateField(
+                    date = endDate,
+                    onDateChange = { endDate = it },
+                    modifier = Modifier.weight(1f),
+                    label = "End Date"
+                )
+                OutlinedTextField(
+                    value = endTime,
+                    onValueChange = { endTime = it },
+                    label = { Text("End Time") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) }
+                )
+            }
 
             // Employer selector (if multiple employers enabled)
             if (employers.isNotEmpty()) {
@@ -129,133 +156,41 @@ fun AddShiftScreen(
                 EmployerDropdown(
                     employers = employers,
                     selectedEmployerId = selectedEmployerId,
-                    onEmployerSelected = { selectedEmployerId = it }
+                    onEmployerSelected = { viewModel.selectEmployer(it) }
                 )
             }
 
-            if (isShiftType) {
-                // Time fields for Shift
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedTextField(
-                        value = startTime,
-                        onValueChange = { startTime = it },
-                        label = { Text("Start Time") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) }
-                    )
-                    OutlinedTextField(
-                        value = endTime,
-                        onValueChange = { endTime = it },
-                        label = { Text("End Time") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = hours,
-                    onValueChange = { hours = it },
-                    label = { Text("Total Hours") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = hourlyRate,
-                    onValueChange = { hourlyRate = it },
-                    label = { Text("Hourly Rate") },
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-
-            // Financial fields
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Financial Information",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = hours,
+                onValueChange = { hours = it },
+                label = { Text("Total Hours") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
+            OutlinedTextField(
+                value = hourlyRate,
+                onValueChange = { }, // Read-only, controlled by employer selection
+                label = { Text("Hourly Rate") },
+                prefix = { Text("$") },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = sales,
-                    onValueChange = { sales = it },
-                    label = { Text("Sales") },
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = tips,
-                    onValueChange = { tips = it },
-                    label = { Text("Tips") },
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = cashOut,
-                    onValueChange = { cashOut = it },
-                    label = { Text("Tip-out") },
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = other,
-                    onValueChange = { other = it },
-                    label = { Text("Other") },
-                    prefix = { Text("$") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-            }
+                singleLine = true,
+                readOnly = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledPrefixColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                enabled = false
+            )
 
             // Notes
             Spacer(modifier = Modifier.height(16.dp))
@@ -268,15 +203,39 @@ fun AddShiftScreen(
                 maxLines = 5
             )
 
-            // Summary Card
+            // Expected Income Summary Card
             Spacer(modifier = Modifier.height(24.dp))
-            SummaryCard(
-                sales = sales.toDoubleOrNull() ?: 0.0,
-                tips = tips.toDoubleOrNull() ?: 0.0,
-                wages = if (isShiftType) (hourlyRate.toDoubleOrNull() ?: 0.0) * (hours.toDoubleOrNull() ?: 0.0) else 0.0,
-                cashOut = cashOut.toDoubleOrNull() ?: 0.0,
-                other = other.toDoubleOrNull() ?: 0.0
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Expected Income",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val expectedWages = (hourlyRate.toDoubleOrNull() ?: 0.0) * (hours.toDoubleOrNull() ?: 0.0)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Expected Wages", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = NumberFormat.getCurrencyInstance(Locale.US).format(expectedWages),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
 
             // Error message
             state.error?.let { error ->
@@ -334,15 +293,17 @@ fun SegmentedButton(
 @Composable
 fun DateField(
     date: LocalDate,
-    onDateChange: (LocalDate) -> Unit
+    onDateChange: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "Date"
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         value = date.toString(),
         onValueChange = { },
-        label = { Text("Date") },
-        modifier = Modifier.fillMaxWidth(),
+        label = { Text(label) },
+        modifier = modifier,
         readOnly = true,
         singleLine = true,
         trailingIcon = {
@@ -353,9 +314,48 @@ fun DateField(
     )
 
     if (showDatePicker) {
-        // DatePicker Dialog would go here
-        // For now, just dismiss
-        showDatePicker = false
+        DatePickerDialog(
+            initialDate = date,
+            onDateSelected = { selectedDate ->
+                onDateChange(selectedDate)
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerDialog(
+    initialDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+    )
+
+    androidx.compose.material3.DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { millis ->
+                    val days = (millis / (24 * 60 * 60 * 1000)).toInt()
+                    val selectedDate = LocalDate.fromEpochDays(days)
+                    onDateSelected(selectedDate)
+                }
+            }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
 
