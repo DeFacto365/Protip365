@@ -15,11 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.protip365.app.presentation.localization.OnboardingLocalization
@@ -530,15 +533,15 @@ fun TargetsStep(
     state: OnboardingState,
     onTargetsChanged: (tipPercentage: String, averageDeduction: String, salesDaily: String, hoursDaily: String, salesWeekly: String, hoursWeekly: String, salesMonthly: String, hoursMonthly: String) -> Unit
 ) {
-    var tipPercentage by remember { mutableStateOf(state.tipTargetPercentage) }
-    var averageDeduction by remember { mutableStateOf(state.averageDeductionPercentage) }
-    var salesDaily by remember { mutableStateOf(state.targetSalesDaily) }
-    var hoursDaily by remember { mutableStateOf(state.targetHoursDaily) }
-    var salesWeekly by remember { mutableStateOf(state.targetSalesWeekly) }
-    var hoursWeekly by remember { mutableStateOf(state.targetHoursWeekly) }
-    var salesMonthly by remember { mutableStateOf(state.targetSalesMonthly) }
-    var hoursMonthly by remember { mutableStateOf(state.targetHoursMonthly) }
-    
+    var tipPercentage by remember { mutableStateOf(TextFieldValue(state.tipTargetPercentage)) }
+    var averageDeduction by remember { mutableStateOf(TextFieldValue(state.averageDeductionPercentage)) }
+    var salesDaily by remember { mutableStateOf(TextFieldValue(state.targetSalesDaily)) }
+    var hoursDaily by remember { mutableStateOf(TextFieldValue(state.targetHoursDaily)) }
+    var salesWeekly by remember { mutableStateOf(TextFieldValue(state.targetSalesWeekly)) }
+    var hoursWeekly by remember { mutableStateOf(TextFieldValue(state.targetHoursWeekly)) }
+    var salesMonthly by remember { mutableStateOf(TextFieldValue(state.targetSalesMonthly)) }
+    var hoursMonthly by remember { mutableStateOf(TextFieldValue(state.targetHoursMonthly)) }
+
 @Suppress("UNUSED_VARIABLE")
     val focusManager = LocalFocusManager.current
     val tipFocusRequester = remember { FocusRequester() }
@@ -570,15 +573,22 @@ fun TargetsStep(
             OutlinedTextField(
                 value = tipPercentage,
                 onValueChange = { newValue ->
-                    if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                    if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                         tipPercentage = newValue
-                        onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                        onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                     }
                 },
                 label = { Text("Tip Target %") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(tipFocusRequester),
+                    .focusRequester(tipFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused && tipPercentage.text.isNotEmpty()) {
+                            tipPercentage = tipPercentage.copy(
+                                selection = TextRange(0, tipPercentage.text.length)
+                            )
+                        }
+                    },
                 suffix = { Text("%") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
@@ -593,15 +603,22 @@ fun TargetsStep(
             OutlinedTextField(
                 value = averageDeduction,
                 onValueChange = { newValue ->
-                    if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                    if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                         averageDeduction = newValue
-                        onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                        onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                     }
                 },
                 label = { Text("Average Deduction %") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(deductionFocusRequester),
+                    .focusRequester(deductionFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused && averageDeduction.text.isNotEmpty()) {
+                            averageDeduction = averageDeduction.copy(
+                                selection = TextRange(0, averageDeduction.text.length)
+                            )
+                        }
+                    },
                 suffix = { Text("%") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
@@ -623,15 +640,22 @@ fun TargetsStep(
             OutlinedTextField(
                 value = salesDaily,
                 onValueChange = { newValue ->
-                    if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                    if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                         salesDaily = newValue
-                        onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                        onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                     }
                 },
                 label = { Text("Daily Sales Target") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(salesFocusRequester),
+                    .focusRequester(salesFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused && salesDaily.text.isNotEmpty()) {
+                            salesDaily = salesDaily.copy(
+                                selection = TextRange(0, salesDaily.text.length)
+                            )
+                        }
+                    },
                 prefix = { Text("$") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
@@ -648,13 +672,21 @@ fun TargetsStep(
                 OutlinedTextField(
                     value = salesWeekly,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                        if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                             salesWeekly = newValue
-                            onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                            onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                         }
                     },
                     label = { Text("Weekly Sales Target") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused && salesWeekly.text.isNotEmpty()) {
+                                salesWeekly = salesWeekly.copy(
+                                    selection = TextRange(0, salesWeekly.text.length)
+                                )
+                            }
+                        },
                     prefix = { Text("$") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
@@ -663,13 +695,21 @@ fun TargetsStep(
                 OutlinedTextField(
                     value = salesMonthly,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                        if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                             salesMonthly = newValue
-                            onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                            onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                         }
                     },
                     label = { Text("Monthly Sales Target") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused && salesMonthly.text.isNotEmpty()) {
+                                salesMonthly = salesMonthly.copy(
+                                    selection = TextRange(0, salesMonthly.text.length)
+                                )
+                            }
+                        },
                     prefix = { Text("$") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
@@ -679,15 +719,22 @@ fun TargetsStep(
             OutlinedTextField(
                 value = hoursDaily,
                 onValueChange = { newValue ->
-                    if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                    if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                         hoursDaily = newValue
-                        onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                        onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                     }
                 },
                 label = { Text("Daily Hours Target") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(hoursFocusRequester),
+                    .focusRequester(hoursFocusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused && hoursDaily.text.isNotEmpty()) {
+                            hoursDaily = hoursDaily.copy(
+                                selection = TextRange(0, hoursDaily.text.length)
+                            )
+                        }
+                    },
                 suffix = { Text("hrs") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal
@@ -703,13 +750,21 @@ fun TargetsStep(
                 OutlinedTextField(
                     value = hoursWeekly,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                        if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                             hoursWeekly = newValue
-                            onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                            onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                         }
                     },
                     label = { Text("Weekly Hours Target") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused && hoursWeekly.text.isNotEmpty()) {
+                                hoursWeekly = hoursWeekly.copy(
+                                    selection = TextRange(0, hoursWeekly.text.length)
+                                )
+                            }
+                        },
                     suffix = { Text("hrs") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
@@ -718,13 +773,21 @@ fun TargetsStep(
                 OutlinedTextField(
                     value = hoursMonthly,
                     onValueChange = { newValue ->
-                        if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                        if (newValue.text.isEmpty() || newValue.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                             hoursMonthly = newValue
-                            onTargetsChanged(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                            onTargetsChanged(tipPercentage.text, averageDeduction.text, salesDaily.text, hoursDaily.text, salesWeekly.text, hoursWeekly.text, salesMonthly.text, hoursMonthly.text)
                         }
                     },
                     label = { Text("Monthly Hours Target") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused && hoursMonthly.text.isNotEmpty()) {
+                                hoursMonthly = hoursMonthly.copy(
+                                    selection = TextRange(0, hoursMonthly.text.length)
+                                )
+                            }
+                        },
                     suffix = { Text("hrs") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true

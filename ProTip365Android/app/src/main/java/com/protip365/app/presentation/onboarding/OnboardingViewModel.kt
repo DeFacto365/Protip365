@@ -166,11 +166,21 @@ class OnboardingViewModel @Inject constructor(
 
     fun completeOnboarding(onComplete: () -> Unit) {
         viewModelScope.launch {
+            // Set loading state
+            _state.value = _state.value.copy(
+                isCompleting = true,
+                completionError = null
+            )
+
             try {
+                println("🔵 Starting onboarding completion...")
                 val userId = userRepository.getCurrentUserId()
+                if (userId == null) {
+                    throw Exception("User not authenticated")
+                }
 
                 // Reload employers if using multiple employers to get latest default
-                if (_state.value.useMultipleEmployers && userId != null) {
+                if (_state.value.useMultipleEmployers) {
                     val employers = employerRepository.getEmployers(userId)
                     _state.value = _state.value.copy(employers = employers)
 
@@ -182,7 +192,7 @@ class OnboardingViewModel @Inject constructor(
                 }
 
                 // Save single employer if not using multiple employers (matching iOS)
-                if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty() && userId != null) {
+                if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty()) {
                     // Create employer in database (matching iOS)
                     // TODO: Add employer repository method
                 }
@@ -247,14 +257,21 @@ class OnboardingViewModel @Inject constructor(
                 preferencesManager.setOnboardingCompleted(true)
                 println("✅ Onboarding marked complete in preferences")
 
+                // Clear loading state
+                _state.value = _state.value.copy(isCompleting = false)
+
                 // Navigate to main screen
+                println("✅ Onboarding complete, navigating to main screen")
                 onComplete()
             } catch (e: Exception) {
                 // Handle error - show to user
                 println("❌ Error completing onboarding: ${e.message}")
                 e.printStackTrace()
-                // Don't call onComplete() if there was an error
-                // User will stay on onboarding screen and can try again
+
+                _state.value = _state.value.copy(
+                    isCompleting = false,
+                    completionError = e.message ?: "Failed to save onboarding data. Please try again."
+                )
             }
         }
     }

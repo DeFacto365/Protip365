@@ -145,9 +145,20 @@ class UserRepositoryImpl @Inject constructor(
             }
 
             // Profile exists, update it
-            val response = supabaseClient
+            // Convert Map<String, Any?> to proper types for Supabase serialization
+            val typedUpdates = updates.mapValues { (key, value) ->
+                when (value) {
+                    is Number -> value // Keep numbers as-is
+                    is Boolean -> value // Keep booleans as-is
+                    is String -> value // Keep strings as-is
+                    null -> null // Keep nulls as-is
+                    else -> value.toString() // Convert everything else to string
+                }
+            }
+
+            supabaseClient
                 .from("users_profile")
-                .update(updates) {
+                .update(typedUpdates) {
                     filter {
                         eq("user_id", userId)
                     }

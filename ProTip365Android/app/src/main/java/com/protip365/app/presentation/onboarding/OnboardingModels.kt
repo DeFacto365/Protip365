@@ -17,7 +17,9 @@ data class OnboardingState(
     val targetSalesMonthly: String = "",
     val targetHoursDaily: String = "",
     val targetHoursWeekly: String = "",
-    val targetHoursMonthly: String = ""
+    val targetHoursMonthly: String = "",
+    val isCompleting: Boolean = false, // Loading state for finish button
+    val completionError: String? = null // Error message if completion fails
 ) {
     fun isStepValid(): Boolean {
         return when (currentStep) {
