@@ -125,7 +125,21 @@ class UserRepositoryImpl @Inject constructor(
                 // Profile doesn't exist, create it with the updates
                 val newProfile = UserProfile(
                     userId = userId,
-                    name = updates["name"] as? String
+                    name = updates["name"] as? String,
+                    preferredLanguage = updates["preferred_language"] as? String ?: "en",
+                    useMultipleEmployers = updates["use_multiple_employers"] as? Boolean ?: true,
+                    weekStart = (updates["week_start"] as? Number)?.toInt() ?: 0,
+                    hasVariableSchedule = updates["has_variable_schedule"] as? Boolean ?: false,
+                    tipTargetPercentage = (updates["tip_target_percentage"] as? Number)?.toDouble() ?: 15.0,
+                    targetSalesDaily = (updates["target_sales_daily"] as? Number)?.toDouble() ?: 0.0,
+                    targetSalesWeekly = (updates["target_sales_weekly"] as? Number)?.toDouble() ?: 0.0,
+                    targetSalesMonthly = (updates["target_sales_monthly"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursDaily = (updates["target_hours_daily"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursWeekly = (updates["target_hours_weekly"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursMonthly = (updates["target_hours_monthly"] as? Number)?.toDouble() ?: 0.0,
+                    averageDeductionPercentage = (updates["average_deduction_percentage"] as? Number)?.toDouble() ?: 30.0,
+                    defaultEmployerId = updates["default_employer_id"] as? String,
+                    onboardingCompleted = updates["onboarding_completed"] as? Boolean ?: false
                 )
                 return createUserProfile(newProfile)
             }

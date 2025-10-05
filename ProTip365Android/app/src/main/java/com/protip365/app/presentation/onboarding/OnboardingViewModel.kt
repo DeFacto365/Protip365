@@ -183,8 +183,18 @@ class OnboardingViewModel @Inject constructor(
                 val hoursWeekly = if (_state.value.hasVariableSchedule) 0.0 else (_state.value.targetHoursWeekly.toDoubleOrNull() ?: 0.0)
                 val hoursMonthly = if (_state.value.hasVariableSchedule) 0.0 else (_state.value.targetHoursMonthly.toDoubleOrNull() ?: 0.0)
 
+                println("🔵 Completing onboarding with data:")
+                println("  Language: ${_state.value.language}")
+                println("  Multiple Employers: ${_state.value.useMultipleEmployers}")
+                println("  Week Start: ${_state.value.weekStart}")
+                println("  Variable Schedule: ${_state.value.hasVariableSchedule}")
+                println("  Tip Target: $tipTarget%")
+                println("  Avg Deduction: $averageDeduction%")
+                println("  Sales Daily: $$salesDaily")
+                println("  Hours Daily: $hoursDaily hrs")
+
                 // Update user profile with all onboarding data (matching iOS)
-                userRepository.updateUserProfile(
+                val updateResult = userRepository.updateUserProfile(
                     mapOf(
                         "preferred_language" to _state.value.language,
                         "use_multiple_employers" to _state.value.useMultipleEmployers,
@@ -202,6 +212,13 @@ class OnboardingViewModel @Inject constructor(
                         "onboarding_completed" to true // ⭐ NEW: Mark onboarding as completed
                     )
                 )
+
+                if (updateResult.isFailure) {
+                    println("❌ Failed to save onboarding data: ${updateResult.exceptionOrNull()?.message}")
+                    throw updateResult.exceptionOrNull() ?: Exception("Failed to save onboarding data")
+                } else {
+                    println("✅ Onboarding data saved successfully")
+                }
 
                 // Save to preferences
                 preferencesManager.setDailyTarget(salesDaily.toFloat())
