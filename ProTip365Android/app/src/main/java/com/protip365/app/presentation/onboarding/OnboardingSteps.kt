@@ -275,11 +275,23 @@ fun MultipleEmployersStep(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeekStartStep(
     state: OnboardingState,
     onWeekStartChanged: (Int) -> Unit
 ) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    val weekDays = listOf(
+        Pair(0, "Sunday"),
+        Pair(1, "Monday"),
+        Pair(2, "Tuesday"),
+        Pair(3, "Wednesday"),
+        Pair(4, "Thursday"),
+        Pair(5, "Friday"),
+        Pair(6, "Saturday")
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -290,50 +302,44 @@ fun WeekStartStep(
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        
+
         Text(
             text = "When does your work week begin?",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        Column(
-            modifier = Modifier.selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+
+        ExposedDropdownMenuBox(
+            expanded = dropdownExpanded,
+            onExpandedChange = { dropdownExpanded = it }
         ) {
-            val weekDays = listOf(
-                Pair(0, "Sunday"),
-                Pair(1, "Monday"),
-                Pair(2, "Tuesday"),
-                Pair(3, "Wednesday"),
-                Pair(4, "Thursday"),
-                Pair(5, "Friday"),
-                Pair(6, "Saturday")
+            OutlinedTextField(
+                value = weekDays.find { it.first == state.weekStart }?.second ?: "Sunday",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Week Start Day") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                colors = OutlinedTextFieldDefaults.colors()
             )
-            
-            weekDays.forEach { (dayCode, dayName) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.weekStart == dayCode,
-                            onClick = { onWeekStartChanged(dayCode) }
-                        )
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = state.weekStart == dayCode,
-                        onClick = { onWeekStartChanged(dayCode) }
-                    )
-                    
-                    Spacer(modifier = Modifier.width(16.dp))
-                    
-                    Text(
-                        text = dayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
+
+            ExposedDropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false }
+            ) {
+                weekDays.forEach { (dayCode, dayName) ->
+                    DropdownMenuItem(
+                        text = { Text(dayName) },
+                        onClick = {
+                            onWeekStartChanged(dayCode)
+                            dropdownExpanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
                 }
             }
