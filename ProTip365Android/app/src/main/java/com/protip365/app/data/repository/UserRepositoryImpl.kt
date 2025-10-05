@@ -118,6 +118,19 @@ class UserRepositoryImpl @Inject constructor(
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return Result.failure(Exception("User not authenticated"))
 
+            // Check if profile exists first
+            val existingProfile = getUserProfile(userId)
+
+            if (existingProfile == null) {
+                // Profile doesn't exist, create it with the updates
+                val newProfile = UserProfile(
+                    userId = userId,
+                    name = updates["name"] as? String
+                )
+                return createUserProfile(newProfile)
+            }
+
+            // Profile exists, update it
             supabaseClient
                 .from("users_profile")
                 .update(updates) {
