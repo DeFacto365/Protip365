@@ -39,6 +39,7 @@ fun AddEditEntryScreen(
     viewModel: AddEditEntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
 
     // Initialize with entry/shift data
@@ -426,7 +427,7 @@ fun WorkInfoCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -516,7 +517,7 @@ fun WorkInfoCard(
                 }
 
                 // Divider
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
@@ -712,7 +713,7 @@ fun TimeSelectionCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -791,7 +792,7 @@ fun TimeSelectionCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -971,7 +972,7 @@ fun EarningsCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -1012,7 +1013,7 @@ fun EarningsCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -1053,7 +1054,7 @@ fun EarningsCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -1094,7 +1095,7 @@ fun EarningsCard(
             }
 
             // Divider
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
@@ -1238,7 +1239,7 @@ fun SummaryCard(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-                Divider()
+                HorizontalDivider()
             }
 
             if (!didntWork) {
@@ -1305,7 +1306,7 @@ fun SummaryCard(
                         }
                     }
                     
-                    Divider()
+                    HorizontalDivider()
                 }
 
                 // Income components
@@ -1382,7 +1383,7 @@ fun SummaryCard(
                     }
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // Total Earnings
                 Row(

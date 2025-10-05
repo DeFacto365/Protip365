@@ -1,6 +1,7 @@
 package com.protip365.app.presentation.calculator
 
 import androidx.compose.animation.*
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +52,7 @@ fun TipCalculatorScreen(
     var totalEarnings by remember { mutableStateOf("") }
     var hoursWorked by remember { mutableStateOf("") }
 
+@Suppress("UNUSED_VARIABLE")
     val focusManager = LocalFocusManager.current
     val language = "en" // Get from settings/preferences
 
@@ -84,7 +87,7 @@ fun TipCalculatorScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = getLocalizedText("Back", language)
                         )
                     }
@@ -127,7 +130,7 @@ fun TipCalculatorScreen(
             AnimatedContent(
                 targetState = selectedCalculatorTab,
                 transitionSpec = {
-                    slideInHorizontally { it } with slideOutHorizontally { -it }
+                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
                 }
             ) { tab ->
                 when (tab) {
@@ -824,7 +827,7 @@ private fun ResultsCard(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Divider()
+            HorizontalDivider()
 
             ResultRow(
                 label = getLocalizedText("Total", language),
@@ -918,7 +921,7 @@ private fun ComparisonRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (isPositive) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                if (isPositive) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                 contentDescription = null,
                 tint = if (isPositive) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(20.dp)

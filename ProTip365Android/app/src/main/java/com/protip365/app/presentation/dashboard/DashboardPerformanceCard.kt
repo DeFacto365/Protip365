@@ -209,6 +209,7 @@ private fun MetricRow(
     target: Double,
     suffix: String,
     isCurrency: Boolean,
+    @Suppress("UNUSED_PARAMETER")
     localization: DashboardLocalization
 ) {
     val percentage = if (target > 0) (actual / target) * 100 else 0.0

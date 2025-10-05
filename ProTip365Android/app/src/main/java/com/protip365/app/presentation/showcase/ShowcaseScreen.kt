@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -194,7 +195,7 @@ fun AccordionItem(
             }
             
             if (expanded) {
-                Divider(color = Color(0xFFE5E7EB))
+                HorizontalDivider(color = Color(0xFFE5E7EB))
                 Text(
                     text = content,
                     fontSize = 14.sp,
@@ -478,7 +479,7 @@ fun getKeyFeatures(): List<KeyFeature> {
         KeyFeature(
             title = "Smart Analytics",
             description = "AI-powered insights to maximize your earnings",
-            icon = Icons.Default.TrendingUp,
+            icon = Icons.AutoMirrored.Filled.TrendingUp,
             color = Color(0xFF10B981)
         ),
         KeyFeature(

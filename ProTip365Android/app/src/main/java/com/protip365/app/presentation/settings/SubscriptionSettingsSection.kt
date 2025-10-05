@@ -176,7 +176,7 @@ fun SubscriptionSettingsSection(
                 )
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Plan Details Button
             SubscriptionActionItem(

@@ -195,7 +195,7 @@ class ExportManager @Inject constructor() {
         val totalHours = shifts.sumOf { it.hours }
         val totalTips = shifts.sumOf { it.tips } + entries.sumOf { it.tips }
         val totalSales = shifts.sumOf { it.sales } + entries.sumOf { it.sales }
-        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalEarnings(15.0) }
+        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalIncome(15.0) }
         
         content.appendLine("SUMMARY")
         content.appendLine("Total Shifts: $totalShifts")
@@ -228,7 +228,7 @@ class ExportManager @Inject constructor() {
             content.appendLine("ENTRY - ${entry.actualStartTime}")
             content.appendLine("  Tips: $${String.format("%.2f", entry.tips)}")
             content.appendLine("  Sales: $${String.format("%.2f", entry.sales)}")
-            content.appendLine("  Revenue: $${String.format("%.2f", entry.getTotalEarnings(15.0))}")
+            content.appendLine("  Revenue: $${String.format("%.2f", entry.getTotalIncome(15.0))}")
             if (entry.notes?.isNotEmpty() == true) {
                 content.appendLine("  Notes: ${entry.notes}")
             }
@@ -247,7 +247,7 @@ class ExportManager @Inject constructor() {
         val totalHours = shifts.sumOf { it.hours }
         val totalTips = shifts.sumOf { it.tips } + entries.sumOf { it.tips }
         val totalSales = shifts.sumOf { it.sales } + entries.sumOf { it.sales }
-        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalEarnings(15.0) }
+        val totalRevenue = shifts.sumOf { it.totalEarnings } + entries.sumOf { it.getTotalIncome(15.0) }
         
         return """
             📊 ProTip365 Summary

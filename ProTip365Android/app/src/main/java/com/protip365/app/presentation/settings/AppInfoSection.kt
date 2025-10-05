@@ -30,6 +30,7 @@ fun AppInfoSection(
 ) {
     var showAboutDialog by remember { mutableStateOf(false) }
     var showWhatsNewDialog by remember { mutableStateOf(false) }
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val packageInfo = remember {
         try {
@@ -110,7 +111,7 @@ fun AppInfoSection(
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // What's New
             InfoActionItem(
@@ -181,7 +182,7 @@ fun AppInfoSection(
                 }
             )
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Developer Section
             Text(

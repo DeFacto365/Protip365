@@ -171,6 +171,7 @@ class AchievementRepositoryImpl @Inject constructor(
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private suspend fun checkConsecutiveDaysAchievement(userId: String, requiredDays: Int): Boolean {
         return try {
             // Simplified version - return true for testing
@@ -236,18 +237,21 @@ class AchievementRepositoryImpl @Inject constructor(
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private suspend fun checkTargetExceedAchievement(userId: String, percentage: Int): Boolean {
         // This would require checking user's targets and actual performance
         // For now, return false as this is complex to implement
         return false
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private suspend fun checkWeeklyGoalsAchievement(userId: String): Boolean {
         // This would require checking if all weekly targets were met
         // For now, return false as this is complex to implement
         return false
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private suspend fun checkMonthlyGoalsAchievement(userId: String): Boolean {
         // This would require checking if all monthly targets were met
         // For now, return false as this is complex to implement

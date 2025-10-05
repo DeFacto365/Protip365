@@ -1,6 +1,7 @@
 package com.protip365.app.presentation.auth
 
 import androidx.compose.animation.*
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -107,7 +109,7 @@ fun OnboardingScreen(
                 AnimatedContent(
                     targetState = currentStep,
                     transitionSpec = {
-                        slideInHorizontally { it } + fadeIn() with
+                        slideInHorizontally { it } + fadeIn() togetherWith
                         slideOutHorizontally { -it } + fadeOut()
                     }
                 ) { step ->
@@ -154,7 +156,7 @@ fun OnboardingScreen(
                     AnimatedContent(
                         targetState = currentStep,
                         transitionSpec = {
-                            slideInHorizontally { it } + fadeIn() with
+                            slideInHorizontally { it } + fadeIn() togetherWith
                             slideOutHorizontally { -it } + fadeOut()
                         },
                         modifier = Modifier.padding(24.dp)
@@ -186,7 +188,7 @@ fun OnboardingScreen(
                             enabled = !state.isLoading
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -229,7 +231,7 @@ fun OnboardingScreen(
                             if (currentStep < steps.size - 1) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
-                                    imageVector = Icons.Default.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -453,7 +455,7 @@ fun WorkSettingsStep(state: OnboardingState, viewModel: OnboardingViewModel) {
             suffix = { Text(stringResource(R.string.percentage_symbol)) },
             leadingIcon = {
                 Icon(
-                    imageVector = Icons.Default.TrendingUp,
+                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                     contentDescription = null
                 )
             },

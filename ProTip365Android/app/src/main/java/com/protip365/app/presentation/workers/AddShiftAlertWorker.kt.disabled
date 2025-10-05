@@ -1,0 +1,56 @@
+package com.protip365.app.presentation.workers
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.protip365.app.presentation.alerts.AlertManager
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import java.util.UUID
+
+@HiltWorker
+class AddShiftAlertWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val alertManager: AlertManager
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        return try {
+            val shiftId = inputData.getString("shift_id") ?: return Result.failure()
+            val employerName = inputData.getString("employer_name") ?: return Result.failure()
+            val startTime = inputData.getString("start_time") ?: return Result.failure()
+            
+            val time = try {
+                LocalTime.parse(startTime)
+            } catch (e: Exception) {
+                LocalTime(12, 0)
+            }
+            
+            val today = Clock.System.now()
+            val todayDate = today.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val dateTime = LocalDateTime(todayDate, time)
+            val instant = dateTime.toInstant(TimeZone.currentSystemDefault())
+            
+            alertManager.addShiftReminderAlert(
+                shiftId = UUID.fromString(shiftId),
+                employerName = employerName,
+                startTime = instant
+            )
+            
+            android.util.Log.d("AddShiftAlertWorker", "✅ Added shift reminder to bell alerts")
+            Result.success()
+        } catch (e: Exception) {
+            android.util.Log.e("AddShiftAlertWorker", "❌ Failed to add alert to bell: ${e.message}")
+            Result.failure()
+        }
+    }
+}
+

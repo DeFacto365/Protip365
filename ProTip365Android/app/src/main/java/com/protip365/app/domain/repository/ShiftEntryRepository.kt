@@ -46,7 +46,7 @@ interface ShiftEntryRepository {
     suspend fun getEntriesForMonth(userId: String, year: Int, month: Int): List<ShiftEntry>
 
     // Financial aggregations
-    suspend fun getTotalEarnings(userId: String, startDate: LocalDate, endDate: LocalDate): Double
+    suspend fun getTotalIncome(userId: String, startDate: LocalDate, endDate: LocalDate): Double
     suspend fun getTotalTips(userId: String, startDate: LocalDate, endDate: LocalDate): Double
     suspend fun getTotalSales(userId: String, startDate: LocalDate, endDate: LocalDate): Double
     suspend fun getTotalHours(userId: String, startDate: LocalDate, endDate: LocalDate): Double

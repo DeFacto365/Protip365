@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -133,7 +134,7 @@ fun ContactScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                         } else {
-                            Icon(Icons.Default.Send, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Send Message")
@@ -180,7 +181,7 @@ fun ContactScreen(
                         onClick = { navController.navigate("help") },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Help, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("View Help & FAQ")
                     }

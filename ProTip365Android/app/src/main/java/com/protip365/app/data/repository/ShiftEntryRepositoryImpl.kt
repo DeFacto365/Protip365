@@ -241,7 +241,7 @@ class ShiftEntryRepositoryImpl @Inject constructor(
         return getShiftEntries(userId, startDate, endDate)
     }
 
-    override suspend fun getTotalEarnings(userId: String, startDate: LocalDate, endDate: LocalDate): Double {
+    override suspend fun getTotalIncome(userId: String, startDate: LocalDate, endDate: LocalDate): Double {
         return try {
             val entries = getShiftEntries(userId, startDate, endDate)
             entries.sumOf { it.tips + it.other - it.cashOut }

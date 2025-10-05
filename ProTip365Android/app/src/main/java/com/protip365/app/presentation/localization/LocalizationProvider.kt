@@ -8,6 +8,7 @@ import javax.inject.Inject
 
 @Composable
 fun rememberLocalizationState(): LocalizationState {
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val localizationManager = remember {
         EntryPointAccessors.fromApplication(

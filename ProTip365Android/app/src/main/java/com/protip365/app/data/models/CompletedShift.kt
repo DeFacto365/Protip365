@@ -29,7 +29,7 @@ data class CompletedShift(
      * Get total earnings for this shift
      */
     val totalEarnings: Double
-        get() = shiftEntry?.getTotalEarnings(expectedShift.hourlyRate)
+        get() = shiftEntry?.getTotalIncome(expectedShift.hourlyRate)
             ?: expectedShift.expectedNetEarnings
 
     /**

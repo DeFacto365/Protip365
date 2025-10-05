@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -32,6 +33,7 @@ import com.protip365.app.data.models.AlertType
 import com.protip365.app.presentation.alerts.AlertManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.GlobalScope
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.milliseconds
@@ -50,6 +52,7 @@ fun NotificationBell(
     var animateBell by remember { mutableStateOf(false) }
 
     val haptics = LocalHapticFeedback.current
+    @Suppress("UNUSED_VARIABLE")
     val scope = rememberCoroutineScope()
 
     // Animate bell when new alerts arrive
@@ -133,6 +136,7 @@ fun AlertsListModal(
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
 
@@ -195,7 +199,7 @@ fun AlertsListModal(
                 }
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Content
             if (alerts.isEmpty()) {
@@ -343,7 +347,7 @@ fun AlertRowItem(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = alert.action,
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -387,7 +391,7 @@ fun getAlertIcon(alertType: String): androidx.compose.ui.graphics.vector.ImageVe
         AlertType.MISSING_SHIFT -> Icons.Default.Warning
         AlertType.INCOMPLETE_SHIFT -> Icons.Default.ErrorOutline
         AlertType.TARGET_ACHIEVED -> Icons.Default.Star
-        AlertType.PERSONAL_BEST -> Icons.Default.TrendingUp
+        AlertType.PERSONAL_BEST -> Icons.AutoMirrored.Filled.TrendingUp
         AlertType.REMINDER -> Icons.Default.Notifications
         AlertType.SUBSCRIPTION_LIMIT -> Icons.Default.Info
         AlertType.WEEKLY_SUMMARY -> Icons.Default.BarChart
@@ -444,7 +448,7 @@ private fun handleAlertTap(
 
     // Clear the alert since user has acted on it
     if (!listOf("targetAchieved", "personalBest").contains(alert.alertType)) {
-        kotlinx.coroutines.GlobalScope.launch {
+        GlobalScope.launch {
             alertManager.clearAlert(alert)
         }
     }
@@ -461,7 +465,7 @@ private fun handleAlertTap(
                 } ?: nav.navigate("calendar")
             }
             "targetAchieved", "personalBest" -> {
-                kotlinx.coroutines.GlobalScope.launch {
+                GlobalScope.launch {
                     alertManager.clearAlert(alert)
                 }
             }

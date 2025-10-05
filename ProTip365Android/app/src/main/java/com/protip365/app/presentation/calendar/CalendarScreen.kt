@@ -48,6 +48,7 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsState()
     val shifts by viewModel.shifts.collectAsState()
 
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
     val language = preferencesManager.getLanguage()
@@ -713,6 +714,7 @@ fun EmptyShiftsState(
     modifier: Modifier = Modifier
 ) {
     val formatter = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
+@Suppress("UNUSED_VARIABLE")
     val date = Date(selectedDate.toEpochDays() * 24 * 60 * 60 * 1000L)
 
     Column(

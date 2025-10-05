@@ -167,7 +167,7 @@ class AuthViewModel @Inject constructor(
 
             try {
                 authRepository.signUp(_state.value.email, _state.value.password)
-                    .onSuccess { user ->
+                    .onSuccess { _ ->
                         // Mark user as new for onboarding and save the name
                         userRepository.updateUserMetadata(mapOf("is_new_user" to true))
 

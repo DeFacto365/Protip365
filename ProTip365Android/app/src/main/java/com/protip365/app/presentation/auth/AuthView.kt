@@ -48,6 +48,7 @@ fun AuthView(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by viewModel.state.collectAsState()
+    @Suppress("UNUSED_VARIABLE")
     val scope = rememberCoroutineScope()
 
     var isSignUpMode by remember { mutableStateOf(false) }

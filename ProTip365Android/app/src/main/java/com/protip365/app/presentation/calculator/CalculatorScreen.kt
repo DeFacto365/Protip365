@@ -130,7 +130,7 @@ fun TipCalculator() {
             singleLine = true
         )
 
-        Divider()
+        HorizontalDivider()
 
         // Results
         ResultCard(
@@ -231,7 +231,7 @@ fun TipOutCalculator() {
             onPercentageChange = { runnerPercentage = it }
         )
 
-        Divider()
+        HorizontalDivider()
 
         // Results
         ResultCard(

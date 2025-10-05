@@ -27,6 +27,7 @@ fun LanguageSelector(
     modifier: Modifier = Modifier,
     localizationManager: LocalizationManager? = null
 ) {
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
     val manager = localizationManager ?: remember {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,7 +63,7 @@ fun DashboardStatsCards(
                 } else null
             )
 
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // Expected Net Salary section
             val netSalary = currentStats.totalWages * (1 - averageDeductionPercentage / 100)
@@ -77,7 +78,7 @@ fun DashboardStatsCards(
                 )
             )
 
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // Hours Worked section
             CompactStatRow(
@@ -90,7 +91,7 @@ fun DashboardStatsCards(
                 } else null
             )
 
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // Tips section
             CompactStatRow(
@@ -111,7 +112,7 @@ fun DashboardStatsCards(
 
             // Other section (only if there's other income)
             if (currentStats.otherIncome > 0) {
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 CompactStatRow(
                     title = localizedString(R.string.other_label),
                     value = formatCurrency(currentStats.otherIncome),
@@ -121,7 +122,7 @@ fun DashboardStatsCards(
                 )
             }
 
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // Subtotal
             Row(
@@ -182,7 +183,7 @@ fun DashboardStatsCards(
                 }
             }
 
-            Divider(
+            HorizontalDivider(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
                 thickness = 1.dp
             )
@@ -222,7 +223,7 @@ fun DashboardStatsCards(
                 enabled = currentStats.hasData
             ) {
                 Icon(
-                    imageVector = Icons.Default.List,
+                    imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp)
                 )

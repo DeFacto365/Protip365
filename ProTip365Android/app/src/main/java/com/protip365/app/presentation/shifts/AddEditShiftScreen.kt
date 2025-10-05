@@ -41,6 +41,7 @@ fun AddEditShiftScreen(
     viewModel: AddEditShiftViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
 
     // Initialize with shift data if editing
@@ -404,7 +405,7 @@ fun ShiftDetailsSection(
         }
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -453,7 +454,7 @@ fun ShiftDetailsSection(
         }
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -580,7 +581,7 @@ fun ShiftTimeSection(
         }
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -659,7 +660,7 @@ fun ShiftTimeSection(
         }
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -783,7 +784,7 @@ fun ShiftAlertSection(
 ) {
     Column {
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -902,7 +903,7 @@ fun ShiftAlertSection(
                     }
                     
                     if (minutes != options.last().first) {
-                        Divider(
+                        HorizontalDivider(
                             modifier = Modifier.padding(start = 20.dp),
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         )
@@ -932,7 +933,7 @@ fun ShiftSummarySection(
 
     Column {
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -961,7 +962,7 @@ fun ShiftSummarySection(
         }
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
@@ -989,7 +990,7 @@ fun ShiftSummarySection(
 
 
         // Divider
-        Divider(
+        HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )

@@ -26,9 +26,11 @@ class EmailService @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) {
     
+    @Suppress("UNUSED_PARAMETER")
     suspend fun sendSuggestion(suggestion: String): Result<EmailResponse> {
         return try {
-            val userId = supabaseClient.getCurrentUserId()
+            @Suppress("UNUSED_VARIABLE")
+        val userId = supabaseClient.getCurrentUserId()
             
             // For now, return success - Edge Functions will be implemented later
             Result.success(EmailResponse(success = true))
@@ -37,9 +39,11 @@ class EmailService @Inject constructor(
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     suspend fun sendSupportRequest(subject: String, message: String): Result<EmailResponse> {
         return try {
-            val userId = supabaseClient.getCurrentUserId()
+            @Suppress("UNUSED_VARIABLE")
+        val userId = supabaseClient.getCurrentUserId()
             
             // For now, return success - Edge Functions will be implemented later
             Result.success(EmailResponse(success = true))

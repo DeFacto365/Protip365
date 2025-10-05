@@ -187,6 +187,7 @@ fun CalendarActionButtons(
 ) {
     val today = java.time.LocalDate.now()
     val isPastDateOrToday = selectedDate <= today
+    @Suppress("UNUSED_VARIABLE")
     val isFutureDate = selectedDate > today
 
     Row(

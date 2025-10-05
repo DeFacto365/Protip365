@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,7 +45,7 @@ fun SupportSettingsSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    Icons.Default.HelpOutline,
+                    Icons.AutoMirrored.Filled.HelpOutline,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -59,7 +60,7 @@ fun SupportSettingsSection(
                 )
             }
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Contact Support
             SupportActionItem(
@@ -97,7 +98,7 @@ fun SupportSettingsSection(
 
             // User Guide
             SupportActionItem(
-                icon = Icons.Default.MenuBook,
+                icon = Icons.AutoMirrored.Filled.MenuBook,
                 title = when (currentLanguage) {
                     "fr" -> "Guide de l'utilisateur"
                     "es" -> "Guía del usuario"
@@ -131,7 +132,7 @@ fun SupportSettingsSection(
                 }
             )
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Legal Section
             Text(
@@ -165,7 +166,7 @@ fun SupportSettingsSection(
 
             // Terms of Service
             SupportActionItem(
-                icon = Icons.Default.Article,
+                icon = Icons.AutoMirrored.Filled.Article,
                 title = when (currentLanguage) {
                     "fr" -> "Conditions d'utilisation"
                     "es" -> "Términos de servicio"
@@ -259,7 +260,7 @@ private fun SupportActionItem(
             }
 
             Icon(
-                Icons.Default.OpenInNew,
+                Icons.AutoMirrored.Filled.OpenInNew,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(16.dp)
@@ -466,7 +467,7 @@ private fun SupportFormDialog(
                             )
                         } else {
                             Icon(
-                                Icons.Default.Send,
+                                Icons.AutoMirrored.Filled.Send,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )

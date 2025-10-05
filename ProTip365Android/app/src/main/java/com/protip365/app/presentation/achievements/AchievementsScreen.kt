@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,7 +39,7 @@ fun AchievementsScreen(
             title = { Text("Achievements") },
             navigationIcon = {
                 IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
         )
@@ -102,7 +103,7 @@ fun AchievementProgressCard(
             Spacer(modifier = Modifier.height(16.dp))
             
             CircularProgressIndicator(
-                progress = progress,
+                progress = { progress },
                 modifier = Modifier.size(80.dp),
                 color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 8.dp
@@ -164,7 +165,7 @@ fun AchievementCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = getAchievementIcon(achievement.id),
+                    imageVector = getAchievementIconLocal(achievement.id),
                     contentDescription = null,
                     modifier = Modifier.size(28.dp),
                     tint = if (isUnlocked) {
@@ -215,7 +216,7 @@ fun AchievementCard(
                     }
                     
                     LinearProgressIndicator(
-                        progress = progress,
+                        progress = { progress },
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -243,10 +244,10 @@ fun AchievementCard(
     }
 }
 
-private fun getAchievementIcon(type: String): ImageVector {
+private fun getAchievementIconLocal(type: String): ImageVector {
     return when (type) {
         "tip_master" -> Icons.Default.AttachMoney
-        "consistency_king" -> Icons.Default.TrendingUp
+        "consistency_king" -> Icons.AutoMirrored.Filled.TrendingUp
         "tip_target_crusher" -> Icons.Default.GpsFixed
         "high_earner" -> Icons.Default.Star
         else -> Icons.Default.EmojiEvents

@@ -21,6 +21,7 @@ fun DashboardPeriodSelector(
     monthViewType: Int,
     onPeriodSelected: (Int) -> Unit,
     onMonthViewTypeChanged: (Int) -> Unit,
+    @Suppress("UNUSED_PARAMETER")
     currentLanguage: String = "en"
 ) {
     Column(
@@ -113,6 +114,7 @@ private fun PeriodTab(
 private fun MonthViewTypeSelector(
     monthViewType: Int,
     onViewTypeChanged: (Int) -> Unit,
+    @Suppress("UNUSED_PARAMETER")
     currentLanguage: String
 ) {
     Card(

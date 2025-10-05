@@ -13,6 +13,7 @@ import com.protip365.app.data.models.SubscriptionTier
 import com.protip365.app.data.models.UserSubscription
 import com.protip365.app.presentation.localization.LocalizationManager
 import com.protip365.app.presentation.security.SecurityManager
+import com.protip365.app.presentation.alerts.AlertManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 // import com.protip365.app.presentation.export.ExportManager
@@ -90,26 +91,8 @@ object AppModule {
         janSupabaseClient: JanSupabaseClient
     ): EmployerRepository = EmployerRepositoryImpl(janSupabaseClient)
 
-    // Subscription repository disabled for testing - providing mock implementation
-    @Provides
-    @Singleton
-    fun provideSubscriptionRepository(): SubscriptionRepository = object : SubscriptionRepository {
-        override suspend fun getCurrentSubscription(userId: String?): UserSubscription? = null
-        override suspend fun purchaseSubscription(tier: SubscriptionTier): Result<Unit> = Result.success(Unit)
-        override suspend fun restorePurchases(): Result<Unit> = Result.success(Unit)
-        override suspend fun cancelSubscription(): Result<Unit> = Result.success(Unit)
-        override fun observeSubscriptionStatus(): Flow<SubscriptionTier> = flowOf(SubscriptionTier.FULL_ACCESS)
-        override suspend fun checkWeeklyLimits(userId: String): WeeklyLimits = WeeklyLimits(
-            shiftsUsed = 0,
-            entriesUsed = 0,
-            shiftsLimit = null,
-            entriesLimit = null,
-            canAddShift = true,
-            canAddEntry = true
-        )
-        override suspend fun startFreeTrial(tier: String): Result<Unit> = Result.success(Unit)
-        override suspend fun initializeFree(): Result<Unit> = Result.success(Unit)
-    }
+    // Subscription repository - using real implementation from BillingModule
+    // (Removed mock implementation to avoid duplicate binding)
 
     @Provides
     @Singleton
@@ -155,6 +138,14 @@ object AppModule {
         @ApplicationContext context: Context,
         securityManager: SecurityManager
     ): SecurityRepository = SecurityRepositoryImpl(context, securityManager)
+
+    @Provides
+    @Singleton
+    fun provideAlertManager(
+        @ApplicationContext context: Context,
+        alertRepository: AlertRepository,
+        preferencesManager: com.protip365.app.data.local.PreferencesManager
+    ): AlertManager = AlertManager(context, alertRepository, preferencesManager)
 
     // @Provides
     // @Singleton

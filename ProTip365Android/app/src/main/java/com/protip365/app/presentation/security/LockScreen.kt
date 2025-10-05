@@ -28,6 +28,7 @@ fun LockScreen(
     viewModel: LockScreenViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

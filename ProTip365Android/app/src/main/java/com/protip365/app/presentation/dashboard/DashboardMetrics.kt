@@ -58,6 +58,7 @@ object DashboardMetrics {
     fun calculateStatsFromCompletedShifts(
         shifts: List<CompletedShift>,
         averageDeductionPercentage: Double = 30.0,
+        @Suppress("UNUSED_PARAMETER")
         defaultHourlyRate: Double = 15.0
     ): Stats {
         val stats = Stats()
@@ -83,8 +84,8 @@ object DashboardMetrics {
                 // Use snapshot values if available, otherwise calculate
                 if (entry.grossIncome != null && entry.netIncome != null) {
                     // Use snapshot values
-                    stats.income += entry.grossIncome ?: 0.0
-                    totalNetIncome += entry.netIncome ?: 0.0
+                    stats.income += entry.grossIncome
+                    totalNetIncome += entry.netIncome
                 } else {
                     // Fallback: calculate income using hourly rate and actual hours
                     val hourlyRate = entry.hourlyRate ?: shift.expectedShift.hourlyRate

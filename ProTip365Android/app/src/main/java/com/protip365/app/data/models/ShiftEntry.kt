@@ -115,14 +115,6 @@ data class ShiftEntry(
         }
     }
 
-    /**
-     * Calculate total earnings including wages (requires ExpectedShift data)
-     * DEPRECATED: Use getTotalIncome() instead
-     */
-    @Deprecated("Use getTotalIncome() instead", ReplaceWith("getTotalIncome(hourlyRate)"))
-    fun getTotalEarnings(hourlyRate: Double): Double {
-        return getTotalIncome(hourlyRate)
-    }
 
     /**
      * Calculate effective hourly rate including all income

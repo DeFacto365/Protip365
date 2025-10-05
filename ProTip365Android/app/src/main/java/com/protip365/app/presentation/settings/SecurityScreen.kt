@@ -2,6 +2,7 @@ package com.protip365.app.presentation.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,7 @@ fun SecurityScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     var biometricAvailable by remember { mutableStateOf(false) }
 
@@ -43,7 +45,7 @@ fun SecurityScreen(
             title = { Text("Security") },
             navigationIcon = {
                 IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
         )

@@ -38,6 +38,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WelcomeSignUpScreen(
+    @Suppress("UNUSED_PARAMETER")
     navController: NavController,
     onComplete: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
@@ -418,7 +419,7 @@ fun ProgressBar(currentStep: Int, totalSteps: Int) {
             Spacer(modifier = Modifier.height(8.dp))
             
             LinearProgressIndicator(
-                progress = currentStep.toFloat() / totalSteps,
+                progress = { currentStep.toFloat() / totalSteps },
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.outline
@@ -576,6 +577,7 @@ fun PasswordStep(
     onPasswordChange: (String) -> Unit,
     confirmPassword: String,
     onConfirmPasswordChange: (String) -> Unit,
+    @Suppress("UNUSED_PARAMETER")
     passwordError: String,
     passwordVisible: Boolean,
     confirmPasswordVisible: Boolean,

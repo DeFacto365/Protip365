@@ -112,6 +112,7 @@ private fun TabBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    @Suppress("UNUSED_VARIABLE")
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.15f else 1.0f,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),

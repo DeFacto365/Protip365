@@ -43,6 +43,7 @@ fun SecuritySettingsSection(
 ) {
     var showPINSetup by remember { mutableStateOf(false) }
     var showVerifyDialog by remember { mutableStateOf(false) }
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val biometricManager = remember { BiometricManager.from(context) }
     val isBiometricAvailable = remember {
@@ -314,7 +315,7 @@ private fun AutoLockSettings(
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Divider()
+        HorizontalDivider()
 
         // Auto-lock toggle
         Row(

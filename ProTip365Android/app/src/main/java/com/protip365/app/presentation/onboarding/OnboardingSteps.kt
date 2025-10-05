@@ -533,6 +533,7 @@ fun TargetsStep(
     var salesMonthly by remember { mutableStateOf(state.targetSalesMonthly) }
     var hoursMonthly by remember { mutableStateOf(state.targetHoursMonthly) }
     
+@Suppress("UNUSED_VARIABLE")
     val focusManager = LocalFocusManager.current
     val tipFocusRequester = remember { FocusRequester() }
     val salesFocusRequester = remember { FocusRequester() }

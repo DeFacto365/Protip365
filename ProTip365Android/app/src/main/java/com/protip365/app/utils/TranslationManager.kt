@@ -140,6 +140,7 @@ class CommonStrings(private val translationManager: TranslationManager) {
  */
 @Composable
 fun rememberTranslationManager(): TranslationManager {
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     return remember {
         val preferencesManager = PreferencesManager(context)
@@ -152,6 +153,7 @@ fun rememberTranslationManager(): TranslationManager {
  */
 @Composable
 fun localizedString(@StringRes stringRes: Int, vararg formatArgs: Any): String {
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val preferencesManager = remember { PreferencesManager(context) }
     val localizationManager = remember { LocalizationManager(context, preferencesManager) }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -46,7 +47,7 @@ fun AlertsScreen(
                 title = { Text(stringResource(R.string.notifications_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -111,6 +112,7 @@ fun AlertsScreen(
 fun AlertCard(
     alert: Alert,
     onMarkAsRead: () -> Unit,
+    @Suppress("UNUSED_PARAMETER")
     onDelete: () -> Unit
 ) {
     Card(
@@ -235,7 +237,7 @@ fun getAlertIcon(alertType: String): androidx.compose.ui.graphics.vector.ImageVe
         AlertType.MISSING_SHIFT -> Icons.Default.Warning
         AlertType.INCOMPLETE_SHIFT -> Icons.Outlined.ErrorOutline
         AlertType.TARGET_ACHIEVED -> Icons.Default.Star
-        AlertType.PERSONAL_BEST -> Icons.Default.TrendingUp
+        AlertType.PERSONAL_BEST -> Icons.AutoMirrored.Filled.TrendingUp
         AlertType.REMINDER -> Icons.Default.Notifications
         AlertType.SUBSCRIPTION_LIMIT -> Icons.Default.Info
         AlertType.WEEKLY_SUMMARY -> Icons.Default.BarChart
@@ -261,7 +263,8 @@ fun getAlertColor(alertType: String): androidx.compose.ui.graphics.Color {
 
 @Composable
 fun formatRelativeTime(dateTimeString: String): String {
-    val context = LocalContext.current
+        @Suppress("UNUSED_VARIABLE")
+        val context = LocalContext.current
 
     // Parse the datetime safely first
     val timeInfo = remember(dateTimeString) {
@@ -285,6 +288,7 @@ fun formatRelativeTime(dateTimeString: String): String {
             duration.inWholeHours < 24 -> stringResource(R.string.hours_ago, duration.inWholeHours.toInt())
             duration.inWholeDays < 7 -> stringResource(R.string.days_ago, duration.inWholeDays.toInt())
             else -> {
+                @Suppress("UNUSED_VARIABLE")
                 val date = timeInfo.instant!!.toLocalDateTime(TimeZone.currentSystemDefault())
                 SimpleDateFormat("MMM dd", Locale.getDefault()).format(
                     Date(timeInfo.instant.toEpochMilliseconds())

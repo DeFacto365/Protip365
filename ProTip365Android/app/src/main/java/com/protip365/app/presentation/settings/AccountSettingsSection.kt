@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -60,7 +61,7 @@ fun AccountSettingsSection(
                 )
             }
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Export Data
             AccountActionItem(
@@ -96,7 +97,7 @@ fun AccountSettingsSection(
 
             // Sign Out
             AccountActionItem(
-                icon = Icons.Default.Logout,
+                icon = Icons.AutoMirrored.Filled.Logout,
                 title = when (currentLanguage) {
                     "fr" -> "Se déconnecter"
                     "es" -> "Cerrar sesión"
@@ -111,7 +112,7 @@ fun AccountSettingsSection(
                 tintColor = MaterialTheme.colorScheme.primary
             )
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             // Delete Account (Danger Zone)
             AccountActionItem(

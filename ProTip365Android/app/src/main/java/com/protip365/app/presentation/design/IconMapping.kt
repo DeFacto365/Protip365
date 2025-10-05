@@ -1,6 +1,7 @@
 package com.protip365.app.presentation.design
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,8 +48,8 @@ object IconMapping {
         val salary: ImageVector = Icons.Default.AccountBalance
         val hours: ImageVector = Icons.Default.Schedule
         val percentage: ImageVector = Icons.Default.Percent
-        val income: ImageVector = Icons.Default.TrendingUp
-        val expense: ImageVector = Icons.Default.TrendingDown
+        val income: ImageVector = Icons.AutoMirrored.Filled.TrendingUp
+        val expense: ImageVector = Icons.AutoMirrored.Filled.TrendingDown
     }
 
     // MARK: - Status
@@ -57,7 +58,7 @@ object IconMapping {
         val error: ImageVector = Icons.Default.Error
         val warning: ImageVector = Icons.Default.Warning
         val info: ImageVector = Icons.Default.Info
-        val help: ImageVector = Icons.Default.Help
+        val help: ImageVector = Icons.AutoMirrored.Filled.Help
         val pending: ImageVector = Icons.Default.HourglassEmpty
         val complete: ImageVector = Icons.Default.Verified
     }

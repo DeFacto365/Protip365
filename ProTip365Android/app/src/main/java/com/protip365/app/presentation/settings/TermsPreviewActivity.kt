@@ -36,6 +36,7 @@ class TermsPreviewActivity : ComponentActivity() {
 @Composable
 fun TermsPreviewScreen() {
     var currentLanguage by remember { mutableStateOf("en") }
+@Suppress("UNUSED_VARIABLE")
     val context = LocalContext.current
     val navController = rememberNavController()
 

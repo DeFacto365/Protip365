@@ -1,0 +1,50 @@
+package com.protip365.app.presentation.workers
+
+import android.content.Context
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.protip365.app.domain.repository.CompletedShiftRepository
+import com.protip365.app.domain.repository.AuthRepository
+import com.protip365.app.presentation.alerts.AlertManager
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
+
+@HiltWorker
+class DailyShiftCheckWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val completedShiftRepository: CompletedShiftRepository,
+    private val authRepository: AuthRepository,
+    private val alertManager: AlertManager
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        return try {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val yesterday = today.minus(DatePeriod(days = 1))
+            
+            // Get current user
+            val user = authRepository.getCurrentUser() ?: return Result.failure()
+            
+            // Get shifts for yesterday and today
+            val yesterdayShifts = completedShiftRepository.getShiftsForDate(user.userId, yesterday)
+            val todayShifts = completedShiftRepository.getShiftsForDate(user.userId, today)
+            val shifts = yesterdayShifts + todayShifts
+            
+            alertManager.checkYesterdayShifts(shifts)
+            
+            android.util.Log.d("DailyShiftCheckWorker", "✅ Daily shift check completed")
+            Result.success()
+        } catch (e: Exception) {
+            android.util.Log.e("DailyShiftCheckWorker", "❌ Daily shift check failed: ${e.message}")
+            Result.retry()
+        }
+    }
+}
+

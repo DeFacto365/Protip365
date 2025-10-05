@@ -57,6 +57,7 @@ fun AnimatedLoadingIndicator(
         label = "scale"
     )
     
+    @Suppress("UNUSED_VARIABLE")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
