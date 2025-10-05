@@ -44,6 +44,10 @@ class AuthViewModel @Inject constructor(
                     val profile = user?.userId?.let { userRepository.getUserProfile(it) }
                     val needsOnboarding = !(profile?.onboardingCompleted ?: false)
 
+                    println("🔍 Auth Check - User: ${user?.userId}")
+                    println("   Onboarding Completed: ${profile?.onboardingCompleted}")
+                    println("   Needs Onboarding: $needsOnboarding")
+
                     _state.value = _state.value.copy(
                         isAuthenticated = true,
                         isNewUser = needsOnboarding, // true if onboarding not completed

@@ -145,13 +145,16 @@ class UserRepositoryImpl @Inject constructor(
             }
 
             // Profile exists, update it
-            supabaseClient
+            val response = supabaseClient
                 .from("users_profile")
                 .update(updates) {
                     filter {
                         eq("user_id", userId)
                     }
                 }
+
+            println("✅ Profile updated successfully for user: $userId")
+            println("   Updated fields: ${updates.keys.joinToString(", ")}")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

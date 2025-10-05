@@ -230,10 +230,11 @@ class OnboardingViewModel @Inject constructor(
 
                 if (updateResult.isFailure) {
                     println("❌ Failed to save onboarding data: ${updateResult.exceptionOrNull()?.message}")
+                    updateResult.exceptionOrNull()?.printStackTrace()
                     throw updateResult.exceptionOrNull() ?: Exception("Failed to save onboarding data")
-                } else {
-                    println("✅ Onboarding data saved successfully")
                 }
+
+                println("✅ Onboarding data saved successfully to database")
 
                 // Save to preferences
                 preferencesManager.setDailyTarget(salesDaily.toFloat())
@@ -242,15 +243,18 @@ class OnboardingViewModel @Inject constructor(
                     preferencesManager.setMonthlyTarget(salesMonthly.toFloat())
                 }
 
-                // Mark onboarding as complete
-                userRepository.setOnboardingCompleted(true)
+                // Mark onboarding as complete in preferences
                 preferencesManager.setOnboardingCompleted(true)
+                println("✅ Onboarding marked complete in preferences")
 
                 // Navigate to main screen
                 onComplete()
             } catch (e: Exception) {
-                // Handle error if needed
-                println("Error completing onboarding: ${e.message}")
+                // Handle error - show to user
+                println("❌ Error completing onboarding: ${e.message}")
+                e.printStackTrace()
+                // Don't call onComplete() if there was an error
+                // User will stay on onboarding screen and can try again
             }
         }
     }
