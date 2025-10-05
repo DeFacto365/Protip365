@@ -116,6 +116,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun updateDefaultEmployer(employerId: String?) {
         _state.value = _state.value.copy(defaultEmployerId = employerId)
+        println("🔵 Default employer updated to: $employerId")
     }
 
     // Load employers from database (called after employer management sheet closes)
@@ -166,8 +167,21 @@ class OnboardingViewModel @Inject constructor(
     fun completeOnboarding(onComplete: () -> Unit) {
         viewModelScope.launch {
             try {
-                // Save single employer if not using multiple employers (matching iOS)
                 val userId = userRepository.getCurrentUserId()
+
+                // Reload employers if using multiple employers to get latest default
+                if (_state.value.useMultipleEmployers && userId != null) {
+                    val employers = employerRepository.getEmployers(userId)
+                    _state.value = _state.value.copy(employers = employers)
+
+                    // Auto-select first employer if none selected and list is not empty
+                    if (_state.value.defaultEmployerId == null && employers.isNotEmpty()) {
+                        _state.value = _state.value.copy(defaultEmployerId = employers.first().id)
+                        println("🔵 Auto-selected default employer: ${employers.first().name}")
+                    }
+                }
+
+                // Save single employer if not using multiple employers (matching iOS)
                 if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty() && userId != null) {
                     // Create employer in database (matching iOS)
                     // TODO: Add employer repository method
@@ -186,6 +200,7 @@ class OnboardingViewModel @Inject constructor(
                 println("🔵 Completing onboarding with data:")
                 println("  Language: ${_state.value.language}")
                 println("  Multiple Employers: ${_state.value.useMultipleEmployers}")
+                println("  Default Employer ID: ${_state.value.defaultEmployerId}")
                 println("  Week Start: ${_state.value.weekStart}")
                 println("  Variable Schedule: ${_state.value.hasVariableSchedule}")
                 println("  Tip Target: $tipTarget%")
