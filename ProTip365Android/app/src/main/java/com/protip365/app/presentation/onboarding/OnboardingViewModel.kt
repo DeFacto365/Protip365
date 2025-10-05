@@ -26,38 +26,33 @@ class OnboardingViewModel @Inject constructor(
     val state: StateFlow<OnboardingState> = _state.asStateFlow()
 
     init {
-        // Pre-fill name from the current user profile if available
-        loadUserProfile()
+        // For onboarding, start with default values from OnboardingState
+        // Don't load profile as it might override the desired defaults
+        loadUserLanguagePreference()
     }
 
-    private fun loadUserProfile() {
+    private fun loadUserLanguagePreference() {
         viewModelScope.launch {
             try {
                 val userId = userRepository.getCurrentUserId()
                 userId?.let { id ->
                     val userProfile = userRepository.getUserProfile(id)
                     userProfile?.let { profile ->
-                    _state.value = _state.value.copy(
-                        language = profile.preferredLanguage,
-                        useMultipleEmployers = profile.useMultipleEmployers,
-                        weekStart = profile.weekStart,
-                        hasVariableSchedule = profile.hasVariableSchedule,
-                        tipTargetPercentage = profile.tipTargetPercentage?.toString() ?: "15",
-                        averageDeductionPercentage = profile.averageDeductionPercentage?.toString() ?: "30",
-                        targetSalesDaily = profile.targetSalesDaily?.toString() ?: "",
-                        targetSalesWeekly = profile.targetSalesWeekly?.toString() ?: "",
-                        targetSalesMonthly = profile.targetSalesMonthly?.toString() ?: "",
-                        targetHoursDaily = profile.targetHoursDaily?.toString() ?: "",
-                        targetHoursWeekly = profile.targetHoursWeekly?.toString() ?: "",
-                        targetHoursMonthly = profile.targetHoursMonthly?.toString() ?: ""
-                    )
+                        // Only load language preference, keep other defaults
+                        _state.value = _state.value.copy(
+                            language = profile.preferredLanguage
+                        )
                     }
                 }
             } catch (e: Exception) {
-                // Handle error - use default values
-                println("Error loading user profile: ${e.message}")
+                // Handle error - use default language
+                println("Error loading user language: ${e.message}")
             }
         }
+    }
+
+    fun updateCurrentStep(step: Int) {
+        _state.value = _state.value.copy(currentStep = step)
     }
 
     fun updateLanguage(language: String) {

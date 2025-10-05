@@ -21,6 +21,7 @@ import com.protip365.app.R
 @Composable
 fun EmployersScreen(
     navController: NavController,
+    fromOnboarding: Boolean = false,
     viewModel: EmployersViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -32,8 +33,19 @@ fun EmployersScreen(
         TopAppBar(
             title = { Text(stringResource(R.string.employers_title)) },
             navigationIcon = {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                if (fromOnboarding) {
+                    // Show "Done" text button in onboarding mode
+                    TextButton(onClick = { navController.navigateUp() }) {
+                        Text(
+                            text = stringResource(R.string.done),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                } else {
+                    // Show back arrow in normal mode
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
                 }
             },
             actions = {
@@ -69,50 +81,6 @@ fun EmployersScreen(
                         onToggleActive = { viewModel.toggleEmployerActive(employer.id) },
                         onDelete = { viewModel.deleteEmployer(employer.id) }
                     )
-                }
-
-                item {
-                    // Info card about employer limits
-                    if (!state.hasFullAccess) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Column {
-                                    Text(
-                                        text = "Multiple Employers Available",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                    Text(
-                                        text = "Full Access subscription allows unlimited employers with per-employer analytics.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    TextButton(
-                                        onClick = { navController.navigate("subscription") }
-                                    ) {
-                                        Text("View Plans")
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
