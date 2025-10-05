@@ -186,12 +186,12 @@ fun OnboardingProgressBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Step $currentStep of $totalSteps",
+                    text = "Step ${currentStep + 1} of $totalSteps",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "${((currentStep.toFloat() / totalSteps) * 100).toInt()}%",
+                    text = "${(((currentStep + 1).toFloat() / totalSteps) * 100).toInt()}%",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
@@ -200,7 +200,7 @@ fun OnboardingProgressBar(
             Spacer(modifier = Modifier.height(8.dp))
             
             LinearProgressIndicator(
-                progress = currentStep.toFloat() / totalSteps,
+                progress = (currentStep + 1).toFloat() / totalSteps,
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.outline

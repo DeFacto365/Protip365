@@ -3,7 +3,7 @@ package com.protip365.app.presentation.onboarding
 data class OnboardingState(
     val currentStep: Int = 0, // Start with language step (matching iOS)
     val language: String = "en",
-    val useMultipleEmployers: Boolean = false,
+    val useMultipleEmployers: Boolean = true,
     val singleEmployerName: String = "", // For single employer mode
     val defaultEmployerId: String? = null, // Default employer for multiple employers mode
     val employers: List<com.protip365.app.data.models.Employer> = emptyList(), // List of employers loaded from database
