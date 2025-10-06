@@ -37,25 +37,35 @@ class AuthRepositoryImpl @Inject constructor(
             }
 
             // Create user profile after successful signup
-            val userId = supabaseClient.auth.currentUserOrNull()?.id
-            if (userId != null) {
-                val userProfile = UserProfile(
-                    userId = userId,
-                    name = null // Let user set their own name later
-                )
-                // Try to create profile, but don't fail the signup if it doesn't work
+            val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("User ID not found after signup")
+
+            val userProfile = UserProfile(
+                userId = userId,
+                name = null // Let user set their own name later
+            )
+
+            // Create the profile - retry once if it fails
+            var profileCreated = false
+            try {
+                supabaseClient.from("users_profile").insert(userProfile)
+                profileCreated = true
+            } catch (e: Exception) {
+                println("First attempt to create profile failed: ${e.message}, retrying...")
+                // Wait a bit and retry once
+                kotlinx.coroutines.delay(500)
                 try {
                     supabaseClient.from("users_profile").insert(userProfile)
-                } catch (e: Exception) {
-                    // Log the error but continue - profile can be created later
-                    println("Note: User profile creation deferred: ${e.message}")
+                    profileCreated = true
+                } catch (retryException: Exception) {
+                    println("Second attempt to create profile failed: ${retryException.message}")
                 }
             }
 
             dataStore.edit { preferences ->
                 preferences[IS_LOGGED_IN_KEY] = true
             }
-            val profile = getCurrentUser() ?: throw Exception("Failed to get user profile")
+
+            val profile = getCurrentUser() ?: UserProfile(userId = userId)
             Result.success(profile)
         } catch (e: Exception) {
             // Check if the error indicates email already exists

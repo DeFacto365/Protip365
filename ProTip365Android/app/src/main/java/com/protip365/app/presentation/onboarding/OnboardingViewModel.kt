@@ -26,38 +26,33 @@ class OnboardingViewModel @Inject constructor(
     val state: StateFlow<OnboardingState> = _state.asStateFlow()
 
     init {
-        // Pre-fill name from the current user profile if available
-        loadUserProfile()
+        // For onboarding, start with default values from OnboardingState
+        // Don't load profile as it might override the desired defaults
+        loadUserLanguagePreference()
     }
 
-    private fun loadUserProfile() {
+    private fun loadUserLanguagePreference() {
         viewModelScope.launch {
             try {
                 val userId = userRepository.getCurrentUserId()
                 userId?.let { id ->
                     val userProfile = userRepository.getUserProfile(id)
                     userProfile?.let { profile ->
-                    _state.value = _state.value.copy(
-                        language = profile.preferredLanguage,
-                        useMultipleEmployers = profile.useMultipleEmployers,
-                        weekStart = profile.weekStart,
-                        hasVariableSchedule = profile.hasVariableSchedule,
-                        tipTargetPercentage = profile.tipTargetPercentage?.toString() ?: "15",
-                        averageDeductionPercentage = profile.averageDeductionPercentage?.toString() ?: "30",
-                        targetSalesDaily = profile.targetSalesDaily?.toString() ?: "",
-                        targetSalesWeekly = profile.targetSalesWeekly?.toString() ?: "",
-                        targetSalesMonthly = profile.targetSalesMonthly?.toString() ?: "",
-                        targetHoursDaily = profile.targetHoursDaily?.toString() ?: "",
-                        targetHoursWeekly = profile.targetHoursWeekly?.toString() ?: "",
-                        targetHoursMonthly = profile.targetHoursMonthly?.toString() ?: ""
-                    )
+                        // Only load language preference, keep other defaults
+                        _state.value = _state.value.copy(
+                            language = profile.preferredLanguage
+                        )
                     }
                 }
             } catch (e: Exception) {
-                // Handle error - use default values
-                println("Error loading user profile: ${e.message}")
+                // Handle error - use default language
+                println("Error loading user language: ${e.message}")
             }
         }
+    }
+
+    fun updateCurrentStep(step: Int) {
+        _state.value = _state.value.copy(currentStep = step)
     }
 
     fun updateLanguage(language: String) {
@@ -121,6 +116,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun updateDefaultEmployer(employerId: String?) {
         _state.value = _state.value.copy(defaultEmployerId = employerId)
+        println("🔵 Default employer updated to: $employerId")
     }
 
     // Load employers from database (called after employer management sheet closes)
@@ -170,10 +166,33 @@ class OnboardingViewModel @Inject constructor(
 
     fun completeOnboarding(onComplete: () -> Unit) {
         viewModelScope.launch {
+            // Set loading state
+            _state.value = _state.value.copy(
+                isCompleting = true,
+                completionError = null
+            )
+
             try {
-                // Save single employer if not using multiple employers (matching iOS)
+                println("🔵 Starting onboarding completion...")
                 val userId = userRepository.getCurrentUserId()
-                if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty() && userId != null) {
+                if (userId == null) {
+                    throw Exception("User not authenticated")
+                }
+
+                // Reload employers if using multiple employers to get latest default
+                if (_state.value.useMultipleEmployers) {
+                    val employers = employerRepository.getEmployers(userId)
+                    _state.value = _state.value.copy(employers = employers)
+
+                    // Auto-select first employer if none selected and list is not empty
+                    if (_state.value.defaultEmployerId == null && employers.isNotEmpty()) {
+                        _state.value = _state.value.copy(defaultEmployerId = employers.first().id)
+                        println("🔵 Auto-selected default employer: ${employers.first().name}")
+                    }
+                }
+
+                // Save single employer if not using multiple employers (matching iOS)
+                if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty()) {
                     // Create employer in database (matching iOS)
                     // TODO: Add employer repository method
                 }
@@ -188,8 +207,19 @@ class OnboardingViewModel @Inject constructor(
                 val hoursWeekly = if (_state.value.hasVariableSchedule) 0.0 else (_state.value.targetHoursWeekly.toDoubleOrNull() ?: 0.0)
                 val hoursMonthly = if (_state.value.hasVariableSchedule) 0.0 else (_state.value.targetHoursMonthly.toDoubleOrNull() ?: 0.0)
 
+                println("🔵 Completing onboarding with data:")
+                println("  Language: ${_state.value.language}")
+                println("  Multiple Employers: ${_state.value.useMultipleEmployers}")
+                println("  Default Employer ID: ${_state.value.defaultEmployerId}")
+                println("  Week Start: ${_state.value.weekStart}")
+                println("  Variable Schedule: ${_state.value.hasVariableSchedule}")
+                println("  Tip Target: $tipTarget%")
+                println("  Avg Deduction: $averageDeduction%")
+                println("  Sales Daily: $$salesDaily")
+                println("  Hours Daily: $hoursDaily hrs")
+
                 // Update user profile with all onboarding data (matching iOS)
-                userRepository.updateUserProfile(
+                val updateResult = userRepository.updateUserProfile(
                     mapOf(
                         "preferred_language" to _state.value.language,
                         "use_multiple_employers" to _state.value.useMultipleEmployers,
@@ -208,6 +238,14 @@ class OnboardingViewModel @Inject constructor(
                     )
                 )
 
+                if (updateResult.isFailure) {
+                    println("❌ Failed to save onboarding data: ${updateResult.exceptionOrNull()?.message}")
+                    updateResult.exceptionOrNull()?.printStackTrace()
+                    throw updateResult.exceptionOrNull() ?: Exception("Failed to save onboarding data")
+                }
+
+                println("✅ Onboarding data saved successfully to database")
+
                 // Save to preferences
                 preferencesManager.setDailyTarget(salesDaily.toFloat())
                 if (!_state.value.hasVariableSchedule) {
@@ -215,15 +253,25 @@ class OnboardingViewModel @Inject constructor(
                     preferencesManager.setMonthlyTarget(salesMonthly.toFloat())
                 }
 
-                // Mark onboarding as complete
-                userRepository.setOnboardingCompleted(true)
+                // Mark onboarding as complete in preferences
                 preferencesManager.setOnboardingCompleted(true)
+                println("✅ Onboarding marked complete in preferences")
+
+                // Clear loading state
+                _state.value = _state.value.copy(isCompleting = false)
 
                 // Navigate to main screen
+                println("✅ Onboarding complete, navigating to main screen")
                 onComplete()
             } catch (e: Exception) {
-                // Handle error if needed
-                println("Error completing onboarding: ${e.message}")
+                // Handle error - show to user
+                println("❌ Error completing onboarding: ${e.message}")
+                e.printStackTrace()
+
+                _state.value = _state.value.copy(
+                    isCompleting = false,
+                    completionError = e.message ?: "Failed to save onboarding data. Please try again."
+                )
             }
         }
     }

@@ -118,13 +118,54 @@ class UserRepositoryImpl @Inject constructor(
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return Result.failure(Exception("User not authenticated"))
 
+            // Check if profile exists first
+            val existingProfile = getUserProfile(userId)
+
+            if (existingProfile == null) {
+                // Profile doesn't exist, create it with the updates
+                val newProfile = UserProfile(
+                    userId = userId,
+                    name = updates["name"] as? String,
+                    preferredLanguage = updates["preferred_language"] as? String ?: "en",
+                    useMultipleEmployers = updates["use_multiple_employers"] as? Boolean ?: true,
+                    weekStart = (updates["week_start"] as? Number)?.toInt() ?: 0,
+                    hasVariableSchedule = updates["has_variable_schedule"] as? Boolean ?: false,
+                    tipTargetPercentage = (updates["tip_target_percentage"] as? Number)?.toDouble() ?: 15.0,
+                    targetSalesDaily = (updates["target_sales_daily"] as? Number)?.toDouble() ?: 0.0,
+                    targetSalesWeekly = (updates["target_sales_weekly"] as? Number)?.toDouble() ?: 0.0,
+                    targetSalesMonthly = (updates["target_sales_monthly"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursDaily = (updates["target_hours_daily"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursWeekly = (updates["target_hours_weekly"] as? Number)?.toDouble() ?: 0.0,
+                    targetHoursMonthly = (updates["target_hours_monthly"] as? Number)?.toDouble() ?: 0.0,
+                    averageDeductionPercentage = (updates["average_deduction_percentage"] as? Number)?.toDouble() ?: 30.0,
+                    defaultEmployerId = updates["default_employer_id"] as? String,
+                    onboardingCompleted = updates["onboarding_completed"] as? Boolean ?: false
+                )
+                return createUserProfile(newProfile)
+            }
+
+            // Profile exists, update it
+            // Convert Map<String, Any?> to proper types for Supabase serialization
+            val typedUpdates = updates.mapValues { (key, value) ->
+                when (value) {
+                    is Number -> value // Keep numbers as-is
+                    is Boolean -> value // Keep booleans as-is
+                    is String -> value // Keep strings as-is
+                    null -> null // Keep nulls as-is
+                    else -> value.toString() // Convert everything else to string
+                }
+            }
+
             supabaseClient
                 .from("users_profile")
-                .update(updates) {
+                .update(typedUpdates) {
                     filter {
                         eq("user_id", userId)
                     }
                 }
+
+            println("✅ Profile updated successfully for user: $userId")
+            println("   Updated fields: ${updates.keys.joinToString(", ")}")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

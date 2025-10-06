@@ -3,7 +3,7 @@ package com.protip365.app.presentation.onboarding
 data class OnboardingState(
     val currentStep: Int = 0, // Start with language step (matching iOS)
     val language: String = "en",
-    val useMultipleEmployers: Boolean = false,
+    val useMultipleEmployers: Boolean = true,
     val singleEmployerName: String = "", // For single employer mode
     val defaultEmployerId: String? = null, // Default employer for multiple employers mode
     val employers: List<com.protip365.app.data.models.Employer> = emptyList(), // List of employers loaded from database
@@ -17,7 +17,9 @@ data class OnboardingState(
     val targetSalesMonthly: String = "",
     val targetHoursDaily: String = "",
     val targetHoursWeekly: String = "",
-    val targetHoursMonthly: String = ""
+    val targetHoursMonthly: String = "",
+    val isCompleting: Boolean = false, // Loading state for finish button
+    val completionError: String? = null // Error message if completion fails
 ) {
     fun isStepValid(): Boolean {
         return when (currentStep) {

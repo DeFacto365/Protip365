@@ -13,16 +13,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.protip365.app.presentation.calendar.CalendarScreen
 import com.protip365.app.presentation.dashboard.DashboardScreen
 import com.protip365.app.presentation.settings.*
 import com.protip365.app.presentation.calculator.CalculatorScreen
 import com.protip365.app.presentation.employers.EmployersScreen
 import com.protip365.app.presentation.achievements.AchievementsScreen
+import com.protip365.app.presentation.entries.AddEditEntryScreen
+import kotlinx.datetime.LocalDate
 import com.protip365.app.presentation.localization.LocalizedBottomNavItems
 import com.protip365.app.presentation.localization.rememberLocalization
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,14 +69,14 @@ fun MainScreen(
             }
             composable("calendar") {
                 CalendarScreen(
-                    onNavigateToAddShift = { navController.navigate("add_shift") },
+                    onNavigateToAddShift = { date -> navController.navigate("add_shift?date=${date}") },
                     onNavigateToAddEntry = { date -> navController.navigate("add_entry?initialDate=${date}") },
                     onNavigateToEditShift = { shiftId -> navController.navigate("edit_shift/$shiftId") }
                 )
             }
             if (useMultipleEmployers) {
                 composable("employers") {
-                    EmployersScreen(navController)
+                    EmployersScreen(navController = navController, fromOnboarding = false)
                 }
             }
             composable("calculator") {
@@ -81,8 +85,44 @@ fun MainScreen(
             composable("settings") {
                 SettingsScreen(navController)
             }
-            composable("add_shift") {
-                AddShiftScreen(navController)
+            composable(
+                route = "add_shift?date={date}",
+                arguments = listOf(
+                    navArgument("date") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val dateString = backStackEntry.arguments?.getString("date")
+                AddShiftScreen(
+                    navController = navController,
+                    initialDate = dateString
+                )
+            }
+            composable(
+                route = "add_entry?initialDate={initialDate}",
+                arguments = listOf(
+                    navArgument("initialDate") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val dateString = backStackEntry.arguments?.getString("initialDate")
+                val initialDate = dateString?.let {
+                    try {
+                        LocalDate.parse(it)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                AddEditEntryScreen(
+                    navController = navController,
+                    initialDate = initialDate
+                )
             }
             composable("achievements") {
                 AchievementsScreen(navController)

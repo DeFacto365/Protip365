@@ -44,6 +44,10 @@ class AuthViewModel @Inject constructor(
                     val profile = user?.userId?.let { userRepository.getUserProfile(it) }
                     val needsOnboarding = !(profile?.onboardingCompleted ?: false)
 
+                    println("🔍 Auth Check - User: ${user?.userId}")
+                    println("   Onboarding Completed: ${profile?.onboardingCompleted}")
+                    println("   Needs Onboarding: $needsOnboarding")
+
                     _state.value = _state.value.copy(
                         isAuthenticated = true,
                         isNewUser = needsOnboarding, // true if onboarding not completed
@@ -167,14 +171,17 @@ class AuthViewModel @Inject constructor(
 
             try {
                 authRepository.signUp(_state.value.email, _state.value.password)
-                    .onSuccess { _ ->
-                        // Mark user as new for onboarding and save the name
-                        userRepository.updateUserMetadata(mapOf("is_new_user" to true))
-
+                    .onSuccess { userProfile ->
                         // Save the name to user profile if provided
                         if (_state.value.name.isNotBlank()) {
-                            userRepository.updateUserProfile(mapOf("name" to _state.value.name))
+                            val updateResult = userRepository.updateUserProfile(mapOf("name" to _state.value.name))
+                            if (updateResult.isFailure) {
+                                println("Warning: Failed to save name to profile: ${updateResult.exceptionOrNull()?.message}")
+                            }
                         }
+
+                        // Mark user as new for onboarding
+                        userRepository.updateUserMetadata(mapOf("is_new_user" to true))
 
                         _state.value = _state.value.copy(
                             isAuthenticated = true,  // Set authenticated to true

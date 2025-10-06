@@ -35,6 +35,12 @@ class AddShiftViewModel @Inject constructor(
     private val _employers = MutableStateFlow<List<Employer>>(emptyList())
     val employers: StateFlow<List<Employer>> = _employers.asStateFlow()
 
+    private val _selectedEmployerId = MutableStateFlow<String?>(null)
+    val selectedEmployerId: StateFlow<String?> = _selectedEmployerId.asStateFlow()
+
+    private val _hourlyRate = MutableStateFlow("15.00")
+    val hourlyRate: StateFlow<String> = _hourlyRate.asStateFlow()
+
     private val _selectedAlert = MutableStateFlow("60")
     val selectedAlert: StateFlow<String> = _selectedAlert.asStateFlow()
 
@@ -44,37 +50,63 @@ class AddShiftViewModel @Inject constructor(
     private var currentUserId: String? = null
 
     init {
-        loadEmployers()
-        loadUserDefaults()
-        checkSubscriptionLimits()
-    }
-
-    private fun loadEmployers() {
         viewModelScope.launch {
-            val user = authRepository.getCurrentUser()
-            user?.let {
-                currentUserId = it.userId
-                if (it.useMultipleEmployers) {
-                    val employerList = employerRepository.getEmployers(it.userId)
-                    _employers.value = employerList
-                }
-            }
+            loadEmployersAndDefaults()
+            checkSubscriptionLimits()
         }
     }
 
-    private fun loadUserDefaults() {
-        viewModelScope.launch {
-            try {
-                val user = authRepository.getCurrentUser()
-                user?.let { currentUser ->
-                    val profile = userRepository.getUserProfile(currentUser.userId)
-                    profile?.defaultAlertMinutes?.let { minutes ->
-                        _defaultAlertMinutes.value = minutes
-                        _selectedAlert.value = minutes.toString()
+    private suspend fun loadEmployersAndDefaults() {
+        try {
+            val user = authRepository.getCurrentUser()
+            user?.let { currentUser ->
+                currentUserId = currentUser.userId
+
+                // Load employers first if using multiple employers
+                if (currentUser.useMultipleEmployers) {
+                    val employerList = employerRepository.getEmployers(currentUser.userId)
+                    _employers.value = employerList
+                }
+
+                // Now load user defaults
+                val profile = userRepository.getUserProfile(currentUser.userId)
+
+                // Set default alert minutes
+                profile?.defaultAlertMinutes?.let { minutes ->
+                    _defaultAlertMinutes.value = minutes
+                    _selectedAlert.value = minutes.toString()
+                }
+
+                // Set default employer and hourly rate
+                profile?.defaultEmployerId?.let { employerId ->
+                    _selectedEmployerId.value = employerId
+                    // Find employer and set their hourly rate
+                    _employers.value.find { it.id == employerId }?.let { employer ->
+                        _hourlyRate.value = employer.hourlyRate.toString()
+                        println("🔵 Auto-selected default employer: ${employer.name} @ $${employer.hourlyRate}/hr")
                     }
                 }
-            } catch (e: Exception) {
-                // Handle error silently, use default values
+
+                // Set default hourly rate if no employer selected
+                if (_selectedEmployerId.value == null) {
+                    profile?.defaultHourlyRate?.let { rate ->
+                        _hourlyRate.value = rate.toString()
+                        println("🔵 Using default hourly rate: $${rate}/hr")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            println("❌ Error loading employer/user defaults: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    fun selectEmployer(employerId: String?) {
+        _selectedEmployerId.value = employerId
+        // Update hourly rate when employer changes
+        employerId?.let { id ->
+            _employers.value.find { it.id == id }?.let { employer ->
+                _hourlyRate.value = employer.hourlyRate.toString()
             }
         }
     }

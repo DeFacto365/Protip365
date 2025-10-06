@@ -21,8 +21,8 @@ fun OnboardingScreen(
     onComplete: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
-    var currentStep by remember { mutableStateOf(0) }
     val state by viewModel.state.collectAsState()
+    val currentStep = state.currentStep // Use currentStep from ViewModel state
     val totalSteps = 7 // Matching iOS: Language, Employers, Week Start, Security, Variable, Targets, How To Use
     val localization = rememberOnboardingLocalization()
     
@@ -91,8 +91,8 @@ fun OnboardingScreen(
                                 viewModel.updateDefaultEmployer(employerId)
                             },
                             onNavigateToEmployers = {
-                                // Navigate to employers screen and load employers when returning
-                                navController.navigate("employers")
+                                // Navigate to employers screen in onboarding mode
+                                navController.navigate("employers?fromOnboarding=true")
                             }
                         )
                     }
@@ -127,7 +127,25 @@ fun OnboardingScreen(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            
+
+            // Error message
+            state.completionError?.let { error ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             // Navigation buttons
             Row(
                 modifier = Modifier
@@ -137,7 +155,7 @@ fun OnboardingScreen(
             ) {
                 if (currentStep > 0) {
                 OutlinedButton(
-                    onClick = { currentStep-- },
+                    onClick = { viewModel.updateCurrentStep(currentStep - 1) },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(localization.backButtonText)
@@ -145,22 +163,30 @@ fun OnboardingScreen(
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
-                
+
                 Button(
                     onClick = {
                         if (currentStep < totalSteps - 1) {
-                            currentStep++
+                            viewModel.updateCurrentStep(currentStep + 1)
                         } else {
                             // Last step - complete onboarding
                             viewModel.completeOnboarding(onComplete)
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = state.isStepValid()
+                    enabled = state.isStepValid() && !state.isCompleting
                 ) {
-                    Text(
-                        text = if (currentStep < totalSteps - 1) localization.nextButtonText else "Finish"
-                    )
+                    if (state.isCompleting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = if (currentStep < totalSteps - 1) localization.nextButtonText else "Finish"
+                        )
+                    }
                 }
             }
         }
@@ -186,12 +212,12 @@ fun OnboardingProgressBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Step $currentStep of $totalSteps",
+                    text = "Step ${currentStep + 1} of $totalSteps",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "${((currentStep.toFloat() / totalSteps) * 100).toInt()}%",
+                    text = "${(((currentStep + 1).toFloat() / totalSteps) * 100).toInt()}%",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
@@ -200,7 +226,7 @@ fun OnboardingProgressBar(
             Spacer(modifier = Modifier.height(8.dp))
             
             LinearProgressIndicator(
-                progress = currentStep.toFloat() / totalSteps,
+                progress = (currentStep + 1).toFloat() / totalSteps,
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.outline

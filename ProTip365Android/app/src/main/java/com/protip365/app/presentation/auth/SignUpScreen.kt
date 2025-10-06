@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -103,10 +104,6 @@ fun SignUpScreen(
                 onValueChange = {
                     email = it
                     viewModel.updateEmail(it)
-                    // Check email availability when user stops typing (debounced)
-                    if (it.contains("@") && it.contains(".")) {
-                        viewModel.validateEmailAvailability(it)
-                    }
                 },
                 label = { Text(stringResource(R.string.email_hint)) },
                 keyboardOptions = KeyboardOptions(
@@ -114,7 +111,14 @@ fun SignUpScreen(
                     imeAction = ImeAction.Next
                 ),
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState ->
+                        // Check email availability when user leaves the field
+                        if (!focusState.isFocused && email.contains("@") && email.contains(".")) {
+                            viewModel.validateEmailAvailability(email)
+                        }
+                    },
                 isError = authState.emailError != null,
                 supportingText = {
                     if (authState.isCheckingEmail) {
@@ -287,6 +291,7 @@ fun SignUpScreen(
 
     // Request focus on the name field when the screen is first displayed
     LaunchedEffect(Unit) {
+        viewModel.setAuthMode(AuthMode.SIGN_UP)
         nameFocusRequester.requestFocus()
     }
 }
