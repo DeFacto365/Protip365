@@ -267,7 +267,7 @@ struct SubscriptionTiersView: View {
     }
 
     private var termsText: some View {
-        Text(termsString)
+        Text(termsString(for: subscriptionManager.product))
             .font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -465,11 +465,21 @@ struct SubscriptionTiersView: View {
         }
     }
 
-    var termsString: String {
+    func termsString(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Auto-localized by App Store region
+        } else {
+            priceString = "$3.99" // Fallback
+        }
+
         switch language {
-        case "fr": return "Essai gratuit de 7 jours, puis 3,99$/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
-        case "es": return "Prueba gratuita de 7 días, luego $3.99/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
-        default: return "7-day free trial, then $3.99/month. Subscription auto-renews. Cancel anytime in App Store settings."
+        case "fr":
+            return "Essai gratuit de 7 jours, puis \(priceString)/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+        case "es":
+            return "Prueba gratuita de 7 días, luego \(priceString)/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+        default:
+            return "7-day free trial, then \(priceString)/month. Subscription auto-renews. Cancel anytime in App Store settings."
         }
     }
 

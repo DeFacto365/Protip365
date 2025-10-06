@@ -42,7 +42,7 @@ struct SubscriptionManagementView: View {
                                 Text(localization.upgradeToPremium)
                                     .foregroundColor(.blue)
                                 Spacer()
-                                Text("$3.99/month")
+                                Text(subscriptionManager.product?.displayPrice ?? "N/A")
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -61,7 +61,7 @@ struct SubscriptionManagementView: View {
                 // Support Section
                 Section("Support") {
                     NavigationLink(localization.subscriptionFAQ) {
-                        SubscriptionFAQView(localization: localization)
+                        SubscriptionFAQView(localization: localization, subscriptionManager: subscriptionManager)
                     }
 
                     Button(action: {
@@ -100,7 +100,7 @@ struct SubscriptionManagementView: View {
                     }
                 }
             } message: {
-                Text(localization.upgradeMessage)
+                Text(localization.upgradeMessage(for: subscriptionManager.product))
             }
         }
     }
@@ -248,18 +248,19 @@ struct ManageSubscriptionsView: View {
 
 struct SubscriptionFAQView: View {
     let localization: SubscriptionManagementLocalization
-
+    @ObservedObject var subscriptionManager: SubscriptionManager
+    
     var body: some View {
         List {
             Section(localization.trialSection) {
                 FAQRow(question: localization.trialQuestion,
-                       answer: localization.trialAnswer)
+                       answer: localization.trialAnswer(for: subscriptionManager.product))
 
                 FAQRow(question: localization.cancelQuestion,
                        answer: localization.cancelAnswer)
 
                 FAQRow(question: localization.afterTrialQuestion,
-                       answer: localization.afterTrialAnswer)
+                       answer: localization.afterTrialAnswer(for: subscriptionManager.product))
             }
 
             Section(localization.featuresSection) {
@@ -331,13 +332,24 @@ struct SubscriptionManagementLocalization {
         }
     }
 
-    var upgradeMessage: String {
+    func upgradeMessage(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Automatically localized
+        } else {
+            priceString = "$3.99" // fallback
+        }
+        
         switch language {
-        case "fr": return "Convertir votre essai en un abonnement Premium complet pour 3,99$/mois."
-        case "es": return "Convierte tu prueba en una suscripción Premium completa por $3.99/mes."
-        default: return "Convert your trial to a full Premium subscription for $3.99/month."
+        case "fr":
+            return "Convertir votre essai en un abonnement Premium complet pour \(priceString)/mois."
+        case "es":
+            return "Convierte tu prueba en una suscripción Premium completa por \(priceString)/mes."
+        default:
+            return "Convert your trial to a full Premium subscription for \(priceString)/month."
         }
     }
+
 
     var currentPlan: String {
         switch language {
@@ -459,11 +471,21 @@ struct SubscriptionManagementLocalization {
         }
     }
 
-    var trialAnswer: String {
+    func trialAnswer(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // localized automatically
+        } else {
+            priceString = "$3.99" // fallback
+        }
+
         switch language {
-        case "fr": return "Vous bénéficiez de 7 jours d'accès Premium complet gratuit. Après l'essai, vous serez facturé 3,99$/mois sauf si vous annulez."
-        case "es": return "Obtienes 7 días de acceso Premium completo gratis. Después de la prueba, se te cobrará $3.99/mes a menos que canceles."
-        default: return "You get 7 days of full Premium access completely free. After the trial, you'll be charged $3.99/month unless you cancel."
+        case "fr":
+            return "Vous bénéficiez de 7 jours d'accès Premium complet gratuit. Après l'essai, vous serez facturé \(priceString)/mois, sauf si vous annulez."
+        case "es":
+            return "Obtienes 7 días de acceso Premium completo gratis. Después de la prueba, se te cobrará \(priceString)/mes a menos que canceles."
+        default:
+            return "You get 7 days of full Premium access completely free. After the trial, you'll be charged \(priceString)/month unless you cancel."
         }
     }
 
@@ -491,13 +513,24 @@ struct SubscriptionManagementLocalization {
         }
     }
 
-    var afterTrialAnswer: String {
+    func afterTrialAnswer(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // localized automatically
+        } else {
+            priceString = "$3.99" // fallback
+        }
+
         switch language {
-        case "fr": return "Votre abonnement se convertit automatiquement en 3,99$/mois. Vous pouvez annuler avant la fin de l'essai pour éviter les frais."
-        case "es": return "Tu suscripción se convierte automáticamente en $3.99/mes. Puedes cancelar antes de que termine la prueba para evitar cargos."
-        default: return "Your subscription automatically converts to $3.99/month. You can cancel before the trial ends to avoid charges."
+        case "fr":
+            return "Votre abonnement se convertira automatiquement en \(priceString)/mois. Vous pouvez annuler avant la fin de l'essai pour éviter les frais."
+        case "es":
+            return "Tu suscripción se convertirá automáticamente en \(priceString)/mes. Puedes cancelar antes de que termine la prueba para evitar cargos."
+        default:
+            return "Your subscription automatically converts to \(priceString)/month. You can cancel before the trial ends to avoid charges."
         }
     }
+
 
     var premiumQuestion: String {
         switch language {

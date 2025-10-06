@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 struct SubscriptionSettingsSection: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
@@ -87,7 +88,7 @@ struct SubscriptionSettingsSection: View {
                                     .foregroundStyle(.white)
                                     .font(.body)
                             }
-                            Text(localization.trialInfoText)
+                            Text(localization.trialInfoText(for: subscriptionManager.product))
                                 .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.9))
                         }
@@ -113,7 +114,7 @@ struct SubscriptionSettingsSection: View {
                                 .foregroundStyle(.primary)
                                 .font(.body)
                             Spacer()
-                            Text(localization.priceText)
+                            Text(localization.priceText(for: subscriptionManager.product))
                                 .foregroundStyle(.secondary)
                                 .font(.caption)
                             Image(systemName: IconNames.Form.next)
@@ -209,13 +210,24 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    var trialInfoText: String {
+    func trialInfoText(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Localized per country
+        } else {
+            priceString = "$3.99" // Fallback if unavailable
+        }
+
         switch language {
-        case "fr": return "7 jours gratuits, puis 3,99$/mois"
-        case "es": return "7 días gratis, luego $3.99/mes"
-        default: return "7 days free, then $3.99/month"
+        case "fr":
+            return "7 jours gratuits, puis \(priceString)/mois"
+        case "es":
+            return "7 días gratis, luego \(priceString)/mes"
+        default:
+            return "7 days free, then \(priceString)/month"
         }
     }
+
 
     var viewSubscriptionButton: String {
         switch language {
@@ -225,13 +237,24 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    var priceText: String {
+    func priceText(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Automatically localized
+        } else {
+            priceString = "$3.99" // Fallback
+        }
+
         switch language {
-        case "fr": return "3,99$/mois"
-        case "es": return "$3.99/mes"
-        default: return "$3.99/mo"
+        case "fr":
+            return "\(priceString)/mois"
+        case "es":
+            return "\(priceString)/mes"
+        default:
+            return "\(priceString)/mo"
         }
     }
+
 
     var manageButton: String {
         switch language {

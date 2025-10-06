@@ -16,7 +16,7 @@ class SubscriptionManager: ObservableObject {
     @Published var currentTier: SubscriptionTier = .none
     @Published var trialDaysRemaining: Int = 0
     @Published var subscriptionExpirationDate: Date? = nil
-
+    @Published var product: Product?
     // Single product ID for simplified pricing (must match App Store Connect exactly)
     private let premiumMonthlyId = "com.protip365.premium.monthly"
 
@@ -96,6 +96,7 @@ class SubscriptionManager: ObservableObject {
             self.trialDaysRemaining = 0
             self.isCheckingSubscription = false
             self.products = []
+            self.product = nil
             print("Subscription state reset")
         }
     }
@@ -110,6 +111,7 @@ class SubscriptionManager: ObservableObject {
 
             await MainActor.run {
                 self.products = products // Single product, no sorting needed
+                self.product = products.first(where: { $0.id == premiumMonthlyId })
             }
 
             // Print product details for debugging

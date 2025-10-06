@@ -142,7 +142,7 @@ struct SubscriptionView: View {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 } else {
-                                    Text(subscribeButton)
+                                    Text(subscribeButton(for: subscriptionManager.product))
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                 }
@@ -276,11 +276,21 @@ struct SubscriptionView: View {
         }
     }
 
-    var subscribeButton: String {
+    func subscribeButton(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Localized currency & formatting
+        } else {
+            priceString = "$3.99" // Fallback
+        }
+
         switch language {
-        case "fr": return "S'abonner pour 3,99 $/mois"
-        case "es": return "Suscribirse por $3.99/mes"
-        default: return "Subscribe for $3.99 / month"
+        case "fr":
+            return "S'abonner pour \(priceString)/mois"
+        case "es":
+            return "Suscribirse por \(priceString)/mes"
+        default:
+            return "Subscribe for \(priceString)/month"
         }
     }
 
