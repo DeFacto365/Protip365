@@ -287,9 +287,9 @@ struct SubscriptionView: View {
 
     var trialText: String {
         switch language {
-        case "fr": return "Commencez avec 1 mois d'essai gratuit."
-        case "es": return "Comienza con 1 mes de prueba gratis."
-        default: return "Start with a 1 month free trial."
+        case "fr": return "Commencez avec 7 jours d'essai gratuit."
+        case "es": return "Comienza con 7 días de prueba gratis."
+        default: return "Start with a 7 day free trial."
         }
     }
 
