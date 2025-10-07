@@ -8,6 +8,7 @@ struct SubscriptionManagementView: View {
     @State private var showManageSubscriptions = false
     @State private var showCancellationAlert = false
     @State private var showUpgradeAlert = false
+    @State private var showErrorAlert = false
 
     private var localization: SubscriptionManagementLocalization {
         SubscriptionManagementLocalization(language: language)
@@ -94,14 +95,28 @@ struct SubscriptionManagementView: View {
             .alert("Upgrade to Premium?", isPresented: $showUpgradeAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Upgrade") {
-                    // Trigger upgrade flow
                     Task {
-                        await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                        do {
+                            try await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                        } catch {
+                            await MainActor.run {
+                                showErrorAlert = true
+                            }
+                        }
                     }
                 }
             } message: {
                 Text(localization.upgradeMessage(for: subscriptionManager.product))
             }
+            .alert("Purchase Failed", isPresented: $showErrorAlert) {
+                        Button("OK", role: .cancel) { }
+                    } message: {
+                        if let errorMessage = subscriptionManager.purchaseError {
+                            Text(errorMessage)
+                        } else {
+                            Text("An error occurred. Please try again.")
+                        }
+                    }
         }
     }
 }

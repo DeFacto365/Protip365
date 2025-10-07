@@ -11,14 +11,23 @@ enum SubscriptionTier: String {
 class SubscriptionManager: ObservableObject {
     @Published var isSubscribed = false
     @Published var isInTrialPeriod = false
-    @Published var isCheckingSubscription = false // Start as false - only check when authenticated
+    @Published var isCheckingSubscription = false
     @Published var products: [Product] = []
     @Published var currentTier: SubscriptionTier = .none
     @Published var trialDaysRemaining: Int = 0
     @Published var subscriptionExpirationDate: Date? = nil
     @Published var product: Product?
+    
+    // NEW: Error handling for UI feedback
+    @Published var loadingError: String?
+    @Published var purchaseError: String?
+    
     // Single product ID for simplified pricing (must match App Store Connect exactly)
     private let premiumMonthlyId = "com.protip365.premium.monthly"
+
+    // CRITICAL: Add your App Store Connect shared secret here
+    // Get this from: App Store Connect > Your App > Features > In-App Purchases > App-Specific Shared Secret
+    private let sharedSecret = "0b3c33127296426f9846d484f520f693" // TODO: Replace with your actual shared secret
 
     private var allProductIds: [String] {
         [premiumMonthlyId]
@@ -29,15 +38,12 @@ class SubscriptionManager: ObservableObject {
     // Testing mode support (StoreKitTest framework may not be available)
     #if DEBUG && canImport(StoreKitTest)
     @Published var isTestingMode = false
-    @Published var testTransactions: [[String: Any]] = [] // Array of test transaction dictionaries
+    @Published var testTransactions: [[String: Any]] = []
     #endif
 
     init() {
         // Start listening for transaction updates immediately
         transactionListener = listenForTransactionUpdates()
-
-        // Don't automatically check subscriptions - wait for authentication
-        // This prevents showing subscription screen before login
     }
 
     deinit {
@@ -46,7 +52,6 @@ class SubscriptionManager: ObservableObject {
 
     private func listenForTransactionUpdates() -> Task<Void, Error> {
         return Task.detached {
-            // Listen for transaction updates
             for await result in StoreKit.Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
@@ -97,89 +102,67 @@ class SubscriptionManager: ObservableObject {
             self.isCheckingSubscription = false
             self.products = []
             self.product = nil
+            self.loadingError = nil
+            self.purchaseError = nil
             print("Subscription state reset")
         }
     }
 
+    // FIXED: Improved product loading with proper error handling
     func loadProducts() async {
         print("🔄 Loading products: \(allProductIds)")
         print("🔄 Loading products in current environment")
+
+        await MainActor.run {
+            self.loadingError = nil
+        }
 
         do {
             let products = try await Product.products(for: allProductIds)
             print("✅ Loaded \(products.count) products: \(products.map { $0.id })")
 
             await MainActor.run {
-                self.products = products // Single product, no sorting needed
+                self.products = products
                 self.product = products.first(where: { $0.id == premiumMonthlyId })
+                
+                if products.isEmpty {
+                    self.loadingError = "No subscription products available. Please check your internet connection and try again."
+                    print("⚠️ No products loaded - check App Store Connect configuration")
+                } else {
+                    self.loadingError = nil
+                }
             }
 
             // Print product details for debugging
             for product in products {
                 print("Product: \(product.id) - \(product.displayName) - \(product.displayPrice)")
             }
-
-            if products.isEmpty {
-                print("⚠️ No products loaded - will show subscription screen with fallback option")
-                // Don't auto-grant access - let user see the subscription screen
-                // They can choose "Continue Anyway" if they want
-            }
         } catch {
+            let errorMessage = "Unable to load subscription products: \(error.localizedDescription)"
             print("❌ Failed to load products: \(error)")
-            print("Will show subscription screen with fallback option")
-            // Don't auto-grant access - show subscription screen instead
+            
+            await MainActor.run {
+                self.loadingError = errorMessage
+            }
         }
     }
 
-    // Test mode subscription for development - or fallback when App Store fails
-    private func enableTestModeSubscription() async {
-        print("🧪 Enabling fallback access mode")
-
-        // Just grant access locally without hitting the database
-        // This ensures users can always use the app even if everything fails
-        await MainActor.run {
-            self.isSubscribed = true
-            self.isInTrialPeriod = true
-            self.currentTier = .premium
-            self.trialDaysRemaining = 999 // Generous trial for fallback mode
-        }
-
-        print("✅ Fallback access granted - users can use the app")
-
-        // Try to save to database but don't fail if it doesn't work
-        guard let session = try? await SupabaseManager.shared.client.auth.session else {
-            return
-        }
-
-        let userId = session.user.id
-        let testTransactionId = "fallback_\(UUID().uuidString)"
-
-        // Try to create a fallback subscription record
-        let testSubscription = SubscriptionRecord(
-            user_id: userId.uuidString,
-            product_id: premiumMonthlyId,
-            status: "active",
-            expires_at: ISO8601DateFormatter().string(from: Date().addingTimeInterval(365 * 24 * 60 * 60)), // 1 year fallback
-            transaction_id: testTransactionId,
-            purchase_date: ISO8601DateFormatter().string(from: Date()),
-            environment: "fallback"
-        )
-
-        // Try to save but don't worry if it fails
-        _ = try? await SupabaseManager.shared.client
-            .from("user_subscriptions")
-            .upsert(testSubscription, onConflict: "user_id")
-            .execute()
-    }
-
-    func purchase(productId: String) async {
+    // FIXED: Improved purchase handling with better error feedback
+    func purchase(productId: String) async throws {
         print("Attempting to purchase product: \(productId)")
         print("Available products: \(products.map { $0.id })")
 
+        await MainActor.run {
+            self.purchaseError = nil
+        }
+
         guard let product = products.first(where: { $0.id == productId }) else {
+            let error = "Product not found. Please try reloading the subscription options."
             print("❌ Product not found: \(productId)")
-            print("Make sure the product IDs are configured in App Store Connect")
-            return
+            await MainActor.run {
+                self.purchaseError = error
+            }
+            throw NSError(domain: "SubscriptionManager", code: 1, userInfo: [NSLocalizedDescriptionKey: error])
         }
 
         print("✅ Found product: \(product.id) - \(product.displayName)")
@@ -191,30 +174,66 @@ class SubscriptionManager: ObservableObject {
             case .success(let verification):
                 switch verification {
                 case .verified(let transaction):
-                    // Sync this new purchase to the user's account
+                    print("✅ Purchase verified, syncing to server...")
                     await syncSubscriptionToServer(transaction: transaction)
                     await transaction.finish()
                     await checkSubscriptionStatus()
+                    
                 case .unverified:
-                    print("Unverified transaction")
+                    let error = "Purchase verification failed. Please contact support."
+                    print("❌ Unverified transaction")
+                    await MainActor.run {
+                        self.purchaseError = error
+                    }
+                    throw NSError(domain: "SubscriptionManager", code: 2, userInfo: [NSLocalizedDescriptionKey: error])
                 }
+                
             case .userCancelled:
                 print("User cancelled purchase")
-                // User cancelled - don't auto-sync device subscriptions
-                // They can use "Restore Purchases" if needed
+                return
+                
             case .pending:
-                print("Purchase pending")
-                break
+                print("Purchase pending - waiting for approval")
+                await MainActor.run {
+                    self.purchaseError = "Purchase is pending approval. Please check back later."
+                }
+                return
+                
             @unknown default:
+                print("Unknown purchase result")
                 break
             }
         } catch {
-            print("Purchase failed: \(error)")
+            print("❌ Purchase failed: \(error)")
+            
+            let errorMessage: String
             if let storeKitError = error as? StoreKitError {
-                print("StoreKit error: \(storeKitError)")
+                // Log the specific StoreKit error details
+                print("StoreKit error details: \(storeKitError)")
+                
+                switch storeKitError {
+                case .userCancelled:
+                    errorMessage = "Purchase cancelled"
+                case .networkError(let underlyingError):
+                    errorMessage = "Network error: \(underlyingError.localizedDescription)"
+                case .notAvailableInStorefront:
+                    errorMessage = "This subscription is not available in your region"
+                case .notEntitled:
+                    errorMessage = "You don't have access to this subscription"
+                case .systemError(let underlyingError):
+                    errorMessage = "System error: \(underlyingError.localizedDescription)"
+                default:
+                    errorMessage = "Purchase failed: \(storeKitError.localizedDescription)"
+                }
+            } else {
+                errorMessage = "Purchase failed: \(error.localizedDescription)"
             }
-            // Don't auto-sync on purchase failure
-            // User can use "Restore Purchases" if they already have a subscription
+            
+            await MainActor.run {
+                self.purchaseError = errorMessage
+            }
+            
+            throw error
         }
     }
 
@@ -222,7 +241,6 @@ class SubscriptionManager: ObservableObject {
     func checkAndSyncExistingSubscription() async {
         print("Checking for existing device subscription to sync...")
 
-        // Get current user
         guard let session = try? await SupabaseManager.shared.client.auth.session else {
             print("No authenticated user, cannot sync subscription")
             return
@@ -230,14 +248,12 @@ class SubscriptionManager: ObservableObject {
 
         let currentUserId = session.user.id
 
-        // Check for any active StoreKit transactions
         for await result in StoreKit.Transaction.currentEntitlements {
             guard case .verified(let transaction) = result else { continue }
 
             if allProductIds.contains(transaction.productID) {
                 print("Found active subscription: \(transaction.productID)")
 
-                // Check if this subscription is already synced to current user
                 let isSynced = await verifyTransactionForCurrentUser(
                     transaction: transaction,
                     userId: currentUserId
@@ -248,7 +264,6 @@ class SubscriptionManager: ObservableObject {
                     await syncSubscriptionToServer(transaction: transaction)
                 }
 
-                // Update local subscription state
                 await checkSubscriptionStatus()
                 return
             }
@@ -257,11 +272,11 @@ class SubscriptionManager: ObservableObject {
         print("No existing subscription found to sync")
     }
     
+    // FIXED: Better error handling in checkSubscriptionStatus
     func checkSubscriptionStatus() async {
         print("🔍 Starting subscription status check...")
         print("🌐 SERVER-ONLY MODE: Checking user's subscription from our database")
 
-        // Get current user ID - if no user is authenticated, clear subscription state
         guard let session = try? await SupabaseManager.shared.client.auth.session else {
             print("❌ No session - clearing subscription state")
             await MainActor.run {
@@ -276,17 +291,19 @@ class SubscriptionManager: ObservableObject {
         let currentUserId = session.user.id
         print("✅ Session found for user: \(currentUserId)")
 
-        // Check server subscription for this specific user
-        // This ensures subscriptions are tied to app users, not device/Apple ID
-        if await checkServerSubscription() {
-            print("✅ Active subscription found for user")
-            await MainActor.run {
-                self.isCheckingSubscription = false
+        do {
+            if await checkServerSubscription() {
+                print("✅ Active subscription found for user")
+                await MainActor.run {
+                    self.isCheckingSubscription = false
+                    self.loadingError = nil
+                }
+                return
             }
-            return
+        } catch {
+            print("⚠️ Error checking server subscription: \(error)")
         }
 
-        // No subscription found for this user
         print("❌ No active subscription found for user: \(currentUserId)")
         await MainActor.run {
             self.isSubscribed = false
@@ -296,12 +313,10 @@ class SubscriptionManager: ObservableObject {
         }
     }
 
-    // ONLINE receipt validation with Apple's verifyReceipt API
-    // This explicitly calls Apple's servers (sandbox or production)
+    // FIXED: Receipt validation with proper shared secret and Apple's recommended flow
     private func validateReceiptWithAppleServers(transaction: StoreKit.Transaction) async -> Bool {
         print("🌐 Validating receipt ONLINE with Apple servers...")
 
-        // Get the app receipt
         guard let receiptURL = Bundle.main.appStoreReceiptURL,
               let receiptData = try? Data(contentsOf: receiptURL) else {
             print("❌ No receipt found on device")
@@ -311,128 +326,174 @@ class SubscriptionManager: ObservableObject {
         let receiptString = receiptData.base64EncodedString()
         print("📄 Receipt size: \(receiptData.count) bytes")
 
-        // Try production first (Apple's recommendation)
+        // CRITICAL FIX: Apple's exact recommended approach
+        // Try production first, if it returns 21007 (sandbox receipt), then try sandbox
         print("🔵 Trying PRODUCTION server first...")
-        if await verifyReceiptWithEnvironment(receiptString: receiptString, isProduction: true) {
+        let productionResult = await verifyReceiptWithEnvironment(
+            receiptString: receiptString,
+            isProduction: true
+        )
+        
+        switch productionResult {
+        case .success:
             print("✅ PRODUCTION validation successful")
             return true
+            
+        case .sandboxReceipt:
+            // This is the key fix: Apple returns 21007 when sandbox receipt is sent to production
+            print("🟡 Sandbox receipt detected (21007), trying SANDBOX server...")
+            let sandboxResult = await verifyReceiptWithEnvironment(
+                receiptString: receiptString,
+                isProduction: false
+            )
+            
+            if case .success = sandboxResult {
+                print("✅ SANDBOX validation successful")
+                return true
+            } else {
+                print("❌ SANDBOX validation also failed")
+                return false
+            }
+            
+        case .failed:
+            print("❌ PRODUCTION validation failed")
+            return false
         }
-
-        // If production fails with sandbox error, try sandbox
-        print("🟡 Production failed, trying SANDBOX server...")
-        if await verifyReceiptWithEnvironment(receiptString: receiptString, isProduction: false) {
-            print("✅ SANDBOX validation successful")
-            return true
-        }
-
-        print("❌ Both PRODUCTION and SANDBOX validation failed")
-        return false
     }
 
-    // Call Apple's verifyReceipt API
-    private func verifyReceiptWithEnvironment(receiptString: String, isProduction: Bool) async -> Bool {
+    // NEW: Result type for receipt validation
+    private enum ReceiptValidationResult {
+        case success
+        case sandboxReceipt  // Status 21007 - sandbox receipt sent to production
+        case failed
+    }
+    
+    // FIXED: Proper receipt verification with comprehensive error handling
+    private func verifyReceiptWithEnvironment(
+        receiptString: String,
+        isProduction: Bool
+    ) async -> ReceiptValidationResult {
         let urlString = isProduction
             ? "https://buy.itunes.apple.com/verifyReceipt"
             : "https://sandbox.itunes.apple.com/verifyReceipt"
 
         guard let url = URL(string: urlString) else {
             print("❌ Invalid URL")
-            return false
+            return .failed
         }
 
         print("🌐 Calling: \(urlString)")
 
+        // CRITICAL FIX: Include the shared secret for auto-renewable subscriptions
         let requestBody: [String: Any] = [
             "receipt-data": receiptString,
-            "password": "", // Shared secret - leave empty if not using auto-renewable subscriptions with shared secret
+            "password": sharedSecret, // Must not be empty for subscriptions!
             "exclude-old-transactions": true
         ]
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
             print("❌ Failed to serialize request")
-            return false
+            return .failed
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = jsonData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 15 // 15 second timeout
+        request.timeoutInterval = 30 // Increased timeout for App Review
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 print("❌ Invalid response")
-                return false
+                return .failed
             }
 
             print("📡 HTTP Status: \(httpResponse.statusCode)")
 
             guard httpResponse.statusCode == 200 else {
                 print("❌ Server returned error status: \(httpResponse.statusCode)")
-                return false
+                return .failed
             }
 
-            // Parse response
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 print("❌ Failed to parse response JSON")
-                return false
+                return .failed
             }
 
             let status = json["status"] as? Int ?? -1
             print("📋 Apple Response Status: \(status)")
 
-            // Status codes:
-            // 0: Valid receipt
-            // 21007: Sandbox receipt sent to production
-            // 21008: Production receipt sent to sandbox
-
+            // Handle all Apple status codes properly
             switch status {
             case 0:
                 print("✅ Receipt is VALID")
-                // Check for active subscriptions
-                if let receipt = json["receipt"] as? [String: Any],
-                   let inApp = receipt["in_app"] as? [[String: Any]] {
-                    print("📱 Found \(inApp.count) in-app purchases")
-                    return true
-                }
-                if let latestReceiptInfo = json["latest_receipt_info"] as? [[String: Any]] {
+                // Verify we have subscription data
+                if let latestReceiptInfo = json["latest_receipt_info"] as? [[String: Any]],
+                   !latestReceiptInfo.isEmpty {
                     print("📱 Found \(latestReceiptInfo.count) subscription transactions")
-                    return !latestReceiptInfo.isEmpty
+                    return .success
                 }
-                return true
+                if let receipt = json["receipt"] as? [String: Any],
+                   let inApp = receipt["in_app"] as? [[String: Any]],
+                   !inApp.isEmpty {
+                    print("📱 Found \(inApp.count) in-app purchases")
+                    return .success
+                }
+                print("⚠️ Valid receipt but no subscription data found")
+                return .failed
 
             case 21007:
-                print("⚠️ Sandbox receipt used in production (expected for TestFlight)")
-                return false // Signal to try sandbox
+                // CRITICAL: This is the exact case Apple mentioned in their rejection
+                print("⚠️ Status 21007: Sandbox receipt used in production")
+                return .sandboxReceipt
 
             case 21008:
-                print("⚠️ Production receipt used in sandbox")
-                return false
+                print("⚠️ Status 21008: Production receipt used in sandbox")
+                return .failed
+
+            case 21000:
+                print("❌ Status 21000: App Store could not read receipt")
+                return .failed
+                
+            case 21002:
+                print("❌ Status 21002: Receipt data was malformed")
+                return .failed
+                
+            case 21003:
+                print("❌ Status 21003: Receipt could not be authenticated")
+                return .failed
+                
+            case 21005:
+                print("❌ Status 21005: Receipt server unavailable")
+                return .failed
+                
+            case 21009:
+                print("❌ Status 21009: Shared secret does not match")
+                print("⚠️ CHECK YOUR SHARED SECRET IN APP STORE CONNECT!")
+                return .failed
 
             default:
                 print("❌ Receipt validation failed with status: \(status)")
-                return false
+                return .failed
             }
 
         } catch {
             print("❌ Network error calling Apple servers: \(error.localizedDescription)")
-            return false
+            return .failed
         }
     }
 
-    // Check server-side subscription status (for cross-device sync only)
+    // Check server-side subscription status
     private func checkServerSubscription() async -> Bool {
         do {
-            // Get current user ID - handle case where session might not be ready
             guard let session = try? await SupabaseManager.shared.client.auth.session else {
                 print("Session not yet available, skipping server subscription check")
                 return false
             }
             let userId = session.user.id
 
-            // Query for active subscription - don't use .single() as it fails when no results
             let response = try await SupabaseManager.shared.client
                 .from("user_subscriptions")
                 .select()
@@ -440,14 +501,11 @@ class SubscriptionManager: ObservableObject {
                 .eq("status", value: "active")
                 .execute()
 
-            // Parse the response
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
 
-            // Decode as array since we removed .single()
             let subscriptions = try decoder.decode([ServerSubscription].self, from: response.data)
             if let subscription = subscriptions.first {
-                // Check if subscription is still valid
                 if let expiresAt = subscription.expires_at, expiresAt > Date() {
                     print("✅ Found valid server subscription, expires: \(expiresAt)")
                     let tier = getTierForProductId(subscription.product_id ?? "")
@@ -456,15 +514,14 @@ class SubscriptionManager: ObservableObject {
                         self.isSubscribed = true
                         self.currentTier = tier
 
-                        // Check trial period based on purchase date
                         if let purchaseDate = subscription.purchase_date, tier == .premium {
-                            let trialDuration: TimeInterval = 7 * 24 * 60 * 60 // 7 days
+                            let trialDuration: TimeInterval = 7 * 24 * 60 * 60
                             let timeSincePurchase = Date().timeIntervalSince(purchaseDate)
                             self.isInTrialPeriod = timeSincePurchase <= trialDuration
 
                             if self.isInTrialPeriod {
                                 let daysRemaining = Int((trialDuration - timeSincePurchase) / (24 * 60 * 60))
-                                self.trialDaysRemaining = max(0, daysRemaining + 1) // +1 to include today
+                                self.trialDaysRemaining = max(0, daysRemaining + 1)
                             }
                         }
                     }
@@ -490,7 +547,6 @@ class SubscriptionManager: ObservableObject {
 
             let dateFormatter = ISO8601DateFormatter()
 
-            // Create subscription record for upsert
             let subscriptionRecord = SubscriptionRecord(
                 user_id: userId.uuidString,
                 product_id: transaction.productID,
@@ -501,7 +557,6 @@ class SubscriptionManager: ObservableObject {
                 environment: transaction.environment == StoreKit.AppStore.Environment.xcode ? "sandbox" : "production"
             )
 
-            // Upsert subscription (insert or update if exists)
             _ = try await SupabaseManager.shared.client
                 .from("user_subscriptions")
                 .upsert(subscriptionRecord, onConflict: "user_id")
@@ -538,7 +593,6 @@ class SubscriptionManager: ObservableObject {
     func restorePurchases() async {
         print("🔄 Restore Purchases: Checking device for existing subscriptions...")
 
-        // Get current user
         guard let session = try? await SupabaseManager.shared.client.auth.session else {
             print("❌ No authenticated user, cannot restore purchases")
             return
@@ -547,7 +601,6 @@ class SubscriptionManager: ObservableObject {
         let currentUserId = session.user.id
         print("✅ Restoring purchases for user: \(currentUserId)")
 
-        // Check for any active StoreKit transactions on this device
         var foundSubscription = false
 
         for await result in StoreKit.Transaction.currentEntitlements {
@@ -557,12 +610,10 @@ class SubscriptionManager: ObservableObject {
                 print("📱 Found device subscription: \(transaction.productID)")
                 print("   Transaction ID: \(transaction.id)")
 
-                // Validate with Apple servers before syncing
                 let isValid = await validateReceiptWithAppleServers(transaction: transaction)
 
                 if isValid {
                     print("✅ Subscription validated with Apple - syncing to user account")
-                    // Sync this subscription to the current user
                     await syncSubscriptionToServer(transaction: transaction)
                     foundSubscription = true
                 } else {
@@ -572,7 +623,6 @@ class SubscriptionManager: ObservableObject {
         }
 
         if foundSubscription {
-            // Refresh subscription status after restoring
             await checkSubscriptionStatus()
             print("✅ Restore complete - subscription synced")
         } else {
@@ -581,23 +631,19 @@ class SubscriptionManager: ObservableObject {
     }
 
     private func schedulePeriodicValidation() {
-        // Check subscription status every 6 hours to ensure it's still valid
-        // Run in background task, don't await
         Task.detached { [weak self] in
             guard let self = self else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 6 * 60 * 60 * 1_000_000_000) // 6 hours
+                try? await Task.sleep(nanoseconds: 6 * 60 * 60 * 1_000_000_000)
                 await self.checkSubscriptionStatus()
             }
         }
     }
 
-    // Force refresh subscription status (can be called manually)
     func refreshSubscriptionStatus() async {
         await checkSubscriptionStatus()
     }
 
-    // Start subscription checking (call this only after user is authenticated)
     func startSubscriptionChecking() async {
         print("🚀 Starting subscription checking...")
 
@@ -605,50 +651,40 @@ class SubscriptionManager: ObservableObject {
             self.isCheckingSubscription = true
         }
 
-        // Load products with timeout
         await withTimeout(seconds: 5) {
             await self.loadProducts()
         }
 
-        // Check subscription status with timeout
         await withTimeout(seconds: 10) {
             await self.checkSubscriptionStatus()
         }
 
-        // Always clear the checking flag after timeout
         await MainActor.run {
             self.isCheckingSubscription = false
         }
 
-        // Schedule periodic subscription validation (non-blocking)
         schedulePeriodicValidation()
 
         print("✅ Subscription checking completed")
     }
 
-    // Helper function to run async code with timeout
     private func withTimeout(seconds: TimeInterval, operation: @escaping () async -> Void) async {
         await withTaskGroup(of: Void.self) { group in
-            // Start the operation
             group.addTask {
                 await operation()
             }
 
-            // Start timeout task
             group.addTask {
                 try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             }
 
-            // Wait for first to complete, then cancel the rest
             _ = await group.next()
             group.cancelAll()
         }
     }
 
-    // Verify if a StoreKit transaction belongs to the current user
     private func verifyTransactionForCurrentUser(transaction: StoreKit.Transaction, userId: UUID) async -> Bool {
         do {
-            // Check if this transaction has been synced to our server for this user
             let response = try await SupabaseManager.shared.client
                 .from("user_subscriptions")
                 .select()
@@ -656,28 +692,23 @@ class SubscriptionManager: ObservableObject {
                 .eq("transaction_id", value: String(transaction.id))
                 .execute()
 
-            // If we found a matching record, this transaction belongs to current user
-            // Check if the response has any data
-            if response.data.count > 2 {  // Empty JSON array is "[]" which is 2 bytes
+            if response.data.count > 2 {
                 return true
             }
         } catch {
             print("Failed to verify transaction for user: \(error)")
         }
 
-        // If no server record exists for this transaction/user combo, it's likely from a previous user
         return false
     }
 
     // MARK: - Simplified Access Management
 
     func canAddShift() -> Bool {
-        // With single tier, always allow if subscribed
         return isSubscribed || isInTrialPeriod
     }
 
     func canAddEntry() -> Bool {
-        // With single tier, always allow if subscribed
         return isSubscribed || isInTrialPeriod
     }
 
@@ -698,29 +729,20 @@ class SubscriptionManager: ObservableObject {
     // MARK: - Testing Support
 
     #if DEBUG && canImport(StoreKitTest)
-    /// Enable testing mode with StoreKitTest framework
     func enableTestingMode() async {
-        #if DEBUG && canImport(StoreKitTest)
-        // Check if StoreKitTest is available (iOS 15+)
         guard #available(iOS 15.0, *) else {
             print("❌ StoreKitTest requires iOS 15.0+")
             return
         }
-
-        // In StoreKitTest, the session is automatically created when enableStoreKitTesting = YES in scheme
-        // We don't need to manually create a session
 
         await MainActor.run {
             self.isTestingMode = true
         }
 
         print("✅ StoreKitTest mode enabled")
-        #endif
     }
 
-    /// Add a test transaction for testing
     func addTestTransaction(productId: String, state: String = "purchased") async {
-        #if DEBUG && canImport(StoreKitTest)
         guard #available(iOS 15.0, *) else {
             print("❌ StoreKitTest requires iOS 15.0+")
             return
@@ -731,7 +753,6 @@ class SubscriptionManager: ObservableObject {
             return
         }
 
-        // Create a test transaction dictionary
         let testTransaction: [String: Any] = [
             "productID": productId,
             "state": state,
@@ -740,11 +761,9 @@ class SubscriptionManager: ObservableObject {
             "originalTransactionID": UUID().uuidString
         ]
 
-        // Add to test transactions list
         await MainActor.run {
             self.testTransactions.append(testTransaction)
             
-            // Simulate subscription status change for testing
             if productId == "com.protip365.premium.monthly" {
                 switch state {
                 case "purchased":
@@ -772,21 +791,15 @@ class SubscriptionManager: ObservableObject {
         }
 
         print("✅ Added test transaction: \(productId) with state: \(state)")
-        #endif
     }
 
-    /// Clear all test transactions
     func clearTestTransactions() async {
-        #if DEBUG && canImport(StoreKitTest)
         guard #available(iOS 15.0, *) else { return }
 
         guard isTestingMode else { return }
 
-        // Clear test transactions and reset subscription status
         await MainActor.run {
             self.testTransactions.removeAll()
-            
-            // Reset subscription status for testing
             self.isSubscribed = false
             self.currentTier = .free
             self.subscriptionExpirationDate = nil
@@ -794,7 +807,6 @@ class SubscriptionManager: ObservableObject {
         }
 
         print("✅ Cleared all test transactions and reset subscription status")
-        #endif
     }
     #endif
 }

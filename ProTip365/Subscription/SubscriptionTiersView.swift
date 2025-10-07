@@ -11,6 +11,7 @@ struct SubscriptionTiersView: View {
     @State private var loadError: String? = nil
     @State private var isLoadingProducts = false
     @Environment(\.dismiss) private var dismiss
+    @State private var showErrorAlert = false
 
     var body: some View {
         NavigationStack {
@@ -156,6 +157,15 @@ struct SubscriptionTiersView: View {
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView(isAuthenticated: .constant(true), showOnboarding: $showOnboarding)
         }
+        .alert("Purchase Failed", isPresented: $showErrorAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    if let errorMessage = subscriptionManager.purchaseError {
+                        Text(errorMessage)
+                    } else {
+                        Text("An error occurred. Please try again.")
+                    }
+                }
         .task {
             await loadProductsWithTimeout()
         }
@@ -311,21 +321,26 @@ struct SubscriptionTiersView: View {
         isLoading = true
         selectedProductId = productId
 
-        await subscriptionManager.purchase(productId: productId)
+        do {
+            try await subscriptionManager.purchase(productId: productId)
+            
+            await MainActor.run {
+                isLoading = false
+                selectedProductId = nil
 
-        await MainActor.run {
-            isLoading = false
-            selectedProductId = nil
-
-            // After purchase attempt, check subscription status
-            // This handles both new purchases and existing subscriptions
-            if subscriptionManager.isSubscribed {
-                // If we now have a subscription, dismiss or show onboarding
-                if !subscriptionManager.isInTrialPeriod {
-                    dismiss()
-                } else {
-                    showOnboarding = true
+                if subscriptionManager.isSubscribed {
+                    if !subscriptionManager.isInTrialPeriod {
+                        dismiss()
+                    } else {
+                        showOnboarding = true
+                    }
                 }
+            }
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                selectedProductId = nil
+                showErrorAlert = true  // Show alert on error
             }
         }
     }

@@ -11,7 +11,8 @@ struct SubscriptionView: View {
     @Binding var showOnboarding: Bool
     @AppStorage("language") private var language = "en"
     @State private var isLoading = false
-    
+    @State private var showErrorAlert = false
+
     var body: some View {
         ZStack {
             // Background color
@@ -128,11 +129,18 @@ struct SubscriptionView: View {
 
                             isLoading = true
                             Task {
-                                await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
-                                await MainActor.run {
-                                    isLoading = false
-                                    if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
-                                        checkOnboardingStatus()
+                                do {
+                                    try await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                                    await MainActor.run {
+                                        isLoading = false
+                                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                                            checkOnboardingStatus()
+                                        }
+                                    }
+                                } catch {
+                                    await MainActor.run {
+                                        isLoading = false
+                                        showErrorAlert = true  // Show alert on error
                                     }
                                 }
                             }
@@ -223,6 +231,15 @@ struct SubscriptionView: View {
                 }
             }
         }
+        .alert("Purchase Failed", isPresented: $showErrorAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    if let errorMessage = subscriptionManager.purchaseError {
+                        Text(errorMessage)
+                    } else {
+                        Text("An error occurred. Please try again.")
+                    }
+                }
     }
 
     private func checkOnboardingStatus() {
