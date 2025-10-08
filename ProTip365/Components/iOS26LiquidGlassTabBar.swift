@@ -190,7 +190,8 @@ struct iOS26LiquidGlassMainView: View {
     @State private var navigateToShiftId: UUID? = nil
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @EnvironmentObject var subscriptionManager: SubscriptionManager
-    
+    @EnvironmentObject var securityManager: SecurityManager
+
     // Tab items based on app configuration
     private var tabItems: [TabItem] {
         var items = [

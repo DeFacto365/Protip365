@@ -4,7 +4,7 @@ import LocalAuthentication
 struct SecuritySettingsSection: View {
     @Binding var showPINSetup: Bool
     @Binding var isVerifyingToDisable: Bool
-    @Binding var selectedSecurityType: SecurityType
+  //  @Binding var selectedSecurityType: SecurityType
     @ObservedObject var securityManager: SecurityManager
 
     let language: String
@@ -13,13 +13,13 @@ struct SecuritySettingsSection: View {
     init(
         showPINSetup: Binding<Bool>,
         isVerifyingToDisable: Binding<Bool>,
-        selectedSecurityType: Binding<SecurityType>,
+       // selectedSecurityType: Binding<SecurityType>,
         securityManager: SecurityManager,
         language: String
     ) {
         self._showPINSetup = showPINSetup
         self._isVerifyingToDisable = isVerifyingToDisable
-        self._selectedSecurityType = selectedSecurityType
+      //  self._selectedSecurityType = selectedSecurityType
         self.securityManager = securityManager
         self.language = language
         self.localization = SettingsLocalization(language: language)
@@ -53,7 +53,7 @@ struct SecuritySettingsSection: View {
                             type: .none,
                             title: localization.noneSecurityType,
                             icon: "lock.open",
-                            isSelected: selectedSecurityType == .none
+                            isSelected: securityManager.currentSecurityType == .none
                         )
 
                         // PIN Option
@@ -61,7 +61,7 @@ struct SecuritySettingsSection: View {
                             type: .pinCode,
                             title: localization.pinSecurityType,
                             icon: "lock.fill",
-                            isSelected: selectedSecurityType == .pinCode
+                            isSelected: securityManager.currentSecurityType == .pinCode
                         )
 
                         // Biometric Option (if available)
@@ -70,7 +70,7 @@ struct SecuritySettingsSection: View {
                                 type: .biometric,
                                 title: biometricTitle,
                                 icon: biometricIcon,
-                                isSelected: selectedSecurityType == .biometric
+                                isSelected: securityManager.currentSecurityType == .biometric
                             )
                         }
                     }
@@ -103,9 +103,9 @@ struct SecuritySettingsSection: View {
             }
         }
         .sheet(isPresented: $showPINSetup) {
-            PINSetupView(securityManager: securityManager, language: language, targetSecurityType: selectedSecurityType)
+            PINSetupView(securityManager: securityManager, language: language, targetSecurityType: securityManager.currentSecurityType)
         }
-        .onChange(of: selectedSecurityType) { _, newType in
+        .onChange(of: securityManager.currentSecurityType) { _, newType in
             handleSecurityTypeChange(newType)
         }
     }
@@ -117,7 +117,7 @@ struct SecuritySettingsSection: View {
         isSelected: Bool
     ) -> some View {
         Button(action: {
-            selectedSecurityType = type
+           // selectedSecurityType = type
         }) {
             HStack {
                 // Only show icon for biometric option
@@ -189,7 +189,7 @@ struct SecuritySettingsSection: View {
                         if success {
                             securityManager.disableAllSecurity()
                         } else {
-                            selectedSecurityType = securityManager.currentSecurityType
+                            //selectedSecurityType = securityManager.currentSecurityType
                         }
                         isVerifyingToDisable = false
                     }

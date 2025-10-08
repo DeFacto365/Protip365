@@ -4,8 +4,9 @@ import Supabase
 struct OnboardingView: View {
     @Binding var isAuthenticated: Bool
     @Binding var showOnboarding: Bool
+    @EnvironmentObject var securityManager: SecurityManager
     @StateObject private var state = OnboardingState()
-    @StateObject private var securityManager = SecurityManager()
+   // @StateObject private var securityManager = SecurityManager()
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
 

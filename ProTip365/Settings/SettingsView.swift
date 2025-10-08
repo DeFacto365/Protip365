@@ -4,6 +4,7 @@ import Supabase
 struct SettingsView: View {
     @Binding var selectedTab: String
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @EnvironmentObject var securityManager: SecurityManager
 
     // State variables
     @State private var userEmail = ""
@@ -46,7 +47,6 @@ struct SettingsView: View {
     @State private var isVerifyingToDisable = false
     @State private var selectedSecurityType = SecurityType.none
     @State private var showOnboarding = false
-    @StateObject private var securityManager = SecurityManager()
     @State private var userName = ""
     @AppStorage("language") private var language = "en"
     @AppStorage("useMultipleEmployers") private var useMultipleEmployersStorage = false
@@ -234,7 +234,7 @@ struct SettingsView: View {
             SecuritySettingsSection(
                 showPINSetup: $showPINSetup,
                 isVerifyingToDisable: $isVerifyingToDisable,
-                selectedSecurityType: $selectedSecurityType,
+//                selectedSecurityType: $selectedSecurityType,
                 securityManager: securityManager,
                 language: language
             )

@@ -1,10 +1,9 @@
 import SwiftUI
 
-// MARK: - Setup Step View
-
 struct SetupStep: View {
+    @EnvironmentObject var securityManager: SecurityManager
+
     @ObservedObject var state: OnboardingState
-    @StateObject private var securityManager = SecurityManager()
     private let localization: OnboardingLocalization
 
     init(state: OnboardingState, language: String) {
@@ -56,8 +55,17 @@ struct SetupStep: View {
                     }
 
                     Button(action: {
-                        state.selectedSecurityType = .biometric
-                        HapticFeedback.selection()
+                        Task {
+                            let success = await securityManager.authenticateWithBiometrics(
+                                reason: localization.securityExplanation
+                            )
+                            await MainActor.run {
+                                if success {
+                                    state.selectedSecurityType = .biometric
+                                }
+                                HapticFeedback.selection()
+                            }
+                        }
                     }) {
                         Label(localization.faceIDText, systemImage: "faceid")
                     }

@@ -109,40 +109,60 @@ class SecurityManager: ObservableObject {
         case .none:
             isUnlocked = true
         case .biometric:
-            authenticateWithBiometric()
+            Task {
+                await authenticateWithBiometric()
+            }
         case .pinCode:
             showPINEntry = true
         case .both:
             // Try biometric first, fallback to PIN
-            authenticateWithBiometric(fallbackToPIN: true)
+            Task {
+                await authenticateWithBiometric(fallbackToPIN: true)
+            }
         }
     }
 
-    private func authenticateWithBiometric(fallbackToPIN: Bool = false) {
+    private func authenticateWithBiometric(fallbackToPIN: Bool = false) async {
         let context = LAContext()
         var error: NSError?
 
         // Check if biometric authentication is available
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            let reason = NSLocalizedString("Unlock ProTip365 to view your data", comment: "")
-
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-                DispatchQueue.main.async {
-                    if success {
-                        self.isUnlocked = true
-                        self.showPINEntry = false
-                    } else if fallbackToPIN {
-                        // If biometric fails and we have fallback, show PIN entry
-                        self.showPINEntry = true
-                    }
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            await MainActor.run {
+                if fallbackToPIN || currentSecurityType == .pinCode {
+                    // No biometrics available, use PIN
+                    self.showPINEntry = true
+                } else {
+                    // No security available
+                    self.isUnlocked = true
                 }
             }
-        } else if fallbackToPIN || currentSecurityType == .pinCode {
-            // No biometrics available, use PIN
-            showPINEntry = true
-        } else {
-            // No security available
-            isUnlocked = true
+            return
+        }
+
+        let reason = NSLocalizedString("Unlock ProTip365 to view your data", comment: "")
+
+        do {
+            let success = try await context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: reason
+            )
+
+            await MainActor.run {
+                if success {
+                    self.isUnlocked = true
+                    self.showPINEntry = false
+                } else if fallbackToPIN {
+                    // If biometric fails and we have fallback, show PIN entry
+                    self.showPINEntry = true
+                }
+            }
+        } catch {
+            await MainActor.run {
+                if fallbackToPIN {
+                    self.showPINEntry = true
+                }
+            }
         }
     }
 
@@ -233,24 +253,39 @@ class SecurityManager: ObservableObject {
         showPINEntry = false
     }
 
-    // MARK: - Authentication with Completion Handler
+    // MARK: - Async Authentication Methods
 
-    func authenticateWithBiometric(completion: @escaping (Bool) -> Void) {
+    /// Authenticate with biometrics - async version
+    func authenticateWithBiometrics(reason: String? = nil) async -> Bool {
         let context = LAContext()
         var error: NSError?
 
         // Check if biometric authentication is available
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            let reason = NSLocalizedString("Authenticate to change security settings", comment: "")
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            print("❌ Biometric authentication not available: \(error?.localizedDescription ?? "unknown")")
+            return false
+        }
 
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-                DispatchQueue.main.async {
-                    completion(success)
-                }
-            }
-        } else {
-            DispatchQueue.main.async {
-                completion(false)
+        let authReason = reason ?? NSLocalizedString("Authenticate to change security settings", comment: "")
+
+        do {
+            let success = try await context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: authReason
+            )
+            return success
+        } catch {
+            print("❌ Biometric authentication failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Legacy completion handler version for backwards compatibility
+    func authenticateWithBiometric(completion: @escaping (Bool) -> Void) {
+        Task {
+            let success = await authenticateWithBiometrics()
+            await MainActor.run {
+                completion(success)
             }
         }
     }

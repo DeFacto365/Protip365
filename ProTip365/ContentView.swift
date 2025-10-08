@@ -34,6 +34,7 @@ struct ContentView: View {
                     } else if showOnboarding {
                         // Has valid subscription but needs onboarding
                         OnboardingView(isAuthenticated: $isAuthenticated, showOnboarding: $showOnboarding)
+                            .environmentObject(securityManager)
                     } else {
                         // Has valid subscription and completed onboarding - show main app
                         mainAppView
@@ -205,6 +206,7 @@ struct ContentView: View {
                 // iPhone Layout - Use Liquid Glass Navigation
                 iOS26LiquidGlassMainView()
                     .environmentObject(subscriptionManager)
+                    .environmentObject(securityManager)
             }
         }
         .environmentObject(subscriptionManager)
