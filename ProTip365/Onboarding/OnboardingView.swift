@@ -48,6 +48,9 @@ struct OnboardingView: View {
                             // Navigation Buttons
                             navigationButtons
                         }
+                        .onTapGesture {
+                            focusedField = nil
+                        }
                         .padding(.bottom, 20) // Ensure buttons stay on screen
                     }
                 }
@@ -67,9 +70,6 @@ struct OnboardingView: View {
             Button("OK") { }
         } message: {
             Text(state.errorMessage)
-        }
-        .onTapGesture {
-            focusedField = nil
         }
         .onAppear {
             state.selectedLanguage = language
