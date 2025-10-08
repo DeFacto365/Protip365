@@ -88,7 +88,7 @@ struct SubscriptionSettingsSection: View {
                                     .foregroundStyle(.white)
                                     .font(.body)
                             }
-                            Text(localization.trialInfoText(for: subscriptionManager.product))
+                            Text(localization.trialInfoTextMonthly(for: subscriptionManager.productMonthly))
                                 .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.9))
                         }
@@ -103,6 +103,38 @@ struct SubscriptionSettingsSection: View {
                         )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
+                    Button(action: {
+                        HapticFeedback.selection()
+                        showSubscriptionView = true
+                    }) {
+                        VStack(spacing: 4) {
+                            HStack {
+                                Text(localization.startFreeTrialButton)
+                                    .foregroundStyle(.white)
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .foregroundStyle(.white)
+                                    .font(.body)
+                            }
+                            Text(localization.trialInfoTextYearly(for: subscriptionManager.productYearly))
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue, Color.purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    
                 } else if subscriptionManager.isInTrialPeriod {
                     // View subscription button during trial
                     Button(action: {
@@ -114,7 +146,7 @@ struct SubscriptionSettingsSection: View {
                                 .foregroundStyle(.primary)
                                 .font(.body)
                             Spacer()
-                            Text(localization.priceText(for: subscriptionManager.product))
+                            Text(localization.priceTextMonthly(for: subscriptionManager.productMonthly))
                                 .foregroundStyle(.secondary)
                                 .font(.caption)
                             Image(systemName: IconNames.Form.next)
@@ -123,6 +155,26 @@ struct SubscriptionSettingsSection: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        HapticFeedback.selection()
+                        showSubscriptionView = true
+                    }) {
+                        HStack {
+                            Text(localization.viewSubscriptionButton)
+                                .foregroundStyle(.primary)
+                                .font(.body)
+                            Spacer()
+                            Text(localization.priceTextYearly(for: subscriptionManager.productYearly))
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                            Image(systemName: IconNames.Form.next)
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
                 } else {
                     // Manage subscription button for active subscribers - now shows in-app management
                     Button(action: {
@@ -210,7 +262,7 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    func trialInfoText(for product: Product?) -> String {
+    func trialInfoTextMonthly(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Localized per country
@@ -227,6 +279,25 @@ struct SubscriptionSectionLocalization {
             return "7 days free, then \(priceString)/month"
         }
     }
+    
+    func trialInfoTextYearly(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Localized per country
+        } else {
+            priceString = "$34.99" // Fallback if unavailable
+        }
+
+        switch language {
+        case "fr":
+            return "7 jours gratuits, puis \(priceString)/an"
+        case "es":
+            return "7 días gratis, luego \(priceString)/año"
+        default:
+            return "7 days free, then \(priceString)/year"
+        }
+    }
+
 
 
     var viewSubscriptionButton: String {
@@ -237,7 +308,7 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    func priceText(for product: Product?) -> String {
+    func priceTextMonthly(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Automatically localized
@@ -254,6 +325,25 @@ struct SubscriptionSectionLocalization {
             return "\(priceString)/mo"
         }
     }
+    
+    func priceTextYearly(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Automatically localized
+        } else {
+            priceString = "$34.99" // Fallback
+        }
+
+        switch language {
+        case "fr":
+            return "\(priceString)/an"
+        case "es":
+            return "\(priceString)/año"
+        default:
+            return "\(priceString)/yr"
+        }
+    }
+
 
 
     var manageButton: String {

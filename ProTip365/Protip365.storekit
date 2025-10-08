@@ -14,39 +14,7 @@
 
   ],
   "products" : [
-    {
-      "displayPrice" : "3.99",
-      "familyShareable" : false,
-      "groupNumber" : 1,
-      "internalID" : "6751758595",
-      "introductoryOffer" : {
-        "internalID" : "6751758596",
-        "paymentMode" : "free",
-        "subscriptionPeriod" : "P1W"
-      },
-      "localizations" : [
-        {
-          "description" : "Unlock all features: unlimited shifts, multiple employers, advanced analytics, and data export",
-          "displayName" : "ProTip365 Premium",
-          "locale" : "en_US"
-        },
-        {
-          "description" : "Débloquez toutes les fonctionnalités: shifts illimités, employeurs multiples, analyses avancées et export de données",
-          "displayName" : "ProTip365 Premium",
-          "locale" : "fr"
-        },
-        {
-          "description" : "Desbloquea todas las funciones: turnos ilimitados, múltiples empleadores, análisis avanzados y exportación de datos",
-          "displayName" : "ProTip365 Premium",
-          "locale" : "es"
-        }
-      ],
-      "productID" : "com.protip365.premium.monthly",
-      "recurringSubscriptionPeriod" : "P1M",
-      "referenceName" : "ProTip365 Premium Monthly",
-      "subscriptionGroupID" : "21769428",
-      "type" : "RecurringSubscription"
-    }
+
   ],
   "settings" : {
     "_applicationInternalID" : "6751753292",
@@ -128,6 +96,7 @@
           "internalID" : "6751758595",
           "introductoryOffer" : {
             "internalID" : "6751758596",
+            "numberOfPeriods" : 1,
             "paymentMode" : "free",
             "subscriptionPeriod" : "P1W"
           },
@@ -140,12 +109,12 @@
             {
               "description" : "Débloquez toutes les fonctionnalités: shifts illimités, employeurs multiples, analyses avancées et export de données",
               "displayName" : "ProTip365 Premium",
-              "locale" : "fr"
+              "locale" : "fr_CA"
             },
             {
               "description" : "Desbloquea todas las funciones: turnos ilimitados, múltiples empleadores, análisis avanzados y exportación de datos",
               "displayName" : "ProTip365 Premium",
-              "locale" : "es"
+              "locale" : "es_MX"
             }
           ],
           "productID" : "com.protip365.premium.monthly",
@@ -156,7 +125,36 @@
           "winbackOffers" : [
 
           ]
-        }
+        },
+{
+  "adHocOffers": [],
+  "codeOffers": [],
+  "displayPrice": "34.99",
+  "familyShareable": false,
+  "groupNumber": 1,
+  "internalID": "6751758600",
+  "introductoryOffer": {
+    "internalID": "6751758601",
+    "numberOfPeriods": 1,
+    "paymentMode": "free",
+    "subscriptionPeriod": "P1W"
+  },
+  "localizations": [
+    {
+      "description": "Unlock all premium ProTip365 features for a full year.",
+      "displayName": "ProTip365 Premium Yearly",
+      "locale": "en_US"
+    }
+  ],
+  "productID": "com.protip365.premium.yearly",
+  "recurringSubscriptionPeriod": "P1Y",
+  "referenceName": "ProTip365 Premium Yearly",
+  "subscriptionGroupID": "21769428",
+  "type": "RecurringSubscription",
+  "winbackOffers": []
+}
+
+
       ]
     }
   ],

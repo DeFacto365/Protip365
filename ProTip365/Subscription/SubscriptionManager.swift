@@ -16,21 +16,23 @@ class SubscriptionManager: ObservableObject {
     @Published var currentTier: SubscriptionTier = .none
     @Published var trialDaysRemaining: Int = 0
     @Published var subscriptionExpirationDate: Date? = nil
-    @Published var product: Product?
-    
+    @Published var productMonthly: Product?
+    @Published var productYearly: Product?
+
     // NEW: Error handling for UI feedback
     @Published var loadingError: String?
     @Published var purchaseError: String?
     
     // Single product ID for simplified pricing (must match App Store Connect exactly)
-    private let premiumMonthlyId = "com.protip365.premium.monthly"
+    let premiumMonthlyId = "com.protip365.premium.monthly"
+    let premiumYearlyId = "com.protip365.premium.yearly"
 
     // CRITICAL: Add your App Store Connect shared secret here
     // Get this from: App Store Connect > Your App > Features > In-App Purchases > App-Specific Shared Secret
     private let sharedSecret = "0b3c33127296426f9846d484f520f693" // TODO: Replace with your actual shared secret
 
     private var allProductIds: [String] {
-        [premiumMonthlyId]
+        [premiumMonthlyId, premiumYearlyId]
     }
 
     private var transactionListener: Task<Void, Error>?
@@ -81,7 +83,7 @@ class SubscriptionManager: ObservableObject {
 
     private func getTierForProductId(_ productId: String) -> SubscriptionTier {
         switch productId {
-        case premiumMonthlyId:
+        case premiumMonthlyId, premiumYearlyId:
             return .premium
         default:
             return .none
@@ -101,7 +103,8 @@ class SubscriptionManager: ObservableObject {
             self.trialDaysRemaining = 0
             self.isCheckingSubscription = false
             self.products = []
-            self.product = nil
+            self.productMonthly = nil
+            self.productYearly = nil
             self.loadingError = nil
             self.purchaseError = nil
             print("Subscription state reset")
@@ -123,8 +126,9 @@ class SubscriptionManager: ObservableObject {
 
             await MainActor.run {
                 self.products = products
-                self.product = products.first(where: { $0.id == premiumMonthlyId })
-                
+                self.productMonthly = products.first(where: { $0.id == premiumMonthlyId })
+                self.productYearly = products.first(where: { $0.id == premiumYearlyId })
+
                 if products.isEmpty {
                     self.loadingError = "No subscription products available. Please check your internet connection and try again."
                     print("⚠️ No products loaded - check App Store Connect configuration")
@@ -208,23 +212,8 @@ class SubscriptionManager: ObservableObject {
             
             let errorMessage: String
             if let storeKitError = error as? StoreKitError {
-                // Log the specific StoreKit error details
-                print("StoreKit error details: \(storeKitError)")
-                
-                switch storeKitError {
-                case .userCancelled:
-                    errorMessage = "Purchase cancelled"
-                case .networkError(let underlyingError):
-                    errorMessage = "Network error: \(underlyingError.localizedDescription)"
-                case .notAvailableInStorefront:
-                    errorMessage = "This subscription is not available in your region"
-                case .notEntitled:
-                    errorMessage = "You don't have access to this subscription"
-                case .systemError(let underlyingError):
-                    errorMessage = "System error: \(underlyingError.localizedDescription)"
-                default:
-                    errorMessage = "Purchase failed: \(storeKitError.localizedDescription)"
-                }
+                print("StoreKit error: \(storeKitError)")
+                errorMessage = "Purchase failed: \(storeKitError.localizedDescription)"
             } else {
                 errorMessage = "Purchase failed: \(error.localizedDescription)"
             }

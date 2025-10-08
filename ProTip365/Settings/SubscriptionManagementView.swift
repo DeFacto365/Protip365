@@ -43,7 +43,7 @@ struct SubscriptionManagementView: View {
                                 Text(localization.upgradeToPremium)
                                     .foregroundColor(.blue)
                                 Spacer()
-                                Text(subscriptionManager.product?.displayPrice ?? "N/A")
+                                Text(subscriptionManager.productMonthly?.displayPrice ?? "N/A")
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -106,7 +106,7 @@ struct SubscriptionManagementView: View {
                     }
                 }
             } message: {
-                Text(localization.upgradeMessage(for: subscriptionManager.product))
+                Text(localization.upgradeMessage(for: subscriptionManager.productMonthly))
             }
             .alert("Purchase Failed", isPresented: $showErrorAlert) {
                         Button("OK", role: .cancel) { }
@@ -269,13 +269,13 @@ struct SubscriptionFAQView: View {
         List {
             Section(localization.trialSection) {
                 FAQRow(question: localization.trialQuestion,
-                       answer: localization.trialAnswer(for: subscriptionManager.product))
+                       answer: localization.trialAnswer(for: subscriptionManager.productMonthly))
 
                 FAQRow(question: localization.cancelQuestion,
                        answer: localization.cancelAnswer)
 
                 FAQRow(question: localization.afterTrialQuestion,
-                       answer: localization.afterTrialAnswer(for: subscriptionManager.product))
+                       answer: localization.afterTrialAnswer(for: subscriptionManager.productMonthly))
             }
 
             Section(localization.featuresSection) {

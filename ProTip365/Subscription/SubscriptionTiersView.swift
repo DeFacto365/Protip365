@@ -114,10 +114,10 @@ struct SubscriptionTiersView: View {
                                 tierName: premiumTitle,
                                 description: premiumDescription,
                                 features: premiumFeatures,
-                                monthlyPrice: "$3.99",
-                                yearlyPrice: nil, // No yearly option for now
-                                monthlyProductId: "com.protip365.premium.monthly",
-                                yearlyProductId: nil,
+                                monthlyPrice: subscriptionManager.productMonthly?.displayPrice ?? "$3.99",
+                                yearlyPrice: subscriptionManager.productYearly?.displayPrice ?? "$34.99", // No yearly option for now
+                                monthlyProductId: subscriptionManager.premiumMonthlyId,
+                                yearlyProductId: subscriptionManager.premiumYearlyId,
                                 isCurrentTier: subscriptionManager.currentTier == .premium,
                                 hasTrial: true,
                                 isLoading: $isLoading,
@@ -277,7 +277,7 @@ struct SubscriptionTiersView: View {
     }
 
     private var termsText: some View {
-        Text(termsString(for: subscriptionManager.product))
+        Text(termsString(for: subscriptionManager.productMonthly))
             .font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -488,13 +488,30 @@ struct SubscriptionTiersView: View {
             priceString = "$3.99" // Fallback
         }
 
+        // Detect yearly or monthly based on product ID or subscription period
+        let isYearly = product?.id.lowercased().contains("year") == true
+
         switch language {
         case "fr":
-            return "Essai gratuit de 7 jours, puis \(priceString)/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+            if isYearly {
+                return "Essai gratuit de 7 jours, puis \(priceString)/an. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+            } else {
+                return "Essai gratuit de 7 jours, puis \(priceString)/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+            }
+
         case "es":
-            return "Prueba gratuita de 7 días, luego \(priceString)/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+            if isYearly {
+                return "Prueba gratuita de 7 días, luego \(priceString)/año. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+            } else {
+                return "Prueba gratuita de 7 días, luego \(priceString)/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+            }
+
         default:
-            return "7-day free trial, then \(priceString)/month. Subscription auto-renews. Cancel anytime in App Store settings."
+            if isYearly {
+                return "7-day free trial, then \(priceString)/year. Subscription auto-renews. Cancel anytime in App Store settings."
+            } else {
+                return "7-day free trial, then \(priceString)/month. Subscription auto-renews. Cancel anytime in App Store settings."
+            }
         }
     }
 

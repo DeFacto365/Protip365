@@ -10,7 +10,8 @@ struct SubscriptionView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
     @Binding var showOnboarding: Bool
     @AppStorage("language") private var language = "en"
-    @State private var isLoading = false
+    @State private var isLoadingMonthly = false
+    @State private var isLoadingYearly = false
     @State private var showErrorAlert = false
 
     var body: some View {
@@ -127,30 +128,30 @@ struct SubscriptionView: View {
                                 return
                             }
 
-                            isLoading = true
+                            isLoadingMonthly = true
                             Task {
                                 do {
-                                    try await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumMonthlyId)
                                     await MainActor.run {
-                                        isLoading = false
+                                        isLoadingMonthly = false
                                         if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
                                             checkOnboardingStatus()
                                         }
                                     }
                                 } catch {
                                     await MainActor.run {
-                                        isLoading = false
+                                        isLoadingMonthly = false
                                         showErrorAlert = true  // Show alert on error
                                     }
                                 }
                             }
                         }) {
                             Group {
-                                if isLoading {
+                                if isLoadingMonthly {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 } else {
-                                    Text(subscribeButton(for: subscriptionManager.product))
+                                    Text(subscribeButtonMonthly(for: subscriptionManager.productMonthly))
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                 }
@@ -161,7 +162,52 @@ struct SubscriptionView: View {
                             .foregroundColor(.white)
                             .cornerRadius(12)
                         }
-                        .disabled(isLoading)
+                        .disabled(isLoadingMonthly)
+                        .padding(.horizontal, 30)
+                        
+                        // Subscribe Button
+                        Button(action: {
+                            // Check if products are loaded first
+                            if subscriptionManager.products.isEmpty {
+                                print("❌ Cannot purchase - no products loaded")
+                                return
+                            }
+
+                            isLoadingYearly = true
+                            Task {
+                                do {
+                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumYearlyId)
+                                    await MainActor.run {
+                                        isLoadingYearly = false
+                                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                                            checkOnboardingStatus()
+                                        }
+                                    }
+                                } catch {
+                                    await MainActor.run {
+                                        isLoadingYearly = false
+                                        showErrorAlert = true  // Show alert on error
+                                    }
+                                }
+                            }
+                        }) {
+                            Group {
+                                if isLoadingYearly {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text(subscribeButtonYearly(for: subscriptionManager.productYearly))
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                        }
+                        .disabled(isLoadingYearly)
                         .padding(.horizontal, 30)
 
                         // Terms and Privacy (inline)
@@ -212,9 +258,11 @@ struct SubscriptionView: View {
                         // Restore Purchases
                         Button(action: {
                             Task {
-                                isLoading = true
+                                isLoadingMonthly = true
+                                isLoadingYearly = true
                                 await subscriptionManager.restorePurchases()
-                                isLoading = false
+                                isLoadingMonthly = false
+                                isLoadingYearly = false
                                 if subscriptionManager.isSubscribed {
                                     HapticFeedback.success()
                                 }
@@ -224,7 +272,7 @@ struct SubscriptionView: View {
                                 .font(.body)
                                 .foregroundColor(.blue)
                         }
-                        .disabled(isLoading)
+                        .disabled(isLoadingMonthly || isLoadingYearly)
                         .padding(.top, 8)
                     }
                     .padding(.bottom, 40)
@@ -293,7 +341,7 @@ struct SubscriptionView: View {
         }
     }
 
-    func subscribeButton(for product: Product?) -> String {
+    func subscribeButtonMonthly(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Localized currency & formatting
@@ -308,6 +356,24 @@ struct SubscriptionView: View {
             return "Suscribirse por \(priceString)/mes"
         default:
             return "Subscribe for \(priceString)/month"
+        }
+    }
+    
+    func subscribeButtonYearly(for product: Product?) -> String {
+        let priceString: String
+        if let displayPrice = product?.displayPrice {
+            priceString = displayPrice // Localized currency & formatting
+        } else {
+            priceString = "$34.99" // Fallback
+        }
+
+        switch language {
+        case "fr":
+            return "S'abonner pour \(priceString)/an"
+        case "es":
+            return "Suscribirse por \(priceString)/año"
+        default:
+            return "Subscribe for \(priceString)/year"
         }
     }
 
