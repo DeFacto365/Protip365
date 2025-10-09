@@ -27,12 +27,18 @@ class SecurityManager: ObservableObject {
     // MARK: - User Session Management
 
     /// Load security settings from database for the current user
+    struct SecuritySettingsResponse: Decodable {
+        let security_type: String?
+        let pin_code_hash: String?
+        let biometric_enabled: Bool?
+    }
+
     func loadSecuritySettings(for userId: UUID) async {
         print("🔐 Loading security settings for user: \(userId)")
         self.currentUserId = userId
 
         do {
-            let profile: UserProfile = try await SupabaseManager.shared.client
+            let settings: SecuritySettingsResponse = try await SupabaseManager.shared.client
                 .from("users_profile")
                 .select("security_type, pin_code_hash, biometric_enabled")
                 .eq("user_id", value: userId)
@@ -41,9 +47,9 @@ class SecurityManager: ObservableObject {
                 .value
 
             await MainActor.run {
-                self.securityType = profile.security_type ?? "none"
-                self.pinCodeHash = profile.pin_code_hash ?? ""
-                self.biometricEnabled = profile.biometric_enabled ?? false
+                self.securityType = settings.security_type ?? "none"
+                self.pinCodeHash = settings.pin_code_hash ?? ""
+                self.biometricEnabled = settings.biometric_enabled ?? false
                 print("✅ Security settings loaded: \(self.securityType)")
             }
         } catch {

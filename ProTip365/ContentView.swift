@@ -209,6 +209,7 @@ struct ContentView: View {
                     .environmentObject(securityManager)
             }
         }
+        .environmentObject(securityManager)
         .environmentObject(subscriptionManager)
         .environmentObject(SupabaseManager.shared)
         .environmentObject(alertManager)
