@@ -18,7 +18,6 @@
 
 /* Begin PBXFileReference section */
 		855AA5962E636523006D4C41 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		856366672E88349B00D9FB92 /* Protip365.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Protip365.storekit; sourceTree = "<group>"; };
 		85946DEB2E625D8C0018C7F9 /* ProTip365.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProTip365.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -72,7 +71,6 @@
 		85946DE22E625D8C0018C7F9 = {
 			isa = PBXGroup;
 			children = (
-				856366672E88349B00D9FB92 /* Protip365.storekit */,
 				85946DED2E625D8C0018C7F9 /* ProTip365 */,
 				855AA5882E62E69F006D4C41 /* Frameworks */,
 				85946DEC2E625D8C0018C7F9 /* Products */,
@@ -310,7 +308,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2VNLA63QB4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -327,7 +325,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.30;
+				MARKETING_VERSION = 1.1.41;
 				PRODUCT_BUNDLE_IDENTIFIER = com.protip365.monthly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -344,7 +342,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2VNLA63QB4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -361,7 +359,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.30;
+				MARKETING_VERSION = 1.1.41;
 				PRODUCT_BUNDLE_IDENTIFIER = com.protip365.monthly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

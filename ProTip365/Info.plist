@@ -15,13 +15,11 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.38</string>
+	<string>1.1.41</string>
 	<key>CFBundleVersion</key>
-	<string>38</string>
+	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-
-	<!-- Localization Settings -->
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
@@ -30,48 +28,33 @@
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
-
-	<!-- Network Permissions -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 	</dict>
-
-	<!-- Local Network Usage Description -->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>ProTip365 uses the local network to discover and sync with other devices on your network.</string>
-
-	<!-- Bonjour services to trigger Local Network permission -->
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_protip365._tcp</string>
 		<string>_protip365._udp</string>
 	</array>
-
-	<!-- Allow Local Networking -->
 	<key>NSAllowsLocalNetworking</key>
 	<true/>
-
-	<!-- Face ID Usage Description -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>ProTip365 uses Face ID to protect your sensitive financial data and ensure only you can access your tip tracking information.</string>
-
-	<!-- Privacy Usage Descriptions -->
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>ProTip365 sends reminders to add entries for yesterday's shifts and other important updates about your earnings.</string>
+	<string>ProTip365 sends reminders to add entries for yesterday&apos;s shifts and other important updates about your earnings.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ProTip365 may access your photo library to allow you to attach receipts or documents to your shift entries.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>ProTip365 may access your camera to allow you to take photos of receipts or documents for your shift entries.</string>
-
-	<!-- Background Modes -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
-
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -111,18 +94,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-
-	<!-- Encryption Export Compliance -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-
-	<!-- Supabase Configuration -->
 	<key>SUPABASE_URL</key>
 	<string>https://ztzpjsbfzcccvbacgskc.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c</string>
-
-	<!-- App Store Metadata -->
 	<key>CFBundleGetInfoString</key>
 	<string>ProTip365 - Professional Tip Tracking</string>
 	<key>CFBundleSignature</key>
