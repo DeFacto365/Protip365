@@ -3,6 +3,7 @@ import SwiftUI
 struct SubscriptionManagementSection: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
     let language: String
+    @Environment(\.colorScheme) private var colorScheme
 
     private var localization: SettingsLocalization {
         SettingsLocalization(language: language)
@@ -69,7 +70,7 @@ struct SubscriptionManagementSection: View {
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
             .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         }

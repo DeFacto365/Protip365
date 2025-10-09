@@ -110,7 +110,8 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color.white)
+                            .foregroundColor(.primary)
+                            .background(Color(.systemBackground))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
@@ -136,7 +137,9 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color.white)
+                            .foregroundColor(.primary)
+                            .background(Color(.systemBackground))
+
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
@@ -269,7 +272,8 @@ struct AuthView: View {
                             .textFieldStyle(.plain)
                             .font(.body)
                             .padding()
-                            .background(Color.white)
+                            .foregroundColor(.primary)
+                            .background(Color(.systemBackground))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)

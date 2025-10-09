@@ -4,7 +4,7 @@ struct TipCalculatorView: View {
     @State private var selectedTab = 1  // Default to Tip-Out tab
     @AppStorage("language") private var language = "en"
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -70,7 +70,8 @@ struct TipCalculatorContent: View {
     @FocusState private var isTextFieldFocused: Bool
     let language: String
     let horizontalSizeClass: UserInterfaceSizeClass?
-
+    @Environment(\.colorScheme) private var colorScheme
+    
     var tipAmount: Double {
         let bill = Double(billAmount) ?? 0
         return bill * (tipPercentage / 100)
@@ -307,8 +308,7 @@ struct TipCalculatorContent: View {
                     }
                     .padding(.bottom, 8)
                 }
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color(.systemGray5), lineWidth: 1)
@@ -396,6 +396,7 @@ struct TipOutCalculatorContent: View {
     @FocusState private var isTextFieldFocused: Bool
     let language: String
     let horizontalSizeClass: UserInterfaceSizeClass?
+    @Environment(\.colorScheme) private var colorScheme
 
     var tips: Double {
         Double(totalTips) ?? 0.0
@@ -582,7 +583,7 @@ struct TipOutCalculatorContent: View {
                     }
                     .padding(.bottom, 8)
                 }
-                .background(Color(.systemBackground))
+                .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)

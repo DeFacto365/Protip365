@@ -183,6 +183,7 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
+                    .foregroundColor(.primary)
                     .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
@@ -360,6 +361,7 @@ struct WelcomeSignUpView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .padding()
+                    .foregroundColor(.primary)
                     .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(

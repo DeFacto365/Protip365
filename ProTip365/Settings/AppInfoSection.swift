@@ -4,7 +4,7 @@ import Supabase
 struct AppInfoSection: View {
     @Binding var language: String
     @Binding var showOnboarding: Bool
-
+    @Environment(\.colorScheme) private var colorScheme
     private let localization: SettingsLocalization
 
     private var appVersion: String {
@@ -115,7 +115,7 @@ struct AppInfoSection: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         .sheet(isPresented: $showOnboarding) {

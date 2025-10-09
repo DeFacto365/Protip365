@@ -27,7 +27,8 @@ struct SummarySection: View {
     // App Storage for deduction percentage
     @AppStorage("averageDeductionPercentage") private var averageDeductionPercentage: Double = 30.0
     @AppStorage("language") private var language = "en"
-
+    @Environment(\.colorScheme) private var colorScheme
+    
     // Computed property for net salary
     private var expectedNetSalary: Double {
         let deductionMultiplier = 1.0 - (averageDeductionPercentage / 100.0)
@@ -162,7 +163,7 @@ struct SummarySection: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

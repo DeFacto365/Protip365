@@ -119,7 +119,8 @@ struct CompactGlassStatCard: View {
     let icon: String
     let color: Color
     let subtitle: String?
-
+    @Environment(\.colorScheme) private var colorScheme
+    
     var body: some View {
         let _ = print("📊 Compact Card: \(title) = \(value)")
         return HStack(spacing: 12) {
@@ -154,7 +155,7 @@ struct CompactGlassStatCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }

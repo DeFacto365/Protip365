@@ -20,7 +20,8 @@ struct CalendarShiftsView: View {
     @State private var showingAddEntryDialog = false
     @State private var showingSelectShiftDialog = false
     @AppStorage("language") private var language = "en"
-
+    @Environment(\.colorScheme) private var colorScheme
+    
     @Binding var navigateToShiftId: UUID?
 
     // Calendar date range - show current month plus/minus 2 months
@@ -46,7 +47,7 @@ struct CalendarShiftsView: View {
                     language: language
                 )
                 .frame(height: 400)
-                .background(Color(UIColor.systemBackground))
+                .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
                 .cornerRadius(16)
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                 .padding(.horizontal)
@@ -450,7 +451,7 @@ struct CalendarShiftsView: View {
                 .frame(height: 50)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground))
+                        .fill(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 )
             }
@@ -472,7 +473,7 @@ struct CalendarShiftsView: View {
                 .frame(height: 50)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemBackground))
+                        .fill(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 )
             }

@@ -22,6 +22,7 @@ struct AddEntryView: View {
     @AppStorage("defaultHourlyRate") private var defaultHourlyRate: Double = 15.00
     @AppStorage("useMultipleEmployers") private var useMultipleEmployers = false
     @AppStorage("language") private var language = "en"
+    @Environment(\.colorScheme) private var colorScheme
     
     // MARK: - Computed Properties
     private var localizedStrings: AddEntryLocalizedStrings {
@@ -199,7 +200,7 @@ struct AddEntryView: View {
             defaultHourlyRate: defaultHourlyRate,
             closeOtherPickers: closeOtherPickers
         )
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -222,7 +223,7 @@ struct AddEntryView: View {
             endsText: localizedStrings.endsText,
             lunchBreakText: localizedStrings.lunchBreakText
         )
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
@@ -241,7 +242,7 @@ struct AddEntryView: View {
             notesText: localizedStrings.notesText,
             optionalNotesText: localizedStrings.optionalNotesText
         )
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     

@@ -6,6 +6,7 @@ struct SecuritySettingsSection: View {
     @Binding var isVerifyingToDisable: Bool
   //  @Binding var selectedSecurityType: SecurityType
     @ObservedObject var securityManager: SecurityManager
+    @Environment(\.colorScheme) private var colorScheme
 
     let language: String
     private let localization: SettingsLocalization
@@ -76,7 +77,7 @@ struct SecuritySettingsSection: View {
                     }
                 }
                 .padding(Constants.formPadding)
-                .background(Color(.systemBackground))
+                .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
                 .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
 

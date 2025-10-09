@@ -21,7 +21,8 @@ struct AddShiftView: View {
     @State private var showAlertPicker = false
     @State private var showingDeleteConfirmation = false
     @AppStorage("language") private var language = "en"
-
+    @Environment(\.colorScheme) private var colorScheme
+    
     // MARK: - Initializer with StateObject
     init(editingShift: ShiftWithEntry? = nil, initialDate: Date? = nil) {
         self.editingShift = editingShift
@@ -229,7 +230,7 @@ struct AddShiftView: View {
                 localization: localization
             )
         }
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.05), radius: 1, x: 0, y: 1)
     }

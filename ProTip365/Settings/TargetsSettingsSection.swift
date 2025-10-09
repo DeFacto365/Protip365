@@ -9,6 +9,7 @@ struct TargetsSettingsSection: View {
     @Binding var targetHoursWeekly: String
     @Binding var targetHoursMonthly: String
     @Binding var hasVariableSchedule: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     let language: String
     private let localization: SettingsLocalization
@@ -228,7 +229,7 @@ struct TargetsSettingsSection: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }

@@ -8,7 +8,7 @@ struct DashboardPerformanceCard: View {
     let monthViewType: Int
     let hasVariableSchedule: Bool
     let localization: DashboardLocalization
-
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("performanceCardExpanded") private var isExpanded: Bool = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -72,7 +72,7 @@ struct DashboardPerformanceCard: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }

@@ -4,6 +4,7 @@ import Supabase
 struct ProfileSettingsSection: View {
     @Binding var userEmail: String
     @Binding var userName: String
+    @Environment(\.colorScheme) private var colorScheme
 
     let language: String
     private let localization: SettingsLocalization
@@ -57,7 +58,7 @@ struct ProfileSettingsSection: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }

@@ -7,6 +7,7 @@ struct AccountSettingsSection: View {
     @Binding var showDeleteAccountAlert: Bool
     @Binding var isDeletingAccount: Bool
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @Environment(\.colorScheme) private var colorScheme
 
     let language: String
     private let localization: SettingsLocalization
@@ -71,7 +72,7 @@ struct AccountSettingsSection: View {
                 }
                 .padding()
             }
-            .background(Color(.systemBackground))
+            .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
             .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
             }
@@ -108,7 +109,7 @@ struct AccountSettingsSection: View {
                     .padding()
                 }
             }
-            .background(Color(.systemBackground))
+            .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
             .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         }

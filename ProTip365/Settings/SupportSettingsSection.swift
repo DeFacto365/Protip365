@@ -12,6 +12,7 @@ struct SupportSettingsSection: View {
     @Binding var showThankYouMessage: Bool
     @Binding var isSendingSuggestion: Bool
     @Binding var userEmail: String
+    @Environment(\.colorScheme) private var colorScheme
 
     let language: String
     private let localization: SettingsLocalization
@@ -152,7 +153,7 @@ struct SupportSettingsSection: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         .sheet(isPresented: $showSuggestIdeas) {
