@@ -59,10 +59,10 @@ struct SubscriptionView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
                     }
-                    .padding(.top, 60)
+                    .padding(.top, 30)
                     .padding(.bottom, 30)
 
-                    // Value Description (replacing icon)
+                    // Value Description
                     VStack(spacing: 20) {
                         Text(detailedDescription)
                             .font(.system(size: 13))
@@ -71,32 +71,14 @@ struct SubscriptionView: View {
                             .lineSpacing(3)
                             .padding(.horizontal, 50)
                             .fixedSize(horizontal: false, vertical: true)
-
-                        // Page indicators
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color.primary)
-                                .frame(width: 8, height: 8)
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                        }
-                        .padding(.top, 10)
                     }
-                    .padding(.vertical, 40)
+                    .padding(.vertical, 20)
 
                     Spacer()
 
                     // Bottom Section
                     VStack(spacing: 16) {
-                        // Trial text (discrete, like Ocean Journal)
-                        Text(trialText)
-                            .font(.body)
-                            .foregroundColor(.blue)
-
+                        
                         // Debug info (only show if products failed to load)
                         if subscriptionManager.products.isEmpty {
                             VStack(spacing: 12) {
@@ -120,9 +102,67 @@ struct SubscriptionView: View {
                             }
                         }
 
-                        // Subscribe Button
+                        // Annual Plan Button (Featured - Better Deal)
                         Button(action: {
-                            // Check if products are loaded first
+                            if subscriptionManager.products.isEmpty {
+                                print("❌ Cannot purchase - no products loaded")
+                                return
+                            }
+
+                            isLoadingYearly = true
+                            Task {
+                                do {
+                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumYearlyId)
+                                    await MainActor.run {
+                                        isLoadingYearly = false
+                                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
+                                            checkOnboardingStatus()
+                                        }
+                                    }
+                                } catch {
+                                    await MainActor.run {
+                                        isLoadingYearly = false
+                                        showErrorAlert = true
+                                    }
+                                }
+                            }
+                        }) {
+                            Group {
+                                if isLoadingYearly {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    VStack(spacing: 4) {
+                                        Text(subscribeButtonYearly(for: subscriptionManager.productYearly))
+                                            .font(.headline)
+                                            .fontWeight(.semibold)
+                                        Text(bestValueText)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 60)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.blue.opacity(0.5), lineWidth: 2)
+                            )
+                        }
+                        .disabled(isLoadingYearly)
+                        .padding(.horizontal, 30)
+                        
+                        // Monthly Plan Button
+                        Button(action: {
                             if subscriptionManager.products.isEmpty {
                                 print("❌ Cannot purchase - no products loaded")
                                 return
@@ -141,7 +181,7 @@ struct SubscriptionView: View {
                                 } catch {
                                     await MainActor.run {
                                         isLoadingMonthly = false
-                                        showErrorAlert = true  // Show alert on error
+                                        showErrorAlert = true
                                     }
                                 }
                             }
@@ -164,52 +204,14 @@ struct SubscriptionView: View {
                         }
                         .disabled(isLoadingMonthly)
                         .padding(.horizontal, 30)
+
                         
-                        // Subscribe Button
-                        Button(action: {
-                            // Check if products are loaded first
-                            if subscriptionManager.products.isEmpty {
-                                print("❌ Cannot purchase - no products loaded")
-                                return
-                            }
-
-                            isLoadingYearly = true
-                            Task {
-                                do {
-                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumYearlyId)
-                                    await MainActor.run {
-                                        isLoadingYearly = false
-                                        if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
-                                            checkOnboardingStatus()
-                                        }
-                                    }
-                                } catch {
-                                    await MainActor.run {
-                                        isLoadingYearly = false
-                                        showErrorAlert = true  // Show alert on error
-                                    }
-                                }
-                            }
-                        }) {
-                            Group {
-                                if isLoadingYearly {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Text(subscribeButtonYearly(for: subscriptionManager.productYearly))
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                        }
-                        .disabled(isLoadingYearly)
-                        .padding(.horizontal, 30)
-
+                        // Trial text
+                        Text(trialText)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 4)
+                        
                         // Terms and Privacy (inline)
                         HStack(spacing: 6) {
                             Button(action: {
@@ -218,12 +220,12 @@ struct SubscriptionView: View {
                                 }
                             }) {
                                 Text(termsLink)
-                                    .font(.subheadline)
+                                    .font(.footnote)
                                     .foregroundColor(.blue)
                             }
 
-                            Text("and")
-                                .font(.subheadline)
+                            Text("•")
+                                .font(.footnote)
                                 .foregroundColor(.secondary)
 
                             Button(action: {
@@ -232,30 +234,18 @@ struct SubscriptionView: View {
                                 }
                             }) {
                                 Text(privacyLink)
-                                    .font(.subheadline)
+                                    .font(.footnote)
                                     .foregroundColor(.blue)
                             }
                         }
                         .padding(.top, 4)
 
-                        // Sign Out Button
-                        Button(action: {
-                            Task {
-                                do {
-                                    try await SupabaseManager.shared.client.auth.signOut()
-                                    NotificationCenter.default.post(name: .userDidSignOut, object: nil)
-                                } catch {
-                                    print("Error signing out: \(error)")
-                                }
-                            }
-                        }) {
-                            Text(signOutButton)
-                                .font(.body)
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.top, 20)
+                        // Divider for visual separation
+                        Divider()
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 30)
 
-                        // Restore Purchases
+                        // Restore Purchases (subscription-related action)
                         Button(action: {
                             Task {
                                 isLoadingMonthly = true
@@ -273,21 +263,37 @@ struct SubscriptionView: View {
                                 .foregroundColor(.blue)
                         }
                         .disabled(isLoadingMonthly || isLoadingYearly)
-                        .padding(.top, 8)
+
+                        // Sign Out Button (account action)
+                        Button(action: {
+                            Task {
+                                do {
+                                    try await SupabaseManager.shared.client.auth.signOut()
+                                    NotificationCenter.default.post(name: .userDidSignOut, object: nil)
+                                } catch {
+                                    print("Error signing out: \(error)")
+                                }
+                            }
+                        }) {
+                            Text(signOutButton)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 12)
                     }
                     .padding(.bottom, 40)
                 }
             }
         }
         .alert("Purchase Failed", isPresented: $showErrorAlert) {
-                    Button("OK", role: .cancel) { }
-                } message: {
-                    if let errorMessage = subscriptionManager.purchaseError {
-                        Text(errorMessage)
-                    } else {
-                        Text("An error occurred. Please try again.")
-                    }
-                }
+            Button("OK", role: .cancel) { }
+        } message: {
+            if let errorMessage = subscriptionManager.purchaseError {
+                Text(errorMessage)
+            } else {
+                Text("An error occurred. Please try again.")
+            }
+        }
     }
 
     private func checkOnboardingStatus() {
@@ -335,45 +341,56 @@ struct SubscriptionView: View {
 
     var trialText: String {
         switch language {
-        case "fr": return "Commencez avec 7 jours d'essai gratuit."
-        case "es": return "Comienza con 7 días de prueba gratis."
-        default: return "Start with a 7 day free trial."
+        case "fr":
+            return "Les deux forfaits incluent un essai gratuit de 7 jours. Annulez à tout moment."
+        case "es":
+            return "Ambos planes incluyen una prueba gratuita de 7 días. Cancela en cualquier momento."
+        default:
+            return "Both plans include a 7-day free trial. Cancel anytime."
+        }
+    }
+
+    var bestValueText: String {
+        switch language {
+        case "fr": return "Meilleure valeur"
+        case "es": return "Mejor valor"
+        default: return "Best Value"
         }
     }
 
     func subscribeButtonMonthly(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
-            priceString = displayPrice // Localized currency & formatting
+            priceString = displayPrice
         } else {
-            priceString = "$3.99" // Fallback
+            priceString = "$3.99"
         }
 
         switch language {
         case "fr":
-            return "S'abonner pour \(priceString)/mois"
+            return "Forfait mensuel - \(priceString)/mois"
         case "es":
-            return "Suscribirse por \(priceString)/mes"
+            return "Plan mensual - \(priceString)/mes"
         default:
-            return "Subscribe for \(priceString)/month"
+            return "Monthly Plan - \(priceString)/month"
         }
     }
-    
+
     func subscribeButtonYearly(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
-            priceString = displayPrice // Localized currency & formatting
+            priceString = displayPrice
         } else {
-            priceString = "$34.99" // Fallback
+            priceString = "$34.99"
         }
 
         switch language {
         case "fr":
-            return "S'abonner pour \(priceString)/an"
+            return "Forfait annuel - \(priceString)/an (Économisez 27 %)"
         case "es":
-            return "Suscribirse por \(priceString)/año"
+            return "Plan anual - \(priceString)/año (Ahorra 27 %)"
         default:
-            return "Subscribe for \(priceString)/year"
+            return "Annual Plan - \(priceString)/year (Save 27%)"
         }
     }
 
