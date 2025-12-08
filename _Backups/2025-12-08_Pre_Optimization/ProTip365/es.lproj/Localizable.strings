@@ -1,0 +1,13 @@
+/*
+  Localizable.strings (Spanish)
+  ProTip365
+*/
+
+/* App Name */
+"CFBundleDisplayName" = "ProTip365";
+
+/* Local Network Usage */
+"NSLocalNetworkUsageDescription" = "ProTip365 usa la red local para sincronizar datos con tus otros dispositivos.";
+
+/* Face ID Usage */
+"NSFaceIDUsageDescription" = "ProTip365 usa Face ID para proteger tus datos financieros confidenciales y asegurarse de que solo tú puedas acceder a tu información de propinas.";

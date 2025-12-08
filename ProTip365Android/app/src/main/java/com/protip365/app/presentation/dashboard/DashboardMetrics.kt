@@ -107,7 +107,9 @@ object DashboardMetrics {
         }
 
         // Calculate total revenue: NET salary + tips + other - tip out
-        stats.totalRevenue = totalNetIncome + stats.tips + stats.other - stats.tipOut
+        // MATCHING iOS LOGIC: Apply average deduction to total gross income, ignoring per-shift deduction snapshots
+        val netSalary = stats.income * (1 - averageDeductionPercentage / 100)
+        stats.totalRevenue = netSalary + stats.tips + stats.other - stats.tipOut
 
         // Calculate tip percentage
         stats.tipPercentage = if (stats.sales > 0 && !stats.sales.isNaN() && !stats.tips.isNaN()) {

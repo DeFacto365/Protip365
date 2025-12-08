@@ -3,13 +3,9 @@ import SwiftUI
 // MARK: - Onboarding Models
 
 enum OnboardingStep: Int, CaseIterable {
-    case language = 1
-    case multipleEmployers = 2
-    case weekStart = 3
-    case security = 4
-    case variableSchedule = 5
-    case salesAndTipTargets = 6
-    case howToUse = 7
+    case welcome = 1
+    case setup = 2
+    case completion = 3
 
     var totalSteps: Int {
         return OnboardingStep.allCases.count
@@ -37,30 +33,26 @@ class OnboardingState: ObservableObject {
     @Published var selectedSecurityType = SecurityType.none
     @Published var hasVariableSchedule = false
     @Published var tipTargetPercentage = "15"
-    @Published var targetSalesDaily = ""
-    @Published var targetSalesWeekly = ""
-    @Published var targetSalesMonthly = ""
-    @Published var targetHoursDaily = ""
-    @Published var targetHoursWeekly = ""
-    @Published var targetHoursMonthly = ""
+    @Published var targetSalesDaily = "100" // Smart Default
+    @Published var targetSalesWeekly = "500" // Smart Default
+    @Published var targetSalesMonthly = "2000" // Smart Default
+    @Published var targetHoursDaily = "8" // Smart Default
+    @Published var targetHoursWeekly = "40" // Smart Default
+    @Published var targetHoursMonthly = "160" // Smart Default
     @Published var averageDeductionPercentage = "30"
     @Published var showPINSetup = false
     @Published var isLoading = false
     @Published var showError = false
     @Published var errorMessage = ""
 
-    private let totalSteps = 7
+    private let totalSteps = 3
     let weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
     var isStepValid: Bool {
         switch currentStep {
-        case 1: return true // Language selection always valid
-        case 2: return useMultipleEmployers || !singleEmployerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case 3: return true // Week start always valid
-        case 4: return true // Security always valid
-        case 5: return true // Variable schedule always valid (boolean)
-        case 6: return !tipTargetPercentage.isEmpty && !targetSalesDaily.isEmpty && !targetHoursDaily.isEmpty // All targets required
-        case 7: return true // How to use page always valid
+        case 1: return true // Welcome/Language
+        case 2: return true // Setup (Week Start + Security)
+        case 3: return true // Completion
         default: return false
         }
     }

@@ -119,10 +119,10 @@ fun TipCalculatorScreen(
                     icon = { Icon(Icons.Default.Share, contentDescription = null) }
                 )
                 Tab(
-                    selected = selectedCalculatorTab == 2,
-                    onClick = { selectedCalculatorTab = 2 },
-                    text = { Text(getLocalizedText("Hourly", language)) },
-                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) }
+                    selected = selectedCalculatorTab == 1,
+                    onClick = { selectedCalculatorTab = 1 },
+                    text = { Text(getLocalizedText("Tip-out", language)) },
+                    icon = { Icon(Icons.Default.Share, contentDescription = null) }
                 )
             }
 
@@ -161,11 +161,11 @@ fun TipCalculatorScreen(
                         language = language
                     )
 
-                    2 -> HourlyRateCalculatorTab(
-                        totalEarnings = totalEarnings,
-                        onTotalEarningsChange = { totalEarnings = it },
-                        hoursWorked = hoursWorked,
-                        onHoursWorkedChange = { hoursWorked = it },
+                    1 -> TipOutCalculatorTab(
+                        totalTips = totalTips,
+                        onTotalTipsChange = { totalTips = it },
+                        tipOutPercentage = tipOutPercentage,
+                        onTipOutPercentageChange = { tipOutPercentage = it },
                         focusManager = focusManager,
                         language = language
                     )

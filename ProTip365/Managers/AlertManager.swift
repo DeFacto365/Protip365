@@ -92,35 +92,14 @@ class AlertManager: ObservableObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if granted {
                 print("✅ Notification permission granted")
-                self.scheduleDailyNotificationCheck()
+                // self.scheduleDailyNotificationCheck() // Removed irrelevant noon alert
             } else if let error = error {
                 print("❌ Notification permission error: \(error)")
             }
         }
     }
 
-    func scheduleDailyNotificationCheck() {
-        // Schedule a daily check at noon for yesterday's shifts
-        let content = UNMutableNotificationContent()
-        content.title = "ProTip365"
-        content.sound = .default
-
-        // Create a trigger for every day at noon
-        var dateComponents = DateComponents()
-        dateComponents.hour = 12
-        dateComponents.minute = 0
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-        let request = UNNotificationRequest(identifier: "daily-shift-check", content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("❌ Error scheduling daily notification: \(error)")
-            } else {
-                print("✅ Daily notification check scheduled for noon")
-            }
-        }
-    }
+    // func scheduleDailyNotificationCheck() { ... } // Logic removed as requested
 
     private func scheduleLocalNotification(title: String, body: String, identifier: String) {
         let content = UNMutableNotificationContent()

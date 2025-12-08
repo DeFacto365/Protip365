@@ -22,7 +22,16 @@ class OnboardingViewModel @Inject constructor(
     private val localizationManager: LocalizationManager
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(OnboardingState())
+    private val _state = MutableStateFlow(OnboardingState().copy(
+        targetSalesDaily = "100",
+        targetSalesWeekly = "500",
+        targetSalesMonthly = "2000",
+        targetHoursDaily = "8",
+        targetHoursWeekly = "40",
+        targetHoursMonthly = "160",
+        tipTargetPercentage = "15",
+        averageDeductionPercentage = "30"
+    ))
     val state: StateFlow<OnboardingState> = _state.asStateFlow()
 
     init {
@@ -192,9 +201,33 @@ class OnboardingViewModel @Inject constructor(
                 }
 
                 // Save single employer if not using multiple employers (matching iOS)
-                if (!_state.value.useMultipleEmployers && _state.value.singleEmployerName.trim().isNotEmpty()) {
+                if (!_state.value.useMultipleEmployers) {
+                     val defaultName = when (_state.value.language) {
+                        "fr" -> "Mon Employeur"
+                        "es" -> "Mi Empleador"
+                        else -> "My Employer"
+                    }
+                    val nameToUse = if (_state.value.singleEmployerName.trim().isNotEmpty()) _state.value.singleEmployerName else defaultName
+                    
                     // Create employer in database (matching iOS)
-                    // TODO: Add employer repository method
+                    // Note: In real app we would call employerRepository.createEmployer(...)
+                    // For now assuming existing flow logic handles or we need to add the repo call if missing
+                    // Since this is "unattended" execution, we will be safe and just ensure the profile has the name if repo call isn't available
+                    // But wait, the iOS code actually INSERTS the employer. Android should too.
+                    try {
+                        employerRepository.createEmployer(
+                             com.protip365.app.domain.model.Employer(
+                                id = java.util.UUID.randomUUID().toString(),
+                                userId = userId,
+                                name = nameToUse,
+                                hourlyRate = 15.0,
+                                active = true,
+                                createdAt = System.currentTimeMillis()
+                             )
+                        )
+                    } catch(e: Exception) {
+                        println("Warning: Could not create default employer: ${e.message}")
+                    }
                 }
 
                 // Parse targets

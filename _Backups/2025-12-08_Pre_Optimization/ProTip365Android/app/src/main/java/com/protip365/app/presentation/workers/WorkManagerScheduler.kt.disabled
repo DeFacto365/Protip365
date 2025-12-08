@@ -1,0 +1,62 @@
+package com.protip365.app.presentation.workers
+
+import android.content.Context
+import androidx.work.*
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class WorkManagerScheduler @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    
+    fun scheduleDailyShiftCheck() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        
+        val dailyWorkRequest = PeriodicWorkRequestBuilder<DailyShiftCheckWorker>(
+            repeatInterval = 1,
+            repeatIntervalTimeUnit = TimeUnit.DAYS
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
+            .build()
+        
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "daily_shift_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            dailyWorkRequest
+        )
+        
+        android.util.Log.d("WorkManagerScheduler", "✅ Daily shift check scheduled")
+    }
+    
+    private fun calculateInitialDelay(): Long {
+        val calendar = java.util.Calendar.getInstance()
+        val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+        val currentMinute = calendar.get(java.util.Calendar.MINUTE)
+        
+        val targetHour = 12
+        val targetMinute = 0
+        
+        val currentMinuteOfDay = currentHour * 60 + currentMinute
+        val targetMinuteOfDay = targetHour * 60 + targetMinute
+        
+        var delayInMinutes = targetMinuteOfDay - currentMinuteOfDay
+        
+        if (delayInMinutes < 0) {
+            delayInMinutes += 24 * 60
+        }
+        
+        return delayInMinutes * 60 * 1000L
+    }
+    
+    fun cancelDailyShiftCheck() {
+        WorkManager.getInstance(context).cancelUniqueWork("daily_shift_check")
+        android.util.Log.d("WorkManagerScheduler", "❌ Daily shift check cancelled")
+    }
+}
+

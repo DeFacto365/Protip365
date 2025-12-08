@@ -81,12 +81,9 @@ struct CompletionStep: View {
 
     var body: some View {
         Group {
-            switch state.currentStep {
-            case 6:
-                salesAndTipTargetsStepView
-            case 7:
+            if state.currentStep == 3 {
                 howToUseStepView
-            default:
+            } else {
                 EmptyView()
             }
         }

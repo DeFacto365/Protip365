@@ -55,8 +55,57 @@ struct DashboardStatsCards: View {
     }
 
     private var unifiedCompactCards: some View {
-        VStack(spacing: 12) {
-            // Performance Card - NEW
+            // Performance Card (Keeping as is, or maybe moving below Hero?)
+            // Let's put Hero First
+            
+            // 1. HERO: Total Earnings
+            HeroStatCard(
+                title: localization.totalIncomeText,
+                value: DashboardMetrics.formatCurrency(currentStats.totalRevenue),
+                rawValue: currentStats.totalRevenue,
+                subtitle: periodText,
+                color: .green
+            )
+            .padding(.bottom, 8)
+
+            // 2. GRID: Secondary Stats
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                // Sales
+                VerticalStatCard(
+                    title: localization.salesText,
+                    value: DashboardMetrics.formatCurrency(currentStats.sales),
+                    icon: "cart.fill",
+                    color: .purple
+                )
+                
+                // Tips
+                VerticalStatCard(
+                    title: localization.tipsText,
+                    value: DashboardMetrics.formatCurrency(currentStats.tips),
+                    icon: "banknote.fill",
+                    color: .green
+                )
+                
+                // Hours
+                VerticalStatCard(
+                    title: localization.hoursWorkedText,
+                    value: String(format: "%.1f", currentStats.hours),
+                    icon: "clock.fill",
+                    color: .blue,
+                    caption: "hours"
+                )
+                
+                // Net Salary (Est.)
+                VerticalStatCard(
+                    title: localization.expectedNetSalaryText,
+                    value: DashboardMetrics.formatCurrency(currentStats.netIncome(deductionPercentage: averageDeductionPercentage)),
+                    icon: "dollarsign.circle.fill",
+                    color: .orange
+                )
+            }
+            .padding(.bottom, 8)
+
+            // 3. Performance Card (Moved below grid for flow)
             DashboardPerformanceCard(
                 currentStats: currentStats,
                 userTargets: userTargets,
@@ -66,35 +115,58 @@ struct DashboardStatsCards: View {
                 localization: localization
             )
 
-            // Sales at the top
-            salesSection
-
-            // Income section
-            incomeSection
-
-            // Hours section
-            hoursSection
-
-            // Tips section
-            tipsSection
-
-            // Other section (only if there's other income)
-            if currentStats.other > 0 {
-                otherSection
-            }
-
-            // Subtotal
-            subtotalSection
-
-            // Tip Out (negative) - only if there's tip out
-            if currentStats.tipOut > 0 {
-                tipOutSection
-            }
-
-            Divider()
-
-            // Total Income
-            totalIncomeSection
+            // 4. Details Section (Collapsible)
+            DisclosureGroup(
+                content: {
+                    VStack(spacing: 12) {
+                        Divider()
+                        
+                        // Other
+                        if currentStats.other > 0 {
+                            HStack {
+                                Label(localization.otherText, systemImage: "square.and.pencil")
+                                Spacer()
+                                Text(DashboardMetrics.formatCurrency(currentStats.other))
+                                    .fontWeight(.bold)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        
+                        // Tip Out
+                        if currentStats.tipOut > 0 {
+                             HStack {
+                                Label(localization.tipOutText, systemImage: "minus.circle")
+                                    .foregroundStyle(.red)
+                                Spacer()
+                                Text("-\(DashboardMetrics.formatCurrency(currentStats.tipOut))")
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.red)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        
+                        // Gross Income
+                        HStack {
+                            Text(localization.totalGrossSalaryText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(DashboardMetrics.formatCurrency(currentStats.income))
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground).opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                },
+                label: {
+                    Text(localization.showDetailsText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            )
+            .tint(.secondary)
 
             // Show Details Button - always show for all tabs
             showDetailsButton
@@ -252,7 +324,7 @@ struct DashboardStatsCards: View {
                         startDate: periodStartDate,
                         endDate: periodEndDate
                     )
-                    HapticFeedback.light()
+                    HapticManager.shared.impact(.light)
                 }) {
                     HStack {
                         Image(systemName: "list.bullet")

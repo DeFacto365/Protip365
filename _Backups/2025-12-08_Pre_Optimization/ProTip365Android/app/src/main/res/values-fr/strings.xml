@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">ProTip365</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Bon retour</string>
+    <string name="signup_title">Créer un compte</string>
+    <string name="email_hint">Courriel</string>
+    <string name="password_hint">Mot de passe</string>
+    <string name="confirm_password_hint">Confirmer le mot de passe</string>
+    <string name="login_button">Se connecter</string>
+    <string name="signup_button">S\'inscrire</string>
+    <string name="forgot_password">Mot de passe oublié?</string>
+    <string name="already_have_account">Vous avez déjà un compte? Se connecter</string>
+    <string name="dont_have_account">Vous n\'avez pas de compte? S\'inscrire</string>
+    <string name="reset_password_title">Réinitialiser le mot de passe</string>
+    <string name="reset_password_button">Envoyer le lien de réinitialisation</string>
+    <string name="password_reset_sent">Lien de réinitialisation envoyé à votre courriel</string>
+
+    <!-- Auth Screen Branding -->
+    <string name="app_name_title">ProTip365</string>
+    <string name="auth_welcome_text">Suivez vos pourboires</string>
+    <string name="auth_tagline">Suivez chaque pourboire.\nGérez chaque quart.\nAccédez à vos données partout.</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Tableau de bord</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="week">Semaine</string>
+    <string name="month">Mois</string>
+    <string name="year">Année</string>
+    <string name="total_revenue">Revenu total</string>
+    <string name="salary">Salaire</string>
+    <string name="tips">Pourboires</string>
+    <string name="hours">Heures</string>
+    <string name="sales">Ventes</string>
+    <string name="tip_out">Partage</string>
+    <string name="other_income">Autres revenus</string>
+    <string name="average_tip_percentage">Pourboire moyen %</string>
+    <string name="effective_hourly_rate">Taux horaire effectif</string>
+    <string name="no_data_yet">Aucune donnée</string>
+    <string name="add_first_shift">Ajouter votre premier quart</string>
+
+    <!-- Add/Edit Shift -->
+    <string name="add_shift_title">Ajouter un quart</string>
+    <string name="edit_shift_title">Modifier le quart</string>
+    <string name="add_entry_title">Ajouter une entrée</string>
+    <string name="edit_entry_title">Modifier l\'entrée</string>
+    <string name="shift_type">Quart</string>
+    <string name="entry_type">Entrée</string>
+    <string name="date">Date</string>
+    <string name="start_time">Heure de début</string>
+    <string name="end_time">Heure de fin</string>
+    <string name="employer">Employeur</string>
+    <string name="hourly_rate">Taux horaire</string>
+    <string name="notes">Notes</string>
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete">Supprimer</string>
+    <string name="delete_shift_confirm">Êtes-vous sûr de vouloir supprimer ce quart?</string>
+    <string name="delete_entry_confirm">Êtes-vous sûr de vouloir supprimer cette entrée?</string>
+    <string name="shift_saved">Quart enregistré avec succès</string>
+    <string name="entry_saved">Entrée enregistrée avec succès</string>
+    <string name="shift_deleted">Quart supprimé</string>
+    <string name="entry_deleted">Entrée supprimée</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendrier</string>
+    <string name="shifts_this_month">Quarts ce mois</string>
+    <string name="no_shifts_this_month">Aucun quart ce mois</string>
+    <string name="total_earned">Total gagné</string>
+
+    <!-- Add Shift Dialog -->
+    <string name="existing_shift_found">Quart existant trouvé</string>
+    <string name="existing_shift_message">Un quart existe déjà pour cette date. Que souhaitez-vous faire?</string>
+    <string name="modify_existing_shift">Modifier le quart existant</string>
+    <string name="add_new_shift">Ajouter un nouveau quart</string>
+
+    <!-- Add Entry Dialog -->
+    <string name="existing_shift_no_entry_message">Un quart sans entrée existe pour cette date. Que souhaitez-vous faire?</string>
+    <string name="existing_shift_with_entry_message">Un quart avec entrée existe pour cette date. Que souhaitez-vous faire?</string>
+    <string name="add_entry_to_existing_shift">Ajouter entrée au quart existant</string>
+    <string name="edit_existing_entry">Modifier l\'entrée existante</string>
+    <string name="create_new_shift_and_entry">Créer nouveau quart et entrée</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Paramètres</string>
+    <string name="profile_section">Profil</string>
+    <string name="settings_name_label">Nom</string>
+    <string name="settings_email_label">Courriel</string>
+    <string name="targets_section">Objectifs</string>
+    <string name="preferences_section">Préférences</string>
+    <string name="security_section">Sécurité</string>
+    <string name="subscription_section">Abonnement</string>
+    <string name="support_section">Support</string>
+    <string name="account_section">Compte</string>
+
+    <!-- Profile Settings -->
+    <string name="name">Nom</string>
+    <string name="preferred_language">Langue préférée</string>
+    <string name="english">English</string>
+    <string name="french">Français</string>
+    <string name="spanish">Español</string>
+
+    <!-- Target Settings -->
+    <string name="tip_percentage_target">Objectif de pourcentage de pourboire</string>
+    <string name="daily_sales_target">Ventes prévue/jour</string>
+    <string name="weekly_sales_target">Objectif de ventes hebdomadaires</string>
+    <string name="monthly_sales_target">Objectif de ventes mensuelles</string>
+    <string name="daily_hours_target"># d\'heures/jour</string>
+    <string name="weekly_hours_target">Objectif d\'heures hebdomadaires</string>
+    <string name="monthly_hours_target">Objectif d\'heures mensuelles</string>
+
+    <!-- Preference Settings -->
+    <string name="week_start_day">Premier jour de la semaine</string>
+    <string name="sunday">Dimanche</string>
+    <string name="monday">Lundi</string>
+    <string name="tuesday">Mardi</string>
+    <string name="wednesday">Mercredi</string>
+    <string name="thursday">Jeudi</string>
+    <string name="friday">Vendredi</string>
+    <string name="saturday">Samedi</string>
+    <string name="default_hourly_rate">Taux horaire par défaut</string>
+    <string name="multiple_employers">Employeurs multiples</string>
+    <string name="work_for_multiple_employers">Je travaille pour plusieurs employeurs</string>
+    <string name="variable_schedule">Horaire variable</string>
+    <string name="work_irregular_hours">Je travaille des heures irrégulières</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="default_employer">Employeur par défaut</string>
+
+    <!-- Security Settings -->
+    <string name="pin_setup">Configuration du NIP</string>
+    <string name="biometric_login">Connexion biométrique</string>
+    <string name="face_id">Face ID</string>
+    <string name="fingerprint">Empreinte digitale</string>
+    <string name="auto_lock">Verrouillage automatique</string>
+    <string name="change_pin">Changer le NIP</string>
+    <string name="enter_pin">Entrer le NIP</string>
+    <string name="confirm_pin">Confirmer le NIP</string>
+    <string name="pin_mismatch">Les NIP ne correspondent pas</string>
+    <string name="pin_changed">NIP changé avec succès</string>
+
+    <!-- Subscription -->
+    <string name="subscription_status">Statut de l\'abonnement</string>
+    <string name="part_time">Temps partiel</string>
+    <string name="full_access">Accès complet</string>
+    <string name="no_subscription">Aucun abonnement actif</string>
+    <string name="shifts_per_week">%d quarts par semaine</string>
+    <string name="entries_per_week">%d entrées par semaine</string>
+    <string name="unlimited_shifts">Quarts illimités</string>
+    <string name="unlimited_entries">Entrées illimitées</string>
+    <string name="upgrade">Améliorer</string>
+    <string name="manage_subscription">Gérer l\'abonnement</string>
+    <string name="restore_purchases">Restaurer les achats</string>
+    <string name="price_monthly">%s$/mois</string>
+    <string name="price_annual">%s$/année</string>
+    <string name="free_trial">Essai gratuit de 7 jours</string>
+    <string name="subscription_limit_reached">Limite hebdomadaire atteinte. Améliorez pour ajouter plus de quarts.</string>
+
+    <!-- Support -->
+    <string name="contact_support">Contacter le support</string>
+    <string name="faq">FAQ</string>
+    <string name="privacy_policy">Politique de confidentialité</string>
+    <string name="terms_of_service">Conditions d\'utilisation</string>
+    <string name="rate_app">Évaluer l\'application</string>
+    <string name="share_app">Partager l\'application</string>
+    <string name="version">Version %s</string>
+
+    <!-- Account -->
+    <string name="export_data">Exporter les données</string>
+    <string name="change_password">Changer le mot de passe</string>
+    <string name="sign_out">Se déconnecter</string>
+    <string name="delete_account">Supprimer le compte</string>
+    <string name="delete_account_confirm">Êtes-vous sûr de vouloir supprimer votre compte? Cette action ne peut pas être annulée.</string>
+    <string name="delete_account_warning_title">⚠️ Suppression permanente du compte</string>
+    <string name="delete_account_warning_subtitle">Cette action ne peut pas être annulée. Toutes vos données seront définitivement perdues.</string>
+    <string name="what_will_be_deleted">Ce qui sera supprimé :</string>
+    <string name="deletion_item_shifts">Tous vos enregistrements de quarts et horaires</string>
+    <string name="deletion_item_entries">Toutes vos entrées de pourboires et gains</string>
+    <string name="deletion_item_employers">Toutes les informations et paramètres d\'employeur</string>
+    <string name="deletion_item_settings">Toutes les préférences et configurations de l\'app</string>
+    <string name="deletion_item_achievements">Toutes les données de réalisations et de progrès</string>
+    <string name="deletion_item_subscriptions">Les abonnements actifs seront annulés</string>
+    <string name="alternatives_before_deletion">Considérez ces alternatives :</string>
+    <string name="alternatives_description">Vous pouvez exporter vos données, vous déconnecter, ou contacter le support si vous avez des problèmes.</string>
+    <string name="go_to_settings">Aller aux paramètres</string>
+    <string name="confirm_deletion">Confirmer la suppression</string>
+    <string name="type_delete_to_confirm">Tapez SUPPRIMER pour confirmer</string>
+    <string name="delete_permanently">Supprimer définitivement</string>
+    <string name="need_help">Besoin d\'aide ?</string>
+    <string name="contact_support_for_deletion">Si vous avez besoin d\'assistance pour la suppression de compte ou avez des questions, notre équipe de support est là pour vous aider.</string>
+    <string name="sign_out_confirm">Êtes-vous sûr de vouloir vous déconnecter?</string>
+
+    <!-- Employers -->
+    <string name="employers_title">Employeurs</string>
+    <string name="add_employer">Ajouter un employeur</string>
+    <string name="edit_employer">Modifier l\'employeur</string>
+    <string name="employer_name">Nom de l\'employeur</string>
+    <string name="employer_address">Adresse</string>
+    <string name="default_employer_label">Employeur par défaut</string>
+    <string name="select_employer">Sélectionner un employeur</string>
+    <string name="employer_hourly_rate">Taux horaire</string>
+    <string name="employer_active">Actif</string>
+    <string name="employer_inactive">Inactif</string>
+    <string name="no_employers">Aucun employeur ajouté</string>
+    <string name="delete_employer_confirm">Êtes-vous sûr de vouloir supprimer cet employeur?</string>
+
+    <!-- Shift Sales Target -->
+    <string name="sales_target">Objectif de ventes</string>
+    <string name="use_default_target">Utiliser l\'objectif par défaut</string>
+    <string name="custom_target">Objectif personnalisé</string>
+
+    <!-- Achievements -->
+    <string name="achievements_title">Réalisations</string>
+    <string name="achievement_unlocked">Réalisation débloquée!</string>
+    <string name="achievement_locked">Verrouillé</string>
+    <string name="achievement_progress">%d%% Complété</string>
+
+    <!-- Achievement Names -->
+    <string name="achievement_tip_master">Maître du pourboire</string>
+    <string name="achievement_elite_server">Serveur élite</string>
+    <string name="achievement_tip_champion">Champion du pourboire</string>
+    <string name="achievement_steady_tracker">Suivi constant</string>
+    <string name="achievement_dedicated_logger">Enregistreur dévoué</string>
+    <string name="achievement_tracking_legend">Légende du suivi</string>
+    <string name="achievement_high_earner">Haut salarié</string>
+    <string name="achievement_top_performer">Meilleur performeur</string>
+    <string name="achievement_sales_star">Étoile des ventes</string>
+    <string name="achievement_target_crusher">Briseur d\'objectifs</string>
+    <string name="achievement_goal_getter">Atteinte des objectifs</string>
+    <string name="achievement_perfect_month">Mois parfait</string>
+
+    <!-- Achievement Descriptions -->
+    <string name="achievement_tip_master_desc">Maintenir 20%+ de pourboires moyens</string>
+    <string name="achievement_elite_server_desc">Maintenir 25%+ de pourboires moyens</string>
+    <string name="achievement_tip_champion_desc">Maintenir 30%+ de pourboires moyens</string>
+    <string name="achievement_steady_tracker_desc">Suivre les quarts pendant 7 jours consécutifs</string>
+    <string name="achievement_dedicated_logger_desc">Suivre les quarts pendant 30 jours consécutifs</string>
+    <string name="achievement_tracking_legend_desc">Suivre les quarts pendant 100 jours consécutifs</string>
+    <string name="achievement_high_earner_desc">Gagner 30$/heure en moyenne</string>
+    <string name="achievement_top_performer_desc">Gagner 50$/heure en moyenne</string>
+    <string name="achievement_sales_star_desc">1000$+ de ventes en un quart</string>
+    <string name="achievement_target_crusher_desc">Dépasser l\'objectif de 50%</string>
+    <string name="achievement_goal_getter_desc">Atteindre tous les objectifs hebdomadaires</string>
+    <string name="achievement_perfect_month_desc">Atteindre tous les objectifs mensuels</string>
+
+    <!-- Calculator -->
+    <string name="calculator_title">Calculatrice</string>
+    <string name="tip_calculator">Calculatrice de pourboire</string>
+    <string name="bill_amount">Montant de la facture</string>
+    <string name="tip_percentage">Pourcentage de pourboire</string>
+    <string name="tip_amount">Montant du pourboire</string>
+    <string name="total_amount">Montant total</string>
+    <string name="split_bill">Diviser la facture</string>
+    <string name="number_of_people">Nombre de personnes</string>
+    <string name="per_person">Par personne</string>
+    <string name="tip_out_calculator">Calculatrice de partage</string>
+    <string name="tip_out_distribution">Distribution du partage</string>
+    <string name="tip_out_explanation">Entrez le % de vos pourboires à distribuer à chaque rôle</string>
+    <string name="total_tips">Pourboires totaux</string>
+    <string name="tip_out_percentage">Pourcentage de partage</string>
+    <string name="tip_out_amount">Montant du partage</string>
+    <string name="take_home_tips">Pourboires nets</string>
+
+    <!-- Export -->
+    <string name="export_title">Exporter les données</string>
+    <string name="export_format">Format d\'exportation</string>
+    <string name="csv_format">CSV</string>
+    <string name="date_range">Plage de dates</string>
+    <string name="all_data">Toutes les données</string>
+    <string name="custom_range">Plage personnalisée</string>
+    <string name="from_date">Date de début</string>
+    <string name="to_date">Date de fin</string>
+    <string name="include_employers">Inclure les employeurs</string>
+    <string name="all_employers">Tous les employeurs</string>
+    <string name="export_button">Exporter</string>
+    <string name="export_success">Données exportées avec succès</string>
+    <string name="export_failed">Échec de l\'exportation</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="mark_all_read">Tout marquer comme lu</string>
+    <string name="no_notifications">Aucune notification</string>
+    <string name="youre_all_caught_up">Vous êtes à jour!</string>
+    <string name="just_now">À l\'instant</string>
+    <string name="minutes_ago">Il y a %dm</string>
+    <string name="hours_ago">Il y a %dh</string>
+    <string name="days_ago">Il y a %dj</string>
+
+    <!-- Alert Settings -->
+    <string name="alert_label">Alerte</string>
+    <string name="alert_none">Aucune</string>
+    <string name="alert_15_minutes">15 minutes avant</string>
+    <string name="alert_30_minutes">30 minutes avant</string>
+    <string name="alert_60_minutes">1 heure avant</string>
+    <string name="alert_1_day">1 jour avant</string>
+    <string name="default_alert_label">Alerte par défaut</string>
+
+    <!-- Shift Alert Notifications -->
+    <string name="notification_title">Quart de travail à venir</string>
+    <string name="notification_body">Votre quart chez %1$s commence à %2$s</string>
+
+    <!-- Error Messages -->
+    <string name="error_invalid_email">Adresse courriel invalide</string>
+    <string name="error_password_too_short">Le mot de passe doit contenir au moins 6 caractères</string>
+    <string name="error_passwords_dont_match">Les mots de passe ne correspondent pas</string>
+    <string name="error_required_field">Ce champ est obligatoire</string>
+    <string name="error_network">Erreur réseau. Veuillez réessayer.</string>
+    <string name="error_generic">Une erreur s\'est produite. Veuillez réessayer.</string>
+    <string name="error_login_failed">Échec de connexion. Veuillez vérifier vos identifiants.</string>
+    <string name="error_signup_failed">Échec de l\'inscription. Veuillez réessayer.</string>
+    <string name="error_save_failed">Échec de l\'enregistrement. Veuillez réessayer.</string>
+    <string name="error_delete_failed">Échec de la suppression. Veuillez réessayer.</string>
+    <string name="error_load_failed">Échec du chargement des données. Veuillez réessayer.</string>
+
+    <!-- Success Messages -->
+    <string name="success_saved">Enregistré avec succès</string>
+    <string name="success_deleted">Supprimé avec succès</string>
+    <string name="success_updated">Mis à jour avec succès</string>
+    <string name="success_exported">Exporté avec succès</string>
+    <string name="success_restored">Restauré avec succès</string>
+
+    <!-- Loading States -->
+    <string name="loading">Chargement…</string>
+    <string name="saving">Enregistrement…</string>
+    <string name="deleting">Suppression…</string>
+    <string name="exporting">Exportation…</string>
+    <string name="restoring">Restauration…</string>
+
+    <!-- Period View Types -->
+    <string name="calendar_month">Mois calendaire</string>
+    <string name="four_weeks_pay">4 semaines</string>
+
+    <!-- Alert Screen -->
+    <string name="more_options">Plus d\'options</string>
+
+    <!-- Subscription Screen -->
+    <string name="basic_analytics">Analyses de base</string>
+    <string name="single_employer">Employeur unique</string>
+    <string name="advanced_analytics">Analyses avancées</string>
+    <string name="priority_support">Support prioritaire</string>
+    <string name="custom_targets">Objectifs personnalisés</string>
+    <string name="unlimited_everything">Tout illimité</string>
+    <string name="limited_features">Fonctionnalités limitées</string>
+    <string name="available_plans">Plans Disponibles</string>
+    <string name="export_to_csv">Exporter vers CSV</string>
+    <string name="achievements_badges">Réalisations et badges</string>
+    <string name="free_trial_title">Essai Gratuit</string>
+    <string name="shifts_entries_per_week">%d quarts et entrées par semaine</string>
+    <string name="renews_on">Se renouvelle le %s</string>
+    <string name="expires_on">Expire le %s</string>
+    <string name="active">Actif</string>
+    <string name="recommended">RECOMMANDÉ</string>
+    <string name="current_plan">Plan Actuel</string>
+    <string name="cancel_subscription">Annuler l\'Abonnement</string>
+    <string name="cancel_subscription_disclaimer">Vous pouvez annuler à tout moment. Votre abonnement restera actif jusqu\'à la fin de la période de facturation actuelle.</string>
+    <string name="subscription_terms">Les abonnements sont facturés mensuellement et peuvent être annulés à tout moment. Tous les prix sont en USD.</string>
+
+    <!-- Calendar Screen -->
+    <string name="previous_month">Mois précédent</string>
+    <string name="next_month">Mois suivant</string>
+    <string name="no_shifts">Aucun quart</string>
+
+    <!-- Targets Screen -->
+    <string name="target_amount">Montant cible</string>
+
+    <!-- Onboarding Screen -->
+    <string name="back">Retour</string>
+    <string name="eg_restaurant_name">ex. Nom du restaurant</string>
+    <string name="decide_later">Décider plus tard</string>
+    <string name="not_set">Non défini</string>
+    <string name="invalid_number">Nombre invalide</string>
+
+    <!-- Sign Up Screen -->
+    <string name="show_password">Afficher le mot de passe</string>
+    <string name="hide_password">Masquer le mot de passe</string>
+
+    <!-- Add/Edit Shift Screen -->
+    <string name="delete_shift">Supprimer le quart</string>
+    <string name="error">Erreur</string>
+    <string name="enter_hourly_rate">Entrer le taux horaire</string>
+    <string name="add_notes_optional">Ajouter des notes (optionnel)</string>
+
+    <!-- Calculator Screen -->
+    <string name="hourly_rate_calculator">Taux horaire</string>
+
+    <!-- Settings Screen -->
+    <string name="profile">Profil</string>
+    <string name="security">Sécurité</string>
+    <string name="update_account_password">Mettre à jour le mot de passe du compte</string>
+
+    <!-- Common Units -->
+    <string name="currency_symbol">$</string>
+    <string name="percentage_symbol">%</string>
+    <string name="hours_abbr">hrs</string>
+    <string name="hour_abbr">h</string>
+    <string name="minute_abbr">m</string>
+    <string name="placeholder_zero">0,00</string>
+    <string name="placeholder_dots">••••</string>
+
+    <!-- Error Messages -->
+    <string name="network_error">Erreur réseau. Veuillez vérifier votre connexion</string>
+    <string name="unexpected_error">Une erreur inattendue s\'est produite</string>
+    <string name="validation_error">Veuillez vérifier votre saisie</string>
+    <string name="shift_not_found">Quart introuvable</string>
+    <string name="user_not_logged_in">Utilisateur non connecté</string>
+    <string name="invalid_credentials">Email ou mot de passe invalide</string>
+    <string name="weak_password">Le mot de passe doit contenir au moins 6 caractères</string>
+    <string name="passwords_dont_match">Les mots de passe ne correspondent pas</string>
+    <string name="email_already_exists">Cet email existe déjà</string>
+
+    <!-- Terms and Conditions -->
+    <string name="terms_title">Conditions d\'utilisation</string>
+    <string name="terms_last_updated">Dernière mise à jour : janvier 2025</string>
+    <string name="terms_intro">Bienvenue sur ProTip365. En utilisant notre application, vous acceptez ces conditions d\'utilisation.</string>
+
+    <string name="terms_section1_title">1. Acceptation des conditions</string>
+    <string name="terms_section1_content">En téléchargeant, installant ou utilisant ProTip365, vous reconnaissez avoir lu, compris et accepté d\'être lié par ces conditions d\'utilisation.</string>
+
+    <string name="terms_section2_title">2. Description du service</string>
+    <string name="terms_section2_content">ProTip365 est une application de suivi des pourboires et de gestion des quarts de travail conçue pour les professionnels de l\'industrie des services. L\'application vous permet de suivre vos quarts de travail, pourboires, revenus et de générer des rapports pour usage personnel.</string>
+
+    <string name="terms_section3_title">3. Compte utilisateur</string>
+    <string name="terms_section3_content">Vous êtes responsable de maintenir la confidentialité de vos identifiants de compte et de toutes les activités qui se produisent sous votre compte. Vous devez nous notifier immédiatement toute utilisation non autorisée de votre compte.</string>
+
+    <string name="terms_section4_title">4. Données utilisateur et confidentialité</string>
+    <string name="terms_section4_content">Nous respectons votre vie privée et protégeons vos données personnelles. Toutes les informations financières que vous entrez sont cryptées et stockées en toute sécurité. Nous ne partageons pas vos informations personnelles avec des tiers sans votre consentement, sauf si la loi l\'exige.</string>
+
+    <string name="terms_section5_title">5. Utilisation acceptable</string>
+    <string name="terms_section5_content">Vous acceptez d\'utiliser ProTip365 uniquement à des fins légales et conformément à ces conditions. Vous ne pouvez pas utiliser l\'application pour :\n• Violer les lois ou règlements applicables\n• Stocker des informations fausses ou trompeuses\n• Tenter d\'obtenir un accès non autorisé à nos systèmes\n• Interférer avec l\'utilisation du service par d\'autres utilisateurs</string>
+
+    <string name="terms_section6_title">6. Abonnement et paiement</string>
+    <string name="terms_section6_content">ProTip365 propose des niveaux d\'abonnement gratuits et payants. Les abonnements payants sont facturés mensuellement ou annuellement via l\'app store. Vous pouvez annuler votre abonnement à tout moment via les paramètres de votre compte app store. Les remboursements sont soumis à la politique de remboursement de l\'app store.</string>
+
+    <string name="terms_section7_title">7. Exactitude des données</string>
+    <string name="terms_section7_content">Bien que ProTip365 vous aide à suivre et calculer vos revenus, vous êtes responsable de l\'exactitude des données que vous entrez. Les calculs de l\'application sont fournis à titre informatif uniquement et ne doivent pas être utilisés à des fins fiscales ou légales sans vérification.</string>
+
+    <string name="terms_section8_title">8. Limitation de responsabilité</string>
+    <string name="terms_section8_content">ProTip365 est fourni \"tel quel\" sans garantie d\'aucune sorte. Nous ne sommes pas responsables des dommages indirects, accessoires, spéciaux ou consécutifs découlant de votre utilisation de l\'application, y compris mais sans s\'y limiter la perte de profits ou de données.</string>
+
+    <string name="terms_section9_title">9. Modifications</string>
+    <string name="terms_section9_content">Nous nous réservons le droit de modifier ces conditions à tout moment. Nous vous informerons de tout changement en mettant à jour la date \"Dernière mise à jour\". Votre utilisation continue de ProTip365 après les changements constitue une acceptation des conditions modifiées.</string>
+
+    <string name="terms_section10_title">10. Résiliation</string>
+    <string name="terms_section10_content">Nous pouvons résilier ou suspendre votre compte immédiatement, sans préavis, pour toute raison, y compris la violation de ces conditions. À la résiliation, votre droit d\'utiliser l\'application cessera immédiatement.</string>
+
+    <string name="terms_section11_title">11. Coordonnées</string>
+    <string name="terms_section11_content">Si vous avez des questions sur ces conditions d\'utilisation, veuillez nous contacter à :\n\nEmail : support@protip365.com\nSite web : www.protip365.com</string>
+
+    <string name="terms_accept_button">J\'accepte</string>
+    <string name="terms_decline_button">Refuser</string>
+
+    <!-- New Subscription Marketing (Oct 2, 2025) -->
+    <string name="subscription_header_title">Suivez Chaque Pourboire.\nGérez Chaque Quart.\nAccédez à Vos Données Partout.</string>
+    <string name="subscription_header_subtitle">L\'application intelligente de suivi des pourboires conçue pour les professionnels de l\'industrie des services qui veulent remplacer les reçus papier et les fichiers Excel par une gestion des données en temps réel sur tous leurs appareils.</string>
+    <string name="premium_features">Fonctionnalités Premium</string>
+    <string name="feature_unlimited_shifts">Suivi illimité des quarts de travail par jour</string>
+    <string name="feature_multiple_employers">Gestion de plusieurs employeurs</string>
+    <string name="feature_advanced_analytics">Analyses avancées et rapports détaillés</string>
+    <string name="feature_data_export">Export de données (CSV/PDF)</string>
+    <string name="feature_cloud_sync">Synchronisation automatique dans le cloud</string>
+    <string name="feature_priority_support">Support prioritaire</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_catchphrase">Maximisez vos revenus, un pourboire à la fois</string>
+
+    <!-- Settings Targets -->
+    <string name="set_your_goals_title">Définissez vos objectifs</string>
+    <string name="set_your_goals_description">Définissez des objectifs quotidiens, hebdomadaires et mensuels pour suivre vos progrès.</string>
+    <string name="tip_targets">Objectifs de pourboires</string>
+    <string name="sales_targets">Objectifs de ventes</string>
+    <string name="hours_targets">Objectifs d\'heures</string>
+</resources>

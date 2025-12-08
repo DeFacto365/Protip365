@@ -23,7 +23,7 @@ fun OnboardingScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val currentStep = state.currentStep // Use currentStep from ViewModel state
-    val totalSteps = 7 // Matching iOS: Language, Employers, Week Start, Security, Variable, Targets, How To Use
+    val totalSteps = 3 // Matching iOS: Welcome, Setup, Completion
     val localization = rememberOnboardingLocalization()
     
     Scaffold(
@@ -71,58 +71,12 @@ fun OnboardingScreen(
                             viewModel.updateLanguage(language)
                         }
                     )
-                    1 -> {
-                        // Load employers when entering this step (in case user just created them)
-                        LaunchedEffect(Unit) {
-                            if (state.useMultipleEmployers) {
-                                viewModel.loadEmployers()
-                            }
-                        }
-
-                        MultipleEmployersStep(
-                            state = state,
-                            onMultipleEmployersChanged = { useMultiple ->
-                                viewModel.updateMultipleEmployers(useMultiple)
-                            },
-                            onSingleEmployerNameChanged = { name ->
-                                viewModel.updateSingleEmployerName(name)
-                            },
-                            onDefaultEmployerChanged = { employerId ->
-                                viewModel.updateDefaultEmployer(employerId)
-                            },
-                            onNavigateToEmployers = {
-                                // Navigate to employers screen in onboarding mode
-                                navController.navigate("employers?fromOnboarding=true")
-                            }
-                        )
-                    }
-                    2 -> WeekStartStep(
-                        state = state,
-                        onWeekStartChanged = { weekStart ->
-                            viewModel.updateWeekStart(weekStart)
-                        }
+                    1 -> SetupStep(
+                         state = state,
+                         onWeekStartChanged = { viewModel.updateWeekStart(it) },
+                         onSecurityTypeChanged = { viewModel.updateSecurityType(it) }
                     )
-                    3 -> SecurityStep(
-                        state = state,
-                        onSecurityTypeChanged = { securityType ->
-                            viewModel.updateSecurityType(securityType)
-                        }
-                    )
-                    4 -> VariableScheduleStep(
-                        state = state,
-                        onVariableScheduleChanged = { hasVariable ->
-                            viewModel.updateVariableSchedule(hasVariable)
-                        }
-                    )
-                    5 -> TargetsStep(
-                        state = state,
-                        onTargetsChanged = { tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly ->
-                            viewModel.updateTargets(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
-                        }
-                    )
-                    6 -> HowToUseStep(
-                        state = state
-                    )
+                    2 -> HowToUseStep(state = state)
                 }
             }
             

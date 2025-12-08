@@ -13,12 +13,12 @@ struct SetupStep: View {
 
     var body: some View {
         Group {
-            switch state.currentStep {
-            case 4:
-                securityStepView
-            case 5:
-                variableScheduleStepView
-            default:
+            if state.currentStep == 2 {
+                VStack(spacing: 24) {
+                    weekStartSection
+                    securitySection
+                }
+            } else {
                 EmptyView()
             }
         }
@@ -33,98 +33,104 @@ struct SetupStep: View {
 
     // MARK: - Security Step
 
-    private var securityStepView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 16) {
-                Label(localization.securityTitle, systemImage: "lock.shield")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+    // MARK: - Week Start Section
 
-                InfoBox(
-                    title: localization.securityExplanationTitle,
-                    message: localization.securityExplanation,
-                    color: .blue
-                )
+    private var weekStartSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(localization.weekStartTitle, systemImage: "calendar")
+                .font(.headline)
+                .foregroundColor(.primary)
 
-                Menu {
-                    Button(action: {
-                        state.selectedSecurityType = .none
+            Menu {
+                ForEach(0..<7) { index in
+                    Button(localization.localizedWeekDay(index)) {
+                        state.weekStartDay = index
                         HapticFeedback.selection()
-                    }) {
-                        Label(localization.noSecurityText, systemImage: "lock.open")
                     }
-
-                    Button(action: {
-                        Task {
-                            let success = await securityManager.authenticateWithBiometrics(
-                                reason: localization.securityExplanation
-                            )
-                            await MainActor.run {
-                                if success {
-                                    state.selectedSecurityType = .biometric
-                                }
-                                HapticFeedback.selection()
-                            }
-                        }
-                    }) {
-                        Label(localization.faceIDText, systemImage: "faceid")
-                    }
-
-                    Button(action: {
-                        state.showPINSetup = true
-                        HapticFeedback.selection()
-                    }) {
-                        Label(localization.pinCodeText, systemImage: "number.square")
-                    }
-                } label: {
-                    HStack {
-                        Text(currentSecurityText)
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
+            } label: {
+                HStack {
+                    Text(localization.localizedWeekDay(state.weekStartDay))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+    }
+
+    // MARK: - Security Section
+
+    private var securitySection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label(localization.securityTitle, systemImage: "lock.shield")
+                .font(.headline)
+                .foregroundColor(.primary)
+
+            Menu {
+                Button(action: {
+                    state.selectedSecurityType = .none
+                    HapticFeedback.selection()
+                }) {
+                    Label(localization.noSecurityText, systemImage: "lock.open")
+                }
+
+                Button(action: {
+                    Task {
+                        let success = await securityManager.authenticateWithBiometrics(
+                            reason: localization.securityExplanation
+                        )
+                        await MainActor.run {
+                            if success {
+                                state.selectedSecurityType = .biometric
+                            }
+                            HapticFeedback.selection()
+                        }
+                    }
+                }) {
+                    Label(localization.faceIDText, systemImage: "faceid")
+                }
+
+                Button(action: {
+                    state.showPINSetup = true
+                    HapticFeedback.selection()
+                }) {
+                    Label(localization.pinCodeText, systemImage: "number.square")
+                }
+            } label: {
+                HStack {
+                    Text(currentSecurityText)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 
     // MARK: - Variable Schedule Step
 
-    private var variableScheduleStepView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 16) {
-                Label(localization.variableScheduleTitle, systemImage: "calendar.badge.clock")
-                    .font(.headline)
-                    .foregroundColor(.primary)
 
-                Toggle(localization.variableScheduleQuestion, isOn: $state.hasVariableSchedule)
-                    .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    .onChange(of: state.hasVariableSchedule) { _, _ in
-                        HapticFeedback.selection()
-                    }
-
-                InfoBox(
-                    title: localization.variableScheduleExplanationTitle,
-                    message: localization.variableScheduleExplanation,
-                    color: .blue
-                )
-            }
-            .padding()
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-        }
-    }
 
     // MARK: - Helper Properties
 

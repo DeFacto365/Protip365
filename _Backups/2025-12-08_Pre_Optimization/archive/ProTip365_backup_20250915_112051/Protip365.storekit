@@ -1,0 +1,117 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "1F6DAFAF",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6751753292",
+    "_developerTeamID" : "2VNLA63QB4",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 778264812.96438706,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21769428",
+      "localizations" : [
+
+      ],
+      "name" : "Protip365",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6751758587",
+          "introductoryOffer" : {
+            "internalID" : "6751758588",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+
+          ],
+          "productID" : "com.protip365.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "MonthlyProtip365",
+          "subscriptionGroupID" : "21769428",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
