@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,10 +28,12 @@ import androidx.compose.ui.unit.sp
 import com.protip365.app.R
 import com.protip365.app.presentation.components.BreathingGradient
 import com.protip365.app.presentation.components.RollingCounter
+import com.protip365.app.presentation.components.EarningsChart
 import com.protip365.app.utils.localizedString
 import android.view.HapticFeedbackConstants
 import androidx.compose.ui.platform.LocalView
 import java.text.NumberFormat
+import java.time.format.TextStyle
 import java.util.Locale
 
 /**
@@ -66,7 +69,45 @@ fun DashboardStatsCards(
             color = Color(0xFF4CAF50) // Green
         )
 
-        // 2. GRID: Secondary Stats
+        // 2. CHART: Weekly Distribution
+        // Only show if we have shifts and are in weekly view (selectedPeriod == 1)
+        if (selectedPeriod == 1) {
+            val weeklyData = remember(currentStats.shifts) {
+                // Transform shifts to weekly data
+                // This is a simplified transformation for the chart
+                 val days = (0..6).map { dayOffset ->
+                    // Simple approach:
+                    // 1. Create map of DayOfWeek -> Total
+                    val totals = currentStats.shifts.groupBy { 
+                        // Assuming shiftDate is ISO string, parse carefully. 
+                        // If it fails, fallback to empty. Ideally use safe parsing.
+                        try {
+                             java.time.LocalDate.parse(it.shiftDate).dayOfWeek 
+                        } catch (e: Exception) {
+                             java.time.DayOfWeek.MONDAY // Fallback
+                        }
+                    }.mapValues { entry ->
+                        entry.value.sumOf { it.totalEarnings }
+                    }
+                    
+                    // 2. Generate list for Mon-Sun
+                    // Assuming Week starts on Monday for display
+                    val day = java.time.DayOfWeek.MONDAY.plus(dayOffset.toLong())
+                    val dayLabel = day.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                    val amount = totals[day] ?: 0.0
+                    
+                    dayLabel to amount
+                 }
+                 days
+            }
+            
+            EarningsChart(
+                weeklyData = weeklyData,
+                totalForWeek = formatCurrency(currentStats.totalRevenue)
+            )
+        }
+
+        // 3. GRID: Secondary Stats
         val netSalary = currentStats.totalWages * (1 - averageDeductionPercentage / 100)
         
         Row(
@@ -115,7 +156,7 @@ fun DashboardStatsCards(
             }
         }
 
-        // 3. COLLAPSIBLE DETAILS
+        // 4. COLLAPSIBLE DETAILS
         var isDetailsExpanded by remember { mutableStateOf(false) }
         
         Card(
@@ -286,7 +327,7 @@ fun VerticalStatCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            crossAxisAlignment = Alignment.Start,
+            horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Icon
@@ -373,9 +414,7 @@ fun DetailRow(
 }
 
 // Add modifier extension for alpha if needed or use standard Modifier.alpha
-fun Modifier.alpha(alpha: Float) = this.then(
-    Modifier.drawLayer(alpha = alpha) // Simplified, usually available via graphicsLayer or standard lib
-)
+// function removed
 
 // Helper to avoid import issues if Modifier.alpha is tricky in some compose versions
 private fun formatCurrency(amount: Double): String {

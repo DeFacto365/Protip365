@@ -66,9 +66,22 @@ struct DashboardStatsCards: View {
                 subtitle: periodText,
                 color: .green
             )
+            )
             .padding(.bottom, 8)
 
-            // 2. GRID: Secondary Stats
+            // 2. CHART: Weekly Distribution
+            // Only show chart in Weekly view (selectedPeriod == 1)
+            if selectedPeriod == 1 {
+                let weeklyData = getWeeklyData(from: currentStats.shifts)
+                EarningsChart(
+                    data: weeklyData,
+                    totalForWeek: currentStats.totalRevenue
+                )
+                .padding(.horizontal, 4) // Align with grid items
+                .padding(.bottom, 12)
+            }
+
+            // 3. GRID: Secondary Stats
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 // Sales
                 VerticalStatCard(
@@ -362,5 +375,53 @@ struct DashboardStatsCards: View {
             monthViewType: monthViewType,
             userTargets: userTargets
         )
+    }
+
+    // MARK: - Chart Helpers
+    
+    private func getWeeklyData(from shifts: [ShiftIncome]) -> [DailyEarnings] {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Initialize 7 days with 0
+        var days: [DailyEarnings] = []
+        
+        // 1. Get start of current week
+        // Use the same weekStart logic as the rest of the dashboard
+        let startOfWeek = DashboardMetrics.getStartOfWeek(for: today, weekStartDay: weekStartDay)
+        
+        for i in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) else { continue }
+            
+            // Format Day String (e.g., "Mon")
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEE"
+            let dayString = formatter.string(from: date)
+            
+            // Find shifts for this day and sum earnings
+            let dateKey = formatDateKey(date)
+            let dailyTotal = shifts
+                .filter { $0.shift_date == dateKey }
+                .reduce(0) { $0 + calculateTotal(for: $1) }
+            
+            let isToday = calendar.isDateInToday(date)
+            
+            days.append(DailyEarnings(day: dayString, amount: dailyTotal, isToday: isToday))
+        }
+        
+        return days
+    }
+    
+    private func formatDateKey(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+    
+    private func calculateTotal(for shift: ShiftIncome) -> Double {
+        // Approximate total earnings for trend visual
+        let hourlyIncome = (shift.hours ) * (shift.hourly_rate )
+        let grossIncome = hourlyIncome + (shift.tips )
+        return grossIncome
     }
 }

@@ -40,7 +40,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
-    onNavigateToAddShift: () -> Unit,
+    onNavigateToAddShift: (LocalDate) -> Unit,
     onNavigateToAddEntry: (LocalDate) -> Unit,
     onNavigateToEditShift: (String) -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
@@ -126,7 +126,7 @@ fun CalendarScreen(
                             if (existingShifts.isNotEmpty()) {
                                 showAddShiftDialog = true
                             } else {
-                                onNavigateToAddShift()
+                                onNavigateToAddShift(uiState.selectedDate)
                             }
                         },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -238,7 +238,7 @@ fun CalendarScreen(
                 Column {
                     TextButton(
                         onClick = {
-                            onNavigateToAddShift()
+                            onNavigateToAddShift(uiState.selectedDate)
                             showAddShiftDialog = false
                         }
                     ) {

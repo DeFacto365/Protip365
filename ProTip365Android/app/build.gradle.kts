@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
     // id("com.google.gms.google-services")
@@ -57,6 +58,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -68,9 +70,9 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // composeOptions {
+    //    kotlinCompilerExtensionVersion = "1.5.14"
+    // }
 
     packaging {
         resources {
@@ -80,12 +82,17 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     // Core Android dependencies
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.1")
+
+    // Material Components
+    implementation("com.google.android.material:material:1.13.0")
 
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
@@ -118,7 +125,7 @@ dependencies {
     implementation("io.ktor:ktor-client-logging:2.3.12")
     
     // SLF4J Android logger to fix logging warnings
-    implementation("org.slf4j:slf4j-android:2.0.13")
+    implementation("org.slf4j:slf4j-android:1.7.36")
 
     // Kotlinx Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
@@ -133,10 +140,10 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Biometric
-    implementation("androidx.biometric:biometric-ktx:1.2.0-rc01")
+    implementation("androidx.biometric:biometric:1.1.0")
 
     // Security Crypto for encrypted preferences
-    implementation("androidx.security:security-crypto:1.0.0")
+    implementation("androidx.security:security-crypto:1.1.0")
 
     // Google Play Billing
     implementation("com.android.billingclient:billing-ktx:7.0.0")
@@ -149,9 +156,12 @@ dependencies {
 
     // Calendar View
     implementation("com.kizitonwose.calendar:compose:2.5.1")
+    implementation("com.kizitonwose.calendar:data:2.5.1")
 
     // Charts
+    implementation("com.patrykandpatrick.vico:compose:2.0.0-beta.1")
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.1")
+    implementation("com.patrykandpatrick.vico:core:2.0.0-beta.1")
 
     // CSV Export
     implementation("com.opencsv:opencsv:5.9")

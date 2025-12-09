@@ -216,13 +216,12 @@ class OnboardingViewModel @Inject constructor(
                     // But wait, the iOS code actually INSERTS the employer. Android should too.
                     try {
                         employerRepository.createEmployer(
-                             com.protip365.app.domain.model.Employer(
+                             com.protip365.app.data.models.Employer(
                                 id = java.util.UUID.randomUUID().toString(),
                                 userId = userId,
                                 name = nameToUse,
                                 hourlyRate = 15.0,
-                                active = true,
-                                createdAt = System.currentTimeMillis()
+                                active = true
                              )
                         )
                     } catch(e: Exception) {

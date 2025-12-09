@@ -84,6 +84,18 @@
             android:name=".presentation.notifications.ShiftAlertReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- Register the Home Screen Widget -->
+        <receiver
+            android:name=".widget.ShiftWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shift_widget_info" />
+        </receiver>
         
         <!-- Network Security Config -->
         <meta-data

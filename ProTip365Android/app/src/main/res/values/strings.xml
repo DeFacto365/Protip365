@@ -378,6 +378,7 @@
 
     <!-- Onboarding Screen -->
     <string name="back">Back</string>
+    <string name="done">Done</string>
     <string name="eg_restaurant_name">e.g., Restaurant Name</string>
     <string name="decide_later">Decide later</string>
     <string name="not_set">Not set</string>

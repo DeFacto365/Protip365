@@ -243,6 +243,7 @@ class DashboardViewModel @Inject constructor(
             ),
 
             // Additional data
+            shifts = currentStats.completedShifts,
             recentShifts = currentStats.completedShifts.take(5), // Show 5 most recent
             hasData = currentStats.completedShifts.isNotEmpty()
         )
@@ -299,6 +300,7 @@ data class DashboardState(
     val otherChange: Double = 0.0,
 
     // Additional data
+    val shifts: List<CompletedShift> = emptyList(),
     val recentShifts: List<CompletedShift> = emptyList(),
     val hasData: Boolean = false
 )

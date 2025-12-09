@@ -84,6 +84,7 @@ fun LanguageStep(
 }
 
 // MARK: - Step 2: Setup (Consolidated)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupStep(
     state: OnboardingState,
