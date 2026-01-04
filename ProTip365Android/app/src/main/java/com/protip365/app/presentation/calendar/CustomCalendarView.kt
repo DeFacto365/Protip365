@@ -255,33 +255,27 @@ fun ShiftIndicators(shifts: List<com.protip365.app.data.models.CompletedShift>) 
 }
 
 private fun colorForShift(shift: com.protip365.app.data.models.CompletedShift, index: Int): Color {
-    // Use different colors based on shift status and earnings (matching iOS logic)
-    val hasEarnings = shift.totalEarnings > 0
-    
-    return if (hasEarnings) {
-        // Completed shifts with earnings
-        when (index % 3) {
-            0 -> Color(0xFF4CAF50) // Green
-            1 -> Color(0xFF2196F3) // Blue  
-            2 -> Color(0xFF9C27B0) // Purple
+    // iOS-conformant: Use status-based colors ONLY (no earnings logic)
+    return when (shift.status.lowercase()) {
+        "completed" -> when (index % 3) {
+            0 -> Color(0xFF4CAF50)  // Green
+            1 -> Color(0xFF80CBC4)  // Mint/Teal (iOS mint equivalent)
+            2 -> Color(0xFF66BB6A)  // Light Green (Green with 0.8 alpha effect)
             else -> Color(0xFF4CAF50)
         }
-    } else {
-        // Planned shifts or completed but no earnings
-        when (shift.status) {
-            "planned" -> when (index % 3) {
-                0 -> Color(0xFF00BCD4) // Cyan
-                1 -> Color(0xFF4DD0E1) // Light Blue
-                2 -> Color(0xFF3F51B5) // Indigo
-                else -> Color(0xFF00BCD4)
-            }
-            "missed" -> Color(0xFFF44336) // Red
-            else -> when (index % 3) {
-                0 -> Color(0xFF9E9E9E) // Gray
-                1 -> Color(0xFF757575) // Dark Gray
-                2 -> Color(0xFF424242) // Darker Gray
-                else -> Color(0xFF9E9E9E)
-            }
+        "planned" -> when (index % 3) {
+            0 -> Color(0xFF9C27B0)  // Purple
+            1 -> Color(0xFF5C6BC0)  // Indigo
+            2 -> Color(0xFFAB47BC)  // Light Purple (Purple with 0.8 alpha effect)
+            else -> Color(0xFF9C27B0)
+        }
+        "missed" -> Color(0xFFF44336)  // Red (no variation for missed)
+        else -> when (index % 3) {
+            // Default/unknown status - Orange/Yellow variations
+            0 -> Color(0xFFFF9800)  // Orange
+            1 -> Color(0xFFFFEB3B)  // Yellow
+            2 -> Color(0xFFFFB74D)  // Light Orange (Orange with 0.8 alpha effect)
+            else -> Color(0xFFFF9800)
         }
     }
 }

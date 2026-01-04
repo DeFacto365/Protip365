@@ -147,6 +147,9 @@ struct Constants {
 extension Notification.Name {
     static let navigateToCalendar = Notification.Name("navigateToCalendar")
     static let navigateToShift = Notification.Name("navigateToShift")
+    static let shiftDataChanged = Notification.Name("shiftDataChanged")
+    static let userDidSignOut = Notification.Name("userDidSignOut")
+    static let userDidDeleteAccount = Notification.Name("userDidDeleteAccount")
 }
 
 // MARK: - Locale-Aware Number Parsing

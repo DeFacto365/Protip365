@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import com.protip365.app.presentation.localization.DashboardLocalization
 import java.text.NumberFormat
 import java.util.*
@@ -33,13 +35,15 @@ fun DashboardPerformanceCard(
     // State for expansion
     var isExpanded by remember { mutableStateOf(false) }
 
-    // Calculate targets based on period
-    val targets = remember(selectedPeriod, monthViewType, userTargets, hasVariableSchedule) {
+    // Calculate targets based on period with effective sales targets (iOS pattern)
+    // Matches iOS DashboardPerformanceCard (lines 232-293)
+    val targets = remember(selectedPeriod, monthViewType, userTargets, hasVariableSchedule, currentStats.allShifts) {
         getTargetsForPeriod(
             selectedPeriod = selectedPeriod,
             monthViewType = monthViewType,
             userTargets = userTargets,
-            hasVariableSchedule = hasVariableSchedule
+            hasVariableSchedule = hasVariableSchedule,
+            shifts = currentStats.allShifts
         )
     }
 
@@ -56,11 +60,13 @@ fun DashboardPerformanceCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),  // Increased from 12dp
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp  // Subtle elevation like iOS
+        )
     ) {
         Column {
             // Header (always visible)
@@ -108,12 +114,12 @@ private fun PerformanceCardHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(16.dp),
+            .padding(20.dp),  // Increased from 16dp
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),  // Increased spacing
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -124,7 +130,8 @@ private fun PerformanceCardHeader(
             Text(
                 text = "${localization.performanceText}:",
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.semantics { heading() } // Section heading (h2)
             )
 
             if (hasAnyTargets) {
@@ -286,18 +293,31 @@ private fun NoTargetsContent(localization: DashboardLocalization) {
 
 // Helper Functions
 
+/**
+ * Get targets for period with effective sales target calculation
+ * Matches iOS DashboardPerformanceCard.getTargetsForPeriod (lines 232-293)
+ * Uses calculateEffectiveSalesTarget for custom per-shift targets
+ */
 private fun getTargetsForPeriod(
     selectedPeriod: DashboardPeriod,
     monthViewType: MonthViewType,
     userTargets: DashboardMetrics.UserTargets,
-    hasVariableSchedule: Boolean
+    hasVariableSchedule: Boolean,
+    shifts: List<com.protip365.app.data.models.CompletedShift>
 ): PerformanceTargets {
+    // Calculate effective sales target using shift-specific targets
+    // Matches iOS: DashboardMetrics.calculateEffectiveSalesTarget() (lines 196-210)
+    val effectiveSalesTarget = DashboardMetrics.calculateEffectiveSalesTarget(
+        shifts = shifts,
+        defaultTarget = userTargets.dailySales
+    )
+
     // For variable schedule users, only use daily targets
     if (hasVariableSchedule) {
         return PerformanceTargets(
             hours = userTargets.dailyHours,
             tips = userTargets.dailyIncome,
-            sales = userTargets.dailySales,
+            sales = effectiveSalesTarget,
             tipPercentage = userTargets.tipTargetPercentage
         )
     }
@@ -307,7 +327,7 @@ private fun getTargetsForPeriod(
             PerformanceTargets(
                 hours = userTargets.dailyHours,
                 tips = userTargets.dailyIncome,
-                sales = userTargets.dailySales,
+                sales = effectiveSalesTarget,
                 tipPercentage = userTargets.tipTargetPercentage
             )
         }
@@ -315,7 +335,7 @@ private fun getTargetsForPeriod(
             PerformanceTargets(
                 hours = userTargets.weeklyHours,
                 tips = userTargets.weeklyIncome,
-                sales = userTargets.weeklySales,
+                sales = effectiveSalesTarget,
                 tipPercentage = userTargets.tipTargetPercentage
             )
         }
@@ -325,7 +345,7 @@ private fun getTargetsForPeriod(
                 PerformanceTargets(
                     hours = userTargets.weeklyHours * 4,
                     tips = userTargets.weeklyIncome * 4,
-                    sales = userTargets.weeklySales * 4,
+                    sales = effectiveSalesTarget,
                     tipPercentage = userTargets.tipTargetPercentage
                 )
             } else {
@@ -333,7 +353,7 @@ private fun getTargetsForPeriod(
                 PerformanceTargets(
                     hours = userTargets.monthlyHours,
                     tips = userTargets.monthlyIncome,
-                    sales = userTargets.monthlySales,
+                    sales = effectiveSalesTarget,
                     tipPercentage = userTargets.tipTargetPercentage
                 )
             }
@@ -344,7 +364,7 @@ private fun getTargetsForPeriod(
             PerformanceTargets(
                 hours = userTargets.monthlyHours * currentMonth,
                 tips = userTargets.monthlyIncome * currentMonth,
-                sales = userTargets.monthlySales * currentMonth,
+                sales = effectiveSalesTarget,
                 tipPercentage = userTargets.tipTargetPercentage
             )
         }
@@ -352,7 +372,7 @@ private fun getTargetsForPeriod(
             PerformanceTargets(
                 hours = userTargets.weeklyHours * 4,
                 tips = userTargets.weeklyIncome * 4,
-                sales = userTargets.weeklySales * 4,
+                sales = effectiveSalesTarget,
                 tipPercentage = userTargets.tipTargetPercentage
             )
         }

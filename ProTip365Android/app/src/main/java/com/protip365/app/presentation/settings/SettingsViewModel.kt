@@ -13,6 +13,7 @@ import com.protip365.app.domain.repository.UserRepository
 import com.protip365.app.presentation.localization.LocalizationManager
 import com.protip365.app.presentation.localization.SupportedLanguage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,14 +29,15 @@ class SettingsViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val employerRepository: EmployerRepository,
     private val preferencesManager: PreferencesManager,
-    private val localizationManager: LocalizationManager
+    private val localizationManager: LocalizationManager,
+    private val supabaseClient: io.github.jan.supabase.SupabaseClient
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
 
-    private val _user = MutableStateFlow<UserProfile?>(null)
-    val user: StateFlow<UserProfile?> = _user.asStateFlow()
+    private val _user = MutableStateFlow<UserProfileWithEmail?>(null)
+    val user: StateFlow<UserProfileWithEmail?> = _user.asStateFlow()
 
     // Track original values to detect changes
     private var originalState: SettingsState? = null
@@ -43,6 +45,10 @@ class SettingsViewModel @Inject constructor(
     init {
         loadUserSettings()
         observeConnectivity()
+    }
+
+    fun refreshSettings() {
+        loadUserSettings()
     }
 
     private fun observeConnectivity() {
@@ -81,7 +87,10 @@ class SettingsViewModel @Inject constructor(
     private suspend fun syncWithServer() {
         val currentUser = authRepository.getCurrentUser()
         currentUser?.let { user ->
-            _user.value = user
+            // Get email from Supabase auth
+            val authUser = supabaseClient.auth.currentUserOrNull()
+            val email = authUser?.email ?: ""
+            _user.value = UserProfileWithEmail(user, email)
 
             // Load employers
             val employers = try {
@@ -95,9 +104,12 @@ class SettingsViewModel @Inject constructor(
 
             val serverState = SettingsState(
                 // Targets
-                dailyTarget = user.metadata?.get("daily_target") as? Double ?: 200.0,
-                weeklyTarget = user.metadata?.get("weekly_target") as? Double ?: 1400.0,
-                monthlyTarget = user.metadata?.get("monthly_target") as? Double ?: 6000.0,
+                dailyTarget = user.targetSalesDaily ?: 200.0,
+                dailyHoursTarget = user.targetHoursDaily ?: 8.0,
+                weeklyTarget = user.targetSalesWeekly ?: 1400.0,
+                weeklyHoursTarget = user.targetHoursWeekly ?: 40.0,
+                monthlyTarget = user.targetSalesMonthly ?: 6000.0,
+                monthlyHoursTarget = user.targetHoursMonthly ?: 160.0,
                 yearlyTarget = user.metadata?.get("yearly_target") as? Double ?: 72000.0,
 
                 // Work defaults
@@ -153,7 +165,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 userRepository.updateUserProfile(mapOf("name" to name))
-                _user.value = _user.value?.copy(name = name)
+                _user.value?.let { userWithEmail ->
+                    val updatedProfile = userWithEmail.profile.copy(name = name)
+                    _user.value = userWithEmail.copy(profile = updatedProfile)
+                }
             } catch (e: Exception) {
                 // Handle error
             }
@@ -164,12 +179,24 @@ class SettingsViewModel @Inject constructor(
         updateField { it.copy(dailyTarget = target) }
     }
 
+    fun updateDailyHoursTarget(target: Double) {
+        updateField { it.copy(dailyHoursTarget = target) }
+    }
+
     fun updateWeeklyTarget(target: Double) {
         updateField { it.copy(weeklyTarget = target) }
     }
 
+    fun updateWeeklyHoursTarget(target: Double) {
+        updateField { it.copy(weeklyHoursTarget = target) }
+    }
+
     fun updateMonthlyTarget(target: Double) {
         updateField { it.copy(monthlyTarget = target) }
+    }
+
+    fun updateMonthlyHoursTarget(target: Double) {
+        updateField { it.copy(monthlyHoursTarget = target) }
     }
 
     fun updateYearlyTarget(target: Double) {
@@ -338,7 +365,8 @@ class SettingsViewModel @Inject constructor(
         preferencesManager.saveSettings(currentState)
 
         // Update user profile in database
-        _user.value?.let { user ->
+        _user.value?.let { userWithEmail ->
+            val user = userWithEmail.profile
             val updates = mutableMapOf<String, Any?>()
 
             // Basic settings
@@ -346,12 +374,15 @@ class SettingsViewModel @Inject constructor(
             updates["default_alert_minutes"] = currentState.defaultAlertMinutes
             updates["use_multiple_employers"] = currentState.useMultipleEmployers
             updates["preferred_language"] = currentState.language
+            updates["target_sales_daily"] = currentState.dailyTarget
+            updates["target_hours_daily"] = currentState.dailyHoursTarget
+            updates["target_sales_weekly"] = currentState.weeklyTarget
+            updates["target_hours_weekly"] = currentState.weeklyHoursTarget
+            updates["target_sales_monthly"] = currentState.monthlyTarget
+            updates["target_hours_monthly"] = currentState.monthlyHoursTarget
 
             // Metadata updates
             val metadata = mutableMapOf<String, Any?>()
-            metadata["daily_target"] = currentState.dailyTarget
-            metadata["weekly_target"] = currentState.weeklyTarget
-            metadata["monthly_target"] = currentState.monthlyTarget
             metadata["yearly_target"] = currentState.yearlyTarget
             metadata["week_starts_monday"] = currentState.weekStartsMonday
             metadata["default_tip_percentage"] = currentState.defaultTipPercentage
@@ -445,7 +476,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isExporting = true)
 
-            val user = _user.value ?: return@launch
+            val userWithEmail = _user.value ?: return@launch
+            val user = userWithEmail.profile
 
             try {
                 // Get all completed shift data
@@ -503,7 +535,17 @@ class SettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(showSignOutDialog = true)
+            _state.value = _state.value.copy(isSigningOut = true)
+            try {
+                authRepository.signOut()
+                preferencesManager.clearAll()
+                _state.value = _state.value.copy(shouldNavigateToAuth = true, isSigningOut = false)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isSigningOut = false,
+                    error = "Failed to sign out: ${e.message}"
+                )
+            }
         }
     }
 
@@ -512,6 +554,7 @@ class SettingsViewModel @Inject constructor(
             _state.value = _state.value.copy(showSignOutDialog = false)
             authRepository.signOut()
             preferencesManager.clearAll()
+            _state.value = _state.value.copy(shouldNavigateToAuth = true, isSigningOut = true)
         }
     }
 
@@ -559,6 +602,10 @@ class SettingsViewModel @Inject constructor(
     fun clearError() {
         _state.value = _state.value.copy(error = null)
     }
+
+    fun resetNavigateToAuth() {
+        _state.value = _state.value.copy(shouldNavigateToAuth = false)
+    }
 }
 
 data class SettingsState(
@@ -567,6 +614,7 @@ data class SettingsState(
     val isSaving: Boolean = false,
     val isExporting: Boolean = false,
     val isDeleting: Boolean = false,
+    val isSigningOut: Boolean = false,
 
     // Change tracking
     val hasChanges: Boolean = false,
@@ -574,8 +622,11 @@ data class SettingsState(
 
     // Targets
     val dailyTarget: Double = 200.0,
+    val dailyHoursTarget: Double = 8.0,
     val weeklyTarget: Double = 1400.0,
+    val weeklyHoursTarget: Double = 40.0,
     val monthlyTarget: Double = 6000.0,
+    val monthlyHoursTarget: Double = 160.0,
     val yearlyTarget: Double = 72000.0,
 
     // Work defaults
@@ -621,6 +672,7 @@ data class SettingsState(
     val showSignOutDialog: Boolean = false,
     val showDeleteAccountDialog: Boolean = false,
     val deleteAccountError: String? = null,
+    val shouldNavigateToAuth: Boolean = false,
 
     // Errors
     val error: String? = null
@@ -630,4 +682,11 @@ enum class ExportFormat(val extension: String) {
     CSV("csv"),
     PDF("pdf"),
     JSON("json")
+}
+
+data class UserProfileWithEmail(
+    val profile: UserProfile,
+    val email: String
+) {
+    val name: String? get() = profile.name
 }

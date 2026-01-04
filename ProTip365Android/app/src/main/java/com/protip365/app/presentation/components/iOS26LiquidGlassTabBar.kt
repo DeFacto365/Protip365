@@ -16,16 +16,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.protip365.app.utils.HapticFeedbackUtils
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.protip365.app.presentation.design.IconMapping
 import com.protip365.app.presentation.localization.rememberNavigationLocalization
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 
 data class TabItem(
     val id: String,
@@ -52,22 +60,28 @@ fun iOS26LiquidGlassTabBar(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = if (colorScheme.surface == Color.Black) 0.dp else 8.dp,
-                shape = RoundedCornerShape(0.dp),
-                ambientColor = Color.Black.copy(alpha = 0.1f),
-                spotColor = Color.Black.copy(alpha = 0.1f)
+                elevation = if (colorScheme.surface == Color.Black) 0.dp else 8.dp,  // Slightly increased
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),  // Added radius
+                ambientColor = Color.Black.copy(alpha = 0.12f),
+                spotColor = Color.Black.copy(alpha = 0.12f)
             )
     ) {
-        // Top separator line (light mode only)
-        if (colorScheme.surface != Color.Black) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(Color.Gray.copy(alpha = 0.2f))
-                    .align(Alignment.TopCenter)
-            )
-        }
+        // Subtle gradient overlay for depth
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .align(Alignment.TopCenter)
+        )
 
         // Main tab content
         Row(
@@ -94,7 +108,8 @@ fun iOS26LiquidGlassTabBar(
                     isSelected = selectedTabId == item.id,
                     isLargeDevice = isLargeDevice,
                     onClick = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        // Light haptic for navigation (Android 16 Enhanced Haptic Feedback)
+                        HapticFeedbackUtils.performNavigationHaptic(hapticFeedback)
                         onTabSelected(item.id)
                     },
                     modifier = if (isLargeDevice) Modifier else Modifier.weight(1f)
@@ -112,7 +127,6 @@ private fun TabBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    @Suppress("UNUSED_VARIABLE")
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.15f else 1.0f,
         animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
@@ -146,7 +160,11 @@ private fun TabBarItem(
                     contentDescription = item.label,
                     modifier = Modifier
                         .size(if (isLargeDevice) 24.dp else 20.dp)
-                        .alpha(alpha),
+                        .alpha(alpha)
+                        .graphicsLayer(
+                            scaleX = scale,  // iOS-conformant: 1.15x scale when selected
+                            scaleY = scale
+                        ),
                     tint = if (isSelected) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -176,8 +194,7 @@ private fun TabBarItem(
             // Label
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = if (isLargeDevice) 11.sp else 9.sp,
+                style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                 ),
                 color = if (isSelected) {
@@ -186,6 +203,8 @@ private fun TabBarItem(
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.alpha(alpha)
             )
         }
@@ -243,5 +262,97 @@ fun getTabItems(useMultipleEmployers: Boolean): List<TabItem> {
                 activeIcon = IconMapping.Navigation.settingsFill
             )
         )
+    }
+}
+
+/**
+ * Adaptive Navigation Rail for tablets (Android 16)
+ * Uses Material 3 NavigationRail component with iOS-style theming
+ */
+@Composable
+fun AdaptiveNavigationRail(
+    selectedTabId: String,
+    onTabSelected: (String) -> Unit,
+    tabItems: List<TabItem>,
+    modifier: Modifier = Modifier
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val colorScheme = MaterialTheme.colorScheme
+
+    NavigationRail(
+        modifier = modifier
+            .fillMaxHeight()
+            .windowInsetsPadding(
+                WindowInsets.systemBars.only(WindowInsetsSides.Vertical)
+            ),
+        containerColor = colorScheme.surface,
+        contentColor = colorScheme.onSurface
+    ) {
+        // Add top padding for better spacing
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        tabItems.forEach { item ->
+            val isSelected = selectedTabId == item.id
+            
+            NavigationRailItem(
+                selected = isSelected,
+                onClick = {
+                    // Light haptic for navigation (Android 16 Enhanced Haptic Feedback)
+                    HapticFeedbackUtils.performNavigationHaptic(hapticFeedback)
+                    onTabSelected(item.id)
+                },
+                icon = {
+                    Box {
+                        Icon(
+                            imageVector = if (isSelected) item.activeIcon else item.icon,
+                            contentDescription = item.label,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (isSelected) {
+                                colorScheme.primary
+                            } else {
+                                colorScheme.onSurfaceVariant
+                            }
+                        )
+                        
+                        // Badge
+                        item.badgeCount?.let { count ->
+                            if (count > 0) {
+                                Badge(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 4.dp, y = (-4).dp)
+                                ) {
+                                    Text(
+                                        text = if (count > 99) "99+" else count.toString(),
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                label = {
+                    Text(
+                        text = item.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (isSelected) {
+                            colorScheme.primary
+                        } else {
+                            colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = colorScheme.primary,
+                    selectedTextColor = colorScheme.primary,
+                    indicatorColor = colorScheme.primaryContainer,
+                    unselectedIconColor = colorScheme.onSurfaceVariant,
+                    unselectedTextColor = colorScheme.onSurfaceVariant
+                )
+            )
+        }
     }
 }

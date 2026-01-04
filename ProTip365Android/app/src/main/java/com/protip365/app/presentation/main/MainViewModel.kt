@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.protip365.app.data.local.PreferencesManager
 import com.protip365.app.domain.repository.UserRepository
+import com.protip365.app.presentation.navigation.NavigationEventManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    val navigationEventManager: NavigationEventManager
 ) : ViewModel() {
 
     private val _useMultipleEmployers = MutableStateFlow(false)
@@ -34,10 +36,13 @@ class MainViewModel @Inject constructor(
                     _useMultipleEmployers.value = it.useMultipleEmployers
                 }
 
-                // Then try to get from user profile (network)
-                val userProfile = userRepository.getUserProfile("dummy_user_id")
-                userProfile?.let { profile ->
-                    _useMultipleEmployers.value = profile.useMultipleEmployers
+                // Then try to get from user profile (network) - only if user is authenticated
+                val currentUserId = userRepository.getCurrentUserId()
+                if (currentUserId != null) {
+                    val userProfile = userRepository.getUserProfile(currentUserId)
+                    userProfile?.let { profile ->
+                        _useMultipleEmployers.value = profile.useMultipleEmployers
+                    }
                 }
             } catch (e: Exception) {
                 // Handle error - default to false

@@ -363,7 +363,10 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
         Task {
             do {
-                let content = notification.request.content.mutableCopy() as! UNMutableNotificationContent
+                guard let content = notification.request.content.mutableCopy() as? UNMutableNotificationContent else {
+                    print("❌ Failed to mutable copy notification content")
+                    return
+                }
                 content.title = localizedString(key: "upcomingShiftTitle", language: UserDefaults.standard.string(forKey: "language") ?? "en")
 
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 600, repeats: false)

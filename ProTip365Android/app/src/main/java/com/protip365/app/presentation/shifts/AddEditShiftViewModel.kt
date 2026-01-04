@@ -93,14 +93,18 @@ class AddEditShiftViewModel @Inject constructor(
     }
 
     fun loadShift(shiftId: String) {
+        android.util.Log.d("AddEditShiftViewModel", "==== LOAD SHIFT CALLED: $shiftId ====")
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isInitializing = true) }
 
             try {
                 editingShiftId = shiftId
 
+                android.util.Log.d("AddEditShiftViewModel", "Fetching shift from repository...")
                 val completedShift = completedShiftRepository.getCompletedShift(shiftId)
                 if (completedShift == null) {
+                    android.util.Log.e("AddEditShiftViewModel", "Shift not found: $shiftId")
                     _uiState.update { state ->
                         state.copy(
                             isInitializing = false,
@@ -111,6 +115,12 @@ class AddEditShiftViewModel @Inject constructor(
                 }
 
                 val expectedShift = completedShift.expectedShift
+                android.util.Log.d("AddEditShiftViewModel", "==== SHIFT DATA FROM DB ====")
+                android.util.Log.d("AddEditShiftViewModel", "  startTime: ${expectedShift.startTime}")
+                android.util.Log.d("AddEditShiftViewModel", "  endTime: ${expectedShift.endTime}")
+                android.util.Log.d("AddEditShiftViewModel", "  salesTarget: ${expectedShift.salesTarget}")
+                android.util.Log.d("AddEditShiftViewModel", "  alertMinutes: ${expectedShift.alertMinutes}")
+                
                 val shiftDate = LocalDate.parse(expectedShift.shiftDate)
                 val startTime = LocalTime.parse(expectedShift.startTime)
                 val endTime = LocalTime.parse(expectedShift.endTime)
@@ -135,10 +145,18 @@ class AddEditShiftViewModel @Inject constructor(
                         salesTarget = expectedShift.salesTarget?.let {
                             String.format("%.0f", it)
                         } ?: "",
+                        hasEntry = completedShift.shiftEntry != null,
                         isInitializing = false
                     )
                 }
+                
+                android.util.Log.d("AddEditShiftViewModel", "==== UI STATE UPDATED ====")
+                android.util.Log.d("AddEditShiftViewModel", "  startTime: ${_uiState.value.startTime}")
+                android.util.Log.d("AddEditShiftViewModel", "  salesTarget: ${_uiState.value.salesTarget}")
+                android.util.Log.d("AddEditShiftViewModel", "  alertMinutes: ${_uiState.value.alertMinutes}")
+                
             } catch (e: Exception) {
+                android.util.Log.e("AddEditShiftViewModel", "Failed to load shift", e)
                 _uiState.update { state ->
                     state.copy(
                         isInitializing = false,
@@ -196,10 +214,12 @@ class AddEditShiftViewModel @Inject constructor(
     }
 
     fun updateStartTime(time: LocalTime) {
+        android.util.Log.d("AddEditShiftViewModel", "updateStartTime: $time")
         _uiState.update { it.copy(startTime = time) }
     }
 
     fun updateEndTime(time: LocalTime) {
+        android.util.Log.d("AddEditShiftViewModel", "updateEndTime: $time")
         val state = _uiState.value
 
         // If dates are the same and end time is before start time, automatically set end date to next day
@@ -216,27 +236,35 @@ class AddEditShiftViewModel @Inject constructor(
     }
 
     fun updateLunchBreak(minutes: Int) {
+        android.util.Log.d("AddEditShiftViewModel", "updateLunchBreak: $minutes")
         _uiState.update { it.copy(lunchBreak = minutes) }
     }
 
     fun updateAlertMinutes(minutes: Int?) {
+        android.util.Log.d("AddEditShiftViewModel", "updateAlertMinutes: $minutes")
         _uiState.update { it.copy(alertMinutes = minutes) }
     }
 
     fun updateComments(comments: String) {
+        android.util.Log.d("AddEditShiftViewModel", "updateComments: ${comments.take(30)}")
         _uiState.update { it.copy(comments = comments) }
     }
 
     fun updateSalesTarget(target: String) {
+        android.util.Log.d("AddEditShiftViewModel", "updateSalesTarget: $target")
         _uiState.update { it.copy(salesTarget = target) }
     }
 
     fun saveShift(onSuccess: () -> Unit) {
         val state = _uiState.value
 
+        android.util.Log.d("AddEditShiftViewModel", "saveShift called - employer: ${state.selectedEmployer?.name}, date: ${state.selectedDate}, startTime: ${state.startTime}, endTime: ${state.endTime}")
+
         // Validation
         if (state.selectedEmployer == null) {
+            android.util.Log.e("AddEditShiftViewModel", "Validation failed: No employer selected")
             _uiState.update { it.copy(errorMessage = "Please select an employer") }
+            android.util.Log.d("AddEditShiftViewModel", "Error message set, returning early - onSuccess will NOT be called")
             return
         }
 
@@ -250,14 +278,18 @@ class AddEditShiftViewModel @Inject constructor(
 
         // Check if end is before start
         if (endDateTime <= startDateTime) {
+            android.util.Log.e("AddEditShiftViewModel", "Validation failed: End time before start time - start: $startDateTime, end: $endDateTime")
             _uiState.update { it.copy(errorMessage = "End time must be after start time. For overnight shifts, the end date will be automatically set to the next day.") }
+            android.util.Log.d("AddEditShiftViewModel", "Error message set, returning early - onSuccess will NOT be called")
             return
         }
 
+        android.util.Log.d("AddEditShiftViewModel", "Validation passed, launching coroutine")
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
+                android.util.Log.d("AddEditShiftViewModel", "Starting save operation")
                 val currentUser = userRepository.getCurrentUser().first()
                 val userId = currentUser?.userId ?: throw Exception("User not found")
 
@@ -328,7 +360,7 @@ class AddEditShiftViewModel @Inject constructor(
                 val expectedShift = ExpectedShift(
                     id = shiftId,
                     userId = userId,
-                    employerId = state.selectedEmployer?.id ?: "",
+                    employerId = state.selectedEmployer?.id, // Keep as null if not selected, don't use empty string
                     shiftDate = state.selectedDate.toString(),
                     startTime = state.startTime.toString(),
                     endTime = state.endTime.toString(),
@@ -340,6 +372,15 @@ class AddEditShiftViewModel @Inject constructor(
                     alertMinutes = state.alertMinutes,
                     notes = state.comments.ifEmpty { null }
                 )
+                
+                android.util.Log.d("AddEditShiftViewModel", "==== CONSTRUCTED EXPECTED SHIFT ====")
+                android.util.Log.d("AddEditShiftViewModel", "  id: ${expectedShift.id}")
+                android.util.Log.d("AddEditShiftViewModel", "  startTime: ${expectedShift.startTime}")
+                android.util.Log.d("AddEditShiftViewModel", "  endTime: ${expectedShift.endTime}")
+                android.util.Log.d("AddEditShiftViewModel", "  salesTarget: ${expectedShift.salesTarget}")
+                android.util.Log.d("AddEditShiftViewModel", "  alertMinutes: ${expectedShift.alertMinutes}")
+                android.util.Log.d("AddEditShiftViewModel", "  lunchBreak: ${expectedShift.lunchBreakMinutes}")
+                android.util.Log.d("AddEditShiftViewModel", "  status: ${expectedShift.status}")
 
                 if (editingShiftId != null) {
                     // Get the existing completed shift to preserve entry data
@@ -347,40 +388,70 @@ class AddEditShiftViewModel @Inject constructor(
                     val updatedCompletedShift = existingShift?.copy(expectedShift = expectedShift)
                         ?: throw Exception("Shift not found")
 
-                    completedShiftRepository.updateShift(updatedCompletedShift).getOrThrow()
+                    val updateResult = completedShiftRepository.updateShift(updatedCompletedShift)
+                    if (updateResult.isFailure) {
+                        val error = updateResult.exceptionOrNull() ?: Exception("Unknown error")
+                        android.util.Log.e("AddEditShiftViewModel", "Failed to update shift: ${error.message}", error)
+                        throw error
+                    }
+                    android.util.Log.d("AddEditShiftViewModel", "Shift updated successfully: ${updateResult.getOrNull()?.expectedShift?.id}")
 
-                    // Update notification if alert changed
-                    state.alertMinutes?.let { minutes ->
-                        notificationManager.scheduleShiftAlert(
-                            shiftId = shiftId,
-                            shiftDate = state.selectedDate,
-                            startTime = state.startTime,
-                            employerName = state.selectedEmployer!!.name,
-                            alertMinutes = minutes
-                        )
-                    } ?: run {
-                        // Cancel notification if alert removed
+                    // Always cancel existing alert first, then schedule new one if needed
+                    // Wrap in try-catch so notification errors don't break the save
+                    try {
                         notificationManager.cancelShiftAlert(shiftId)
+                        
+                        // Schedule notification if alert is set
+                        state.alertMinutes?.let { minutes ->
+                            notificationManager.scheduleShiftAlert(
+                                shiftId = shiftId,
+                                shiftDate = state.selectedDate,
+                                startTime = state.startTime,
+                                employerName = state.selectedEmployer!!.name,
+                                alertMinutes = minutes
+                            )
+                        }
+                    } catch (e: Exception) {
+                        // Log but don't fail the save if notification fails
+                        android.util.Log.e("AddEditShiftViewModel", "Failed to schedule alert: ${e.message}", e)
                     }
                 } else {
-                    completedShiftRepository.createShift(expectedShift, null).getOrThrow()
+                    android.util.Log.d("AddEditShiftViewModel", "Creating new shift with data: shiftId=$shiftId, userId=$userId, employerId=${state.selectedEmployer?.id}")
+                    android.util.Log.d("AddEditShiftViewModel", "ExpectedShift data: date=${expectedShift.shiftDate}, startTime=${expectedShift.startTime}, endTime=${expectedShift.endTime}, status=${expectedShift.status}")
+                    
+                    val createResult = completedShiftRepository.createShift(expectedShift, null)
+                    if (createResult.isFailure) {
+                        val error = createResult.exceptionOrNull() ?: Exception("Unknown error")
+                        android.util.Log.e("AddEditShiftViewModel", "Failed to create shift: ${error.message}", error)
+                        android.util.Log.e("AddEditShiftViewModel", "Error stack trace: ${error.stackTraceToString()}")
+                        throw error
+                    }
+                    android.util.Log.d("AddEditShiftViewModel", "Shift created successfully: ${createResult.getOrNull()?.expectedShift?.id}")
 
                     // Schedule notification if alert is set
-                    state.alertMinutes?.let { minutes ->
-                        notificationManager.scheduleShiftAlert(
-                            shiftId = shiftId,
-                            shiftDate = state.selectedDate,
-                            startTime = state.startTime,
-                            employerName = state.selectedEmployer!!.name,
-                            alertMinutes = minutes
-                        )
+                    // Wrap in try-catch so notification errors don't break the save
+                    try {
+                        state.alertMinutes?.let { minutes ->
+                            notificationManager.scheduleShiftAlert(
+                                shiftId = shiftId,
+                                shiftDate = state.selectedDate,
+                                startTime = state.startTime,
+                                employerName = state.selectedEmployer!!.name,
+                                alertMinutes = minutes
+                            )
+                        }
+                    } catch (e: Exception) {
+                        // Log but don't fail the save if notification fails
+                        android.util.Log.e("AddEditShiftViewModel", "Failed to schedule alert: ${e.message}", e)
                     }
                 }
 
-                _uiState.update { it.copy(isLoading = false) }
+                android.util.Log.d("AddEditShiftViewModel", "Save completed successfully")
+                _uiState.update { it.copy(isLoading = false, errorMessage = null) }
                 onSuccess()
 
             } catch (e: Exception) {
+                android.util.Log.e("AddEditShiftViewModel", "Error saving shift: ${e.message}", e)
                 _uiState.update { state ->
                     state.copy(
                         isLoading = false,
@@ -435,6 +506,7 @@ data class AddEditShiftUiState(
     val salesTarget: String = "", // Empty string means use default target
     val defaultSalesTarget: Double = 0.0, // Default from user settings
     val averageDeductionPercentage: Double = 30.0, // From settings
+    val hasEntry: Boolean = false, // Track if shift has an entry (for delete dialog)
     val isInitializing: Boolean = true,
     val isLoading: Boolean = false,
     val errorMessage: String? = null

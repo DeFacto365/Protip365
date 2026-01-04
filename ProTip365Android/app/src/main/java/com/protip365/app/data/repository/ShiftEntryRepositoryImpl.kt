@@ -25,16 +25,11 @@ class ShiftEntryRepositoryImpl @Inject constructor(
     ): List<ShiftEntry> {
         return try {
             // Join with expected_shifts to filter by date since shift_entries doesn't have date
-            val query = buildString {
-                append("*, expected_shifts!inner(shift_date)")
-                if (startDate != null || endDate != null) {
-                    append(".select(shift_date)")
-                }
-            }
-
+            // Use inner join to get all columns from expected_shifts
+            // Note: PostgREST doesn't support ordering by joined table fields, so we order by created_at
             supabaseClient
                 .from("shift_entries")
-                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw(query)) {
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, expected_shifts!inner(*)")) {
                     filter {
                         eq("user_id", userId)
                         if (startDate != null) {
@@ -44,7 +39,8 @@ class ShiftEntryRepositoryImpl @Inject constructor(
                             lte("expected_shifts.shift_date", endDate.toString())
                         }
                     }
-                    order("expected_shifts.shift_date", Order.DESCENDING)
+                    // Order by created_at (PostgREST doesn't support ordering by joined table fields)
+                    order("created_at", Order.DESCENDING)
                 }
                 .decodeList<ShiftEntry>()
         } catch (e: Exception) {
@@ -216,7 +212,7 @@ class ShiftEntryRepositoryImpl @Inject constructor(
         return try {
             supabaseClient
                 .from("shift_entries")
-                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, expected_shifts!inner(shift_date)")) {
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, expected_shifts!inner(*)")) {
                     filter {
                         eq("user_id", userId)
                         eq("expected_shifts.shift_date", date.toString())
@@ -301,10 +297,16 @@ class ShiftEntryRepositoryImpl @Inject constructor(
     }
 
     override fun observeShiftEntries(userId: String): Flow<List<ShiftEntry>> = flow {
-        emit(getShiftEntries(userId))
+        while(true) {
+            emit(getShiftEntries(userId))
+            kotlinx.coroutines.delay(2000) // Poll every 2 seconds
+        }
     }
 
     override fun observeEntriesForShift(shiftId: String): Flow<ShiftEntry?> = flow {
-        emit(getShiftEntryByShiftId(shiftId))
+        while(true) {
+            emit(getShiftEntryByShiftId(shiftId))
+            kotlinx.coroutines.delay(2000) // Poll every 2 seconds
+        }
     }
 }

@@ -1,7 +1,10 @@
 package com.protip365.app.presentation.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -10,12 +13,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.protip365.app.presentation.components.TopAppBarWithBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,31 +34,81 @@ fun ContactScreen(
     viewModel: ContactViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        TopAppBarWithBack(
-            title = "Contact Support",
-            onBackClick = { navController.popBackStack() }
-        )
-
+    Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
+        topBar = {
+            TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
+                title = { 
+                    Text(
+                        "Support",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    // Submit button (checkmark icon)
+                    IconButton(
+                        onClick = {
+                            // Send email to web@protip365.com
+                            val email = uiState.email
+                            val message = uiState.message
+                            if (email.isNotBlank() && message.isNotBlank()) {
+                                sendSupportEmail(context, email, message)
+                            }
+                        },
+                        enabled = uiState.email.isNotBlank() && uiState.message.isNotBlank()
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Send",
+                            tint = if (uiState.email.isNotBlank() && uiState.message.isNotBlank()) 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            // Contact Information Card
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Contact Support Card
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
+                    // Header
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -59,221 +119,75 @@ fun ContactScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "Get in Touch",
+                            text = "Contact Support",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
-
+                    
                     Text(
-                        text = "We're here to help! Send us a message and we'll get back to you within 24 hours.",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Describe your issue and we'll get back to you as soon as possible.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    // Contact Methods
-                    ContactMethod(
-                        icon = Icons.Default.Email,
-                        title = "Email Support",
-                        description = "support@protip365.com",
-                        action = "Send Email"
-                    )
-
-                    ContactMethod(
-                        icon = Icons.Default.Phone,
-                        title = "Response Time",
-                        description = "We typically respond within 24 hours",
-                        action = null
-                    )
-                }
-            }
-
-            // Contact Form
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "Send us a message",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    var subject by remember { mutableStateOf("") }
-                    var message by remember { mutableStateOf("") }
-
+                    
+                    // Email field
                     OutlinedTextField(
-                        value = subject,
-                        onValueChange = { subject = it },
-                        label = { Text("Subject") },
+                        value = uiState.email,
+                        onValueChange = { viewModel.updateEmail(it) },
+                        label = { Text("Your email address") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        )
                     )
-
+                    
+                    // Message field
                     OutlinedTextField(
-                        value = message,
-                        onValueChange = { message = it },
-                        label = { Text("Message") },
+                        value = uiState.message,
+                        onValueChange = { viewModel.updateMessage(it) },
+                        label = { Text("Your message") },
+                        placeholder = { Text("Describe your issue...") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp),
-                        maxLines = 5
-                    )
-
-                    Button(
-                        onClick = { 
-                            viewModel.sendSupportRequest(subject, message)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = subject.isNotBlank() && message.isNotBlank() && !uiState.isLoading
-                    ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp)
-                            )
-                        } else {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Send Message")
-                    }
-
-                    uiState.error?.let { error ->
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                        maxLines = 5,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
-                    }
-
-                    uiState.successMessage?.let { success ->
-                        Text(
-                            text = success,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                    )
                 }
             }
-
-            // FAQ Quick Links
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Quick Help",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "Check out our help section for answers to common questions:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Button(
-                        onClick = { navController.navigate("help") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Help, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("View Help & FAQ")
-                    }
-                }
-            }
-
-            // App Information
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "App Information",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    InfoRow("Version", "1.0.0")
-                    InfoRow("Platform", "Android")
-                    InfoRow("Last Updated", "January 2025")
-                }
-            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
 
-@Composable
-private fun ContactMethod(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    description: String,
-    action: String?
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        
-        action?.let {
-            TextButton(onClick = { /* Handle action */ }) {
-                Text(it)
-            }
-        }
+private fun sendSupportEmail(context: android.content.Context, email: String, message: String) {
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:")
+        putExtra(Intent.EXTRA_EMAIL, arrayOf("web@protip365.com"))
+        putExtra(Intent.EXTRA_SUBJECT, "Support Request from ProTip365")
+        putExtra(Intent.EXTRA_TEXT, """
+            Email: $email
+            
+            Message:
+            $message
+            
+            ---
+            Sent from ProTip365 Android App
+        """.trimIndent())
+    }
+    
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
     }
 }
-
-@Composable
-private fun InfoRow(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-

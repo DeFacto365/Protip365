@@ -271,6 +271,7 @@ fun LoadingButton(
 fun AnimatedFAB(
     onClick: () -> Unit,
     icon: ImageVector = Icons.Default.Add,
+    contentDescription: String? = null,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "fab")
@@ -290,7 +291,7 @@ fun AnimatedFAB(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null
+            contentDescription = contentDescription ?: "Action button"
         )
     }
 }

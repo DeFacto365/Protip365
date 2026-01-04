@@ -13,6 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.navigation.NavController
 import com.protip365.app.R
 
@@ -22,8 +28,14 @@ fun TermsAndConditionsScreen(
     navController: NavController
 ) {
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = {
                     Text(
                         text = stringResource(R.string.terms_title),
@@ -49,6 +61,7 @@ fun TermsAndConditionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)

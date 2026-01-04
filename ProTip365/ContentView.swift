@@ -52,6 +52,7 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidSignOut)) { _ in
+            print("📢 ContentView received userDidSignOut notification")
             isAuthenticated = false
             showOnboarding = false
             securityManager.isUnlocked = false
@@ -59,6 +60,7 @@ struct ContentView: View {
             securityManager.clearSecuritySettings()
             // Reset subscription state when user signs out to prevent subscription carryover
             subscriptionManager.resetSubscriptionState()
+            print("✅ ContentView sign out state reset complete")
         }
         .onReceive(NotificationCenter.default.publisher(for: .userDidDeleteAccount)) { _ in
             isAuthenticated = false

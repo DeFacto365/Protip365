@@ -12,9 +12,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 import com.protip365.app.presentation.dashboard.DashboardPeriod
 import com.protip365.app.presentation.settings.SettingsViewModel
 
@@ -62,8 +70,14 @@ fun DetailScreen(
     val titleText = "${localization.getPeriodText(period)} ${localization.detailTitle(statType)}"
     
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = { Text(titleText) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -83,6 +97,7 @@ fun DetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .background(MaterialTheme.colorScheme.background)
         ) {
             when {
@@ -104,12 +119,12 @@ fun DetailScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                text = uiState.error ?: "Error",
+                                text = uiState.error ?: stringResource(R.string.error),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.error
                             )
                             Button(onClick = { viewModel.refreshData() }) {
-                                Text("Retry")
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }

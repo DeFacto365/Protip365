@@ -90,6 +90,13 @@ data class ShiftEntry(
         get() = if (sales > 0) (tips / sales) * 100 else 0.0
 
     /**
+     * Check if this entry has any financial earnings
+     * Matches iOS has_earnings logic (IOS_DASHBOARD_LOGIC_EXPLAINED.md lines 435-438)
+     */
+    val hasEarnings: Boolean
+        get() = sales > 0 || tips > 0 || cashOut > 0 || other > 0
+
+    /**
      * Get gross income (wages only) - uses snapshot if available, otherwise calculates
      */
     fun getGrossIncome(employerHourlyRate: Double = 15.0): Double {

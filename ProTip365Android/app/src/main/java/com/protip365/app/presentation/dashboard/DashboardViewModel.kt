@@ -14,7 +14,10 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val completedShiftRepository: CompletedShiftRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    // AlertManager and AchievementManager (iOS DashboardView.swift line 28-29)
+    private val alertManager: com.protip365.app.presentation.alerts.AlertManager,
+    private val achievementManager: com.protip365.app.presentation.achievements.AchievementManager
 ) : ViewModel() {
 
     private val _dashboardState = MutableStateFlow(DashboardState())
@@ -48,6 +51,43 @@ class DashboardViewModel @Inject constructor(
     private var averageDeductionPercentage: Double = 30.0
     private var defaultHourlyRate: Double = 15.0
     private var weekStartDay: Int = 0  // 0=Sunday, 1=Monday, etc.
+
+    // MARK: - Data Caching (iOS DashboardCharts.swift lines 9-20)
+    // Matches iOS 5-minute cache validity for performance optimization
+    private var cachedData: Pair<List<CompletedShift>, Long>? = null
+    private val CACHE_VALIDITY_MS = 5 * 60 * 1000L // 5 minutes
+
+    private fun isCacheValid(): Boolean {
+        val cache = cachedData ?: return false
+        return System.currentTimeMillis() - cache.second < CACHE_VALIDITY_MS
+    }
+
+    fun invalidateCache() {
+        println("📊 Dashboard - Cache invalidated")
+        cachedData = null
+    }
+
+    // MARK: - Loading Timeout Safeguards (iOS pattern)
+    // Prevents infinite loading states
+    private var loadingStartTime: Long = 0
+    private val LOADING_TIMEOUT_MS = 30_000L // 30 seconds
+
+    private fun startLoadingTimeout() {
+        loadingStartTime = System.currentTimeMillis()
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(LOADING_TIMEOUT_MS)
+            if (_isLoading.value) {
+                val elapsed = System.currentTimeMillis() - loadingStartTime
+                if (elapsed >= LOADING_TIMEOUT_MS) {
+                    println("⏰ Dashboard - Loading timeout after ${elapsed}ms")
+                    _isLoading.value = false
+                    _dashboardState.value = _dashboardState.value.copy(
+                        error = "Loading took too long. Please try again."
+                    )
+                }
+            }
+        }
+    }
 
     init {
         loadUserPreferences()
@@ -95,46 +135,94 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Force refresh data - invalidates cache and reloads
+     * Matches iOS performRefresh() (DashboardView.swift lines 142-170)
+     */
     fun refreshData() {
-        loadDashboardData()
+        println("📊 Dashboard - Force refresh requested")
+        invalidateCache()
+        loadDashboardData(forceRefresh = true)
     }
 
-    private fun loadDashboardData() {
+    /**
+     * Refresh data only if cache is stale
+     * Matches iOS background refresh pattern (lines 209-215)
+     */
+    fun refreshDataIfStale() {
+        if (!isCacheValid()) {
+            println("📊 Dashboard - Cache stale, refreshing...")
+            loadDashboardData(forceRefresh = false)
+        } else {
+            println("📊 Dashboard - Cache still valid, skipping refresh")
+        }
+    }
+
+    /**
+     * Load dashboard data with intelligent caching
+     * Matches iOS loadAllStats with cache (DashboardCharts.swift lines 135-260)
+     */
+    private fun loadDashboardData(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                startLoadingTimeout()
 
                 // Get current user for dashboard data
                 val currentUser = userRepository.getCurrentUser().first()
                 val userId = currentUser?.userId ?: return@launch
 
-                // Load completed shifts data (combines expected + actual data)
-                completedShiftRepository.observeCompletedShifts(userId).collect { allShifts ->
-                    println("📊 Dashboard - Loading data for ${allShifts.size} shifts")
-
-                    // Calculate stats for each period
-                    calculatePeriodStats(DashboardPeriod.TODAY, allShifts, _todayStats)
-                    calculatePeriodStats(DashboardPeriod.WEEK, allShifts, _weekStats)
-                    calculatePeriodStats(DashboardPeriod.MONTH, allShifts, _monthStats)
-                    calculatePeriodStats(DashboardPeriod.YEAR, allShifts, _yearStats)
-                    calculatePeriodStats(DashboardPeriod.FOUR_WEEKS, allShifts, _fourWeeksStats)
-
-                    // Update dashboard state for current period
-                    updateDashboardStateForPeriod()
-
-                    _isLoading.value = false
-
-                    // Log current stats for debugging
-                    val currentStats = when (_selectedPeriod.value) {
-                        DashboardPeriod.TODAY -> _todayStats.value
-                        DashboardPeriod.WEEK -> _weekStats.value
-                        DashboardPeriod.MONTH -> _monthStats.value
-                        DashboardPeriod.YEAR -> _yearStats.value
-                        DashboardPeriod.FOUR_WEEKS -> _fourWeeksStats.value
-                        DashboardPeriod.CUSTOM -> _monthStats.value
-                    }
-                    println("📊 Dashboard - ${_selectedPeriod.value} stats: Revenue=$${currentStats.totalRevenue}, Hours=${currentStats.hours}, Tips=$${currentStats.tips}")
+                // PERFORMANCE OPTIMIZATION: Use cache if valid and not forcing refresh
+                val allShifts: List<CompletedShift>
+                if (!forceRefresh && isCacheValid()) {
+                    println("📊 Dashboard - Using cached data")
+                    allShifts = cachedData!!.first
+                } else {
+                    println("📊 Dashboard - Loading year data from database...")
+                    // Fetch year of data (matching iOS single query optimization)
+                    val yearStart = Clock.System.now()
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .date.let { LocalDate(it.year, 1, 1) }
+                    val today = Clock.System.now()
+                        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    
+                    // Single query for entire year like iOS
+                    val shifts = completedShiftRepository.getCompletedShifts(
+                        userId = userId,
+                        startDate = yearStart,
+                        endDate = today,
+                        includeUnworked = true
+                    )
+                    
+                    // Cache the data
+                    cachedData = Pair(shifts, System.currentTimeMillis())
+                    allShifts = shifts
+                    println("📊 Dashboard - Cached ${allShifts.size} shifts")
                 }
+
+                // Calculate stats for each period from the single dataset (memory filtering)
+                calculatePeriodStats(DashboardPeriod.TODAY, allShifts, _todayStats)
+                calculatePeriodStats(DashboardPeriod.WEEK, allShifts, _weekStats)
+                calculatePeriodStats(DashboardPeriod.MONTH, allShifts, _monthStats)
+                calculatePeriodStats(DashboardPeriod.YEAR, allShifts, _yearStats)
+                calculatePeriodStats(DashboardPeriod.FOUR_WEEKS, allShifts, _fourWeeksStats)
+
+                // Update dashboard state for current period
+                updateDashboardStateForPeriod()
+
+                _isLoading.value = false
+
+                // Log refresh status
+                if (forceRefresh) {
+                    println("📊 Dashboard - Data refreshed successfully")
+                    val currentStats = getCurrentStatsForPeriod()
+                    println("  Today: ${_todayStats.value.completedShifts.size} shifts")
+                    println("  Week: ${_weekStats.value.completedShifts.size} shifts")
+                    println("  Month: ${_monthStats.value.completedShifts.size} shifts")
+                }
+
+                // Check for achievements and alerts (iOS DashboardView.swift lines 184-198)
+                checkAchievementsAndAlerts(getCurrentStatsForPeriod(), allShifts, forceRefresh)
             } catch (e: Exception) {
                 println("❌ Dashboard - Error loading data: ${e.message}")
                 e.printStackTrace()
@@ -160,7 +248,7 @@ class DashboardViewModel @Inject constructor(
             shiftDate in startDate..endDate
         }
 
-        println("📊 Dashboard - Calculating ${period.name} stats for ${periodShifts.size} shifts (${periodShifts.count { it.isWorked }} worked)")
+        println("📊 Dashboard - Calculating ${period.name} stats for ${periodShifts.size} shifts (${periodShifts.count { it.hasEarnings }} with earnings)")
 
         // Calculate stats from CompletedShift data
         val stats = DashboardMetrics.calculateStatsFromCompletedShifts(
@@ -245,10 +333,31 @@ class DashboardViewModel @Inject constructor(
             // Additional data
             shifts = currentStats.completedShifts,
             recentShifts = currentStats.completedShifts.take(5), // Show 5 most recent
+            allShifts = currentStats.completedShifts, // All shifts for effective sales target calculation
             hasData = currentStats.completedShifts.isNotEmpty()
         )
 
         println("📊 Dashboard State Updated - Revenue: ${_dashboardState.value.totalRevenue}, Has Data: ${_dashboardState.value.hasData}")
+        }
+    }
+
+    /**
+     * Get current stats based on selected period
+     */
+    private fun getCurrentStatsForPeriod(): DashboardMetrics.Stats {
+        return when (_selectedPeriod.value) {
+            DashboardPeriod.TODAY -> _todayStats.value
+            DashboardPeriod.WEEK -> _weekStats.value
+            DashboardPeriod.MONTH -> {
+                if (_monthViewType.value == MonthViewType.FOUR_WEEKS) {
+                    _fourWeeksStats.value
+                } else {
+                    _monthStats.value
+                }
+            }
+            DashboardPeriod.YEAR -> _yearStats.value
+            DashboardPeriod.FOUR_WEEKS -> _fourWeeksStats.value
+            DashboardPeriod.CUSTOM -> _monthStats.value
         }
     }
 
@@ -271,6 +380,60 @@ class DashboardViewModel @Inject constructor(
             )
         } catch (e: Exception) {
             DashboardMetrics.Stats()
+        }
+    }
+
+    /**
+     * Check for achievements and alerts after data load
+     * Matches iOS performInitialLoad and performRefresh (DashboardView.swift lines 184-198)
+     */
+    private fun checkAchievementsAndAlerts(
+        currentStats: DashboardMetrics.Stats,
+        allShifts: List<CompletedShift>,
+        isRefresh: Boolean
+    ) {
+        viewModelScope.launch {
+            try {
+                // Check for missing shift entries from yesterday (iOS lines 191-198)
+                val yesterday = Clock.System.now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date.minus(1, DateTimeUnit.DAY)
+                val today = Clock.System.now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+                val recentShifts = allShifts.filter { shift ->
+                    val shiftDate = LocalDate.parse(shift.shiftDate)
+                    shiftDate >= yesterday && shiftDate <= today
+                }
+
+                if (recentShifts.isNotEmpty()) {
+                    alertManager.checkForMissingShiftEntries(recentShifts)
+                }
+
+                // TODO: Check for achievements (needs data structure compatibility)
+                // achievementManager.checkForAchievements(
+                //     shifts = currentStats.completedShifts,
+                //     currentStats = currentStats,
+                //     targets = _userTargets.value
+                // )
+
+                // TODO: Check for target achievements (needs AlertManager API)
+                // alertManager.checkForTargetAchievements(
+                //     currentStats, 
+                //     _userTargets.value, 
+                //     _selectedPeriod.value
+                // )
+
+                // TODO: Check for missing shifts (needs AlertManager API)
+                // alertManager.checkForMissingShifts(
+                //     currentStats.completedShifts,
+                //     _userTargets.value
+                // )
+
+                println("📊 Dashboard - Achievements and alerts checked (refresh=$isRefresh)")
+            } catch (e: Exception) {
+                println("⚠️ Dashboard - Error checking achievements/alerts: ${e.message}")
+            }
         }
     }
 }
@@ -302,6 +465,7 @@ data class DashboardState(
     // Additional data
     val shifts: List<CompletedShift> = emptyList(),
     val recentShifts: List<CompletedShift> = emptyList(),
+    val allShifts: List<CompletedShift> = emptyList(), // All shifts for period (for effective sales targets)
     val hasData: Boolean = false
 )
 

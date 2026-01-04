@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_entry"
+        android:shortcutShortLabel="@string/shortcut_add_entry"
+        android:shortcutLongLabel="@string/shortcut_add_entry_long"
+        android:icon="@mipmap/ic_launcher">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.protip365.monthly"
+            android:targetClass="com.protip365.app.presentation.MainActivity"
+            android:data="protip365://add_entry" />
+    </shortcut>
+    
+    <shortcut
+        android:shortcutId="dashboard"
+        android:shortcutShortLabel="@string/shortcut_dashboard"
+        android:shortcutLongLabel="@string/shortcut_dashboard_long"
+        android:icon="@mipmap/ic_launcher">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.protip365.monthly"
+            android:targetClass="com.protip365.app.presentation.MainActivity"
+            android:data="protip365://dashboard" />
+    </shortcut>
+    
+    <shortcut
+        android:shortcutId="calendar"
+        android:shortcutShortLabel="@string/shortcut_calendar"
+        android:shortcutLongLabel="@string/shortcut_calendar_long"
+        android:icon="@mipmap/ic_launcher">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.protip365.monthly"
+            android:targetClass="com.protip365.app.presentation.MainActivity"
+            android:data="protip365://calendar" />
+    </shortcut>
+</shortcuts>
+
+

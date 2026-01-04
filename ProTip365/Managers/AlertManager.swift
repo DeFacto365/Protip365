@@ -92,14 +92,56 @@ class AlertManager: ObservableObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if granted {
                 print("✅ Notification permission granted")
-                // self.scheduleDailyNotificationCheck() // Removed irrelevant noon alert
+                // No longer scheduling daily blind check
             } else if let error = error {
                 print("❌ Notification permission error: \(error)")
             }
         }
     }
 
-    // func scheduleDailyNotificationCheck() { ... } // Logic removed as requested
+    // MARK: - Smart Shift Reminders
+    
+    func scheduleMissingEntryReminder(for shift: Shift) {
+        let identifier = "missing-entry-reminder-\(shift.id.uuidString)"
+        
+        // Parse the shift date string (yyyy-MM-dd)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        guard let date = dateFormatter.date(from: shift.shift_date) else { return }
+        
+        // Schedule for next day at noon
+        var dateComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        guard let shiftDate = Calendar.current.date(from: dateComponents),
+              let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: shiftDate),
+              let nextDayNoon = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: nextDay) else { return }
+        
+        // Don't schedule if already passed
+        if nextDayNoon < Date() { return }
+        
+        let content = UNMutableNotificationContent()
+        content.title = localizedString(key: "missingShiftTitle")
+        content.body = localizedString(key: "missingShiftMessage")
+        content.sound = .default
+        content.userInfo = ["shiftId": shift.id.uuidString, "type": "missingEntry"]
+        
+        let triggerDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: nextDayNoon)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ Error scheduling missing entry reminder: \(error)")
+            } else {
+                print("✅ Scheduled missing entry reminder for \(nextDayNoon)")
+            }
+        }
+    }
+    
+    func cancelMissingEntryReminder(for shiftId: UUID) {
+        let identifier = "missing-entry-reminder-\(shiftId.uuidString)"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+        print("✅ Cancelled missing entry reminder for \(shiftId)")
+    }
 
     private func scheduleLocalNotification(title: String, body: String, identifier: String) {
         let content = UNMutableNotificationContent()

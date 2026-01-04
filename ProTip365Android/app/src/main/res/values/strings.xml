@@ -69,6 +69,7 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="delete_shift_confirm">Are you sure you want to delete this shift?</string>
+    <string name="delete_shift_with_entry_confirm">This shift has an entry associated with it. Deleting the shift will also delete the entry. Are you sure you want to delete this shift and its entry?</string>
     <string name="delete_entry_confirm">Are you sure you want to delete this entry?</string>
     <string name="shift_saved">Shift saved successfully</string>
     <string name="entry_saved">Entry saved successfully</string>
@@ -99,6 +100,7 @@
     <string name="profile_section">Profile</string>
     <string name="settings_name_label">Name</string>
     <string name="settings_email_label">Email</string>
+    <string name="email_format">Email: %1$s</string>
     <string name="targets_section">Targets</string>
     <string name="preferences_section">Preferences</string>
     <string name="security_section">Security</string>
@@ -375,6 +377,7 @@
 
     <!-- Targets Screen -->
     <string name="target_amount">Target amount</string>
+    <string name="target_hours">Target hours</string>
 
     <!-- Onboarding Screen -->
     <string name="back">Back</string>
@@ -532,4 +535,149 @@
 
     <string name="terms_accept_button">I Accept</string>
     <string name="terms_decline_button">Decline</string>
+
+    <!-- Common UI Strings -->
+    <string name="ok">OK</string>
+    <string name="select">Select</string>
+    <string name="delete_entry">Delete Entry</string>
+    <string name="new_entry">New Entry</string>
+    <string name="edit_entry">Edit Entry</string>
+    <string name="comments">Comments</string>
+    <string name="lunch_break">Lunch Break</string>
+    <string name="starts">Starts</string>
+    <string name="ends">Ends</string>
+    <string name="total_hours">Total Hours</string>
+    <string name="shift_expected_hours">Shift Expected Hours</string>
+    <string name="gross_pay">Gross Pay</string>
+    <string name="didnt_work">Didn\'t Work</string>
+    <string name="reason">Reason</string>
+    <string name="status">Status</string>
+    <string name="version_label">Version</string>
+    <string name="name_label">Name</string>
+    <string name="enter_name">Enter name</string>
+    <string name="your_display_name">Your display name</string>
+    <string name="work_defaults">Work Defaults</string>
+    <string name="default_hourly_rate_setting">Default Hourly Rate</string>
+    <string name="set_default_hourly_rate">Set your default hourly rate</string>
+    <string name="avg_deductions">AVG deductions</string>
+    <string name="average_deduction_percentage">Average deduction percentage</string>
+    <string name="about_deductions">About deductions</string>
+    <string name="multiple_employers_setting">Multiple Employers</string>
+    <string name="track_multiple_employers">Track shifts for multiple employers</string>
+    <string name="variable_schedule_setting">Variable Schedule</string>
+    <string name="select_default_employer">Select default employer for new shifts</string>
+    <string name="choose_week_start_day">Choose which day starts your work week</string>
+    <string name="week_start_day_setting">Week Start Day</string>
+    <string name="default_shift_alert">Default Shift Alert</string>
+    <string name="set_default_shift_reminder">Set default shift reminder time</string>
+    <string name="tip_percentage_setting">Tip Percentage</string>
+    <string name="default_tip_percentage">Default tip percentage for calculations</string>
+    <string name="percentage_of_sales">Percentage of Sales</string>
+    <string name="daily_sales_setting">Daily Sales</string>
+    <string name="target_sales_per_day">Target sales per day</string>
+    <string name="daily_hours_setting">Daily Hours</string>
+    <string name="target_hours_per_day">Target hours per day</string>
+    <string name="weekly_sales_setting">Weekly Sales</string>
+    <string name="target_sales_per_week">Target sales per week</string>
+    <string name="weekly_hours_setting">Weekly Hours</string>
+    <string name="target_hours_per_week">Target hours per week</string>
+    <string name="monthly_sales_setting">Monthly Sales</string>
+    <string name="target_sales_per_month">Target sales per month</string>
+    <string name="monthly_hours_setting">Monthly Hours</string>
+    <string name="target_hours_per_month">Target hours per month</string>
+    <string name="biometric_authentication">Biometric Authentication</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="subscription_section_title">Subscription</string>
+    <string name="support_section_title">Support</string>
+    <string name="setup_guide">Setup Guide</string>
+    <string name="complete_onboarding_again">Complete onboarding setup again</string>
+    <string name="contact_support_option">Contact Support</string>
+    <string name="get_help_from_team">Get help from our team</string>
+    <string name="suggest_ideas">Suggest Ideas</string>
+    <string name="share_ideas_to_improve">Share your ideas to improve the app</string>
+    <string name="account_section_title">Account</string>
+    <string name="achievements_option">Achievements</string>
+    <string name="view_progress_achievements">View your progress and unlocked achievements</string>
+    <string name="export_data_option">Export Data</string>
+    <string name="sign_out_subtitle">Sign out of your account</string>
+    <string name="delete_account_subtitle">Permanently delete your account</string>
+    <string name="no_employer">No Employer</string>
+    <string name="unknown_employer">Unknown Employer</string>
+    <string name="cannot_delete_employer">Cannot Delete Employer</string>
+    <string name="deactivate_instead">Deactivate Instead</string>
+    <string name="no_employers_yet">No Employers Yet</string>
+    <string name="add_employers_to_track">Add your employers to track earnings per workplace</string>
+    <string name="select_time">Select Time</string>
+    <string name="scheduled">Scheduled</string>
+    <string name="planned">Planned</string>
+    <string name="completed">Completed</string>
+    <string name="missed">Missed</string>
+    <string name="not_worked">Not worked</string>
+    <string name="select_shift">Select Shift</string>
+    <string name="modify_shift">Modify Shift</string>
+    <string name="modify_entry">Modify Entry</string>
+    <string name="add_entry_action">Add Entry</string>
+    <string name="add_shift_action">Add Shift</string>
+    <string name="this_shift_has_entry">This shift has an entry associated with it. Deleting the shift will also delete the entry.</string>
+    <string name="delete_shift_and_entry">Are you sure you want to delete this shift and its entry?</string>
+    <string name="are_you_sure_delete_shift">Are you sure you want to delete this shift?</string>
+    <string name="january">January</string>
+    <string name="february">February</string>
+    <string name="march">March</string>
+    <string name="april">April</string>
+    <string name="may">May</string>
+    <string name="june">June</string>
+    <string name="july">July</string>
+    <string name="august">August</string>
+    <string name="september">September</string>
+    <string name="october">October</string>
+    <string name="november">November</string>
+    <string name="december">December</string>
+    <string name="missed_reason_sick">Sick</string>
+    <string name="missed_reason_shift_cancelled">Shift Cancelled</string>
+    <string name="missed_reason_personal_emergency">Personal Emergency</string>
+    <string name="missed_reason_no_show">No Show</string>
+    <string name="missed_reason_weather">Weather</string>
+    <string name="missed_reason_other">Other</string>
+    <string name="none">None</string>
+    <string name="about_deductions_text">This is the expected average deduction on your gross salary (income taxes, social security, etc.). We\'ll use this to estimate your net salary, though the actual amount will come from your payroll.</string>
+    <string name="variable_schedule_info">If you have a variable schedule, you can just use daily targets, which will be more relevant. Weekly and monthly targets don\'t make sense if you don\'t work a fixed number of days.</string>
+    <string name="percentage_of_sales_info">Set your tip goal as a percentage of your total sales. For example, 15% means you aim for 15% of your sales in tips.</string>
+    <string name="export_data_coming_soon">Coming soon - Download your data as CSV</string>
+    <string name="multiple_shifts_exist">Multiple shifts exist for this date. Which one would you like to use?</string>
+    <string name="shift_for_date">Shift for %1$s</string>
+    <string name="entry_for_date">Entry for %1$s</string>
+    <string name="day_sun">Sun</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="retry">Retry</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="add_employer_dialog_title">Add Employer</string>
+    <string name="employer_name_label">Employer Name</string>
+
+    <!-- App Shortcuts -->
+    <string name="shortcut_add_entry">Add Entry</string>
+    <string name="shortcut_add_entry_long">Quickly add a tip entry</string>
+    <string name="shortcut_dashboard">Dashboard</string>
+    <string name="shortcut_dashboard_long">View your earnings dashboard</string>
+    <string name="shortcut_calendar">Calendar</string>
+    <string name="shortcut_calendar_long">View your shift calendar</string>
+
+    <!-- Widget -->
+    <string name="widget_description">View your ProTip365 earnings at a glance</string>
+    
+    <!-- Notification Actions -->
+    <string name="add_entry">Add Entry</string>
+    <string name="view_details">View Details</string>
+    <string name="view_shift">View Shift</string>
+    <string name="shift_reminders">Shift Reminders</string>
+    <string name="achievements">Achievements</string>
+    <string name="targets">Targets</string>
+    <string name="notification_summary_text">Tap to view all notifications</string>
+    <string name="shift_starting_soon">Your shift is starting soon</string>
 </resources>

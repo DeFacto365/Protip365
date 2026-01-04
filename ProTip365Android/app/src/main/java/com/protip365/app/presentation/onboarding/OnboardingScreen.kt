@@ -10,9 +10,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.presentation.localization.rememberOnboardingLocalization
+import com.protip365.app.utilities.DeviceUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,12 +30,18 @@ fun OnboardingScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val currentStep = state.currentStep // Use currentStep from ViewModel state
-    val totalSteps = 3 // Matching iOS: Welcome, Setup, Completion
+    val totalSteps = 7 // Matching iOS: Language, Employers, Week Start, Security, Variable, Targets, How To Use
     val localization = rememberOnboardingLocalization()
     
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = { 
                     Text(
                         text = localization.welcomeTitle,
@@ -46,6 +59,7 @@ fun OnboardingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .padding(horizontal = 16.dp)
         ) {
             // Progress indicator
@@ -71,12 +85,58 @@ fun OnboardingScreen(
                             viewModel.updateLanguage(language)
                         }
                     )
-                    1 -> SetupStep(
-                         state = state,
-                         onWeekStartChanged = { viewModel.updateWeekStart(it) },
-                         onSecurityTypeChanged = { viewModel.updateSecurityType(it) }
+                    1 -> {
+                        // Load employers when entering this step (in case user just created/edited them)
+                        LaunchedEffect(currentStep, navController.currentBackStackEntry) {
+                            if (state.useMultipleEmployers) {
+                                viewModel.loadEmployers()
+                            }
+                        }
+
+                        MultipleEmployersStep(
+                            state = state,
+                            onMultipleEmployersChanged = { useMultiple ->
+                                viewModel.updateMultipleEmployers(useMultiple)
+                            },
+                            onSingleEmployerNameChanged = { name ->
+                                viewModel.updateSingleEmployerName(name)
+                            },
+                            onDefaultEmployerChanged = { employerId ->
+                                viewModel.updateDefaultEmployer(employerId)
+                            },
+                            onNavigateToEmployers = {
+                                // Navigate to employers screen in onboarding mode
+                                navController.navigate("employers?fromOnboarding=true")
+                            }
+                        )
+                    }
+                    2 -> WeekStartStep(
+                        state = state,
+                        onWeekStartChanged = { weekStart ->
+                            viewModel.updateWeekStart(weekStart)
+                        }
                     )
-                    2 -> HowToUseStep(state = state)
+                    3 -> SecurityStep(
+                        state = state,
+                        onSecurityTypeChanged = { securityType ->
+                            viewModel.updateSecurityType(securityType)
+                        }
+                    )
+                    4 -> VariableScheduleStep(
+                        state = state,
+                        onVariableScheduleChanged = { hasVariable ->
+                            viewModel.updateVariableSchedule(hasVariable)
+                        }
+                    )
+                    5 -> TargetsStep(
+                        state = state,
+                        onTargetsChanged = { tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly ->
+                            viewModel.updateTargets(tipPercentage, averageDeduction, salesDaily, hoursDaily, salesWeekly, hoursWeekly, salesMonthly, hoursMonthly)
+                        }
+                    )
+                    6 -> HowToUseStep(
+                        state = state
+                    )
                 }
             }
             

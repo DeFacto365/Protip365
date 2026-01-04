@@ -6,6 +6,7 @@ import android.app.Application
 // import com.google.firebase.ktx.Firebase
 // import com.protip365.app.presentation.analytics.AnalyticsManager
 import com.protip365.app.presentation.localization.LocalizationManager
+import com.protip365.app.utils.PerformanceProfiler
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -18,8 +19,14 @@ class ProTip365Application : Application() {
     // @Inject
     // lateinit var analyticsManager: AnalyticsManager
 
+    private lateinit var appProfiler: PerformanceProfiler
+
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize performance profiler for system-triggered profiling
+        appProfiler = PerformanceProfiler(this)
+        appProfiler.registerProfilingInterest()
 
         // Firebase temporarily disabled for testing
         // Initialize Firebase

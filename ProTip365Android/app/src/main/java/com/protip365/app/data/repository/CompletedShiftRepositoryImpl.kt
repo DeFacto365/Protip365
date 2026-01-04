@@ -69,18 +69,28 @@ class CompletedShiftRepositoryImpl @Inject constructor(
 
     override suspend fun createShift(expectedShift: ExpectedShift, shiftEntry: ShiftEntry?): Result<CompletedShift> {
         return try {
+            android.util.Log.d("CompletedShiftRepository", "createShift called: shiftId=${expectedShift.id}, userId=${expectedShift.userId}, hasEntry=${shiftEntry != null}")
             // Create expected shift first
             val createdExpectedShift = expectedShiftRepository.createExpectedShift(expectedShift)
                 .getOrThrow()
 
+            android.util.Log.d("CompletedShiftRepository", "Expected shift created: ${createdExpectedShift.id}")
+
             // Create entry if provided
             val createdEntry = shiftEntry?.let { entry ->
+                android.util.Log.d("CompletedShiftRepository", "Creating shift entry for shift: ${createdExpectedShift.id}")
                 val entryWithShiftId = entry.copy(shiftId = createdExpectedShift.id)
-                shiftEntryRepository.createShiftEntry(entryWithShiftId).getOrThrow()
+                val entryResult = shiftEntryRepository.createShiftEntry(entryWithShiftId)
+                if (entryResult.isFailure) {
+                    android.util.Log.e("CompletedShiftRepository", "Failed to create shift entry: ${entryResult.exceptionOrNull()?.message}")
+                    throw entryResult.exceptionOrNull() ?: Exception("Failed to create shift entry")
+                }
+                entryResult.getOrThrow()
             }
 
             // Update shift status to completed if entry was created
             if (createdEntry != null) {
+                android.util.Log.d("CompletedShiftRepository", "Updating shift status to completed")
                 expectedShiftRepository.updateShiftStatus(createdExpectedShift.id, "completed")
             }
 
@@ -89,17 +99,23 @@ class CompletedShiftRepositoryImpl @Inject constructor(
             }
 
             val completedShift = CompletedShift(createdExpectedShift, createdEntry, employer)
+            android.util.Log.d("CompletedShiftRepository", "Shift creation completed successfully")
             Result.success(completedShift)
         } catch (e: Exception) {
+            android.util.Log.e("CompletedShiftRepository", "Error in createShift: ${e.message}", e)
+            android.util.Log.e("CompletedShiftRepository", "Stack trace: ${e.stackTraceToString()}")
             Result.failure(e)
         }
     }
 
     override suspend fun updateShift(completedShift: CompletedShift): Result<CompletedShift> {
         return try {
+            android.util.Log.d("CompletedShiftRepository", "==== UPDATESHIFT CALLED ====")
+            android.util.Log.d("CompletedShiftRepository", "Updating shift: id=${completedShift.expectedShift.id}")
             // Update expected shift
             val updatedExpectedShift = expectedShiftRepository.updateExpectedShift(completedShift.expectedShift)
                 .getOrThrow()
+            android.util.Log.d("CompletedShiftRepository", "Expected shift updated successfully")
 
             // Update or create entry
             val updatedEntry = completedShift.shiftEntry?.let { entry ->

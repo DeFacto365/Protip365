@@ -133,8 +133,8 @@ fun BottomNavigationBar(
                 label = {
                     Text(
                         text = getLocalizedNavLabel(item.label, currentLanguage),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(

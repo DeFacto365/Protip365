@@ -27,12 +27,30 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.OffsetMapping
+import java.text.DecimalFormat
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.BuildConfig
 import com.protip365.app.R
+import com.protip365.app.utilities.rememberWindowSizeClass
+import com.protip365.app.utilities.WindowWidthSizeClass
+import com.protip365.app.utilities.rememberFoldableDeviceState
+import com.protip365.app.utilities.isUnfoldedForDualPane
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +64,50 @@ fun SettingsScreen(
     var showAlertPicker by remember { mutableStateOf(false) }
     val localization = rememberSettingsLocalization()
     val localizationState = rememberLocalizationState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    // WindowSizeClass detection for adaptive layouts (Android 16)
+    val windowSizeClass = rememberWindowSizeClass()
+    val isTablet = windowSizeClass.widthSizeClass == WindowWidthSizeClass.MEDIUM ||
+                   windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // Foldable device detection for dual-pane layouts (Android 16)
+    val foldableState = rememberFoldableDeviceState()
+    val isUnfoldedDualPane = isUnfoldedForDualPane()
+    
+    // Use dual-pane layout when:
+    // - Tablet-sized screen OR
+    // - Foldable device unfolded
+    val useDualPaneLayout = isTablet || isUnfoldedDualPane
+
+    // Predictive back gesture: Handle dialogs
+    // When any dialog is open, dismiss it first before navigating back
+    BackHandler(
+        enabled = showLanguagePicker || showAlertPicker
+    ) {
+        when {
+            showLanguagePicker -> showLanguagePicker = false
+            showAlertPicker -> showAlertPicker = false
+        }
+    }
+
+    // Refresh settings when screen is displayed (e.g., returning from onboarding or employers)
+    LaunchedEffect(navController.currentBackStackEntry) {
+        viewModel.refreshSettings()
+    }
+
+    // Handle navigation after sign out
+    LaunchedEffect(state.shouldNavigateToAuth) {
+        if (state.shouldNavigateToAuth) {
+            // Navigate to auth screen and clear back stack
+            navController.navigate("auth") {
+                // Clear entire back stack
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            }
+            // Reset the flag after navigation
+            viewModel.resetNavigateToAuth()
+        }
+    }
 
     // Show loading state
     if (state.isLoading && user == null) {
@@ -59,8 +121,14 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = {
                     Text(
                         text = localization.settingsTitle,
@@ -104,13 +172,32 @@ fun SettingsScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        // Adaptive layout: Use max width constraint for tablets, full width for phones
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .then(
+                        if (useDualPaneLayout) {
+                            Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = 800.dp) // Center content on tablets/foldables with max width
+                        } else {
+                            Modifier.fillMaxWidth()
+                        }
+                    )
+                    .align(Alignment.TopCenter),
+                contentPadding = PaddingValues(
+                    horizontal = if (useDualPaneLayout) 32.dp else 16.dp,
+                    vertical = 16.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             // Logo at the top
             item {
                 Box(
@@ -134,7 +221,7 @@ fun SettingsScreen(
                     icon = IconMapping.Status.info
                 ) {
                     SettingsItem(
-                        title = "Version",
+                        title = stringResource(R.string.version_label),
                         subtitle = "${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
                         icon = Icons.Default.AppSettingsAlt,
                         onClick = {}
@@ -157,48 +244,61 @@ fun SettingsScreen(
                     icon = IconMapping.Status.info
                 ) {
                     SettingsTextFieldItem(
-                        title = "Name",
-                        subtitle = "Your display name",
+                        title = stringResource(R.string.name_label),
+                        subtitle = stringResource(R.string.your_display_name),
                         icon = Icons.Default.Person,
                         value = user?.name ?: "",
                         onValueChange = { newName ->
                             viewModel.updateName(newName)
                         }
                     )
+                    // Email display (read-only)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = stringResource(R.string.email_format, user?.email ?: ""),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
 
             // Work Defaults Section
             item {
                 SettingsSection(
-                    title = "Work Defaults",
+                    title = stringResource(R.string.work_defaults),
                     icon = IconMapping.Financial.money
                 ) {
                     // Default Hourly Rate
                     SettingsNumberFieldItem(
-                        title = "Default Hourly Rate",
-                        subtitle = "Set your default hourly rate",
+                        title = stringResource(R.string.default_hourly_rate_setting),
+                        subtitle = stringResource(R.string.set_default_hourly_rate),
                         icon = IconMapping.Financial.hours,
                         value = state.defaultHourlyRate,
                         onValueChange = { newValue ->
                             viewModel.updateDefaultHourlyRate(newValue)
                         },
                         suffix = "/hr",
-                        decimalPlaces = 2
+                        decimalPlaces = 2,
+                        isCurrency = true
                     )
 
-                    // Average Deduction
+                    // Average Deduction Percentage
                     SettingsNumberFieldItem(
-                        title = when (localizationState.currentLanguage.code) {
-                            "fr" -> "Déductions moyennes"
-                            "es" -> "Deducciones promedio"
-                            else -> "Average Deduction"
-                        },
-                        subtitle = when (localizationState.currentLanguage.code) {
-                            "fr" -> "Déductions fiscales et salariales"
-                            "es" -> "Deducciones fiscales y salariales"
-                            else -> "Tax and salary deductions"
-                        },
+                        title = stringResource(R.string.avg_deductions),
+                        subtitle = stringResource(R.string.average_deduction_percentage),
                         icon = Icons.Default.Percent,
                         value = state.averageDeductionPercentage,
                         onValueChange = { newValue ->
@@ -207,11 +307,18 @@ fun SettingsScreen(
                         suffix = "%",
                         decimalPlaces = 1
                     )
+                    
+                    // Info box for Average Deductions
+                    InfoBox(
+                        title = stringResource(R.string.about_deductions),
+                        text = stringResource(R.string.about_deductions_text)
+                    )
+
 
                     // Multiple Employers Toggle
                     SettingsToggleItem(
-                        title = "Multiple Employers",
-                        subtitle = "Track shifts for multiple employers",
+                        title = stringResource(R.string.multiple_employers_setting),
+                        subtitle = stringResource(R.string.track_multiple_employers),
                         icon = IconMapping.Navigation.employers,
                         checked = state.useMultipleEmployers,
                         onCheckedChange = { enabled ->
@@ -229,15 +336,21 @@ fun SettingsScreen(
                             viewModel.updateHasVariableSchedule(enabled)
                         }
                     )
+                    
+                    // Info box for Variable Schedule
+                    InfoBox(
+                        title = stringResource(R.string.variable_schedule_setting),
+                        text = stringResource(R.string.variable_schedule_info)
+                    )
 
                     // Default Employer Dropdown (only shown if multiple employers is enabled)
                     if (state.useMultipleEmployers) {
                         SettingsDropdownStringItem(
-                            title = "Default Employer",
-                            subtitle = "Select default employer for new shifts",
+                            title = stringResource(R.string.default_employer),
+                            subtitle = stringResource(R.string.select_default_employer),
                             icon = IconMapping.Navigation.employers,
                             selectedValue = state.defaultEmployerId,
-                            options = listOf(null to "None") + state.employers.map { it.id to it.name },
+                            options = listOf(null to stringResource(R.string.none)) + state.employers.map { it.id to it.name },
                             onValueSelected = { employerId ->
                                 viewModel.updateDefaultEmployer(employerId)
                             }
@@ -246,18 +359,18 @@ fun SettingsScreen(
 
                     // Week Start Day
                     SettingsDropdownItem(
-                        title = "Week Start Day",
-                        subtitle = "Choose which day starts your work week",
+                        title = stringResource(R.string.week_start_day),
+                        subtitle = stringResource(R.string.choose_week_start_day),
                         icon = Icons.Default.CalendarMonth,
                         selectedValue = state.weekStartDay,
                         options = listOf(
-                            0 to "Sunday",
-                            1 to "Monday",
-                            2 to "Tuesday",
-                            3 to "Wednesday",
-                            4 to "Thursday",
-                            5 to "Friday",
-                            6 to "Saturday"
+                            0 to stringResource(R.string.sunday),
+                            1 to stringResource(R.string.monday),
+                            2 to stringResource(R.string.tuesday),
+                            3 to stringResource(R.string.wednesday),
+                            4 to stringResource(R.string.thursday),
+                            5 to stringResource(R.string.friday),
+                            6 to stringResource(R.string.saturday)
                         ),
                         onValueSelected = { day ->
                             viewModel.updateWeekStartDay(day ?: 1)
@@ -266,8 +379,8 @@ fun SettingsScreen(
 
                     // Default Shift Alert
                     SettingsDropdownItem(
-                        title = "Default Shift Alert",
-                        subtitle = "Set default shift reminder time",
+                        title = stringResource(R.string.default_shift_alert),
+                        subtitle = stringResource(R.string.set_default_shift_reminder),
                         icon = Icons.Default.NotificationsActive,
                         selectedValue = state.defaultAlertMinutes,
                         options = listOf(
@@ -287,35 +400,112 @@ fun SettingsScreen(
             // Targets Section
             item {
                 SettingsSection(
-                    title = "Targets",
+                    title = stringResource(R.string.targets_section),
                     icon = Icons.AutoMirrored.Filled.TrendingUp
                 ) {
-                    SettingsItem(
-                        title = "Daily Target",
-                        subtitle = "$${state.dailyTarget.toInt()}",
-                        icon = Icons.Default.CalendarToday,
-                        onClick = {
-                            navController.navigate("targets")
-                        }
+                    // Tip Percentage (matches iOS order)
+                    SettingsNumberFieldItem(
+                        title = stringResource(R.string.tip_percentage_setting),
+                        subtitle = stringResource(R.string.default_tip_percentage),
+                        icon = Icons.Default.Percent,
+                        value = state.defaultTipPercentage,
+                        onValueChange = { newValue ->
+                            viewModel.updateDefaultTipPercentage(newValue)
+                        },
+                        suffix = "%",
+                        decimalPlaces = 0
                     )
                     
-                    // Only show Weekly and Monthly targets if NOT using variable schedule
+                    // Info box for Tip Percentage
+                    InfoBox(
+                        title = stringResource(R.string.percentage_of_sales),
+                        text = stringResource(R.string.percentage_of_sales_info)
+                    )
+                    
+                    // Daily Sales (matches iOS order)
+                    SettingsNumberFieldItem(
+                        title = stringResource(R.string.daily_sales_setting),
+                        subtitle = stringResource(R.string.target_sales_per_day),
+                        icon = Icons.Default.CalendarToday,
+                        value = state.dailyTarget,
+                        onValueChange = { newValue ->
+                            viewModel.updateDailyTarget(newValue)
+                        },
+                        suffix = "$",
+                        decimalPlaces = 0
+                    )
+                    
+                    // Info box for Daily Sales
+                    InfoBox(
+                        title = stringResource(R.string.variable_schedule_setting),
+                        text = stringResource(R.string.variable_schedule_info)
+                    )
+                    
+                    // Daily Hours (matches iOS order)
+                    SettingsNumberFieldItem(
+                        title = stringResource(R.string.daily_hours_setting),
+                        subtitle = stringResource(R.string.target_hours_per_day),
+                        icon = Icons.Default.AccessTime,
+                        value = state.dailyHoursTarget,
+                        onValueChange = { newValue ->
+                            viewModel.updateDailyHoursTarget(newValue)
+                        },
+                        suffix = " hrs",
+                        decimalPlaces = 1
+                    )
+                    
+                    // Only show Weekly and Monthly targets if NOT using variable schedule (matches iOS)
                     if (!state.hasVariableSchedule) {
-                        SettingsItem(
-                            title = "Weekly Target",
-                            subtitle = "$${state.weeklyTarget.toInt()}",
+                        // Weekly Sales
+                        SettingsNumberFieldItem(
+                            title = stringResource(R.string.weekly_sales_setting),
+                            subtitle = stringResource(R.string.target_sales_per_week),
                             icon = Icons.Default.DateRange,
-                            onClick = {
-                                navController.navigate("targets")
-                            }
+                            value = state.weeklyTarget,
+                            onValueChange = { newValue ->
+                                viewModel.updateWeeklyTarget(newValue)
+                            },
+                            suffix = "$",
+                            decimalPlaces = 0
                         )
-                        SettingsItem(
-                            title = "Monthly Target",
-                            subtitle = "$${state.monthlyTarget.toInt()}",
+                        
+                        // Weekly Hours
+                        SettingsNumberFieldItem(
+                            title = stringResource(R.string.weekly_hours_setting),
+                            subtitle = stringResource(R.string.target_hours_per_week),
+                            icon = Icons.Default.Schedule,
+                            value = state.weeklyHoursTarget,
+                            onValueChange = { newValue ->
+                                viewModel.updateWeeklyHoursTarget(newValue)
+                            },
+                            suffix = " hrs",
+                            decimalPlaces = 1
+                        )
+                        
+                        // Monthly Sales
+                        SettingsNumberFieldItem(
+                            title = stringResource(R.string.monthly_sales_setting),
+                            subtitle = stringResource(R.string.target_sales_per_month),
                             icon = Icons.Default.CalendarMonth,
-                            onClick = {
-                                navController.navigate("targets")
-                            }
+                            value = state.monthlyTarget,
+                            onValueChange = { newValue ->
+                                viewModel.updateMonthlyTarget(newValue)
+                            },
+                            suffix = "$",
+                            decimalPlaces = 0
+                        )
+                        
+                        // Monthly Hours
+                        SettingsNumberFieldItem(
+                            title = stringResource(R.string.monthly_hours_setting),
+                            subtitle = stringResource(R.string.target_hours_per_month),
+                            icon = Icons.Default.Schedule,
+                            value = state.monthlyHoursTarget,
+                            onValueChange = { newValue ->
+                                viewModel.updateMonthlyHoursTarget(newValue)
+                            },
+                            suffix = " hrs",
+                            decimalPlaces = 1
                         )
                     }
                 }
@@ -328,8 +518,8 @@ fun SettingsScreen(
                     icon = IconMapping.Security.shield
                 ) {
                     SettingsItem(
-                        title = "Biometric Authentication",
-                        subtitle = if (state.biometricEnabled) "Enabled" else "Disabled",
+                        title = stringResource(R.string.biometric_authentication),
+                        subtitle = if (state.biometricEnabled) stringResource(R.string.enabled) else stringResource(R.string.disabled),
                         icon = IconMapping.Security.touchID,
                         onClick = {
                             navController.navigate("security")
@@ -349,7 +539,7 @@ fun SettingsScreen(
             // Subscription Section (only show management card if subscribed/trial)
             item {
                 SettingsSection(
-                    title = "Subscription",
+                    title = stringResource(R.string.subscription_section_title),
                     icon = IconMapping.Achievements.crown
                 ) {
                     // Always show subscription option
@@ -379,23 +569,31 @@ fun SettingsScreen(
             // Support Section
             item {
                 SettingsSection(
-                    title = "Support",
+                    title = stringResource(R.string.support_section_title),
                     icon = IconMapping.Status.help
                 ) {
                     SettingsItem(
-                        title = "Contact Support",
-                        subtitle = "Get help from our team",
+                        title = stringResource(R.string.setup_guide),
+                        subtitle = stringResource(R.string.complete_onboarding_again),
+                        icon = Icons.Default.PlayArrow,
+                        onClick = {
+                            navController.navigate("onboarding")
+                        }
+                    )
+                    SettingsItem(
+                        title = stringResource(R.string.contact_support_option),
+                        subtitle = stringResource(R.string.get_help_from_team),
                         icon = IconMapping.Communication.email,
                         onClick = {
                             navController.navigate("contact")
                         }
                     )
                     SettingsItem(
-                        title = "Privacy Policy",
-                        subtitle = "View our privacy policy",
-                        icon = IconMapping.Security.shield,
+                        title = stringResource(R.string.suggest_ideas),
+                        subtitle = stringResource(R.string.share_ideas_to_improve),
+                        icon = Icons.Default.Lightbulb,
                         onClick = {
-                            navController.navigate("privacy")
+                            navController.navigate("suggest_ideas")
                         }
                     )
                 }
@@ -404,40 +602,37 @@ fun SettingsScreen(
             // Account Section
             item {
                 SettingsSection(
-                    title = "Account",
+                    title = stringResource(R.string.account_section_title),
                     icon = Icons.Default.AccountBox
                 ) {
                     SettingsItem(
-                        title = "Achievements",
-                        subtitle = "View your progress and unlocked achievements",
+                        title = stringResource(R.string.achievements_option),
+                        subtitle = stringResource(R.string.view_progress_achievements),
                         icon = IconMapping.Achievements.trophy,
                         onClick = {
                             navController.navigate("achievements")
                         }
                     )
                     SettingsItem(
-                        title = "Export Data",
-                        subtitle = "Download your data as CSV",
+                        title = stringResource(R.string.export_data_option),
+                        subtitle = stringResource(R.string.export_data_coming_soon),
                         icon = IconMapping.Actions.export,
                         onClick = {
-                            viewModel.exportData()
+                            // Coming soon - disabled for now
                         }
                     )
                     SettingsItem(
                         title = stringResource(R.string.sign_out),
-                        subtitle = "Sign out of your account",
+                        subtitle = stringResource(R.string.sign_out_subtitle),
                         icon = Icons.AutoMirrored.Filled.Logout,
                         textColor = MaterialTheme.colorScheme.error,
                         onClick = {
                             viewModel.signOut()
-                            navController.navigate("auth") {
-                                popUpTo(0) { inclusive = true }
-                            }
                         }
                     )
                     SettingsItem(
                         title = stringResource(R.string.delete_account),
-                        subtitle = "Permanently delete your account",
+                        subtitle = stringResource(R.string.delete_account_subtitle),
                         icon = Icons.Default.DeleteForever,
                         textColor = MaterialTheme.colorScheme.error,
                         onClick = {
@@ -445,21 +640,25 @@ fun SettingsScreen(
                         }
                     )
                 }
+                }
             }
         }
+    }
         
         // Language Picker Dialog
-        LanguagePickerDialog(
-            isOpen = showLanguagePicker,
-            currentLanguage = localizationState.currentLanguage.code,
-            onLanguageSelected = { languageCode ->
-                viewModel.updateLanguage(languageCode)
-                showLanguagePicker = false
-            },
-            onDismiss = {
-                showLanguagePicker = false
-            }
-        )
+        if (showLanguagePicker) {
+            LanguagePickerDialog(
+                isOpen = showLanguagePicker,
+                currentLanguage = localizationState.currentLanguage.code,
+                onLanguageSelected = { languageCode ->
+                    viewModel.updateLanguage(languageCode)
+                    showLanguagePicker = false
+                },
+                onDismiss = {
+                    showLanguagePicker = false
+                }
+            )
+        }
 
         // Alert Picker Dialog
         if (showAlertPicker) {
@@ -474,7 +673,6 @@ fun SettingsScreen(
                 }
             )
         }
-    }
 }
 
 @Composable
@@ -524,7 +722,7 @@ fun SettingsTextFieldItem(
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
-                placeholder = { Text("Enter name") },
+                placeholder = { Text(stringResource(R.string.enter_name)) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done
@@ -572,7 +770,8 @@ fun SettingsSection(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.semantics { heading() } // Section heading (h2)
                 )
             }
             content()
@@ -915,6 +1114,187 @@ fun SettingsDropdownStringItem(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+class CurrencyVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val numericText = text.text.filter { it.isDigit() || it == '.' }
+        
+        if (numericText.isEmpty()) {
+            return TransformedText(
+                AnnotatedString(""),
+                OffsetMapping.Identity
+            )
+        }
+        
+        val amount = numericText.toDoubleOrNull() ?: 0.0
+        val formatter = DecimalFormat("#,##0.00")
+        val formatted = formatter.format(amount)
+        
+        return TransformedText(
+            AnnotatedString(formatted),
+            object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    if (offset <= 0) return 0
+                    val numericValue = text.text.substring(0, offset.coerceAtMost(text.length))
+                        .filter { it.isDigit() || it == '.' }
+                    
+                    if (numericValue.isEmpty()) return 0
+                    
+                    val amount = numericValue.toDoubleOrNull() ?: 0.0
+                    val formatted = formatter.format(amount)
+                    return formatted.length.coerceAtLeast(0)
+                }
+                
+                override fun transformedToOriginal(offset: Int): Int {
+                    val numericValue = text.text.filter { it.isDigit() || it == '.' }
+                    return numericValue.length.coerceAtMost(offset).coerceAtLeast(0)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun SettingsNumberFieldItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    value: Double,
+    onValueChange: (Double) -> Unit,
+    suffix: String = "",
+    decimalPlaces: Int = 2,
+    isCurrency: Boolean = false
+) {
+    var textValue by remember(value) {
+        mutableStateOf(String.format("%.${decimalPlaces}f", value))
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isCurrency) {
+                        Text(
+                            text = "$",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    OutlinedTextField(
+                        value = textValue,
+                        onValueChange = { newValue ->
+                            val filtered = if (isCurrency) {
+                                newValue.filter { it.isDigit() || it == '.' }
+                            } else {
+                                newValue
+                            }
+                            if (filtered.count { it == '.' } <= 1) {
+                                val parts = filtered.split('.')
+                                val integerPart = parts[0]
+                                val decimalPart = if (parts.size > 1) parts[1].take(decimalPlaces) else ""
+                                val finalValue = if (decimalPart.isNotEmpty()) "$integerPart.$decimalPart" else integerPart
+                                textValue = finalValue
+                                finalValue.toDoubleOrNull()?.let {
+                                    onValueChange(it)
+                                }
+                            }
+                        },
+                        visualTransformation = if (isCurrency) CurrencyVisualTransformation() else VisualTransformation.None,
+                        suffix = { if (suffix.isNotEmpty()) Text(suffix) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Done
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.width(if (isCurrency) 140.dp else 120.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InfoBox(
+    title: String,
+    text: String
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

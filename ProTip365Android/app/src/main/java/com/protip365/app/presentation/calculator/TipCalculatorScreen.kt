@@ -28,7 +28,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.navigation.NavController
+import com.protip365.app.utilities.DeviceUtils
 import java.text.NumberFormat
 import java.util.*
 
@@ -75,8 +82,14 @@ fun TipCalculatorScreen(
     }
 
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = {
                     Text(
                         text = getLocalizedText("Tip Calculator", language),
@@ -99,6 +112,7 @@ fun TipCalculatorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .verticalScroll(rememberScrollState())
         ) {
             // Calculator Type Tabs
@@ -130,7 +144,11 @@ fun TipCalculatorScreen(
             AnimatedContent(
                 targetState = selectedCalculatorTab,
                 transitionSpec = {
-                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                    slideInHorizontally(
+                        animationSpec = tween(durationMillis = DeviceUtils.getOptimalAnimationDuration().inWholeMilliseconds.toInt())
+                    ) { it } togetherWith slideOutHorizontally(
+                        animationSpec = tween(durationMillis = DeviceUtils.getOptimalAnimationDuration().inWholeMilliseconds.toInt())
+                    ) { -it }
                 }
             ) { tab ->
                 when (tab) {
@@ -203,10 +221,11 @@ private fun TipCalculatorTab(
         // Bill Amount Input
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
@@ -244,10 +263,11 @@ private fun TipCalculatorTab(
         // Tip Percentage Selection
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
@@ -335,10 +355,11 @@ private fun TipCalculatorTab(
         // Split Bill Section
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
@@ -359,41 +380,37 @@ private fun TipCalculatorTab(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         IconButton(
                             onClick = { if (splitCount > 1) onSplitCountChange(splitCount - 1) },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                Icons.Default.Remove,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                Icons.Default.RemoveCircle,
+                                contentDescription = getLocalizedText("Decrease split count", language),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
 
                         Text(
                             text = splitCount.toString(),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.widthIn(min = 40.dp),
+                            modifier = Modifier.widthIn(min = 48.dp),
                             textAlign = TextAlign.Center
                         )
 
                         IconButton(
                             onClick = { if (splitCount < 20) onSplitCountChange(splitCount + 1) },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                Icons.Default.AddCircle,
+                                contentDescription = getLocalizedText("Increase split count", language),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }
@@ -472,7 +489,7 @@ private fun TipOutCalculatorTab(
         // Total Tips Input
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -513,7 +530,7 @@ private fun TipOutCalculatorTab(
         // Tip-out Percentage
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -565,7 +582,7 @@ private fun TipOutCalculatorTab(
         // Results
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
             )
@@ -621,7 +638,7 @@ private fun HourlyRateCalculatorTab(
         // Total Earnings Input
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -662,7 +679,7 @@ private fun HourlyRateCalculatorTab(
         // Hours Worked Input
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -703,7 +720,7 @@ private fun HourlyRateCalculatorTab(
         // Result
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             )
@@ -733,7 +750,7 @@ private fun HourlyRateCalculatorTab(
         if (hourlyRate > 0) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -771,21 +788,30 @@ private fun PercentageButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    FilledTonalButton(
+    Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = if (isSelected) {
-            ButtonDefaults.filledTonalButtonColors(
+            ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         } else {
-            ButtonDefaults.filledTonalButtonColors()
-        }
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = if (isSelected) 2.dp else 0.dp,
+            pressedElevation = if (isSelected) 4.dp else 1.dp
+        )
     ) {
         Text(
             text = "$percentage%",
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
         )
     }
 }
@@ -800,8 +826,8 @@ private fun ResultsCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         )
@@ -966,6 +992,8 @@ private fun getLocalizedText(text: String, language: String): String {
             "Comparison" -> "Comparaison"
             "vs Minimum Wage" -> "vs Salaire minimum"
             "vs Industry Average" -> "vs Moyenne de l'industrie"
+            "Decrease split count" -> "Diminuer le nombre de parts"
+            "Increase split count" -> "Augmenter le nombre de parts"
             else -> text
         }
         "es" -> when (text) {
@@ -996,6 +1024,8 @@ private fun getLocalizedText(text: String, language: String): String {
             "Comparison" -> "Comparación"
             "vs Minimum Wage" -> "vs Salario mínimo"
             "vs Industry Average" -> "vs Promedio de la industria"
+            "Decrease split count" -> "Disminuir número de partes"
+            "Increase split count" -> "Aumentar número de partes"
             else -> text
         }
         else -> text

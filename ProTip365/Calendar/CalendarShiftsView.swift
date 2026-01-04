@@ -88,6 +88,7 @@ struct CalendarShiftsView: View {
                     initialDate: selectedDate
                 )
                 .onDisappear {
+                    print("🔄 AddShiftView dismissed - refreshing shifts")
                     Task {
                         await loadAllShifts()
                     }
@@ -121,6 +122,7 @@ struct CalendarShiftsView: View {
                 }
             }
             .refreshable {
+                print("🔄 Pull-to-refresh triggered - reloading shifts")
                 await loadAllShifts()
             }
             .onChange(of: navigateToShiftId) { _, newShiftId in
@@ -265,6 +267,12 @@ struct CalendarShiftsView: View {
                 Button(cancelText, role: .cancel) { }
             } message: {
                 Text(selectShiftDialogMessage)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .shiftDataChanged)) { _ in
+            print("📢 Received shiftDataChanged notification - refreshing calendar")
+            Task {
+                await loadAllShifts()
             }
         }
     }
@@ -524,6 +532,11 @@ struct CalendarShiftsView: View {
 
             // Reload shifts after deletion
             await loadAllShifts()
+            
+            // Post notification that shift data has changed
+            NotificationCenter.default.post(name: .shiftDataChanged, object: nil)
+            print("📢 Posted shiftDataChanged notification from delete")
+            
             print("✅ Shift deleted successfully")
         } catch {
             print("❌ Error deleting shift: \(error)")
@@ -549,11 +562,16 @@ struct CalendarShiftsView: View {
         let dateString = dateFormatter.string(from: date)
         let shifts = allShifts.filter { $0.shift_date == dateString }
 
+        // Debug: Always print when checking for shifts on a date
+        print("🔍 Checking shifts for date: \(dateString) (total shifts loaded: \(allShifts.count))")
+        
         if !shifts.isEmpty {
             print("📅 Found \(shifts.count) shifts for date: \(dateString)")
             for shift in shifts {
-                print("  - Shift ID: \(shift.id), Employer: \(shift.employer_id?.uuidString ?? "Unknown")")
+                print("  - Shift ID: \(shift.id), Employer: \(shift.employer_id?.uuidString ?? "Unknown"), Status: \(shift.status)")
             }
+        } else {
+            print("❌ No shifts found for date: \(dateString)")
         }
 
         return shifts
@@ -602,6 +620,8 @@ struct CalendarShiftsView: View {
 
     private func loadAllShifts() async {
         do {
+            print("🔄 loadAllShifts() called - starting to load shifts...")
+            
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
 
@@ -612,13 +632,19 @@ struct CalendarShiftsView: View {
             print("📅 Loading shifts from \(dateFormatter.string(from: startDate)) to \(dateFormatter.string(from: endDate))")
 
             // Use new simplified method
-            allShifts = try await SupabaseManager.shared.fetchShiftsWithEntries(from: startDate, to: endDate)
+            let loadedShifts = try await SupabaseManager.shared.fetchShiftsWithEntries(from: startDate, to: endDate)
+            
+            // Update the state on the main thread
+            await MainActor.run {
+                allShifts = loadedShifts
+                print("✅ Updated allShifts with \(allShifts.count) shifts on main thread")
+            }
 
-            print("✅ Loaded \(allShifts.count) shifts with entries from database")
+            print("✅ Loaded \(loadedShifts.count) shifts with entries from database")
 
-            if !allShifts.isEmpty {
+            if !loadedShifts.isEmpty {
                 print("First few shifts:")
-                for (index, shift) in allShifts.prefix(5).enumerated() {
+                for (index, shift) in loadedShifts.prefix(5).enumerated() {
                     let entryStatus = shift.has_entry ? "with entry" : "no entry"
                     print("  \(index + 1). Date: \(shift.shift_date), Status: '\(shift.status)', Hours: \(shift.expected_hours), \(entryStatus)")
                 }
@@ -626,8 +652,10 @@ struct CalendarShiftsView: View {
 
             // Load employers for names (already included in ShiftWithEntry, but keep for compatibility)
             let employersList = try await SupabaseManager.shared.fetchEmployers()
-            employers = Dictionary(uniqueKeysWithValues: employersList.map { ($0.id, $0) })
-            print("✅ Loaded \(employers.count) employers")
+            await MainActor.run {
+                employers = Dictionary(uniqueKeysWithValues: employersList.map { ($0.id, $0) })
+                print("✅ Updated employers dictionary with \(employers.count) employers on main thread")
+            }
         } catch {
             print("❌ Error loading shifts: \(error)")
         }

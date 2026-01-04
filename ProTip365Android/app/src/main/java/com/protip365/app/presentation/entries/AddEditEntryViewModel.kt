@@ -62,14 +62,28 @@ class AddEditEntryViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isInitializing = true)
             try {
-                // Load completed shift data (combines ExpectedShift + ShiftEntry)
-                val completedShift = completedShiftRepository.getCompletedShift(entryId)
-                if (completedShift != null) {
-                    originalCompletedShift = completedShift
-                    originalShiftEntry = completedShift.shiftEntry
-                    originalExpectedShift = completedShift.expectedShift
-                    isEditingExistingEntry = completedShift.shiftEntry != null
-                    populateFromCompletedShift(completedShift)
+                // First get the entry to get the shiftId
+                val shiftEntry = shiftEntryRepository.getShiftEntry(entryId)
+                if (shiftEntry != null) {
+                    // Get the completed shift using the shiftId from the entry
+                    val completedShift = completedShiftRepository.getCompletedShift(shiftEntry.shiftId)
+                    if (completedShift != null) {
+                        originalCompletedShift = completedShift
+                        originalShiftEntry = completedShift.shiftEntry
+                        originalExpectedShift = completedShift.expectedShift
+                        isEditingExistingEntry = completedShift.shiftEntry != null
+                        populateFromCompletedShift(completedShift)
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Failed to load shift for entry",
+                            isInitializing = false
+                        )
+                    }
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Entry not found",
+                        isInitializing = false
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -284,6 +298,12 @@ class AddEditEntryViewModel @Inject constructor(
                 return@launch
             }
 
+            // Require reason when didn't work
+            if (state.didntWork && state.missedReason.isEmpty()) {
+                _uiState.value = state.copy(errorMessage = "Please select a reason for not working")
+                return@launch
+            }
+
             // Check if date is in the future
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             if (state.selectedDate > today) {
@@ -318,7 +338,7 @@ class AddEditEntryViewModel @Inject constructor(
 
                 // Determine shift ID - either from original expected shift or need to create new
                 val shiftId: String = originalExpectedShift?.id ?: run {
-                    // Create new expected shift if needed
+                    // Create new expected shift if needed (Scenario 1: Ad-hoc)
                     val newExpectedShift = ExpectedShift(
                         id = UUID.randomUUID().toString(),
                         userId = userId,
@@ -339,8 +359,9 @@ class AddEditEntryViewModel @Inject constructor(
                     newExpectedShift.id
                 }
 
-                // Update expected shift status if completing a planned shift
-                if (originalExpectedShift != null && originalExpectedShift!!.status == "planned") {
+                // iOS-CONFORMANT FIX: ALWAYS update status when adding/editing entry (iOS doc lines 615-633)
+                // Remove conditional check - status must be updated regardless of current status
+                if (originalExpectedShift != null) {
                     expectedShiftRepository.updateShiftStatus(
                         shiftId = shiftId,
                         status = if (state.didntWork) "missed" else "completed"

@@ -26,6 +26,14 @@ data class CompletedShift(
         get() = shiftEntry != null
 
     /**
+     * Check if this shift has actual financial earnings
+     * Matches iOS has_earnings logic (IOS_DASHBOARD_LOGIC_EXPLAINED.md lines 435-438)
+     * A shift only counts if it has ANY financial data (sales, tips, cashOut, or other)
+     */
+    val hasEarnings: Boolean
+        get() = shiftEntry?.hasEarnings ?: false
+
+    /**
      * Get total earnings for this shift
      */
     val totalEarnings: Double

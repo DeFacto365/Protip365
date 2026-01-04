@@ -29,7 +29,8 @@ class SubscriptionManager: ObservableObject {
 
     // CRITICAL: Add your App Store Connect shared secret here
     // Get this from: App Store Connect > Your App > Features > In-App Purchases > App-Specific Shared Secret
-    private let sharedSecret = "0b3c33127296426f9846d484f520f693" // TODO: Replace with your actual shared secret
+    // Accessed via ConfigManager for security
+    private var sharedSecret: String { ConfigManager.shared.appStoreSharedSecret }
 
     private var allProductIds: [String] {
         [premiumMonthlyId, premiumYearlyId]

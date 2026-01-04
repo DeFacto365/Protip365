@@ -73,6 +73,10 @@ class SupabaseManager: ObservableObject {
             .single()
             .execute()
             .value
+            
+        // Schedule reminder for missing entry
+        AlertManager.shared.scheduleMissingEntryReminder(for: response)
+        
         return response
     }
     
@@ -84,6 +88,9 @@ class SupabaseManager: ObservableObject {
             .update(shift)
             .eq("id", value: shiftId)
             .execute()
+            
+        // Reschedule reminder in case date changed
+        AlertManager.shared.scheduleMissingEntryReminder(for: shift)
     }
     
     func fetchShifts() async throws -> [Shift] {
@@ -103,6 +110,11 @@ class SupabaseManager: ObservableObject {
             .from("shift_income")
             .insert(shiftIncome)
             .execute()
+            
+        // Cancel the missing entry reminder since data was entered
+        if let shiftId = shiftIncome.shift_id {
+            AlertManager.shared.cancelMissingEntryReminder(for: shiftId)
+        }
     }
     
     func fetchShiftIncome() async throws -> [ShiftIncomeData] {

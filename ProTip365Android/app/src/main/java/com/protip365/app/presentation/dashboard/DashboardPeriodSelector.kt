@@ -27,7 +27,7 @@ fun DashboardPeriodSelector(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)  // Increased vertical
     ) {
         // Period tabs (Today, Week, Month, Year)
         Card(
@@ -41,7 +41,7 @@ fun DashboardPeriodSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)  // Increased spacing
             ) {
                 PeriodTab(
                     text = localizedString(R.string.today),
@@ -72,7 +72,7 @@ fun DashboardPeriodSelector(
 
         // Month view type selector (only visible when Month is selected)
         if (selectedPeriod == 2) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))  // Increased spacing
             MonthViewTypeSelector(
                 monthViewType = monthViewType,
                 onViewTypeChanged = onMonthViewTypeChanged,
@@ -94,16 +94,17 @@ private fun PeriodTab(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surface
+                else MaterialTheme.colorScheme.surfaceVariant
             )
             .clickable { onClick() }
-            .padding(vertical = 12.dp),
+            .padding(vertical = 12.dp)
+            .height(44.dp),  // Increased height
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             color = if (isSelected) MaterialTheme.colorScheme.onPrimary
             else MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -166,8 +167,8 @@ private fun MonthViewTab(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             color = if (isSelected) MaterialTheme.colorScheme.onSecondary
             else MaterialTheme.colorScheme.onSecondaryContainer
         )

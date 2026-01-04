@@ -617,6 +617,10 @@ class AddShiftDataManager: ObservableObject {
                 // Shift saved successfully
             }
 
+            // Post notification that shift data has changed
+            NotificationCenter.default.post(name: .shiftDataChanged, object: nil)
+            print("📢 Posted shiftDataChanged notification")
+
             isLoading = false
             return true
         } catch {

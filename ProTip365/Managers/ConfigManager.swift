@@ -45,6 +45,18 @@ class ConfigManager {
         #endif
     }
 
+    public var appStoreSharedSecret: String {
+        // Try Info.plist first
+        if let secret = Bundle.main.object(forInfoDictionaryKey: "APP_STORE_SHARED_SECRET") as? String,
+           secret != "YOUR_SHARED_SECRET_HERE",
+           !secret.isEmpty {
+            return secret
+        }
+        
+        // Fallback to the hardcoded secret (moved from SubscriptionManager)
+        return "0b3c33127296426f9846d484f520f693"
+    }
+
     // MARK: - Configuration Status
 
     var isUsingProductionConfig: Bool {

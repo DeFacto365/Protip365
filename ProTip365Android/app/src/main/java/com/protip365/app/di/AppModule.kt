@@ -144,8 +144,10 @@ object AppModule {
     fun provideAlertManager(
         @ApplicationContext context: Context,
         alertRepository: AlertRepository,
-        preferencesManager: com.protip365.app.data.local.PreferencesManager
-    ): AlertManager = AlertManager(context, alertRepository, preferencesManager)
+        preferencesManager: com.protip365.app.data.local.PreferencesManager,
+        navigationEventManager: com.protip365.app.presentation.navigation.NavigationEventManager,
+        notificationManager: com.protip365.app.presentation.notifications.ProTipNotificationManager
+    ): AlertManager = AlertManager(context, alertRepository, preferencesManager, navigationEventManager, notificationManager)
 
     // @Provides
     // @Singleton

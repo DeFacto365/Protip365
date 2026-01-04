@@ -14,12 +14,14 @@ import com.protip365.app.presentation.calendar.CalendarScreen
 import com.protip365.app.presentation.calculator.TipCalculatorScreen
 import com.protip365.app.presentation.dashboard.DashboardScreen
 import com.protip365.app.presentation.employers.EmployersScreen
+import com.protip365.app.presentation.entries.AddEditEntryScreen
 import com.protip365.app.presentation.settings.SettingsScreen
 import com.protip365.app.presentation.settings.ProfileScreen
 import com.protip365.app.presentation.settings.SecurityScreen
 import com.protip365.app.presentation.settings.SubscriptionScreen
 import com.protip365.app.presentation.settings.TargetsScreen
 import com.protip365.app.presentation.shifts.AddEditShiftScreen
+import com.protip365.app.presentation.detail.DetailScreen
 import java.time.LocalDate
 
 sealed class Screen(val route: String) {
@@ -46,6 +48,27 @@ sealed class Screen(val route: String) {
         fun createRoute(shiftId: String) = "edit_shift/$shiftId"
     }
 
+    object AddEntry : Screen("add_entry?initialDate={initialDate}&shiftId={shiftId}") {
+        fun createRoute(initialDate: kotlinx.datetime.LocalDate? = null, shiftId: String? = null): String {
+            return buildString {
+                append("add_entry")
+                var hasParam = false
+                initialDate?.let {
+                    append("?initialDate=$it")
+                    hasParam = true
+                }
+                shiftId?.let {
+                    append(if (hasParam) "&" else "?")
+                    append("shiftId=$it")
+                }
+            }
+        }
+    }
+
+    object EditEntry : Screen("edit_entry/{entryId}") {
+        fun createRoute(entryId: String) = "edit_entry/$entryId"
+    }
+
     object AddEmployer : Screen("add_employer")
     object EditEmployer : Screen("edit_employer/{employerId}") {
         fun createRoute(employerId: String) = "edit_employer/$employerId"
@@ -57,6 +80,11 @@ sealed class Screen(val route: String) {
     object Targets : Screen("settings/targets")
     object Subscription : Screen("settings/subscription")
     object Export : Screen("settings/export")
+    
+    // Detail screen
+    object Detail : Screen("detail/{period}/{statType}") {
+        fun createRoute(period: String, statType: String) = "detail/$period/$statType"
+    }
 }
 
 @Composable
@@ -113,9 +141,16 @@ fun NavigationGraph(
 
         composable(Screen.Calendar.route) {
             CalendarScreen(
-                onNavigateToAddShift = { navController.navigate("add_shift") },
-                onNavigateToAddEntry = { date -> navController.navigate("add_entry?initialDate=${date}") },
-                onNavigateToEditShift = { shiftId -> navController.navigate("edit_shift/$shiftId") }
+                onNavigateToAddShift = { date -> navController.navigate("add_shift?date=$date") },
+                onNavigateToAddEntry = { date, shiftId ->
+                    val route = buildString {
+                        append("add_entry?initialDate=$date")
+                        shiftId?.let { append("&shiftId=$it") }
+                    }
+                    navController.navigate(route)
+                },
+                onNavigateToEditShift = { shiftId -> navController.navigate("edit_shift/$shiftId") },
+                onNavigateToEditEntry = { entryId -> navController.navigate("edit_entry/$entryId") }
             )
         }
 
@@ -173,6 +208,49 @@ fun NavigationGraph(
             )
         }
 
+        // Add/Edit Entry
+        composable(
+            route = "add_entry?initialDate={initialDate}&shiftId={shiftId}",
+            arguments = listOf(
+                navArgument("initialDate") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("shiftId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val initialDateString = backStackEntry.arguments?.getString("initialDate")
+            val initialDate = initialDateString?.let {
+                try { kotlinx.datetime.LocalDate.parse(it) } catch (e: Exception) { null }
+            }
+            val shiftId = backStackEntry.arguments?.getString("shiftId")
+
+            AddEditEntryScreen(
+                navController = navController,
+                initialDate = initialDate,
+                shiftId = shiftId
+            )
+        }
+
+        composable(
+            route = Screen.EditEntry.route,
+            arguments = listOf(
+                navArgument("entryId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val entryId = backStackEntry.arguments?.getString("entryId")
+
+            AddEditEntryScreen(
+                navController = navController,
+                entryId = entryId
+            )
+        }
+
         // Settings Sub-screens
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
@@ -188,6 +266,30 @@ fun NavigationGraph(
 
         composable(Screen.Subscription.route) {
             SubscriptionScreen(navController)
+        }
+
+        // Detail Screen
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(
+                navArgument("period") {
+                    type = NavType.StringType
+                    defaultValue = "today"
+                },
+                navArgument("statType") {
+                    type = NavType.StringType
+                    defaultValue = "total"
+                }
+            )
+        ) { backStackEntry ->
+            val period = backStackEntry.arguments?.getString("period") ?: "today"
+            val statType = backStackEntry.arguments?.getString("statType") ?: "total"
+            
+            DetailScreen(
+                navController = navController,
+                period = period,
+                statType = statType
+            )
         }
 
         // Deep Links

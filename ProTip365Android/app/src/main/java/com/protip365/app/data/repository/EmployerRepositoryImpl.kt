@@ -108,4 +108,48 @@ class EmployerRepositoryImpl @Inject constructor(
             emit(getEmployers(userId))
         }
     }
+
+    /**
+     * Get count of shifts for employer
+     * Matches iOS loadShiftCounts (EmployersView.swift lines 197-222)
+     */
+    override suspend fun getShiftCountForEmployer(userId: String, employerId: String): Int {
+        return try {
+            val result = supabaseClient
+                .from("expected_shifts")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                        eq("employer_id", employerId)
+                    }
+                }
+                .decodeList<kotlinx.serialization.json.JsonObject>()
+            result.size
+        } catch (e: Exception) {
+            println("Error counting shifts for employer: ${e.message}")
+            0
+        }
+    }
+
+    /**
+     * Get count of entries for employer
+     * Matches iOS loadEntryCounts (EmployersView.swift lines 224-277)
+     */
+    override suspend fun getEntryCountForEmployer(userId: String, employerId: String): Int {
+        return try {
+            // Query entries through expected_shifts join
+            val result = supabaseClient
+                .from("shift_entries")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<kotlinx.serialization.json.JsonObject>()
+            result.size
+        } catch (e: Exception) {
+            println("Error counting entries for employer: ${e.message}")
+            0
+        }
+    }
 }

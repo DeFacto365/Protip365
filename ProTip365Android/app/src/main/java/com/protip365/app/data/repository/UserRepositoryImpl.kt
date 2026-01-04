@@ -144,29 +144,38 @@ class UserRepositoryImpl @Inject constructor(
                 return createUserProfile(newProfile)
             }
 
-            // Profile exists, update it
-            // Convert Map<String, Any?> to proper types for Supabase serialization
-            val typedUpdates = updates.mapValues { (key, value) ->
-                when (value) {
-                    is Number -> value // Keep numbers as-is
-                    is Boolean -> value // Keep booleans as-is
-                    is String -> value // Keep strings as-is
-                    null -> null // Keep nulls as-is
-                    else -> value.toString() // Convert everything else to string
-                }
+            // Profile exists, update it using the UserProfile object approach to avoid serialization issues
+            println("🔵 Updating existing profile for user: $userId")
+            println("🔵 Updates: $updates")
+            
+            // Create a new profile object with updated values
+            val updatedProfile = existingProfile.copy(
+                name = updates["name"] as? String ?: existingProfile.name,
+                preferredLanguage = updates["preferred_language"] as? String ?: existingProfile.preferredLanguage,
+                useMultipleEmployers = updates["use_multiple_employers"] as? Boolean ?: existingProfile.useMultipleEmployers,
+                weekStart = (updates["week_start"] as? Number)?.toInt() ?: existingProfile.weekStart,
+                hasVariableSchedule = updates["has_variable_schedule"] as? Boolean ?: existingProfile.hasVariableSchedule,
+                tipTargetPercentage = (updates["tip_target_percentage"] as? Number)?.toDouble() ?: existingProfile.tipTargetPercentage,
+                targetSalesDaily = (updates["target_sales_daily"] as? Number)?.toDouble() ?: existingProfile.targetSalesDaily,
+                targetSalesWeekly = (updates["target_sales_weekly"] as? Number)?.toDouble() ?: existingProfile.targetSalesWeekly,
+                targetSalesMonthly = (updates["target_sales_monthly"] as? Number)?.toDouble() ?: existingProfile.targetSalesMonthly,
+                targetHoursDaily = (updates["target_hours_daily"] as? Number)?.toDouble() ?: existingProfile.targetHoursDaily,
+                targetHoursWeekly = (updates["target_hours_weekly"] as? Number)?.toDouble() ?: existingProfile.targetHoursWeekly,
+                targetHoursMonthly = (updates["target_hours_monthly"] as? Number)?.toDouble() ?: existingProfile.targetHoursMonthly,
+                averageDeductionPercentage = (updates["average_deduction_percentage"] as? Number)?.toDouble() ?: existingProfile.averageDeductionPercentage,
+                defaultEmployerId = updates["default_employer_id"] as? String ?: existingProfile.defaultEmployerId,
+                onboardingCompleted = updates["onboarding_completed"] as? Boolean ?: existingProfile.onboardingCompleted
+            )
+
+            // Use the existing updateUserProfile method that takes a UserProfile object
+            val result = updateUserProfile(updatedProfile)
+            
+            if (result.isSuccess) {
+                println("✅ Profile updated successfully for user: $userId")
+                println("   Updated fields: ${updates.keys.joinToString(", ")}")
             }
-
-            supabaseClient
-                .from("users_profile")
-                .update(typedUpdates) {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                }
-
-            println("✅ Profile updated successfully for user: $userId")
-            println("   Updated fields: ${updates.keys.joinToString(", ")}")
-            Result.success(Unit)
+            
+            result
         } catch (e: Exception) {
             Result.failure(e)
         }

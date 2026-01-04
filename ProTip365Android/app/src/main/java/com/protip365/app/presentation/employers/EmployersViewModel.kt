@@ -32,6 +32,10 @@ class EmployersViewModel @Inject constructor(
         loadEmployers()
     }
 
+    fun refreshEmployers() {
+        loadEmployers()
+    }
+
     private fun loadEmployers() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
@@ -48,10 +52,16 @@ class EmployersViewModel @Inject constructor(
                     // Load employers
                     val employers = employerRepository.getEmployers(it.userId)
                 
+                    // iOS conformance: Load shift and entry counts (lines 186-277)
+                    val shiftCounts = loadShiftCounts(it.userId, employers)
+                    val entryCounts = loadEntryCounts(it.userId, employers)
+
                 _state.value = _state.value.copy(
                     employers = employers,
                     defaultEmployerId = it.defaultEmployerId,
                     hasFullAccess = hasFullAccess,
+                    employerShiftCounts = shiftCounts,
+                    employerEntryCounts = entryCounts,
                     isLoading = false
                 )
                 } ?: run {
@@ -182,8 +192,54 @@ class EmployersViewModel @Inject constructor(
         }
     }
 
-    fun deleteEmployer(employerId: String) {
+    /**
+     * Load shift counts for each employer
+     * Matches iOS loadShiftCounts (EmployersView.swift lines 197-222)
+     */
+    private suspend fun loadShiftCounts(userId: String, employers: List<Employer>): Map<String, Int> {
+        val counts = mutableMapOf<String, Int>()
+        
+        try {
+            for (employer in employers) {
+                val shiftCount = employerRepository.getShiftCountForEmployer(userId, employer.id)
+                counts[employer.id] = shiftCount
+                println("DEBUG: Employer ${employer.name} has $shiftCount shifts")
+            }
+        } catch (e: Exception) {
+            println("Error loading shift counts: ${e.message}")
+        }
+        
+        return counts
+    }
+
+    /**
+     * Load entry counts for each employer  
+     * Matches iOS loadEntryCounts (EmployersView.swift lines 224-277)
+     */
+    private suspend fun loadEntryCounts(userId: String, employers: List<Employer>): Map<String, Int> {
+        val counts = mutableMapOf<String, Int>()
+        
+        try {
+            for (employer in employers) {
+                val entryCount = employerRepository.getEntryCountForEmployer(userId, employer.id)
+                counts[employer.id] = entryCount
+                println("DEBUG: Employer ${employer.name} has $entryCount entries")
+            }
+        } catch (e: Exception) {
+            println("Error loading entry counts: ${e.message}")
+        }
+        
+        return counts
+    }
+
+    /**
+     * Request employer deletion (iOS pattern with data protection)
+     * Matches iOS handleEmployerDeletion (EmployersView.swift lines 397-407)
+     */
+    fun requestDeleteEmployer(employerId: String) {
         viewModelScope.launch {
+            val employer = _state.value.employers.find { it.id == employerId } ?: return@launch
+            
             // Can't delete default employer
             if (employerId == _state.value.defaultEmployerId) {
                 _state.value = _state.value.copy(
@@ -192,16 +248,70 @@ class EmployersViewModel @Inject constructor(
                 return@launch
             }
             
+            // iOS conformance: Check if employer has shifts or entries
+            val shiftCount = _state.value.employerShiftCounts[employerId] ?: 0
+            val entryCount = _state.value.employerEntryCounts[employerId] ?: 0
+            
+            if (shiftCount > 0 || entryCount > 0) {
+                // Cannot delete - show iOS-style alert with deactivate option
+                _state.value = _state.value.copy(
+                    showCannotDeleteAlert = true,
+                    employerToDelete = employer,
+                    cannotDeleteMessage = "Cannot delete ${employer.name} because it has $shiftCount shifts and $entryCount entries. You can deactivate it instead."
+                )
+            } else {
+                // Safe to delete - proceed
+                _state.value = _state.value.copy(
+                    employerToDelete = employer
+                )
+            }
+        }
+    }
+
+    /**
+     * Confirm deletion after data check passed
+     */
+    fun confirmDeleteEmployer() {
+        viewModelScope.launch {
+            val employerId = _state.value.employerToDelete?.id ?: return@launch
+            
             employerRepository.deleteEmployer(employerId).fold(
                 onSuccess = {
+                    _state.value = _state.value.copy(
+                        employerToDelete = null
+                    )
                     loadEmployers()
                 },
                 onFailure = { exception ->
                     _state.value = _state.value.copy(
-                        error = exception.message ?: "Failed to delete employer"
+                        error = exception.message ?: "Failed to delete employer",
+                        employerToDelete = null
                     )
                 }
             )
+        }
+    }
+
+    /**
+     * Cancel deletion request
+     */
+    fun cancelDelete() {
+        _state.value = _state.value.copy(
+            showCannotDeleteAlert = false,
+            employerToDelete = null,
+            cannotDeleteMessage = null
+        )
+    }
+
+    /**
+     * Deactivate employer instead of deleting (iOS pattern)
+     * Matches iOS alert action (lines 105-110)
+     */
+    fun deactivateInsteadOfDelete() {
+        viewModelScope.launch {
+            val employerId = _state.value.employerToDelete?.id ?: return@launch
+            toggleEmployerActive(employerId)
+            cancelDelete()
         }
     }
 
@@ -216,5 +326,12 @@ data class EmployersState(
     val selectedEmployer: Employer? = null,
     val hasFullAccess: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // iOS conformance: Shift and entry counts (EmployersView.swift lines 19-20)
+    val employerShiftCounts: Map<String, Int> = emptyMap(),
+    val employerEntryCounts: Map<String, Int> = emptyMap(),
+    // Delete protection state (iOS lines 16-18)
+    val showCannotDeleteAlert: Boolean = false,
+    val employerToDelete: Employer? = null,
+    val cannotDeleteMessage: String? = null
 )

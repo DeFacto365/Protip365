@@ -63,11 +63,27 @@ object DashboardMetrics {
     ): Stats {
         val stats = Stats()
 
-        // Only include shifts that have been worked (have ShiftEntry data)
-        stats.completedShifts = shifts.filter { it.isWorked }
+        // Only include shifts that have been worked AND have earnings
+        // Matches iOS filtering: shifts.filter { $0.has_earnings }
+        // (IOS_DASHBOARD_LOGIC_EXPLAINED.md lines 427-443)
+        stats.completedShifts = shifts.filter { it.hasEarnings }
 
         // Track total net income for revenue calculation
         var totalNetIncome = 0.0
+
+        // NOTE: Deduction Percentage Handling Difference from iOS
+        // ============================================================
+        // iOS: Always uses CURRENT deduction % for all calculations (DashboardMetrics.swift line 477)
+        //      - Simpler, shows "what if" with current tax rate
+        //      - Not historically accurate
+        //
+        // Android: Uses SNAPSHOT deduction % if available (stored at entry time)
+        //          Falls back to current % if no snapshot
+        //      - More historically accurate
+        //      - Preserves actual net income at time of work
+        //
+        // Trade-off: Android is more accurate but slightly diverges from iOS display
+        // If exact iOS parity is required, remove the snapshot path and always use averageDeductionPercentage
 
         for (shift in stats.completedShifts) {
             // Use actual hours from shift entry or expected hours as fallback
@@ -83,7 +99,7 @@ object DashboardMetrics {
 
                 // Use snapshot values if available, otherwise calculate
                 if (entry.grossIncome != null && entry.netIncome != null) {
-                    // Use snapshot values
+                    // Use snapshot values (historical accuracy)
                     stats.income += entry.grossIncome
                     totalNetIncome += entry.netIncome
                 } else {
@@ -92,7 +108,7 @@ object DashboardMetrics {
                     val grossIncome = actualHours * hourlyRate
                     stats.income += grossIncome
 
-                    // Calculate net income with deduction
+                    // Calculate net income with deduction (use snapshot if available)
                     val deductionPct = entry.deductionPercentage ?: averageDeductionPercentage
                     val netIncome = grossIncome * (1 - deductionPct / 100)
                     totalNetIncome += netIncome
@@ -178,10 +194,38 @@ object DashboardMetrics {
     }
 
     /**
+     * Calculate effective sales target based on shifts with custom targets
+     * Matches iOS DashboardMetrics.calculateEffectiveSalesTarget() (lines 196-210)
+     * 
+     * @param shifts Array of shifts to analyze
+     * @param defaultTarget Default sales target per shift from user settings
+     * @return Effective sales target considering custom shift targets
+     */
+    fun calculateEffectiveSalesTarget(
+        shifts: List<CompletedShift>,
+        defaultTarget: Double
+    ): Double {
+        var totalTarget = 0.0
+
+        for (shift in shifts) {
+            val customTarget = shift.expectedShift.salesTarget
+            if (customTarget != null) {
+                // Use custom target if set
+                totalTarget += customTarget
+            } else {
+                // Use default target if no custom target
+                totalTarget += defaultTarget
+            }
+        }
+
+        return totalTarget
+    }
+
+    /**
      * Format currency amount
      */
     fun formatCurrency(amount: Double): String {
-        val formatter = NumberFormat.getCurrencyInstance(Locale.US)
+        val formatter = NumberFormat.getCurrencyInstance(Locale.getDefault())
         return formatter.format(amount)
     }
 
@@ -315,16 +359,19 @@ object DashboardMetrics {
             }
 
             DashboardPeriod.YEAR -> {
+                // Year: January 1 to TODAY (not Dec 31)
+                // Matches iOS DashboardCharts.swift line 168
                 val startOfYear = LocalDate(today.year, 1, 1)
-                val endOfYear = LocalDate(today.year, 12, 31)
-                startOfYear to endOfYear
+                startOfYear to today
             }
 
             DashboardPeriod.FOUR_WEEKS -> {
-                // 4 weeks from start of current week
-                val startOfWeek = getStartOfWeek(today, weekStartDay)
-                val endOf4Weeks = startOfWeek.plus(27, DateTimeUnit.DAY) // 4 weeks - 1 day
-                startOfWeek to endOf4Weeks
+                // 4 weeks: Go back 3 weeks from current week start, end at current week end
+                // Matches iOS DashboardCharts.swift lines 170, 234-238
+                val weekStart = getStartOfWeek(today, weekStartDay)
+                val fourWeeksStart = weekStart.minus(21, DateTimeUnit.DAY) // Go back 3 weeks (3 × 7)
+                val weekEnd = weekStart.plus(6, DateTimeUnit.DAY) // Current week end
+                fourWeeksStart to weekEnd
             }
 
             DashboardPeriod.CUSTOM -> {

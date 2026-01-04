@@ -55,9 +55,19 @@ class ContactViewModel @Inject constructor(
             successMessage = null
         )
     }
+
+    fun updateEmail(email: String) {
+        _uiState.value = _uiState.value.copy(email = email)
+    }
+
+    fun updateMessage(message: String) {
+        _uiState.value = _uiState.value.copy(message = message)
+    }
 }
 
 data class ContactUiState(
+    val email: String = "",
+    val message: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null

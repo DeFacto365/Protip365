@@ -1,16 +1,9 @@
 package com.protip365.app.presentation.alerts
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import androidx.core.app.NotificationManagerCompat
 import com.protip365.app.MainActivity
-import com.protip365.app.R
 import com.protip365.app.data.local.PreferencesManager
 import com.protip365.app.data.models.Alert
 import com.protip365.app.data.models.AlertType
@@ -26,6 +19,8 @@ import kotlinx.datetime.*
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
 import java.text.NumberFormat
 import java.util.*
 import java.util.UUID
@@ -36,7 +31,9 @@ import javax.inject.Singleton
 class AlertManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val alertRepository: AlertRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val navigationEventManager: com.protip365.app.presentation.navigation.NavigationEventManager,
+    private val notificationManager: com.protip365.app.presentation.notifications.ProTipNotificationManager
 ) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -55,30 +52,8 @@ class AlertManager @Inject constructor(
     private val _currentAlert = MutableStateFlow<Alert?>(null)
     val currentAlert: StateFlow<Alert?> = _currentAlert.asStateFlow()
 
-    companion object {
-        const val CHANNEL_ID = "protip365_alerts"
-        const val CHANNEL_NAME = "ProTip365 Alerts"
-    }
-
     init {
-        createNotificationChannel()
         loadAlertsFromDatabase()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                importance
-            ).apply {
-                description = "Notifications for shift reminders and app alerts"
-            }
-
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
     }
 
     fun loadAlertsFromDatabase() {
@@ -121,11 +96,13 @@ class AlertManager @Inject constructor(
                         data = shiftData
                     )
 
-                    // Schedule local notification
-                    showLocalNotification(
+                    // Show enhanced notification with Android 16 features
+                    val alertType = AlertType.fromValue(AlertType.INCOMPLETE_SHIFT.value) ?: AlertType.INCOMPLETE_SHIFT
+                    notificationManager.showNotification(
+                        alertType = alertType,
                         title = getLocalizedString("incompleteShiftTitle"),
-                        body = getLocalizedString("incompleteShiftMessage"),
-                        notificationId = shift.expectedShift.id.hashCode()
+                        message = getLocalizedString("incompleteShiftMessage"),
+                        data = mapOf("shiftId" to shift.expectedShift.id, "date" to shift.shiftDate)
                     )
                 }
             }
@@ -145,6 +122,14 @@ class AlertManager @Inject constructor(
                     title = getLocalizedString("missingShiftTitle"),
                     message = getLocalizedString("missingShiftMessage"),
                     action = getLocalizedString("enterData")
+                )
+                
+                // Show enhanced notification
+                notificationManager.showNotification(
+                    alertType = AlertType.MISSING_SHIFT,
+                    title = getLocalizedString("missingShiftTitle"),
+                    message = getLocalizedString("missingShiftMessage"),
+                    data = null
                 )
             }
         }
@@ -175,6 +160,18 @@ class AlertManager @Inject constructor(
                 action = getLocalizedString("viewShift"),
                 data = alertData
             )
+            
+            // Show enhanced notification with Live Updates support
+            notificationManager.showNotification(
+                alertType = AlertType.SHIFT_REMINDER,
+                title = title,
+                message = message,
+                data = mapOf(
+                    "shiftId" to shiftId.toString(),
+                    "employerName" to employerName,
+                    "startTime" to startTime.toEpochMilliseconds()
+                )
+            )
         }
     }
 
@@ -193,6 +190,14 @@ class AlertManager @Inject constructor(
                         title = getLocalizedString("tipTargetAchievedTitle"),
                         message = message,
                         action = getLocalizedString("viewDetails")
+                    )
+                    
+                    // Show enhanced notification
+                    notificationManager.showNotification(
+                        alertType = AlertType.TARGET_ACHIEVED,
+                        title = getLocalizedString("tipTargetAchievedTitle"),
+                        message = message,
+                        data = null
                     )
                 }
             }
@@ -236,6 +241,47 @@ class AlertManager @Inject constructor(
         // Show the newest alert
         _currentAlert.value = alert
         _showAlert.value = true
+        
+        // Show enhanced notification for newly created alerts (if not already shown above)
+        // Only show notification if it's a type that should trigger a notification
+        val alertTypeEnum = AlertType.fromValue(alertType)
+        if (alertTypeEnum != null && shouldShowNotification(alertTypeEnum)) {
+            notificationManager.showNotification(
+                alertType = alertTypeEnum,
+                title = title,
+                message = message,
+                data = data?.let { jsonObject ->
+                    jsonObject.entries.associate { (key, value) ->
+                        key to when (value) {
+                            is JsonPrimitive -> {
+                                when {
+                                    value.isString -> value.content
+                                    value.booleanOrNull != null -> value.booleanOrNull!!
+                                    value.doubleOrNull != null -> value.doubleOrNull!!
+                                    else -> value.content
+                                }
+                            }
+                            else -> value.toString()
+                        }
+                    }
+                }
+            )
+        }
+    }
+    
+    /**
+     * Determines if an alert type should trigger a notification
+     */
+    private fun shouldShowNotification(alertType: AlertType): Boolean {
+        return when (alertType) {
+            AlertType.MISSING_SHIFT,
+            AlertType.INCOMPLETE_SHIFT,
+            AlertType.SHIFT_REMINDER,
+            AlertType.TARGET_ACHIEVED,
+            AlertType.ACHIEVEMENT_UNLOCKED,
+            AlertType.PERSONAL_BEST -> true
+            else -> false
+        }
     }
 
     fun refreshAlerts() {
@@ -302,16 +348,31 @@ class AlertManager @Inject constructor(
                     "startTime" to JsonPrimitive(alertDateTime.toEpochMilliseconds())
                 ))
 
+                val title = getLocalizedString("upcomingShiftTitle")
+                val message = String.format(
+                    getLocalizedString("upcomingShiftMessage"),
+                    employerName,
+                    timeString
+                )
+                
                 createAlert(
                     alertType = AlertType.SHIFT_REMINDER.value,
-                    title = getLocalizedString("upcomingShiftTitle"),
-                    message = String.format(
-                        getLocalizedString("upcomingShiftMessage"),
-                        employerName,
-                        timeString
-                    ),
+                    title = title,
+                    message = message,
                     action = getLocalizedString("viewShift"),
                     data = alertData
+                )
+                
+                // Show enhanced notification with Live Updates support
+                notificationManager.showNotification(
+                    alertType = AlertType.SHIFT_REMINDER,
+                    title = title,
+                    message = message,
+                    data = mapOf(
+                        "shiftId" to shiftId.toString(),
+                        "employerName" to employerName,
+                        "startTime" to alertDateTime.toEpochMilliseconds()
+                    )
                 )
             }
         }
@@ -353,38 +414,6 @@ class AlertManager @Inject constructor(
         }
     }
 
-    private fun showLocalNotification(title: String, body: String, notificationId: Int) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Replace with app icon
-            .setContentTitle("ProTip - $title")
-            .setContentText(body)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-
-        with(NotificationManagerCompat.from(context)) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
-                    android.content.pm.PackageManager.PERMISSION_GRANTED
-                ) {
-                    notify(notificationId, builder.build())
-                }
-            } else {
-                notify(notificationId, builder.build())
-            }
-        }
-    }
 
     private fun formatCurrency(amount: Double): String {
         val formatter = NumberFormat.getCurrencyInstance(Locale.getDefault())
@@ -451,6 +480,40 @@ class AlertManager @Inject constructor(
             "upcomingShiftMessage" -> "Su turno en %s comienza a las %s"
             "viewShift" -> "Ver turno"
             else -> key
+        }
+    }
+
+    /**
+     * Handle notification tap for deep linking
+     * Extracts shiftId from intent extras and triggers navigation event
+     * Matches iOS notification handling pattern
+     */
+    fun handleNotificationTap(intent: Intent?) {
+        scope.launch {
+            try {
+                val shiftId = intent?.getStringExtra("shiftId")
+                val dateString = intent?.getStringExtra("date")
+
+                when {
+                    shiftId != null -> {
+                        // Navigate to shift editor (with iOS 300ms delay)
+                        println("📱 Notification tapped: navigating to shift $shiftId")
+                        navigationEventManager.navigateToShift(shiftId, delayMs = 300)
+                    }
+                    dateString != null -> {
+                        // Navigate to calendar with date
+                        val date = LocalDate.parse(dateString)
+                        println("📱 Notification tapped: navigating to calendar $date")
+                        navigationEventManager.navigateToCalendar(date)
+                    }
+                    else -> {
+                        println("⚠️ Notification tapped but no navigation data found")
+                    }
+                }
+            } catch (e: Exception) {
+                println("❌ Error handling notification tap: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 }

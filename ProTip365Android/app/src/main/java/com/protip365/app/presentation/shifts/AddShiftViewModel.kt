@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.*
 import java.util.UUID
 import javax.inject.Inject
 
@@ -146,8 +146,79 @@ class AddShiftViewModel @Inject constructor(
         }
     }
 
+    private suspend fun checkForOverlappingShifts(
+        shiftDate: LocalDate,
+        newStartTime: String,
+        newEndTime: String
+    ): Boolean {
+        return try {
+            val userId = currentUserId ?: return false
+            
+            // Fetch all expected shifts for the same date
+            val existingShifts = expectedShiftRepository.getShiftsForDate(userId, shiftDate)
+            
+            // Convert times to minutes for comparison
+            fun timeToMinutes(timeString: String): Int {
+                val parts = timeString.split(":")
+                return if (parts.size >= 2) {
+                    val hours = parts[0].toIntOrNull() ?: 0
+                    val minutes = parts[1].toIntOrNull() ?: 0
+                    hours * 60 + minutes
+                } else 0
+            }
+            
+            val newStart = timeToMinutes(newStartTime)
+            val newEnd = timeToMinutes(newEndTime)
+            
+            // Check each existing shift for overlap
+            for (shift in existingShifts) {
+                // Skip if this is the same shift being edited
+                if (currentShiftId != null && shift.id == currentShiftId) {
+                    continue
+                }
+                
+                val existingStart = timeToMinutes(shift.startTime)
+                val existingEnd = timeToMinutes(shift.endTime)
+                
+                // Check for overlap using 4 conditions:
+                // 1. New shift starts during existing shift
+                // 2. New shift ends during existing shift
+                // 3. New shift completely contains existing shift
+                // 4. Existing shift completely contains new shift
+                val hasOverlap = (newStart >= existingStart && newStart < existingEnd) ||
+                        (newEnd > existingStart && newEnd <= existingEnd) ||
+                        (newStart <= existingStart && newEnd >= existingEnd) ||
+                        (existingStart <= newStart && existingEnd >= newEnd)
+                
+                if (hasOverlap) {
+                    // Get employer name for better error message
+                    val employerName: String = shift.employerId?.let { empId ->
+                        _employers.value.find { it.id == empId }?.name
+                    } ?: localizationManager.getString("default_employer_name")
+                    
+                    val errorMessage = localizationManager.getString(
+                        "error_overlapping_shift",
+                        employerName,
+                        shift.startTime,
+                        shift.endTime
+                    )
+                    
+                    _state.value = _state.value.copy(error = errorMessage)
+                    return true // Overlap found
+                }
+            }
+            
+            false // No overlap
+        } catch (e: Exception) {
+            println("❌ Error checking for overlapping shifts: ${e.message}")
+            e.printStackTrace()
+            false // On error, allow the save to proceed
+        }
+    }
+
     fun saveShift(
-        date: LocalDate,
+        startDate: LocalDate,
+        endDate: LocalDate,
         startTime: String,
         endTime: String,
         hours: Double,
@@ -168,6 +239,12 @@ class AddShiftViewModel @Inject constructor(
                 return@launch
             }
 
+            // Check for overlapping shifts before saving
+            val hasOverlap = checkForOverlappingShifts(startDate, startTime, endTime)
+            if (hasOverlap) {
+                return@launch // Error already set in checkForOverlappingShifts
+            }
+
             _state.value = _state.value.copy(isLoading = true, error = null)
 
             val userId = currentUserId ?: run {
@@ -178,17 +255,29 @@ class AddShiftViewModel @Inject constructor(
                 return@launch
             }
 
+            // iOS-CONFORMANT FIX: Determine status based on edit vs create
+            val shiftStatus = if (currentShiftId != null) {
+                // EDITING: Preserve existing status (iOS doc line 548)
+                val existingShift = expectedShiftRepository.getExpectedShift(currentShiftId!!)
+                existingShift?.status ?: "planned"
+            } else {
+                // CREATING: Calculate status from shift DATE only (not time)
+                val today = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+                if (startDate >= today) "planned" else "completed"
+            }
+
             val shift = ExpectedShift(
                 id = currentShiftId ?: UUID.randomUUID().toString(),
                 userId = userId,
-                shiftDate = date.toString(),
+                shiftDate = startDate.toString(),
                 startTime = startTime,
                 endTime = endTime,
                 expectedHours = hours,
                 hourlyRate = hourlyRate,
                 employerId = employerId,
-                alertMinutes = alertMinutes ?: when(selectedAlert.value) {
-                    "None" -> null
+                status = shiftStatus,
+                alertMinutes = alertMinutes ?: when {
+                    selectedAlert.value == "None" -> null
                     else -> selectedAlert.value.toIntOrNull()
                 },
                 notes = notes
@@ -202,24 +291,46 @@ class AddShiftViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = { savedShift: ExpectedShift ->
-                    // Schedule notification if alert is set
+                    // Handle notification based on create vs update (iOS-conformant)
                     val finalAlertMinutes = alertMinutes ?: when(selectedAlert.value) {
                         "None" -> null
                         else -> selectedAlert.value.toIntOrNull()
                     }
 
-                    finalAlertMinutes?.let { minutes ->
-                        try {
-                            val employerName = _employers.value.find { it.id == employerId }?.name ?: localizationManager.getString("default_employer_name")
-                            notificationManager.scheduleShiftAlert(
-                                shiftId = savedShift.id,
-                                shiftDate = date,
-                                startTime = kotlinx.datetime.LocalTime.parse(startTime),
-                                employerName = employerName,
-                                alertMinutes = minutes
-                            )
-                        } catch (e: Exception) {
-                            // Handle notification scheduling error silently
+                    if (currentShiftId != null) {
+                        // EDITING: Update or cancel notification
+                        finalAlertMinutes?.let { minutes ->
+                            try {
+                                val employerName = _employers.value.find { it.id == employerId }?.name ?: localizationManager.getString("default_employer_name")
+                                notificationManager.updateShiftAlert(
+                                    shiftId = savedShift.id,
+                                    shiftDate = startDate,
+                                    startTime = kotlinx.datetime.LocalTime.parse(startTime),
+                                    employerName = employerName,
+                                    alertMinutes = minutes
+                                )
+                            } catch (e: Exception) {
+                                // Handle notification update error silently
+                            }
+                        } ?: run {
+                            // Alert was removed, cancel notification
+                            notificationManager.cancelShiftAlert(savedShift.id)
+                        }
+                    } else {
+                        // CREATING: Schedule new notification
+                        finalAlertMinutes?.let { minutes ->
+                            try {
+                                val employerName = _employers.value.find { it.id == employerId }?.name ?: localizationManager.getString("default_employer_name")
+                                notificationManager.scheduleShiftAlert(
+                                    shiftId = savedShift.id,
+                                    shiftDate = startDate,
+                                    startTime = kotlinx.datetime.LocalTime.parse(startTime),
+                                    employerName = employerName,
+                                    alertMinutes = minutes
+                                )
+                            } catch (e: Exception) {
+                                // Handle notification scheduling error silently
+                            }
                         }
                     }
 
@@ -335,6 +446,9 @@ class AddShiftViewModel @Inject constructor(
                 _state.value = _state.value.copy(isLoading = true)
                 expectedShiftRepository.deleteExpectedShift(id).fold(
                     onSuccess = { _: Unit ->
+                        // iOS-conformant: Cancel notification when shift is deleted
+                        notificationManager.cancelShiftAlert(id)
+                        
                         _state.value = _state.value.copy(
                             isLoading = false,
                             isDeleted = true

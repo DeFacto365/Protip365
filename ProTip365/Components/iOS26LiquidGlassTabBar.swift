@@ -80,6 +80,8 @@ struct iOS26LiquidGlassTabBar: View {
                                     Color.accentColor :
                                     Color.secondary
                                 )
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                         }
                         .frame(minWidth: isLargeDevice ? 60 : 40, minHeight: isLargeDevice ? 60 : 50)
                         .frame(maxWidth: .infinity) // Fill available horizontal space

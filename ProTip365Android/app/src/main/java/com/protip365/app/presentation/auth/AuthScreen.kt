@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -56,6 +58,7 @@ fun AuthScreen(
 @Suppress("UNUSED_VARIABLE")
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val nameFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) {
@@ -64,6 +67,14 @@ fun AuthScreen(
             } else {
                 onNavigateToDashboard()
             }
+        }
+    }
+
+    // Auto-focus name field when switching to signup mode
+    LaunchedEffect(state.authMode) {
+        if (state.authMode == AuthMode.SIGN_UP) {
+            delay(100) // Small delay to ensure field is visible
+            nameFocusRequester.requestFocus()
         }
     }
 
@@ -123,6 +134,25 @@ fun AuthScreen(
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    // Name Field (Sign Up only)
+                    AnimatedVisibility(
+                        visible = state.authMode == AuthMode.SIGN_UP,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column {
+                            NameField(
+                                name = state.name,
+                                onNameChange = viewModel::updateName,
+                                error = state.nameError,
+                                enabled = !state.isLoading,
+                                focusRequester = nameFocusRequester,
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
 
                     // Email Field
                     EmailField(
@@ -424,6 +454,45 @@ private fun AuthModeToggle(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NameField(
+    name: String,
+    onNameChange: (String) -> Unit,
+    error: String?,
+    enabled: Boolean,
+    focusRequester: FocusRequester,
+    onNext: () -> Unit
+) {
+    OutlinedTextField(
+        value = name,
+        onValueChange = onNameChange,
+        label = { Text(localizedString(R.string.name)) },
+        placeholder = { Text("John Doe") },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null
+            )
+        },
+        isError = error != null,
+        supportingText = error?.let { { Text(it) } },
+        enabled = enabled,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next,
+            capitalization = KeyboardCapitalization.Words
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onNext() }
+        ),
+        singleLine = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

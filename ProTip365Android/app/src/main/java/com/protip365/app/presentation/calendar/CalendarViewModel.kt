@@ -92,6 +92,34 @@ class CalendarViewModel @Inject constructor(
             )
         }
     }
+
+    fun refreshShifts() {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                val currentUser = userRepository.getCurrentUser().first()
+                val userId = currentUser?.userId ?: return@launch
+
+                val shiftList = completedShiftRepository.getCompletedShifts(userId)
+                _shifts.value = shiftList
+                _uiState.update { it.copy(isLoading = false, error = null) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message, isLoading = false) }
+            }
+        }
+    }
+
+    fun deleteShift(shiftId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                completedShiftRepository.deleteShift(shiftId).getOrThrow()
+                refreshShifts()
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
 }
 
 data class CalendarUiState(

@@ -39,6 +39,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation"
             android:theme="@style/Theme.ProTip365">
             
             <!-- Main launcher intent -->
@@ -47,6 +48,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
+            <!-- App shortcuts meta-data -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+            
             <!-- Deep linking support -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -54,6 +60,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
                     android:host="protip365.app" />
+            </intent-filter>
+            
+            <!-- App shortcut deep links -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="protip365" />
             </intent-filter>
         </activity>
         
@@ -95,6 +109,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/shift_widget_info" />
+        </receiver>
+        
+        <!-- Dashboard Widget Provider -->
+        <receiver
+            android:name=".presentation.widgets.DashboardWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
         </receiver>
         
         <!-- Network Security Config -->

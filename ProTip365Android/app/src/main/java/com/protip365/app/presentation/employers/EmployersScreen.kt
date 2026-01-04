@@ -13,9 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.protip365.app.utils.HapticFeedbackUtils
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.R
+import com.protip365.app.utilities.rememberWindowSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,13 +37,44 @@ fun EmployersScreen(
     viewModel: EmployersViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val haptics = LocalHapticFeedback.current
     var showAddDialog by remember { mutableStateOf(false) }
+    
+    // WindowSizeClass detection for adaptive layouts
+    val windowSizeClass = rememberWindowSizeClass()
+
+    // Predictive back gesture: Handle dialogs
+    // When any dialog is open, dismiss it first before navigating back
+    BackHandler(
+        enabled = showAddDialog || state.showCannotDeleteAlert || state.employerToDelete != null
+    ) {
+        when {
+            showAddDialog -> showAddDialog = false
+            state.showCannotDeleteAlert -> viewModel.cancelDelete()
+            state.employerToDelete != null -> viewModel.cancelDelete()
+        }
+    }
+
+    // Refresh employers list when returning from edit screen
+    LaunchedEffect(navController.currentBackStackEntry) {
+        viewModel.refreshEmployers()
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
     ) {
         TopAppBar(
-            title = { Text(stringResource(R.string.employers_title)) },
+            modifier = Modifier.windowInsetsPadding(
+                WindowInsets.statusBars.only(WindowInsetsSides.Top)
+            ),
+            title = { 
+                Text(
+                    stringResource(R.string.employers_title),
+                    modifier = Modifier.semantics { heading() } // Screen title (h1)
+                ) 
+            },
             navigationIcon = {
                 if (fromOnboarding) {
                     // Show "Done" text button in onboarding mode
@@ -49,7 +92,11 @@ fun EmployersScreen(
                 }
             },
             actions = {
-                IconButton(onClick = { showAddDialog = true }) {
+                IconButton(onClick = { 
+                    // Form interaction haptic for add button
+                    HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                    showAddDialog = true 
+                }) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_employer))
                 }
             }
@@ -57,7 +104,9 @@ fun EmployersScreen(
 
         if (state.isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -68,7 +117,9 @@ fun EmployersScreen(
             )
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -76,10 +127,12 @@ fun EmployersScreen(
                     EmployerCard(
                         employer = employer,
                         isDefault = employer.id == state.defaultEmployerId,
+                        shiftCount = state.employerShiftCounts[employer.id] ?: 0,
+                        entryCount = state.employerEntryCounts[employer.id] ?: 0,
                         onSetDefault = { viewModel.setDefaultEmployer(employer.id) },
                         onEdit = { navController.navigate("edit_employer/${employer.id}") },
                         onToggleActive = { viewModel.toggleEmployerActive(employer.id) },
-                        onDelete = { viewModel.deleteEmployer(employer.id) }
+                        onDelete = { viewModel.requestDeleteEmployer(employer.id) }
                     )
                 }
             }
@@ -91,8 +144,64 @@ fun EmployersScreen(
         AddEmployerDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { name, hourlyRate ->
+                // Confirmation haptic for add employer
+                HapticFeedbackUtils.performConfirmationHaptic(haptics)
                 viewModel.addEmployer(name, hourlyRate)
                 showAddDialog = false
+                // Success haptic will be handled by ViewModel success callback if available
+            }
+        )
+    }
+
+    // iOS conformance: Cannot Delete Alert with Deactivate Option
+    // Matches iOS showCannotDeleteAlert (EmployersView.swift lines 101-113)
+    if (state.showCannotDeleteAlert) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() },
+            title = { Text("Cannot Delete Employer") },
+            text = { Text(state.cannotDeleteMessage ?: "This employer has associated data and cannot be deleted.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Confirmation haptic for deactivate action
+                        HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                        viewModel.deactivateInsteadOfDelete()
+                    }
+                ) {
+                    Text("Deactivate Instead")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDelete() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Normal Delete Confirmation Dialog
+    if (state.employerToDelete != null && !state.showCannotDeleteAlert) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDelete() },
+            title = { Text("Delete Employer") },
+            text = { 
+                Text("Are you sure you want to delete ${state.employerToDelete?.name}? This action cannot be undone.") 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Confirmation haptic for delete confirmation
+                        HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                        viewModel.confirmDeleteEmployer()
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDelete() }) {
+                    Text("Cancel")
+                }
             }
         )
     }
@@ -100,6 +209,8 @@ fun EmployersScreen(
     // Error handling
     state.error?.let { error ->
         LaunchedEffect(error) {
+            // Error haptic when error occurs
+            HapticFeedbackUtils.performErrorHaptic(haptics)
             // Show snackbar or handle error
         }
     }
@@ -110,13 +221,13 @@ fun EmployersScreen(
 fun EmployerCard(
     employer: com.protip365.app.data.models.Employer,
     isDefault: Boolean,
+    shiftCount: Int,
+    entryCount: Int,
     onSetDefault: () -> Unit,
     onEdit: () -> Unit,
     onToggleActive: () -> Unit,
     onDelete: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = if (isDefault) {
@@ -173,22 +284,51 @@ fun EmployerCard(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // Hourly rate
                         Text(
                             text = "$${employer.hourlyRate}/hour",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        // TODO: Calculate total earnings from CompletedShifts
-                        // if (totalEarnings > 0) {
-                        //     Text(
-                        //         text = "Total: $${"%,.2f".format(totalEarnings)}",
-                        //         style = MaterialTheme.typography.bodyMedium,
-                        //         color = MaterialTheme.colorScheme.primary
-                        //     )
-                        // }
+                        
+                        // iOS conformance: Display shift count (EmployerCard.swift lines 38-53)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "$shiftCount ${if (shiftCount == 1) "shift" else "shifts"}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        // iOS conformance: Display entry count (EmployerCard.swift lines 54-59)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "$entryCount ${if (entryCount == 1) "entry" else "entries"}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -238,7 +378,7 @@ fun EmployerCard(
                             DropdownMenuItem(
                                 text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
-                                    showDeleteDialog = true
+                                    onDelete() // Trigger iOS-conformant delete flow
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -254,30 +394,6 @@ fun EmployerCard(
                 }
             }
         }
-    }
-
-    // Delete confirmation dialog
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Employer") },
-            text = { Text("Are you sure you want to delete ${employer.name}? This action cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete()
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
@@ -301,18 +417,18 @@ fun EmptyEmployersState(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "No Employers Yet",
+                text = stringResource(R.string.no_employers_yet),
                 style = MaterialTheme.typography.titleLarge
             )
             Text(
-                text = "Add your employers to track earnings per workplace",
+                text = stringResource(R.string.add_employers_to_track),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(onClick = onAddEmployer) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Employer")
+                Text(stringResource(R.string.add_employer))
             }
         }
     }
@@ -329,7 +445,7 @@ fun AddEmployerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Employer") },
+        title = { Text(stringResource(R.string.add_employer_dialog_title)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -337,14 +453,14 @@ fun AddEmployerDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Employer Name") },
+                    label = { Text(stringResource(R.string.employer_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = hourlyRate,
                     onValueChange = { hourlyRate = it },
-                    label = { Text("Default Hourly Rate") },
+                    label = { Text(stringResource(R.string.default_hourly_rate_setting)) },
                     leadingIcon = { Text("$") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -361,12 +477,12 @@ fun AddEmployerDialog(
                 },
                 enabled = name.isNotBlank() && (hourlyRate.toDoubleOrNull() ?: 0.0) > 0
             ) {
-                Text("Add")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

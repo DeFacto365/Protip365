@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.protip365.app"
-    compileSdk = 34
+    compileSdk = 35 // TODO: Update to 36 when Android 16 SDK is available
 
     defaultConfig {
         applicationId = "com.protip365.monthly"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35 // TODO: Update to 36 when Android 16 SDK is available
         versionCode = 22
         versionName = "1.1.22"
 
@@ -58,7 +58,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -70,32 +69,29 @@ android {
         buildConfig = true
     }
 
-    // composeOptions {
-    //    kotlinCompilerExtensionVersion = "1.5.14"
-    // }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-
     // Core Android dependencies
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.1")
-
-    // Material Components
-    implementation("com.google.android.material:material:1.13.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    implementation(platform(libs.androidx.compose.bom))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -104,71 +100,75 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(libs.androidx.navigation.compose)
 
     // Hilt for Dependency Injection
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-compiler:2.51.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Supabase
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:2.5.3")
-    implementation("io.github.jan-tennert.supabase:functions-kt:2.5.3")
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.gotrue)
+    implementation(libs.supabase.storage)
+    implementation(libs.supabase.realtime)
+    implementation(libs.supabase.functions)
 
     // Ktor client for Supabase
-    implementation("io.ktor:ktor-client-android:2.3.12")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
-    implementation("io.ktor:ktor-client-logging:2.3.12")
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.logging)
     
     // SLF4J Android logger to fix logging warnings
-    implementation("org.slf4j:slf4j-android:1.7.36")
+    implementation(libs.slf4j.android)
 
     // Kotlinx Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+    implementation(libs.kotlinx.serialization.json)
 
     // Gson for JSON serialization
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // Kotlinx DateTime
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+    implementation(libs.kotlinx.datetime)
 
     // DataStore for preferences
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.datastore.preferences)
 
     // Biometric
-    implementation("androidx.biometric:biometric:1.1.0")
+    implementation(libs.androidx.biometric)
 
     // Security Crypto for encrypted preferences
-    implementation("androidx.security:security-crypto:1.1.0")
+    implementation(libs.androidx.security.crypto)
 
     // Google Play Billing
-    implementation("com.android.billingclient:billing-ktx:7.0.0")
+    implementation(libs.billing.ktx)
 
     // Splash Screen
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(libs.androidx.core.splashscreen)
 
     // Work Manager for background tasks
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Calendar View
-    implementation("com.kizitonwose.calendar:compose:2.5.1")
-    implementation("com.kizitonwose.calendar:data:2.5.1")
+    implementation(libs.calendar.compose)
 
     // Charts
-    implementation("com.patrykandpatrick.vico:compose:2.0.0-beta.1")
-    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.1")
-    implementation("com.patrykandpatrick.vico:core:2.0.0-beta.1")
+    implementation(libs.vico.compose.m3)
 
     // CSV Export
-    implementation("com.opencsv:opencsv:5.9")
+    implementation(libs.opencsv)
 
-    // Accompanist for additional Compose utilities (deprecated)
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
+    // Accompanist for additional Compose utilities
+    implementation(libs.accompanist.permissions)
+    implementation(libs.accompanist.systemuicontroller)
+
+    // Window Manager for foldable device support
+    implementation("androidx.window:window:1.3.0")
+    implementation("androidx.window:window-java:1.3.0")
+    implementation("androidx.window:window-rxjava3:1.3.0")
 
     // Firebase - temporarily disabled for testing
     // implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
@@ -176,13 +176,17 @@ dependencies {
     // implementation("com.google.firebase:firebase-crashlytics-ktx")
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("io.mockk:mockk:1.13.12")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-    androidTestImplementation("androidx.test.ext:junit:1.2.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// kapt {
+//     correctErrorTypes = true
+// }

@@ -58,20 +58,29 @@ class ExpectedShiftRepositoryImpl @Inject constructor(
 
     override suspend fun createExpectedShift(shift: ExpectedShift): Result<ExpectedShift> {
         return try {
+            android.util.Log.d("ExpectedShiftRepository", "Creating shift: id=${shift.id}, userId=${shift.userId}, employerId=${shift.employerId}, date=${shift.shiftDate}")
+            android.util.Log.d("ExpectedShiftRepository", "Full shift data: $shift")
             val createdShift = supabaseClient
                 .from("expected_shifts")
                 .insert(shift) {
                     select()
                 }
                 .decodeSingle<ExpectedShift>()
+            android.util.Log.d("ExpectedShiftRepository", "Shift created successfully: ${createdShift.id}")
             Result.success(createdShift)
         } catch (e: Exception) {
+            android.util.Log.e("ExpectedShiftRepository", "Failed to create shift: ${e.message}", e)
+            android.util.Log.e("ExpectedShiftRepository", "Shift data: id=${shift.id}, userId=${shift.userId}, employerId=${shift.employerId}, date=${shift.shiftDate}, status=${shift.status}")
+            android.util.Log.e("ExpectedShiftRepository", "Full exception: ${e.stackTraceToString()}")
             Result.failure(e)
         }
     }
 
     override suspend fun updateExpectedShift(shift: ExpectedShift): Result<ExpectedShift> {
         return try {
+            android.util.Log.d("ExpectedShiftRepository", "==== UPDATE SHIFT ====")
+            android.util.Log.d("ExpectedShiftRepository", "Updating shift: id=${shift.id}, date=${shift.shiftDate}, startTime=${shift.startTime}, endTime=${shift.endTime}")
+            android.util.Log.d("ExpectedShiftRepository", "Full shift data: $shift")
             val updatedShift = supabaseClient
                 .from("expected_shifts")
                 .update(shift) {
@@ -81,8 +90,11 @@ class ExpectedShiftRepositoryImpl @Inject constructor(
                     select()
                 }
                 .decodeSingle<ExpectedShift>()
+            android.util.Log.d("ExpectedShiftRepository", "Shift updated successfully: ${updatedShift.id}")
             Result.success(updatedShift)
         } catch (e: Exception) {
+            android.util.Log.e("ExpectedShiftRepository", "FAILED to update shift: ${e.message}", e)
+            android.util.Log.e("ExpectedShiftRepository", "Full exception: ${e.stackTraceToString()}")
             Result.failure(e)
         }
     }
@@ -200,16 +212,25 @@ class ExpectedShiftRepositoryImpl @Inject constructor(
     }
 
     override fun observeExpectedShifts(userId: String): Flow<List<ExpectedShift>> = flow {
-        emit(getExpectedShifts(userId))
+        while(true) {
+            emit(getExpectedShifts(userId))
+            kotlinx.coroutines.delay(2000) // Poll every 2 seconds
+        }
     }
 
     override fun observeShiftsForDate(userId: String, date: LocalDate): Flow<List<ExpectedShift>> = flow {
-        emit(getShiftsForDate(userId, date))
+        while(true) {
+            emit(getShiftsForDate(userId, date))
+            kotlinx.coroutines.delay(2000) // Poll every 2 seconds
+        }
     }
 
     override fun observeUpcomingShifts(userId: String): Flow<List<ExpectedShift>> = flow {
-        val today = LocalDate.fromEpochDays(System.currentTimeMillis().toInt() / 86400000)
-        emit(getExpectedShifts(userId, today, null))
+        while(true) {
+            val today = LocalDate.fromEpochDays(System.currentTimeMillis().toInt() / 86400000)
+            emit(getExpectedShifts(userId, today, null))
+            kotlinx.coroutines.delay(2000) // Poll every 2 seconds
+        }
     }
 
     override suspend fun getOverlappingShifts(

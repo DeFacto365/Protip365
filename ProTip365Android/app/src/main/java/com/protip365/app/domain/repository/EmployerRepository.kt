@@ -11,4 +11,9 @@ interface EmployerRepository {
     suspend fun deleteEmployer(employerId: String): Result<Unit>
     suspend fun setEmployerActive(employerId: String, active: Boolean): Result<Unit>
     fun observeEmployers(userId: String): Flow<List<Employer>>
+    
+    // iOS conformance: Shift and entry counts for deletion protection
+    // Matches iOS loadShiftCounts/loadEntryCounts (EmployersView.swift lines 197-277)
+    suspend fun getShiftCountForEmployer(userId: String, employerId: String): Int
+    suspend fun getEntryCountForEmployer(userId: String, employerId: String): Int
 }

@@ -171,15 +171,21 @@ struct AccountSettingsSection: View {
     }
 
     private func signOut() {
+        print("🚪 Sign out button tapped - starting sign out process")
         Task {
             do {
+                print("🚪 Attempting to sign out from Supabase...")
                 try await SupabaseManager.shared.client.auth.signOut()
+                print("✅ Successfully signed out from Supabase")
+                
                 await MainActor.run {
+                    print("📢 Posting userDidSignOut notification...")
                     // Reset to auth view - this would typically be handled by the parent view
                     NotificationCenter.default.post(name: .userDidSignOut, object: nil)
+                    print("✅ userDidSignOut notification posted")
                 }
             } catch {
-                print("Error signing out: \(error)")
+                print("❌ Error signing out: \(error)")
             }
         }
     }
@@ -299,8 +305,4 @@ struct AccountSettingsSection: View {
 }
 
 // MARK: - Notification Extensions
-
-extension Notification.Name {
-    static let userDidSignOut = Notification.Name("userDidSignOut")
-    static let userDidDeleteAccount = Notification.Name("userDidDeleteAccount")
-}
+// Note: userDidSignOut and userDidDeleteAccount are now defined in Constants.swift

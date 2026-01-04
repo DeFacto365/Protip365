@@ -3,6 +3,7 @@ package com.protip365.app.presentation.shifts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,18 +17,29 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.protip365.app.utils.HapticFeedbackUtils
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.foundation.text.KeyboardActions
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.data.models.Employer
 import com.protip365.app.R
 import com.protip365.app.presentation.components.DatePickerDialog
 import com.protip365.app.presentation.components.TimePickerDialog
+import com.protip365.app.utilities.rememberWindowSizeClass
 import kotlinx.datetime.*
 import java.text.NumberFormat
 import java.util.*
@@ -41,8 +53,23 @@ fun AddEditShiftScreen(
     viewModel: AddEditShiftViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-@Suppress("UNUSED_VARIABLE")
+    
+    // WindowSizeClass detection for adaptive layouts
+    val windowSizeClass = rememberWindowSizeClass()
+    
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+
+    // Debug: Log screen render
+    LaunchedEffect(Unit) {
+        android.util.Log.d("AddEditShiftScreen", "=== SCREEN RENDERED ===")
+        android.util.Log.d("AddEditShiftScreen", "shiftId: $shiftId, initialDate: $initialDate")
+    }
+
+    // Debug: Log UI state changes
+    LaunchedEffect(uiState) {
+        android.util.Log.d("AddEditShiftScreen", "UI State: isLoading=${uiState.isLoading}, employer=${uiState.selectedEmployer?.name}, errorMessage=${uiState.errorMessage}")
+    }
 
     // Initialize with shift data if editing
     LaunchedEffect(shiftId) {
@@ -69,28 +96,61 @@ fun AddEditShiftScreen(
         viewModel.loadEmployers()
     }
 
-    // Inline picker states (iOS-style)
-    var showEmployerPicker by remember { mutableStateOf(false) }
+    // Inline picker states
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    var showLunchBreakPicker by remember { mutableStateOf(false) }
-    var showAlertPicker by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Predictive back gesture: Handle dialogs and pickers
+    // When any dialog or picker is open, dismiss it first before navigating back
+    BackHandler(
+        enabled = showStartDatePicker || showEndDatePicker || 
+                  showStartTimePicker || showEndTimePicker || 
+                  showDeleteDialog || uiState.errorMessage != null
+    ) {
+        when {
+            showStartDatePicker -> showStartDatePicker = false
+            showEndDatePicker -> showEndDatePicker = false
+            showStartTimePicker -> showStartTimePicker = false
+            showEndTimePicker -> showEndTimePicker = false
+            showDeleteDialog -> showDeleteDialog = false
+            uiState.errorMessage != null -> viewModel.clearError()
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         topBar = {
             AddEditShiftTopBar(
                 isEditMode = shiftId != null,
                 isLoading = uiState.isLoading,
                 onBack = { navController.popBackStack() },
-                onDelete = { showDeleteDialog = true },
+                onDelete = { 
+                    // Confirmation haptic for delete button
+                    HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                    showDeleteDialog = true 
+                },
                 onSave = {
-                    viewModel.saveShift(
-                        onSuccess = { navController.popBackStack() }
-                    )
+                    // Confirmation haptic for save button (Android 16 Enhanced Haptic Feedback)
+                    HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                    android.util.Log.d("AddEditShiftScreen", "Save button clicked - isLoading: ${uiState.isLoading}, hasEmployer: ${uiState.selectedEmployer != null}")
+                    if (!uiState.isLoading) {
+                        viewModel.saveShift(
+                            onSuccess = { 
+                                // Success haptic feedback
+                                HapticFeedbackUtils.performSuccessHaptic(haptics)
+                                android.util.Log.d("AddEditShiftScreen", "Save successful, navigating back")
+                                navController.popBackStack() 
+                            }
+                        )
+                    } else {
+                        android.util.Log.w("AddEditShiftScreen", "Save clicked but already loading, ignoring")
+                    }
                 }
             )
         }
@@ -99,7 +159,8 @@ fun AddEditShiftScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -122,6 +183,7 @@ fun AddEditShiftScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -140,20 +202,19 @@ fun AddEditShiftScreen(
                     )
                 ) {
                     Column {
-                        // Employer and Notes Section (iOS-style)
+                        // Employer and Notes Section
                         ShiftDetailsSection(
                             selectedEmployer = uiState.selectedEmployer,
                             comments = uiState.comments,
                             salesTarget = uiState.salesTarget,
                             defaultSalesTarget = uiState.defaultSalesTarget,
                             employers = uiState.employerList,
-                            showEmployerPicker = showEmployerPicker,
-                            onEmployerClick = { showEmployerPicker = !showEmployerPicker },
+                            onEmployerSelected = viewModel::updateEmployer,
                             onCommentsChange = viewModel::updateComments,
                             onSalesTargetChange = viewModel::updateSalesTarget
                         )
 
-                        // Time Selection Section (iOS-style)
+                        // Time Selection Section
                         ShiftTimeSection(
                             selectedDate = uiState.selectedDate,
                             endDate = uiState.endDate,
@@ -164,19 +225,57 @@ fun AddEditShiftScreen(
                             showEndDatePicker = showEndDatePicker,
                             showStartTimePicker = showStartTimePicker,
                             showEndTimePicker = showEndTimePicker,
-                            showLunchBreakPicker = showLunchBreakPicker,
-                            onStartDateClick = { showStartDatePicker = !showStartDatePicker },
-                            onEndDateClick = { showEndDatePicker = !showEndDatePicker },
-                            onStartTimeClick = { showStartTimePicker = !showStartTimePicker },
-                            onEndTimeClick = { showEndTimePicker = !showEndTimePicker },
-                            onLunchBreakClick = { showLunchBreakPicker = !showLunchBreakPicker }
+                            onStartDateClick = { 
+                                // Form interaction haptic for date picker
+                                HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                                showStartDatePicker = !showStartDatePicker 
+                            },
+                            onEndDateClick = { 
+                                // Form interaction haptic for date picker
+                                HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                                showEndDatePicker = !showEndDatePicker 
+                            },
+                            onStartTimeClick = { 
+                                // Form interaction haptic for time picker
+                                HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                                showStartTimePicker = !showStartTimePicker 
+                            },
+                            onEndTimeClick = { 
+                                // Form interaction haptic for time picker
+                                HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                                showEndTimePicker = !showEndTimePicker 
+                            },
+                            onLunchBreakSelected = viewModel::updateLunchBreak,
+                            onStartDateSelected = { date ->
+                                viewModel.updateDate(date)
+                                showStartDatePicker = false
+                                // Selection haptic when date is selected
+                                HapticFeedbackUtils.performSelectionHaptic(haptics)
+                            },
+                            onEndDateSelected = { date ->
+                                viewModel.updateEndDate(date)
+                                showEndDatePicker = false
+                                // Selection haptic when date is selected
+                                HapticFeedbackUtils.performSelectionHaptic(haptics)
+                            },
+                            onStartTimeSelected = { time ->
+                                viewModel.updateStartTime(time)
+                                showStartTimePicker = false
+                                // Selection haptic when time is selected
+                                HapticFeedbackUtils.performSelectionHaptic(haptics)
+                            },
+                            onEndTimeSelected = { time ->
+                                viewModel.updateEndTime(time)
+                                showEndTimePicker = false
+                                // Selection haptic when time is selected
+                                HapticFeedbackUtils.performSelectionHaptic(haptics)
+                            }
                         )
 
-                        // Alert Section (iOS-style)
+                        // Alert Section
                         ShiftAlertSection(
                             selectedAlert = uiState.alertMinutes,
-                            showAlertPicker = showAlertPicker,
-                            onAlertClick = { showAlertPicker = !showAlertPicker }
+                            onAlertSelected = viewModel::updateAlertMinutes
                         )
 
                         // Summary Section (iOS-style)
@@ -195,47 +294,122 @@ fun AddEditShiftScreen(
         }
     }
 
-    // Only show delete dialog (iOS-style inline pickers are handled in sections)
-
+    // Delete confirmation dialog with entry validation
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(R.string.delete_shift)) },
-            text = { Text("Are you sure you want to delete this shift?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteShift(
-                            onSuccess = { navController.popBackStack() }
-                        )
-                        showDeleteDialog = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+            title = { 
+                Text(
+                    text = stringResource(R.string.delete_shift),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(stringResource(R.string.delete))
+                    if (uiState.hasEntry) {
+                        // Warning message when entry exists
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.this_shift_has_entry),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.delete_shift_and_entry),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.delete_shift_confirm),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+            confirmButton = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // No button
+                    TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) {
+                        Text(stringResource(R.string.no))
+                    }
+                    // Yes button
+                    Button(
+                        onClick = {
+                            // Confirmation haptic for delete confirmation
+                            HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                            viewModel.deleteShift(
+                                onSuccess = { 
+                                    // Success haptic feedback
+                                    HapticFeedbackUtils.performSuccessHaptic(haptics)
+                                    navController.popBackStack() 
+                                }
+                            )
+                            showDeleteDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(stringResource(R.string.yes))
+                    }
                 }
-            }
+            },
+            dismissButton = {}
         )
     }
 
-    // Error dialog
+    // Error dialog - show error messages
     uiState.errorMessage?.let { error ->
+        // Error haptic when error dialog appears
+        LaunchedEffect(error) {
+            HapticFeedbackUtils.performErrorHaptic(haptics)
+        }
+        android.util.Log.d("AddEditShiftScreen", "Showing error dialog: $error")
         AlertDialog(
-            onDismissRequest = { viewModel.clearError() },
-            title = { Text(stringResource(R.string.error)) },
-            text = { Text(error) },
+            onDismissRequest = { 
+                android.util.Log.d("AddEditShiftScreen", "Error dialog dismissed")
+                viewModel.clearError() 
+            },
+            title = { 
+                Text(
+                    text = stringResource(R.string.error),
+                    style = MaterialTheme.typography.titleLarge
+                ) 
+            },
+            text = { 
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodyMedium
+                ) 
+            },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearError() }) {
-                    Text("OK")
+                TextButton(
+                    onClick = { 
+                        android.util.Log.d("AddEditShiftScreen", "Error dialog OK clicked")
+                        viewModel.clearError() 
+                    }
+                ) {
+                    Text(stringResource(R.string.ok))
                 }
-            }
+            },
+            dismissButton = {}
         )
     }
 }
@@ -249,6 +423,9 @@ fun AddEditShiftTopBar(
     onSave: () -> Unit
 ) {
     Surface(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.statusBars.only(WindowInsetsSides.Top)
+        ),
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
@@ -304,7 +481,10 @@ fun AddEditShiftTopBar(
 
                 // Save button
                 IconButton(
-                    onClick = onSave,
+                    onClick = {
+                        android.util.Log.d("AddEditShiftScreen", "Save IconButton clicked - isLoading: $isLoading")
+                        onSave()
+                    },
                     enabled = !isLoading,
                     modifier = Modifier
                         .size(32.dp)
@@ -331,6 +511,7 @@ fun AddEditShiftTopBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftDetailsSection(
     selectedEmployer: Employer?,
@@ -338,13 +519,14 @@ fun ShiftDetailsSection(
     salesTarget: String,
     defaultSalesTarget: Double,
     employers: List<Employer>,
-    showEmployerPicker: Boolean,
-    onEmployerClick: () -> Unit,
+    onEmployerSelected: (Employer?) -> Unit,
     onCommentsChange: (String) -> Unit,
     onSalesTargetChange: (String) -> Unit
 ) {
+    var expandedEmployer by remember { mutableStateOf(false) }
+    
     Column {
-        // Employer Row (iOS-style)
+        // Employer Row with Dropdown
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -353,51 +535,46 @@ fun ShiftDetailsSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Employer",
+                text = stringResource(R.string.employer),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Button(
-                onClick = onEmployerClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+            ExposedDropdownMenuBox(
+                expanded = expandedEmployer,
+                onExpandedChange = { expandedEmployer = !expandedEmployer }
             ) {
-                Text(
-                    text = selectedEmployer?.name ?: "Select",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                OutlinedTextField(
+                    value = selectedEmployer?.name ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEmployer)
+                    },
+                    modifier = Modifier
+                        .width(150.dp)
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    placeholder = {
+                        Text(stringResource(R.string.select))
+                    }
                 )
-            }
-        }
-
-        // Inline Employer Picker (iOS-style)
-        if (showEmployerPicker) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            ) {
-                items(employers.size) { index ->
-                    val employer = employers[index]
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { 
-                                // Update employer and close picker
-                                onEmployerClick()
+                
+                ExposedDropdownMenu(
+                    expanded = expandedEmployer,
+                    onDismissRequest = { expandedEmployer = false }
+                ) {
+                    employers.forEach { employer ->
+                        DropdownMenuItem(
+                            text = { Text(employer.name) },
+                            onClick = {
+                                onEmployerSelected(employer)
+                                expandedEmployer = false
                             }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = employer.name,
-                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
@@ -410,7 +587,7 @@ fun ShiftDetailsSection(
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
 
-        // Sales Target Row (iOS-style: same line as label)
+        // Sales Target Row with Dollar Formatting
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -424,33 +601,53 @@ fun ShiftDetailsSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            OutlinedTextField(
-                value = salesTarget,
-                onValueChange = onSalesTargetChange,
-                placeholder = {
-                    Text(
-                        text = if (defaultSalesTarget > 0) {
-                            String.format("%.0f", defaultSalesTarget)
-                        } else {
-                            "0"
-                        },
-                        textAlign = TextAlign.End
-                    )
-                },
-                modifier = Modifier.width(150.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal
-                ),
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "$",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            )
+                OutlinedTextField(
+                    value = salesTarget,
+                    onValueChange = { newValue ->
+                        val filtered = newValue.filter { it.isDigit() || it == '.' }
+                        if (filtered.count { it == '.' } <= 1) {
+                            val parts = filtered.split('.')
+                            val integerPart = parts[0]
+                            val decimalPart = if (parts.size > 1) parts[1].take(2) else ""
+                            val finalValue = if (decimalPart.isNotEmpty()) "$integerPart.$decimalPart" else integerPart
+                            onSalesTargetChange(finalValue)
+                        }
+                    },
+                    visualTransformation = CurrencyVisualTransformation(),
+                    placeholder = {
+                        Text(
+                            text = if (defaultSalesTarget > 0) {
+                                DecimalFormat("#,##0.00").format(defaultSalesTarget)
+                            } else {
+                                "0.00"
+                            },
+                            textAlign = TextAlign.End
+                        )
+                    },
+                    modifier = Modifier.width(140.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal
+                    ),
+                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    )
+                )
+            }
         }
 
         // Divider
@@ -464,7 +661,7 @@ fun ShiftDetailsSection(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
-                text = "Comments",
+                text = stringResource(R.string.comments),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -474,7 +671,7 @@ fun ShiftDetailsSection(
             OutlinedTextField(
                 value = comments,
                 onValueChange = onCommentsChange,
-                placeholder = { Text("Add notes (optional)") },
+                placeholder = { Text(stringResource(R.string.add_notes_optional)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 2,
@@ -488,6 +685,7 @@ fun ShiftDetailsSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftTimeSection(
     selectedDate: LocalDate,
@@ -499,13 +697,25 @@ fun ShiftTimeSection(
     showEndDatePicker: Boolean,
     showStartTimePicker: Boolean,
     showEndTimePicker: Boolean,
-    showLunchBreakPicker: Boolean,
     onStartDateClick: () -> Unit,
     onEndDateClick: () -> Unit,
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
-    onLunchBreakClick: () -> Unit
+    onLunchBreakSelected: (Int) -> Unit,
+    onStartDateSelected: (LocalDate) -> Unit,
+    onEndDateSelected: (LocalDate) -> Unit,
+    onStartTimeSelected: (LocalTime) -> Unit,
+    onEndTimeSelected: (LocalTime) -> Unit
 ) {
+    var expandedLunchBreak by remember { mutableStateOf(false) }
+    val lunchBreakOptions = listOf(
+        0 to stringResource(R.string.none),
+        15 to "15 ${stringResource(R.string.minute_abbr)}",
+        30 to "30 ${stringResource(R.string.minute_abbr)}",
+        45 to "45 ${stringResource(R.string.minute_abbr)}",
+        60 to "60 ${stringResource(R.string.minute_abbr)}"
+    )
+    val selectedLunchBreakText = lunchBreakOptions.find { it.first == lunchBreak }?.second ?: stringResource(R.string.none)
     Column {
         // Starts Row (iOS-style)
         Row(
@@ -516,7 +726,7 @@ fun ShiftTimeSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Starts",
+                text = stringResource(R.string.starts),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -556,30 +766,6 @@ fun ShiftTimeSection(
             }
         }
 
-        // Inline Start Date Picker (iOS-style)
-        if (showStartDatePicker) {
-            // Date picker would go here
-            Text(
-                text = "Date picker placeholder",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            )
-        }
-
-        // Inline Start Time Picker (iOS-style)
-        if (showStartTimePicker) {
-            // Time picker would go here
-            Text(
-                text = "Time picker placeholder",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            )
-        }
-
         // Divider
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -595,7 +781,7 @@ fun ShiftTimeSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Ends",
+                text = stringResource(R.string.ends),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -635,37 +821,13 @@ fun ShiftTimeSection(
             }
         }
 
-        // Inline End Time Picker (iOS-style)
-        if (showEndTimePicker) {
-            // Time picker would go here
-            Text(
-                text = "End time picker placeholder",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            )
-        }
-
-        // Inline End Date Picker (iOS-style)
-        if (showEndDatePicker) {
-            // Date picker would go here
-            Text(
-                text = "End date picker placeholder",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            )
-        }
-
         // Divider
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
 
-        // Lunch Break Row (iOS-style)
+        // Lunch Break Row with Dropdown
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -674,56 +836,84 @@ fun ShiftTimeSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Lunch Break",
+                text = stringResource(R.string.lunch_break),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Button(
-                onClick = onLunchBreakClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+            ExposedDropdownMenuBox(
+                expanded = expandedLunchBreak,
+                onExpandedChange = { expandedLunchBreak = !expandedLunchBreak }
             ) {
-                Text(
-                    text = if (lunchBreak == 0) "None" else "$lunchBreak min",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                OutlinedTextField(
+                    value = selectedLunchBreakText,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLunchBreak)
+                    },
+                    modifier = Modifier
+                        .width(150.dp)
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
-            }
-        }
-
-        // Inline Lunch Break Picker (iOS-style)
-        if (showLunchBreakPicker) {
-            val options = listOf("None", "15 min", "30 min", "45 min", "60 min")
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-            ) {
-                items(options.size) { index ->
-                    val option = options[index]
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { 
-                                // Update lunch break and close picker
-                                onLunchBreakClick()
+                
+                ExposedDropdownMenu(
+                    expanded = expandedLunchBreak,
+                    onDismissRequest = { expandedLunchBreak = false }
+                ) {
+                    lunchBreakOptions.forEach { (minutes, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onLunchBreakSelected(minutes)
+                                expandedLunchBreak = false
                             }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = option,
-                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
+        }
+
+        // Date and Time Pickers
+        if (showStartDatePicker) {
+            DatePickerDialog(
+                selectedDate = selectedDate,
+                onDateSelected = onStartDateSelected,
+                onDismiss = { onStartDateClick() },
+                allowPastDates = true,
+                allowFutureDates = true
+            )
+        }
+        
+        if (showEndDatePicker) {
+            DatePickerDialog(
+                selectedDate = endDate ?: selectedDate,
+                onDateSelected = onEndDateSelected,
+                onDismiss = { onEndDateClick() },
+                allowPastDates = true,
+                allowFutureDates = true
+            )
+        }
+        
+        if (showStartTimePicker) {
+            TimePickerDialog(
+                selectedTime = startTime,
+                onTimeSelected = onStartTimeSelected,
+                onDismiss = { onStartTimeClick() }
+            )
+        }
+        
+        if (showEndTimePicker) {
+            TimePickerDialog(
+                selectedTime = endTime,
+                onTimeSelected = onEndTimeSelected,
+                onDismiss = { onEndTimeClick() }
+            )
         }
     }
 }
@@ -776,12 +966,22 @@ fun TimeRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftAlertSection(
     selectedAlert: Int?,
-    showAlertPicker: Boolean,
-    onAlertClick: () -> Unit
+    onAlertSelected: (Int?) -> Unit
 ) {
+    var expandedAlert by remember { mutableStateOf(false) }
+    val alertOptions = listOf(
+        null to stringResource(R.string.alert_none),
+        15 to stringResource(R.string.alert_15_minutes),
+        30 to stringResource(R.string.alert_30_minutes),
+        60 to stringResource(R.string.alert_60_minutes),
+        1440 to stringResource(R.string.alert_1_day)
+    )
+    val selectedAlertText = alertOptions.find { it.first == selectedAlert }?.second ?: stringResource(R.string.alert_none)
+    
     Column {
         // Divider
         HorizontalDivider(
@@ -789,123 +989,62 @@ fun ShiftAlertSection(
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
 
-        // Alert Selection Row (iOS-style)
-        Button(
-            onClick = onAlertClick,
+        // Alert Row with Dropdown - EXACT SAME PATTERN AS EMPLOYER
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent
-            ),
-            contentPadding = PaddingValues(0.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.NotificationsActive,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Alert",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = when (selectedAlert) {
-                            null, 0 -> "None"
-                            15 -> "15 minutes before"
-                            30 -> "30 minutes before"
-                            60 -> "1 hour before"
-                            1440 -> "1 day before"
-                            else -> "$selectedAlert min before"
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface  // Changed from onSurfaceVariant to onSurface (primary color)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.alert_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-        }
 
-        // Alert Picker (iOS-style inline)
-        if (showAlertPicker) {
-            val options = listOf(
-                0 to "None",
-                15 to "15 minutes before",
-                30 to "30 minutes before",
-                60 to "1 hour before",
-                1440 to "1 day before"
-            )
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ExposedDropdownMenuBox(
+                expanded = expandedAlert,
+                onExpandedChange = { expandedAlert = !expandedAlert }
             ) {
-                options.forEach { (minutes, label) ->
-                    Button(
-                        onClick = {
-                            // Update alert and close picker
-                            onAlertClick()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if ((minutes == 0 && selectedAlert == null) || 
-                                                (minutes != 0 && minutes == selectedAlert))
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            else Color.Transparent
-                        ),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            
-                            if ((minutes == 0 && selectedAlert == null) || 
-                                (minutes != 0 && minutes == selectedAlert)) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                OutlinedTextField(
+                    value = selectedAlertText,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAlert)
+                    },
+                    modifier = Modifier
+                        .width(180.dp)
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
+                
+                ExposedDropdownMenu(
+                    expanded = expandedAlert,
+                    onDismissRequest = { expandedAlert = false }
+                ) {
+                    alertOptions.forEach { (minutes, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onAlertSelected(minutes)
+                                expandedAlert = false
                             }
-                        }
-                    }
-                    
-                    if (minutes != options.last().first) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 20.dp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         )
                     }
                 }
@@ -947,7 +1086,7 @@ fun ShiftSummarySection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Shift Expected Hours",
+                text = stringResource(R.string.shift_expected_hours),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -976,7 +1115,7 @@ fun ShiftSummarySection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Gross Pay",
+                text = stringResource(R.string.gross_pay),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1004,7 +1143,7 @@ fun ShiftSummarySection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Expected net salary",
+                text = stringResource(R.string.expected_net_salary),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -1040,6 +1179,45 @@ fun formatTime(time: LocalTime): String {
 
 fun formatCurrency(amount: Double): String {
     return NumberFormat.getCurrencyInstance(Locale.US).format(amount)
+}
+
+class CurrencyVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val numericText = text.text.filter { it.isDigit() || it == '.' }
+        
+        if (numericText.isEmpty()) {
+            return TransformedText(
+                AnnotatedString(""),
+                OffsetMapping.Identity
+            )
+        }
+        
+        val amount = numericText.toDoubleOrNull() ?: 0.0
+        val formatter = DecimalFormat("#,##0.00")
+        val formatted = formatter.format(amount)
+        
+        return TransformedText(
+            AnnotatedString(formatted),
+            object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    if (offset <= 0) return 0
+                    val numericValue = text.text.substring(0, offset.coerceAtMost(text.length))
+                        .filter { it.isDigit() || it == '.' }
+                    
+                    if (numericValue.isEmpty()) return 0
+                    
+                    val amount = numericValue.toDoubleOrNull() ?: 0.0
+                    val formatted = formatter.format(amount)
+                    return formatted.length.coerceAtLeast(0)
+                }
+                
+                override fun transformedToOriginal(offset: Int): Int {
+                    val numericValue = text.text.filter { it.isDigit() || it == '.' }
+                    return numericValue.length.coerceAtMost(offset).coerceAtLeast(0)
+                }
+            }
+        )
+    }
 }
 
 // Dialog Components removed - using iOS-style inline pickers instead

@@ -1,15 +1,16 @@
 package com.protip365.app.presentation.auth
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,13 +19,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.protip365.app.R
@@ -44,10 +57,17 @@ fun SignUpScreen(
     var acceptTerms by remember { mutableStateOf(false) }
     val authState by viewModel.state.collectAsState()
     val nameFocusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
 
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         topBar = {
             TopAppBar(
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.statusBars.only(WindowInsetsSides.Top)
+                ),
                 title = { Text(stringResource(R.string.signup_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
@@ -61,6 +81,7 @@ fun SignUpScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -203,9 +224,32 @@ fun SignUpScreen(
                     checked = acceptTerms,
                     onCheckedChange = { acceptTerms = it }
                 )
-                Text(
-                    text = "I accept the Terms of Service and Privacy Policy",
-                    style = MaterialTheme.typography.bodyMedium
+                
+                val termsText = buildAnnotatedString {
+                    append("I accept the Terms of Service and ")
+                    pushStringAnnotation(tag = "privacy", annotation = "https://protip365.com/privacy-policy/")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline
+                    )) {
+                        append("Privacy Policy")
+                    }
+                    pop()
+                }
+                
+                ClickableText(
+                    text = termsText,
+                    onClick = { offset ->
+                        termsText.getStringAnnotations(tag = "privacy", start = offset, end = offset)
+                            .firstOrNull()?.let { annotation ->
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                                context.startActivity(intent)
+                            }
+                    },
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.weight(1f)
                 )
             }
 

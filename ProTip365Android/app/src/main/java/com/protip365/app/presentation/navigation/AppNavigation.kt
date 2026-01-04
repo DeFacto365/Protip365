@@ -64,7 +64,7 @@ fun AppNavigation(
         }
 
         composable("main") {
-            MainScreen()
+            MainScreen(parentNavController = navController)
         }
         
         // Add/Edit Shift and Entry routes
@@ -131,6 +131,10 @@ fun AppNavigation(
         
         composable("contact") {
             ContactScreen(navController = navController)
+        }
+        
+        composable("suggest_ideas") {
+            SuggestIdeasScreen(navController = navController)
         }
         
         composable("privacy") {

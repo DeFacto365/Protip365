@@ -16,15 +16,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.protip365.app.utils.HapticFeedbackUtils
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 import com.protip365.app.data.models.Employer
 import com.protip365.app.presentation.components.DatePickerDialog
 import com.protip365.app.presentation.components.TimePickerDialog
+import com.protip365.app.utilities.rememberWindowSizeClass
+import com.protip365.app.utilities.WindowWidthSizeClass
+import com.protip365.app.utilities.isLandscape
 import kotlinx.datetime.*
 import java.text.NumberFormat
 import java.util.*
@@ -39,8 +55,19 @@ fun AddEditEntryScreen(
     viewModel: AddEditEntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-@Suppress("UNUSED_VARIABLE")
+    
+    // WindowSizeClass detection for adaptive layouts (Android 16)
+    val windowSizeClass = rememberWindowSizeClass()
+    val isTablet = windowSizeClass.widthSizeClass == WindowWidthSizeClass.MEDIUM ||
+                   windowSizeClass.widthSizeClass == WindowWidthSizeClass.EXPANDED
+    
+    // Landscape orientation detection for landscape optimizations
+    val isLandscapeMode = isLandscape()
+    
+    // Use side-by-side layout for tablets OR phones in landscape
+    val useSideBySideLayout = isTablet || (isLandscapeMode && !isTablet)
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
 
     // Initialize with entry/shift data
     LaunchedEffect(entryId, shiftId) {
@@ -64,27 +91,54 @@ fun AddEditEntryScreen(
         viewModel.loadEmployers()
     }
 
-    // Inline picker states (iOS-style)
-    var showEmployerPicker by remember { mutableStateOf(false) }
+    // Inline picker states
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
-    var showLunchBreakPicker by remember { mutableStateOf(false) }
-    var showMissedReasonPicker by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Predictive back gesture: Handle dialogs and pickers
+    // When any dialog or picker is open, dismiss it first before navigating back
+    BackHandler(
+        enabled = showStartDatePicker || showEndDatePicker || 
+                  showStartTimePicker || showEndTimePicker || 
+                  showDeleteDialog || uiState.errorMessage != null
+    ) {
+        when {
+            showStartDatePicker -> showStartDatePicker = false
+            showEndDatePicker -> showEndDatePicker = false
+            showStartTimePicker -> showStartTimePicker = false
+            showEndTimePicker -> showEndTimePicker = false
+            showDeleteDialog -> showDeleteDialog = false
+            uiState.errorMessage != null -> viewModel.clearError()
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+        ),
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         topBar = {
             AddEditEntryTopBar(
                 isEditMode = entryId != null,
                 isLoading = uiState.isLoading,
                 onBack = { navController.popBackStack() },
-                onDelete = { showDeleteDialog = true },
+                onDelete = { 
+                    // Confirmation haptic for delete button
+                    HapticFeedbackUtils.performConfirmationHaptic(haptics)
+                    showDeleteDialog = true 
+                },
                 onSave = {
+                    // Confirmation haptic for save button (Android 16 Enhanced Haptic Feedback)
+                    HapticFeedbackUtils.performConfirmationHaptic(haptics)
                     viewModel.saveEntry(
-                        onSuccess = { navController.popBackStack() }
+                        onSuccess = { 
+                            // Success haptic feedback
+                            HapticFeedbackUtils.performSuccessHaptic(haptics)
+                            navController.popBackStack() 
+                        }
                     )
                 }
             )
@@ -94,7 +148,8 @@ fun AddEditEntryScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -106,7 +161,7 @@ fun AddEditEntryScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Loading...",
+                        text = stringResource(R.string.loading),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -117,11 +172,12 @@ fun AddEditEntryScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                     .verticalScroll(rememberScrollState())
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Work Info Card (iOS-style)
+                // Work Info Card
                 WorkInfoCard(
                     selectedEmployer = uiState.selectedEmployer,
                     didntWork = uiState.didntWork,
@@ -133,11 +189,10 @@ fun AddEditEntryScreen(
                     tipOut = uiState.tipOut.toDoubleOrNull() ?: 0.0,
                     other = uiState.other.toDoubleOrNull() ?: 0.0,
                     employers = uiState.employers,
-                    showEmployerPicker = showEmployerPicker,
-                    showMissedReasonPicker = showMissedReasonPicker,
-                    onEmployerClick = { showEmployerPicker = !showEmployerPicker },
+                    showDidntWorkOption = entryId == null, // Only show for new entries
+                    onEmployerSelected = viewModel::updateEmployer,
                     onDidntWorkChange = viewModel::updateDidntWork,
-                    onMissedReasonClick = { showMissedReasonPicker = !showMissedReasonPicker }
+                    onMissedReasonSelected = viewModel::updateMissedReason
                 )
 
                 // Time Selection Card (only show if worked) (iOS-style)
@@ -153,12 +208,29 @@ fun AddEditEntryScreen(
                         showEndDatePicker = showEndDatePicker,
                         showStartTimePicker = showStartTimePicker,
                         showEndTimePicker = showEndTimePicker,
-                        showLunchBreakPicker = showLunchBreakPicker,
-                        onStartDateClick = { showStartDatePicker = !showStartDatePicker },
-                        onEndDateClick = { showEndDatePicker = !showEndDatePicker },
-                        onStartTimeClick = { showStartTimePicker = !showStartTimePicker },
-                        onEndTimeClick = { showEndTimePicker = !showEndTimePicker },
-                        onLunchBreakClick = { showLunchBreakPicker = !showLunchBreakPicker }
+                        showLunchBreakPicker = false,
+                        onStartDateClick = { 
+                            // Form interaction haptic for date picker
+                            HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                            showStartDatePicker = !showStartDatePicker 
+                        },
+                        onEndDateClick = { 
+                            // Form interaction haptic for date picker
+                            HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                            showEndDatePicker = !showEndDatePicker 
+                        },
+                        onStartTimeClick = { 
+                            // Form interaction haptic for time picker
+                            HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                            showStartTimePicker = !showStartTimePicker 
+                        },
+                        onEndTimeClick = { 
+                            // Form interaction haptic for time picker
+                            HapticFeedbackUtils.performFormInteractionHaptic(haptics)
+                            showEndTimePicker = !showEndTimePicker 
+                        },
+                        onLunchBreakSelected = viewModel::updateLunchBreak,
+                        isTablet = useSideBySideLayout
                     )
 
                     // Earnings Card (only show if worked) (iOS-style)
@@ -174,7 +246,8 @@ fun AddEditEntryScreen(
                         onTipsChange = viewModel::updateTips,
                         onTipOutChange = viewModel::updateTipOut,
                         onOtherChange = viewModel::updateOther,
-                        onCommentsChange = viewModel::updateComments
+                        onCommentsChange = viewModel::updateComments,
+                        isTablet = useSideBySideLayout
                     )
                 }
 
@@ -190,6 +263,7 @@ fun AddEditEntryScreen(
                     other = uiState.other,
                     hourlyRate = uiState.selectedEmployer?.hourlyRate ?: uiState.defaultHourlyRate,
                     totalEarnings = viewModel.calculateTotalEarnings(),
+                    deductionPercentage = uiState.deductionPercentage,
                     salesBudget = uiState.salesBudget
                 )
 
@@ -198,18 +272,81 @@ fun AddEditEntryScreen(
         }
     }
 
+    // Date and Time Pickers
+    if (showStartDatePicker) {
+        DatePickerDialog(
+            selectedDate = uiState.selectedDate,
+            onDateSelected = { date ->
+                viewModel.updateDate(date)
+                showStartDatePicker = false
+                // Selection haptic when date is selected
+                HapticFeedbackUtils.performSelectionHaptic(haptics)
+            },
+            onDismiss = { showStartDatePicker = false },
+            allowPastDates = true,
+            allowFutureDates = true
+        )
+    }
+    
+    if (showEndDatePicker) {
+        DatePickerDialog(
+            selectedDate = uiState.endDate ?: uiState.selectedDate,
+            onDateSelected = { date ->
+                viewModel.updateEndDate(date)
+                showEndDatePicker = false
+                // Selection haptic when date is selected
+                HapticFeedbackUtils.performSelectionHaptic(haptics)
+            },
+            onDismiss = { showEndDatePicker = false },
+            allowPastDates = true,
+            allowFutureDates = true
+        )
+    }
+    
+    if (showStartTimePicker) {
+        TimePickerDialog(
+            selectedTime = uiState.startTime,
+            onTimeSelected = { time ->
+                viewModel.updateStartTime(time)
+                showStartTimePicker = false
+                // Selection haptic when time is selected
+                HapticFeedbackUtils.performSelectionHaptic(haptics)
+            },
+            onDismiss = { showStartTimePicker = false }
+        )
+    }
+    
+    if (showEndTimePicker) {
+        TimePickerDialog(
+            selectedTime = uiState.endTime,
+            onTimeSelected = { time ->
+                viewModel.updateEndTime(time)
+                showEndTimePicker = false
+                // Selection haptic when time is selected
+                HapticFeedbackUtils.performSelectionHaptic(haptics)
+            },
+            onDismiss = { showEndTimePicker = false }
+        )
+    }
+
     // Only show delete dialog (iOS-style inline pickers are handled in cards)
 
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Entry") },
-            text = { Text("Are you sure you want to delete this entry?") },
+            title = { Text(stringResource(R.string.delete_entry)) },
+            text = { Text(stringResource(R.string.delete_entry_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
+                        // Confirmation haptic for delete confirmation
+                        HapticFeedbackUtils.performConfirmationHaptic(haptics)
                         viewModel.deleteEntry(
-                            onSuccess = { navController.popBackStack() }
+                            onSuccess = { 
+                                // Success haptic feedback
+                                HapticFeedbackUtils.performSuccessHaptic(haptics)
+                                navController.popBackStack() 
+                            }
                         )
                         showDeleteDialog = false
                     },
@@ -217,12 +354,12 @@ fun AddEditEntryScreen(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -230,13 +367,17 @@ fun AddEditEntryScreen(
 
     // Error dialog
     uiState.errorMessage?.let { error ->
+        // Error haptic when error dialog appears
+        LaunchedEffect(error) {
+            HapticFeedbackUtils.performErrorHaptic(haptics)
+        }
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("Error") },
+            title = { Text(stringResource(R.string.error)) },
             text = { Text(error) },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -252,37 +393,39 @@ fun AddEditEntryTopBar(
     onSave: () -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant
+        modifier = Modifier.windowInsetsPadding(
+            WindowInsets.statusBars.only(WindowInsetsSides.Top)
+        ),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cancel button
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        shape = CircleShape
-                    )
-            ) {
+            // Cancel button - iOS style text button
+            TextButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Cancel",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    contentDescription = stringResource(R.string.cancel),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    stringResource(R.string.cancel),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             // Title
             Text(
-                text = if (isEditMode) "Edit Entry" else "New Entry",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                text = if (isEditMode) stringResource(R.string.edit_entry) else stringResource(R.string.new_entry),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics { heading() } // Screen title (h1)
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -290,31 +433,26 @@ fun AddEditEntryTopBar(
                 if (isEditMode) {
                     IconButton(
                         onClick = onDelete,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                shape = CircleShape
-                            )
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.error
+                            contentDescription = stringResource(R.string.delete),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
 
-                // Save button
-                IconButton(
+                // Save button - iOS style with checkmark
+                Button(
                     onClick = onSave,
                     enabled = !isLoading,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = CircleShape
-                        )
+                    modifier = Modifier.height(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -325,8 +463,9 @@ fun AddEditEntryTopBar(
                     } else {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Save",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            contentDescription = stringResource(R.string.save),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -335,6 +474,7 @@ fun AddEditEntryTopBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkInfoCard(
     selectedEmployer: Employer?,
@@ -347,79 +487,83 @@ fun WorkInfoCard(
     tipOut: Double,
     other: Double,
     employers: List<Employer>,
-    showEmployerPicker: Boolean,
-    showMissedReasonPicker: Boolean,
-    onEmployerClick: () -> Unit,
+    showDidntWorkOption: Boolean, // Control whether to show the "Didn't Work" toggle
+    onEmployerSelected: (Employer) -> Unit,
     onDidntWorkChange: (Boolean) -> Unit,
-    onMissedReasonClick: () -> Unit
+    onMissedReasonSelected: (String) -> Unit
 ) {
+    var expandedEmployer by remember { mutableStateOf(false) }
+    var expandedMissedReason by remember { mutableStateOf(false) }
+    val missedReasonOptions = listOf(
+        stringResource(R.string.missed_reason_sick),
+        stringResource(R.string.missed_reason_shift_cancelled),
+        stringResource(R.string.missed_reason_personal_emergency),
+        stringResource(R.string.missed_reason_no_show),
+        stringResource(R.string.missed_reason_weather),
+        stringResource(R.string.missed_reason_other)
+    )
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
+            defaultElevation = 2.dp
         )
     ) {
         Column {
-            // Employer Row (iOS-style)
+            // Employer Row with Dropdown
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Employer",
+                    text = stringResource(R.string.employer),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Button(
-                    onClick = onEmployerClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ExposedDropdownMenuBox(
+                    expanded = expandedEmployer,
+                    onExpandedChange = { expandedEmployer = !expandedEmployer }
                 ) {
-                    Text(
-                        text = selectedEmployer?.name ?: "Select",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                    OutlinedTextField(
+                        value = selectedEmployer?.name ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEmployer)
+                        },
+                        modifier = Modifier
+                            .width(150.dp)
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        placeholder = {
+                            Text(stringResource(R.string.select))
+                        }
                     )
-                }
-            }
-
-            // Inline Employer Picker (iOS-style)
-            if (showEmployerPicker) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                ) {
-                    items(employers.size) { index ->
-                        val employer = employers[index]
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { 
-                                    // Update employer and close picker
-                                    onEmployerClick()
+                    
+                    ExposedDropdownMenu(
+                        expanded = expandedEmployer,
+                        onDismissRequest = { expandedEmployer = false }
+                    ) {
+                        employers.forEach { employer ->
+                            DropdownMenuItem(
+                                text = { Text(employer.name) },
+                                onClick = {
+                                    onEmployerSelected(employer)
+                                    expandedEmployer = false
                                 }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = employer.name,
-                                style = MaterialTheme.typography.bodyLarge
                             )
                         }
                     }
@@ -428,106 +572,111 @@ fun WorkInfoCard(
 
             // Divider
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
-            // Didn't Work Toggle (iOS-style)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Didn't Work",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Switch(
-                    checked = didntWork,
-                    onCheckedChange = onDidntWorkChange
-                )
-            }
-
-            // Missed Reason (if didn't work) (iOS-style)
-            if (didntWork) {
+            // Didn't Work Toggle (only shown for new entries)
+            if (showDidntWorkOption) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Reason",
+                        text = stringResource(R.string.didnt_work),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    Button(
-                        onClick = onMissedReasonClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = missedReason.ifEmpty { "Select" },
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (missedReason.isEmpty())
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            else
-                                MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    Switch(
+                        checked = didntWork,
+                        onCheckedChange = {
+                            onDidntWorkChange(it)
+                            if (!it) {
+                                // Clear reason when toggle is turned off
+                                onMissedReasonSelected("")
+                            }
+                        }
+                    )
                 }
 
-                // Inline Missed Reason Picker (iOS-style)
-                if (showMissedReasonPicker) {
-                    val reasons = listOf("Sick", "Vacation", "Personal", "Holiday", "No Show", "Other")
-                    LazyColumn(
+                // Missed Reason (if didn't work) with Dropdown
+                if (didntWork) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
-                            .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(reasons.size) { index ->
-                            val reason = reasons[index]
-                            Row(
+                        Text(
+                            text = stringResource(R.string.reason),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        ExposedDropdownMenuBox(
+                            expanded = expandedMissedReason,
+                            onExpandedChange = { expandedMissedReason = !expandedMissedReason }
+                        ) {
+                            OutlinedTextField(
+                                value = missedReason,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMissedReason)
+                                },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { 
-                                        // Update reason and close picker
-                                        onMissedReasonClick()
-                                    }
-                                    .padding(vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = reason,
-                                    style = MaterialTheme.typography.bodyLarge
+                                    .width(180.dp)
+                                    .menuAnchor(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                placeholder = {
+                                    Text(stringResource(R.string.select))
+                                },
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = if (missedReason.isEmpty())
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
                                 )
+                            )
+                            
+                            ExposedDropdownMenu(
+                                expanded = expandedMissedReason,
+                                onDismissRequest = { expandedMissedReason = false }
+                            ) {
+                                missedReasonOptions.forEach { reason ->
+                                    DropdownMenuItem(
+                                        text = { Text(reason) },
+                                        onClick = {
+                                            onMissedReasonSelected(reason)
+                                            expandedMissedReason = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                // Divider
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                )
+                    // Divider
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                    )
+                }
             }
 
             // Status Display (iOS-style)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
             ) {
                 if (didntWork) {
                     Row(
@@ -536,7 +685,7 @@ fun WorkInfoCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Status",
+                            text = stringResource(R.string.status),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -565,42 +714,45 @@ fun WorkInfoCard(
                         }
                     }
                 } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Total Hours",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.total_hours),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
-                        Text(
-                            text = String.format("%.1f hrs", calculatedHours),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                            Text(
+                                text = String.format("%.1f hours", calculatedHours),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
-                    // Show Gross and Net PAY summary (ONLY hourly pay, no tips - matching iOS)
-                    if (calculatedHours > 0) {
-                        // ✅ CORRECT: Only hourly pay (hours × rate), no tips
-                        val grossPay = calculatedHours * hourlyRate
-                        val netPay = grossPay * (1.0 - (deductionPercentage / 100.0))
+                        // Show Gross and Net PAY summary below Total Hours (iOS-style)
+                        if (calculatedHours > 0) {
+                            val grossPay = calculatedHours * hourlyRate
+                            val netPay = grossPay * (1.0 - (deductionPercentage / 100.0))
 
-                        Text(
-                            text = buildString {
-                                append("Avg Net $")
-                                append(String.format("%.0f", netPay))
-                                append(" / Gross $")
-                                append(String.format("%.0f", grossPay))
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
+                            Text(
+                                text = buildString {
+                                    append("Avg Net $")
+                                    append(String.format("%.0f", netPay))
+                                    append(" / Gross $")
+                                    append(String.format("%.0f", grossPay))
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -608,6 +760,7 @@ fun WorkInfoCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeSelectionCard(
     selectedDate: LocalDate,
@@ -624,234 +777,276 @@ fun TimeSelectionCard(
     onEndDateClick: () -> Unit,
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
-    onLunchBreakClick: () -> Unit
+    onLunchBreakSelected: (Int) -> Unit,
+    isTablet: Boolean = false
 ) {
+    var expandedLunchBreak by remember { mutableStateOf(false) }
+    
+    // Landscape optimization: Use side-by-side layout for tablets OR phones in landscape
+    val useSideBySideLayout = isTablet || (isLandscape() && !isTablet)
+    
+    val lunchBreakOptions = listOf(
+        0 to stringResource(R.string.none),
+        15 to "15 ${stringResource(R.string.minute_abbr)}",
+        30 to "30 ${stringResource(R.string.minute_abbr)}",
+        45 to "45 ${stringResource(R.string.minute_abbr)}",
+        60 to "60 ${stringResource(R.string.minute_abbr)}"
+    )
+    val selectedLunchBreakText = lunchBreakOptions.find { it.first == lunchBreak }?.second ?: stringResource(R.string.none)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
+            defaultElevation = 2.dp
         )
     ) {
         Column {
-            // Starts Row (iOS-style)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Starts",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Date Button
-                    Button(
-                        onClick = onStartDateClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = formatDate(selectedDate),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Time Button
-                    Button(
-                        onClick = onStartTimeClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = formatTime(startTime),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-
-            // Inline Start Date Picker (iOS-style)
-            if (showStartDatePicker) {
-                // Date picker would go here
-                Text(
-                    text = "Date picker placeholder",
+            // Adaptive layout: Two-column for tablets OR phones in landscape
+            if (useSideBySideLayout) {
+                // Two-column layout for tablets: Start and End side by side
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-
-            // Inline Start Time Picker (iOS-style)
-            if (showStartTimePicker) {
-                // Time picker would go here
-                Text(
-                    text = "Time picker placeholder",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-
-            // Divider
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-            )
-
-            // Ends Row (iOS-style)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Ends",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // End Date Button
-                    Button(
-                        onClick = onEndDateClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Start column
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = formatDate(endDate ?: selectedDate),
+                            text = stringResource(R.string.starts),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = onStartDateClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = formatDate(selectedDate),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Button(
+                                onClick = onStartTimeClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = formatTime(startTime),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
-
-                    // End Time Button
-                    Button(
-                        onClick = onEndTimeClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
+                    // End column
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = formatTime(endTime),
+                            text = stringResource(R.string.ends),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = onEndDateClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = formatDate(endDate ?: selectedDate),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Button(
+                                onClick = onEndTimeClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = formatTime(endTime),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
                 }
-            }
-
-            // Inline End Time Picker (iOS-style)
-            if (showEndTimePicker) {
-                // Time picker would go here
-                Text(
-                    text = "End time picker placeholder",
+            } else {
+                // Single-column layout for phones (original)
+                // Starts Row
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-
-            // Inline End Date Picker (iOS-style)
-            if (showEndDatePicker) {
-                // Date picker would go here
-                Text(
-                    text = "End date picker placeholder",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                )
-            }
-
-            // Divider
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-            )
-
-            // Lunch Break Row (iOS-style)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Lunch Break",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Button(
-                    onClick = onLunchBreakClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (lunchBreak == 0) "None" else "$lunchBreak min",
+                        text = stringResource(R.string.starts),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onStartDateClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = formatDate(selectedDate),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Button(
+                            onClick = onStartTimeClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = formatTime(startTime),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                // Divider
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                )
+                // Ends Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.ends),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onEndDateClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = formatDate(endDate ?: selectedDate),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Button(
+                            onClick = onEndTimeClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = formatTime(endTime),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
 
-            // Inline Lunch Break Picker (iOS-style)
-            if (showLunchBreakPicker) {
-                val options = listOf("None", "15 min", "30 min", "45 min", "60 min")
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
+            // Divider
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+            )
+
+            // Lunch Break Row with Dropdown
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.lunch_break),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedLunchBreak,
+                    onExpandedChange = { expandedLunchBreak = !expandedLunchBreak }
                 ) {
-                    items(options.size) { index ->
-                        val option = options[index]
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { 
-                                    // Update lunch break and close picker
-                                    onLunchBreakClick()
+                    OutlinedTextField(
+                        value = selectedLunchBreakText,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLunchBreak)
+                        },
+                        modifier = Modifier
+                            .width(150.dp)
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+                    
+                    ExposedDropdownMenu(
+                        expanded = expandedLunchBreak,
+                        onDismissRequest = { expandedLunchBreak = false }
+                    ) {
+                        lunchBreakOptions.forEach { (minutes, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    onLunchBreakSelected(minutes)
+                                    expandedLunchBreak = false
                                 }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = option,
-                                style = MaterialTheme.typography.bodyLarge
                             )
                         }
                     }
@@ -921,18 +1116,19 @@ fun EarningsCard(
     onTipsChange: (String) -> Unit,
     onTipOutChange: (String) -> Unit,
     onOtherChange: (String) -> Unit,
-    onCommentsChange: (String) -> Unit
+    onCommentsChange: (String) -> Unit,
+    isTablet: Boolean = false
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
+            defaultElevation = 2.dp
         )
     ) {
         Column {
@@ -940,7 +1136,7 @@ fun EarningsCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -959,7 +1155,7 @@ fun EarningsCard(
                     OutlinedTextField(
                         value = sales,
                         onValueChange = onSalesChange,
-                        placeholder = { Text(if (salesBudget > 0) String.format("%.2f", salesBudget) else "0.00") },
+                        placeholder = { Text("0.00") },
                         modifier = Modifier.width(100.dp),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -973,20 +1169,20 @@ fun EarningsCard(
 
             // Divider
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
             // Tips Row (iOS-style)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Tips",
+                    text = stringResource(R.string.tips),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -1014,15 +1210,15 @@ fun EarningsCard(
 
             // Divider
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
             // Tip Out Row (iOS-style)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1055,20 +1251,20 @@ fun EarningsCard(
 
             // Divider
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
             // Other Row (iOS-style)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Other",
+                    text = stringResource(R.string.other_income),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -1096,15 +1292,15 @@ fun EarningsCard(
 
             // Divider
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
             )
 
             // Comments Row (iOS-style)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
@@ -1174,22 +1370,29 @@ fun SummaryCard(
     other: String,
     hourlyRate: Double,
     totalEarnings: Double,
+    deductionPercentage: Double,
     salesBudget: Double
 ) {
+    // Calculate expected net salary (after deductions)
+    val expectedNetSalary = totalEarnings * (1.0 - (deductionPercentage / 100.0))
+    
+    // Check if values are greater than 0
+    val otherAmount = other.toDoubleOrNull() ?: 0.0
+    val tipOutAmount = tipOut.toDoubleOrNull() ?: 0.0
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
+            defaultElevation = 2.dp
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header with status badge (iOS-style)
@@ -1200,7 +1403,8 @@ fun SummaryCard(
             ) {
                 Text(
                     text = "Summary",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -1243,80 +1447,32 @@ fun SummaryCard(
             }
 
             if (!didntWork) {
-                // Sales at the top (stats only)
-                if (sales.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Sales",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatCurrency(sales.toDoubleOrNull() ?: 0.0),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    
-                    // Sales vs Budget line
-                    if (salesBudget > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Sales vs Budget",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val salesAmount = sales.toDoubleOrNull() ?: 0.0
-                            val percentage = if (salesBudget > 0) (salesAmount / salesBudget * 100) else 0.0
-                            Text(
-                                text = "${String.format("%.1f", percentage)}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = if (percentage >= 100) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    
-                    // Tip percentage line
-                    val salesAmount = sales.toDoubleOrNull() ?: 0.0
-                    val tipsAmount = tips.toDoubleOrNull() ?: 0.0
-                    if (salesAmount > 0 && tipsAmount > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Tip %",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val tipPercentage = (tipsAmount / salesAmount * 100)
-                            Text(
-                                text = "${String.format("%.1f", tipPercentage)}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    
-                    HorizontalDivider()
-                }
-
-                // Income components
-                // Gross Pay (Base Pay)
+                // Sales
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Gross Pay",
+                        text = "Sales",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = formatCurrency(sales.toDoubleOrNull() ?: 0.0),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                HorizontalDivider()
+
+                // Gross Pay
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.gross_pay),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1327,13 +1483,15 @@ fun SummaryCard(
                     )
                 }
 
+                HorizontalDivider()
+
                 // Tips
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Tips",
+                        text = stringResource(R.string.tips),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1344,27 +1502,31 @@ fun SummaryCard(
                     )
                 }
 
-                // Other
-                if (other.isNotEmpty()) {
+                HorizontalDivider()
+
+                // Other (only show if > 0)
+                if (otherAmount > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Other",
+                            text = stringResource(R.string.other_income),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = formatCurrency(other.toDoubleOrNull() ?: 0.0),
+                            text = formatCurrency(otherAmount),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                     }
+
+                    HorizontalDivider()
                 }
 
-                // Tip Out (negative)
-                if (tipOut.isNotEmpty()) {
+                // Tip Out (negative in red, only show if > 0)
+                if (tipOutAmount > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -1375,46 +1537,30 @@ fun SummaryCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "-${formatCurrency(tipOut.toDoubleOrNull() ?: 0.0)}",
+                            text = "-${formatCurrency(tipOutAmount)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+
+                    HorizontalDivider()
                 }
 
-                HorizontalDivider()
-
-                // Total Earnings
+                // Expected net salary (bold)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Total Earnings",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = formatCurrency(totalEarnings),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                // Expected Net Salary (after deductions)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Expected net salary",
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = stringResource(R.string.expected_net_salary),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = formatCurrency(totalEarnings * 0.7), // 30% deduction
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = formatCurrency(expectedNetSalary),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )

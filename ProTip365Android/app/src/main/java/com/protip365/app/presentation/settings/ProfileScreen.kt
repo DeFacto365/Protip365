@@ -11,9 +11,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.protip365.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,9 +41,14 @@ fun ProfileScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
     ) {
         TopAppBar(
+            modifier = Modifier.windowInsetsPadding(
+                WindowInsets.statusBars.only(WindowInsetsSides.Top)
+            ),
             title = { Text("Profile") },
             navigationIcon = {
                 IconButton(onClick = { navController.navigateUp() }) {
@@ -57,6 +70,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -84,7 +98,7 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = email,
+                        text = stringResource(R.string.email_format, email),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -95,7 +109,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.settings_name_label)) },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
@@ -109,7 +123,7 @@ fun ProfileScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = {},
-                label = { Text("Email") },
+                label = { Text(stringResource(R.string.settings_email_label)) },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 enabled = false,
                 modifier = Modifier.fillMaxWidth(),
