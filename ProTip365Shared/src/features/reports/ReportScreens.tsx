@@ -10,6 +10,7 @@ import { ReportsStackParamList } from "../../navigation/types";
 import { loadShiftRecords } from "../../storage/shiftRepository";
 import { theme } from "../../theme";
 import { buildReportViewModelForPeriod, ReportMetric, ReportViewModel } from "./reportViewModel";
+import { buildHistoryItems, ShiftListItem } from "../history/historyViewModel";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -151,23 +152,30 @@ export function YearlyReportScreen() {
   return <PeriodReportScreen kind="year" />;
 }
 
-export function HistoryScreen() {
+export function HistoryScreen({ navigation }: NativeStackScreenProps<ReportsStackParamList, "History">) {
   const records = useShiftRecords();
-  const sortedRecords = [...records].sort((first, second) => `${second.plannedShift.shiftDate} ${second.plannedShift.startTime}`.localeCompare(`${first.plannedShift.shiftDate} ${first.plannedShift.startTime}`));
+  const historyItems = buildHistoryItems(records);
+
+  function openHistoryItem(item: ShiftListItem) {
+    if (item.editTarget === "dailyEntry") {
+      navigation.navigate("AddShift", { shiftId: item.id });
+    } else {
+      navigation.navigate("AddPlannedShift", { shiftId: item.id });
+    }
+  }
 
   return (
     <AppScaffold title="History">
-      {sortedRecords.length === 0 ? (
+      {historyItems.length === 0 ? (
         <Card body="Saved shifts will appear here after you log or plan them." title="No history yet" />
       ) : (
         <View style={styles.list}>
-          {sortedRecords.map((record) => (
-            <View key={record.plannedShift.id} style={styles.historyRow}>
-              <Text style={styles.historyTitle}>{record.plannedShift.shiftDate}</Text>
-              <Text style={styles.historyBody}>
-                {record.plannedShift.startTime} - {record.plannedShift.endTime} | {record.plannedShift.status}
-              </Text>
-            </View>
+          {historyItems.map((item) => (
+            <Pressable accessibilityRole="button" key={item.id} onPress={() => openHistoryItem(item)} style={styles.historyRow}>
+              <Text style={styles.historyTitle}>{item.title}</Text>
+              <Text style={styles.historyBody}>{item.statusLabel}</Text>
+              <Text style={styles.historyBody}>{item.subtitle}</Text>
+            </Pressable>
           ))}
         </View>
       )}

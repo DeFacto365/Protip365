@@ -32,6 +32,8 @@ export type ReportsStackParamList = {
   MonthlyReport: undefined;
   YearlyReport: undefined;
   History: undefined;
+  AddShift: ShiftEntryRouteParams;
+  AddPlannedShift: PlannedShiftRouteParams;
 };
 
 export type SettingsStackParamList = {

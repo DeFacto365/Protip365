@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { CalendarPlus, Pencil } from "lucide-react-native";
 import { AppScaffold, Card } from "../../components/AppScaffold";
-import { calculatePlannedHours, ShiftRecord } from "../../domain";
+import { ShiftRecord } from "../../domain";
 import { CalendarStackParamList } from "../../navigation/types";
 import { loadShiftRecords, saveShiftRecord } from "../../storage/shiftRepository";
 import { theme } from "../../theme";
@@ -16,9 +16,9 @@ import {
   markPlannedShiftStatus,
   PlannedShiftForm,
   previewPlannedHours,
-  shiftStatusLabel,
   validatePlannedShift,
 } from "./plannedShift";
+import { buildCalendarItems, ShiftListItem } from "../history/historyViewModel";
 
 type PlannedShiftScreenProps = {
   navigation: {
@@ -82,9 +82,15 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
     }, []),
   );
 
-  const plannedRecords = records
-    .filter((record) => record.plannedShift.status !== "completed")
-    .sort((first, second) => `${first.plannedShift.shiftDate} ${first.plannedShift.startTime}`.localeCompare(`${second.plannedShift.shiftDate} ${second.plannedShift.startTime}`));
+  const calendarItems = buildCalendarItems(records);
+
+  function openCalendarItem(item: ShiftListItem) {
+    if (item.editTarget === "dailyEntry") {
+      navigation.navigate("AddShift", { shiftId: item.id });
+    } else {
+      navigation.navigate("AddPlannedShift", { shiftId: item.id });
+    }
+  }
 
   return (
     <AppScaffold title="Calendar">
@@ -93,30 +99,28 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
         <Text style={styles.primaryButtonText}>Add planned shift</Text>
       </Pressable>
 
-      {plannedRecords.length === 0 ? (
-        <Card body="No planned shifts saved yet." title="Planned shifts" />
+      {calendarItems.length === 0 ? (
+        <Card body="No shifts saved yet. Add a planned shift or log today's shift." title="Calendar" />
       ) : (
         <View style={styles.list}>
-          {plannedRecords.map((record) => (
+          {calendarItems.map((item) => (
             <Pressable
               accessibilityRole="button"
-              key={record.plannedShift.id}
-              onPress={() => navigation.navigate("AddPlannedShift", { shiftId: record.plannedShift.id })}
+              key={item.id}
+              onPress={() => openCalendarItem(item)}
               style={styles.shiftRow}
             >
               <View style={styles.shiftRowHeader}>
                 <View>
-                  <Text style={styles.shiftTitle}>{record.plannedShift.shiftDate}</Text>
-                  <Text style={styles.shiftSubtitle}>
-                    {record.plannedShift.startTime} - {record.plannedShift.endTime} | {calculatePlannedHours(record.plannedShift).toFixed(2)} h
-                  </Text>
+                  <Text style={styles.shiftTitle}>{item.date}</Text>
+                  <Text style={styles.shiftSubtitle}>{item.time}</Text>
                 </View>
                 <View style={styles.rowStatus}>
-                  <Text style={styles.statusBadge}>{shiftStatusLabel(record.plannedShift.status)}</Text>
+                  <Text style={styles.statusBadge}>{item.statusLabel}</Text>
                   <Pencil color={theme.colors.primary} size={18} />
                 </View>
               </View>
-              {record.employer?.name ? <Text style={styles.shiftSubtitle}>{record.employer.name}</Text> : null}
+              <Text style={styles.shiftSubtitle}>{item.subtitle}</Text>
             </Pressable>
           ))}
         </View>

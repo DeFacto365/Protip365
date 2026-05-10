@@ -97,6 +97,8 @@ function ReportsStackNavigator() {
       <ReportsStack.Screen component={MonthlyReportScreen} name="MonthlyReport" />
       <ReportsStack.Screen component={YearlyReportScreen} name="YearlyReport" />
       <ReportsStack.Screen component={HistoryScreen} name="History" />
+      <ReportsStack.Screen component={AddShiftScreen} name="AddShift" />
+      <ReportsStack.Screen component={PlannedShiftScreen} name="AddPlannedShift" />
     </ReportsStack.Navigator>
   );
 }
