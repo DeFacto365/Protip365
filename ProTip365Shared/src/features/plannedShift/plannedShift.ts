@@ -1,4 +1,4 @@
-import { calculatePlannedHours, PlannedShift, ShiftRecord } from "../../domain";
+import { calculatePlannedHours, PlannedShift, ShiftRecord, ShiftStatus } from "../../domain";
 
 export type PlannedShiftForm = {
   id?: string;
@@ -136,4 +136,29 @@ export function previewPlannedHours(form: PlannedShiftForm) {
 
   const record = buildRecordFromPlannedShift(form);
   return calculatePlannedHours(record.plannedShift);
+}
+
+export function shiftStatusLabel(status: ShiftStatus) {
+  switch (status) {
+    case "completed":
+      return "Completed";
+    case "did_not_work":
+      return "Did not work";
+    case "missed":
+      return "Missed";
+    case "planned":
+    default:
+      return "Planned";
+  }
+}
+
+export function markPlannedShiftStatus(record: ShiftRecord, status: Exclude<ShiftStatus, "completed">): ShiftRecord {
+  return {
+    ...record,
+    entry: undefined,
+    plannedShift: {
+      ...record.plannedShift,
+      status,
+    },
+  };
 }

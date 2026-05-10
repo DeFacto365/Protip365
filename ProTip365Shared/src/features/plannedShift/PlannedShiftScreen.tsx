@@ -13,8 +13,10 @@ import {
   createDefaultPlannedShiftForm,
   formFromPlannedShiftRecord,
   hasPlannedShiftValidationErrors,
+  markPlannedShiftStatus,
   PlannedShiftForm,
   previewPlannedHours,
+  shiftStatusLabel,
   validatePlannedShift,
 } from "./plannedShift";
 
@@ -81,7 +83,7 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
   );
 
   const plannedRecords = records
-    .filter((record) => record.plannedShift.status === "planned")
+    .filter((record) => record.plannedShift.status !== "completed")
     .sort((first, second) => `${first.plannedShift.shiftDate} ${first.plannedShift.startTime}`.localeCompare(`${second.plannedShift.shiftDate} ${second.plannedShift.startTime}`));
 
   return (
@@ -109,7 +111,10 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
                     {record.plannedShift.startTime} - {record.plannedShift.endTime} | {calculatePlannedHours(record.plannedShift).toFixed(2)} h
                   </Text>
                 </View>
-                <Pencil color={theme.colors.primary} size={18} />
+                <View style={styles.rowStatus}>
+                  <Text style={styles.statusBadge}>{shiftStatusLabel(record.plannedShift.status)}</Text>
+                  <Pencil color={theme.colors.primary} size={18} />
+                </View>
               </View>
               {record.employer?.name ? <Text style={styles.shiftSubtitle}>{record.employer.name}</Text> : null}
             </Pressable>
@@ -122,6 +127,7 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
 
 export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProps) {
   const [form, setForm] = useState<PlannedShiftForm>(() => createDefaultPlannedShiftForm());
+  const [loadedRecord, setLoadedRecord] = useState<ShiftRecord | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -131,6 +137,7 @@ export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProp
 
     if (!shiftId) {
       setForm(createDefaultPlannedShiftForm());
+      setLoadedRecord(null);
       setNotFound(false);
       return () => {
         active = false;
@@ -145,8 +152,10 @@ export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProp
       const existingRecord = records.find((record) => record.plannedShift.id === shiftId);
       if (existingRecord) {
         setForm(formFromPlannedShiftRecord(existingRecord));
+        setLoadedRecord(existingRecord);
         setNotFound(false);
       } else {
+        setLoadedRecord(null);
         setNotFound(true);
       }
     });
@@ -171,6 +180,27 @@ export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProp
     }
 
     await saveShiftRecord(buildRecordFromPlannedShift(form));
+    navigation.goBack();
+  }
+
+  async function handleStatus(status: "planned" | "missed" | "did_not_work") {
+    setSubmitted(true);
+    const nextErrors = validatePlannedShift(form);
+    if (hasPlannedShiftValidationErrors(nextErrors)) {
+      return;
+    }
+
+    const formRecord = buildRecordFromPlannedShift(form);
+    const baseRecord = loadedRecord ?? formRecord;
+    const updatedRecord = markPlannedShiftStatus(
+      {
+        ...baseRecord,
+        employer: formRecord.employer,
+        plannedShift: formRecord.plannedShift,
+      },
+      status,
+    );
+    await saveShiftRecord(updatedRecord);
     navigation.goBack();
   }
 
@@ -202,6 +232,19 @@ export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProp
       <Pressable accessibilityRole="button" onPress={handleSave} style={styles.primaryButton}>
         <Text style={styles.primaryButtonText}>{route?.params?.shiftId ? "Save changes" : "Save planned shift"}</Text>
       </Pressable>
+      <View style={styles.statusActions}>
+        <Pressable accessibilityRole="button" onPress={() => handleStatus("did_not_work")} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>Did not work</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => handleStatus("missed")} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>Missed</Text>
+        </Pressable>
+        {route?.params?.shiftId ? (
+          <Pressable accessibilityRole="button" onPress={() => handleStatus("planned")} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Restore planned</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </AppScaffold>
   );
 }
@@ -267,6 +310,27 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
   },
+  rowStatus: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: theme.spacing.md,
+  },
+  secondaryButtonText: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+    textAlign: "center",
+  },
   shiftRow: {
     ...theme.cards,
     gap: theme.spacing.sm,
@@ -283,6 +347,15 @@ const styles = StyleSheet.create({
   shiftTitle: {
     ...theme.typography.sectionTitle,
     color: theme.colors.text,
+  },
+  statusActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.md,
+  },
+  statusBadge: {
+    ...theme.typography.label,
+    color: theme.colors.primary,
   },
   twoColumn: {
     flexDirection: "row",

@@ -3,7 +3,9 @@ import {
   buildRecordFromPlannedShift,
   createDefaultPlannedShiftForm,
   formFromPlannedShiftRecord,
+  markPlannedShiftStatus,
   previewPlannedHours,
+  shiftStatusLabel,
   validatePlannedShift,
 } from "./plannedShift";
 
@@ -81,5 +83,37 @@ describe("plannedShift", () => {
       hourlyRate: "17.5",
       notes: "Patio",
     });
+  });
+
+  it("marks a planned shift missed without carrying income", () => {
+    const record = buildRecordFromPlannedShift({
+      ...createDefaultPlannedShiftForm(),
+      endTime: "22:00",
+      hourlyRate: "17.5",
+      startTime: "17:00",
+    });
+
+    const missedRecord = markPlannedShiftStatus(
+      {
+        ...record,
+        entry: {
+          actualHours: 5,
+          id: "entry-1",
+          sales: 500,
+          shiftId: record.plannedShift.id,
+          tips: { card: 100, cash: 20 },
+          userId: "local-user",
+        },
+      },
+      "missed",
+    );
+
+    expect(missedRecord.plannedShift.status).toBe("missed");
+    expect(missedRecord.entry).toBeUndefined();
+  });
+
+  it("labels did-not-work status for calendar and reports", () => {
+    expect(shiftStatusLabel("did_not_work")).toBe("Did not work");
+    expect(shiftStatusLabel("missed")).toBe("Missed");
   });
 });
