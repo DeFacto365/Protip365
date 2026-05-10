@@ -1,20 +1,3 @@
--- Function to check if an email exists in auth.users
--- This needs to be run in Supabase SQL Editor as it accesses auth schema
-
-CREATE OR REPLACE FUNCTION public.check_email_exists(check_email TEXT)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1
-    FROM auth.users
-    WHERE email = check_email
-  );
-END;
-$$;
-
--- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION public.check_email_exists(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.check_email_exists(TEXT) TO anon;
+-- Deprecated for security: public email existence checks allow account enumeration.
+-- Keep this migration as a no-op for fresh environments. Existing deployments are
+-- cleaned up by 20260510000000_remove_email_existence_oracle.sql.

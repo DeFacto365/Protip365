@@ -100,3 +100,25 @@
 - Plaintext password reset tokens.
 - Sensitive shift/subscription data in AsyncStorage.
 - PostCSS vulnerable dependency.
+
+## Remediation Status
+
+Fixed in the RFP-116 dev pass:
+
+- Account deletion now checks delete errors before deleting the auth user and uses `users_profile.user_id`.
+- Public email existence RPC is removed for fresh and existing database paths.
+- Support email fields are length-limited and HTML-escaped before rendering.
+- Password reset token schema now stores `token_hash`; existing plaintext tokens are invalidated during migration.
+- Shared app shift and subscription repositories now use SecureStore-backed storage instead of AsyncStorage.
+- `npm audit --json` reports zero vulnerabilities after the PostCSS override and lockfile refresh.
+
+Final verification commands:
+
+- `npm test`
+- `npm run typecheck`
+- `npx expo-doctor`
+- `npm audit --json`
+- `deno check supabase/functions/delete-account/index.ts`
+- `deno check supabase/functions/send-support/index.ts`
+- `npx expo export --platform all --output-dir /tmp/protip365-security-fixes-export`
+- `git diff --check`

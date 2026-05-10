@@ -6,6 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function deleteUserRows(
+  supabaseClient: any,
+  table: string,
+  userId: string,
+) {
+  const { error } = await supabaseClient
+    .from(table)
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(`Failed to delete ${table}: ${error.message}`);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -56,28 +71,23 @@ Deno.serve(async (req: Request) => {
 
     // Delete user data in the correct order (respecting foreign key constraints)
     // 1. Delete shift_income first (they reference shifts)
-    await supabaseClient
-      .from('shift_income')
-      .delete()
-      .eq('user_id', userId);
+    await deleteUserRows(supabaseClient, 'shift_income', userId);
 
     // 2. Delete shifts
-    await supabaseClient
-      .from('shifts')
-      .delete()
-      .eq('user_id', userId);
+    await deleteUserRows(supabaseClient, 'shifts', userId);
 
     // 3. Delete employers
-    await supabaseClient
-      .from('employers')
+    await deleteUserRows(supabaseClient, 'employers', userId);
+
+    // 4. Delete user profile
+    const { error: profileDeleteError } = await supabaseClient
+      .from('users_profile')
       .delete()
       .eq('user_id', userId);
 
-    // 4. Delete user profile
-    await supabaseClient
-      .from('user_profiles')
-      .delete()
-      .eq('id', userId);
+    if (profileDeleteError) {
+      throw new Error(`Failed to delete users_profile: ${profileDeleteError.message}`);
+    }
 
     // 5. Finally, delete the auth user
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId);

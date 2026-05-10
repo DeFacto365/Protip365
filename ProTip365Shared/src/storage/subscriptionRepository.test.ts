@@ -3,8 +3,8 @@ import { clearSubscription, loadSubscription, saveSubscription } from "./subscri
 
 const storage = new Map<string, string>();
 
-vi.mock("@react-native-async-storage/async-storage", () => ({
-  default: {
+vi.mock("../lib/secureStorage", () => ({
+  supabaseSecureStorage: {
     getItem: vi.fn((key: string) => Promise.resolve(storage.get(key) ?? null)),
     removeItem: vi.fn((key: string) => {
       storage.delete(key);

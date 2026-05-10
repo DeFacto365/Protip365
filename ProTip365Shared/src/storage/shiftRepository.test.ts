@@ -4,8 +4,8 @@ import { ShiftRecord } from "../domain";
 
 const store = new Map<string, string>();
 
-vi.mock("@react-native-async-storage/async-storage", () => ({
-  default: {
+vi.mock("../lib/secureStorage", () => ({
+  supabaseSecureStorage: {
     getItem: vi.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
     removeItem: vi.fn((key: string) => {
       store.delete(key);

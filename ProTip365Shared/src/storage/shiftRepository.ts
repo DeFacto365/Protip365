@@ -1,10 +1,10 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ShiftRecord } from "../domain";
+import { supabaseSecureStorage } from "../lib/secureStorage";
 
 const STORAGE_KEY = "protip365.shiftRecords.v1";
 
 export async function loadShiftRecords(): Promise<ShiftRecord[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await supabaseSecureStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return [];
   }
@@ -16,10 +16,10 @@ export async function loadShiftRecords(): Promise<ShiftRecord[]> {
 export async function saveShiftRecord(record: ShiftRecord): Promise<ShiftRecord[]> {
   const records = await loadShiftRecords();
   const nextRecords = [record, ...records.filter((item) => item.plannedShift.id !== record.plannedShift.id)];
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextRecords));
+  await supabaseSecureStorage.setItem(STORAGE_KEY, JSON.stringify(nextRecords));
   return nextRecords;
 }
 
 export async function clearShiftRecords() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await supabaseSecureStorage.removeItem(STORAGE_KEY);
 }
