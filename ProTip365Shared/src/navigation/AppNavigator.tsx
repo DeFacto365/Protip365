@@ -15,7 +15,6 @@ import {
 import {
   AddHomeScreen,
   AddIncomeScreen,
-  AddShiftScreen,
   CalendarScreen,
   HistoryScreen,
   MonthlyReportScreen,
@@ -23,10 +22,10 @@ import {
   PaywallScreen,
   ReportsScreen,
   SettingsScreen,
-  TodayScreen,
   WeeklyReportScreen,
   YearlyReportScreen,
 } from "../screens/PlaceholderScreens";
+import { AddShiftScreen, TodayScreen } from "../features/dailyEntry/DailyEntryScreen";
 import { theme } from "../theme";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
