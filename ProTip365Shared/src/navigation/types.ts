@@ -1,4 +1,5 @@
 export type ShiftEntryRouteParams = { shiftId?: string } | undefined;
+export type PlannedShiftRouteParams = { shiftId?: string } | undefined;
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -15,11 +16,13 @@ export type TodayStackParamList = {
 export type CalendarStackParamList = {
   CalendarHome: undefined;
   AddShift: ShiftEntryRouteParams;
+  AddPlannedShift: PlannedShiftRouteParams;
 };
 
 export type AddStackParamList = {
   AddHome: undefined;
   AddShift: ShiftEntryRouteParams;
+  AddPlannedShift: PlannedShiftRouteParams;
   AddIncome: undefined;
 };
 

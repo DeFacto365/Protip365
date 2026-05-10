@@ -15,7 +15,6 @@ import {
 import {
   AddHomeScreen,
   AddIncomeScreen,
-  CalendarScreen,
   HistoryScreen,
   MonthlyReportScreen,
   OnboardingScreen,
@@ -26,6 +25,7 @@ import {
   YearlyReportScreen,
 } from "../screens/PlaceholderScreens";
 import { AddShiftScreen, TodayScreen } from "../features/dailyEntry/DailyEntryScreen";
+import { CalendarScreen, PlannedShiftScreen } from "../features/plannedShift/PlannedShiftScreen";
 import { theme } from "../theme";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -71,6 +71,7 @@ function CalendarStackNavigator() {
     <CalendarStack.Navigator screenOptions={stackScreenOptions}>
       <CalendarStack.Screen component={CalendarScreen} name="CalendarHome" />
       <CalendarStack.Screen component={AddShiftScreen} name="AddShift" />
+      <CalendarStack.Screen component={PlannedShiftScreen} name="AddPlannedShift" />
     </CalendarStack.Navigator>
   );
 }
@@ -80,6 +81,7 @@ function AddStackNavigator() {
     <AddStack.Navigator screenOptions={stackScreenOptions}>
       <AddStack.Screen component={AddHomeScreen} name="AddHome" />
       <AddStack.Screen component={AddShiftScreen} name="AddShift" />
+      <AddStack.Screen component={PlannedShiftScreen} name="AddPlannedShift" />
       <AddStack.Screen component={AddIncomeScreen} name="AddIncome" />
     </AddStack.Navigator>
   );

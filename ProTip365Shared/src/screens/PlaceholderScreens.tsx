@@ -3,27 +3,10 @@ import { CalendarDays, CircleDollarSign, ClipboardList, History, Plus, ReceiptTe
 import { ActionList } from "../components/ActionList";
 import { AppScaffold, Card } from "../components/AppScaffold";
 import { getStrings } from "../localization";
-import { AddStackParamList, CalendarStackParamList, ReportsStackParamList } from "../navigation/types";
+import { AddStackParamList, ReportsStackParamList } from "../navigation/types";
 import { theme } from "../theme";
 
 const strings = getStrings();
-
-export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarStackParamList, "CalendarHome">) {
-  return (
-    <AppScaffold title={strings.screens.calendar}>
-      <Card body={strings.placeholders.calendar} title={strings.screens.calendar} />
-      <ActionList
-        items={[
-          {
-            icon: <CalendarDays color={theme.colors.primary} size={theme.navigation.tabIconSize} />,
-            label: strings.actions.addShift,
-            onPress: () => navigation.navigate("AddShift"),
-          },
-        ]}
-      />
-    </AppScaffold>
-  );
-}
 
 export function AddHomeScreen({ navigation }: NativeStackScreenProps<AddStackParamList, "AddHome">) {
   return (
@@ -35,6 +18,11 @@ export function AddHomeScreen({ navigation }: NativeStackScreenProps<AddStackPar
             icon: <Plus color={theme.colors.primary} size={theme.navigation.tabIconSize} />,
             label: strings.actions.addShift,
             onPress: () => navigation.navigate("AddShift"),
+          },
+          {
+            icon: <CalendarDays color={theme.colors.primary} size={theme.navigation.tabIconSize} />,
+            label: "Add planned shift",
+            onPress: () => navigation.navigate("AddPlannedShift"),
           },
           {
             icon: <CircleDollarSign color={theme.colors.primary} size={theme.navigation.tabIconSize} />,
