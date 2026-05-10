@@ -6,6 +6,7 @@ import { getStrings } from "../localization";
 import { AddStackParamList } from "../navigation/types";
 import { theme } from "../theme";
 import { SubscriptionStatusCard } from "../features/entitlements/EntitlementScreens";
+import { SettingsComplianceSection } from "../features/account/SettingsComplianceScreen";
 
 const strings = getStrings();
 
@@ -48,7 +49,7 @@ export function SettingsScreen() {
   return (
     <AppScaffold title={strings.screens.settings}>
       <SubscriptionStatusCard />
-      <Card body={strings.placeholders.settings} title={strings.screens.settings} />
+      <SettingsComplianceSection />
     </AppScaffold>
   );
 }
