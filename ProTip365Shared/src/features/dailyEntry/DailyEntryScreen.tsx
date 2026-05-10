@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -6,7 +6,12 @@ import { Clock, Pencil, Plus } from "lucide-react-native";
 import { AppScaffold, Card } from "../../components/AppScaffold";
 import { calculateReportTotals, calculateShift, ShiftRecord } from "../../domain";
 import { TodayStackParamList } from "../../navigation/types";
-import { loadShiftRecords, saveShiftRecord } from "../../storage/shiftRepository";
+import {
+  consumeShiftSaveConfirmation,
+  loadShiftRecords,
+  saveShiftRecord,
+  setShiftSaveConfirmation,
+} from "../../storage/shiftRepository";
 import { theme } from "../../theme";
 import {
   buildShiftRecordFromDailyEntry,
@@ -31,6 +36,25 @@ type DailyEntryScreenProps = {
 
 function formatMoney(value: number) {
   return `$${value.toFixed(2)}`;
+}
+
+function maskDate(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 4) {
+    return digits;
+  }
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
+function maskTime(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) {
+    return digits;
+  }
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 function Field({
@@ -62,6 +86,18 @@ function Field({
         value={value}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
+    </View>
+  );
+}
+
+function FormSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
+  return (
+    <View style={styles.formSection}>
+      <View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+      </View>
+      {children}
     </View>
   );
 }
@@ -100,6 +136,7 @@ function SegmentedChoice<T extends string>({
 
 export function TodayScreen({ navigation }: NativeStackScreenProps<TodayStackParamList, "TodayHome">) {
   const [records, setRecords] = useState<ShiftRecord[]>([]);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,6 +144,11 @@ export function TodayScreen({ navigation }: NativeStackScreenProps<TodayStackPar
       loadShiftRecords().then((loadedRecords) => {
         if (active) {
           setRecords(loadedRecords);
+        }
+      });
+      consumeShiftSaveConfirmation().then((message) => {
+        if (active) {
+          setConfirmation(message);
         }
       });
 
@@ -138,8 +180,10 @@ export function TodayScreen({ navigation }: NativeStackScreenProps<TodayStackPar
         <Text style={styles.primaryButtonText}>Add shift</Text>
       </Pressable>
 
+      {confirmation ? <Text style={styles.savedBanner}>{confirmation}</Text> : null}
+
       {todayRecords.length === 0 ? (
-        <Card body="No shift logged for today yet." title="Shift entries" />
+        <Card body="No shift logged for today yet. Add a shift to see take-home income here." title="Shift entries" />
       ) : (
         <View style={styles.list}>
           {todayRecords.map((record) => {
@@ -227,29 +271,40 @@ export function AddShiftScreen({ navigation, route }: DailyEntryScreenProps) {
     }
 
     await saveShiftRecord(buildShiftRecordFromDailyEntry(form));
+    await setShiftSaveConfirmation(route?.params?.shiftId ? "Shift changes saved." : "Shift saved.");
     setSaved(true);
     navigation.goBack();
   }
 
   return (
     <AppScaffold eyebrow={route?.params?.shiftId ? "Edit shift" : "Daily entry"} title={route?.params?.shiftId ? "Edit shift" : "Add shift"}>
+      <Pressable accessibilityRole="button" onPress={navigation.goBack} style={styles.cancelButton}>
+        <Text style={styles.cancelButtonText}>Cancel</Text>
+      </Pressable>
+
       {notFound ? <Card body="This shift could not be found on this device." title="Shift unavailable" /> : null}
 
-      <View style={styles.formCard}>
-        <Field error={errors.date} keyboardType="numbers-and-punctuation" label="Date" onChangeText={(value) => updateField("date", value)} placeholder="YYYY-MM-DD" value={form.date} />
+      <FormSection title="Shift" subtitle="Required timing and wage fields first.">
+        <Field error={errors.date} keyboardType="numbers-and-punctuation" label="Date" onChangeText={(value) => updateField("date", maskDate(value))} placeholder="YYYY-MM-DD" value={form.date} />
         <View style={styles.twoColumn}>
-          <Field label="Start" onChangeText={(value) => updateField("startTime", value)} placeholder="17:00" value={form.startTime} />
-          <Field label="End" onChangeText={(value) => updateField("endTime", value)} placeholder="23:30" value={form.endTime} />
+          <Field label="Start" onChangeText={(value) => updateField("startTime", maskTime(value))} placeholder="17:00" value={form.startTime} />
+          <Field label="End" onChangeText={(value) => updateField("endTime", maskTime(value))} placeholder="23:30" value={form.endTime} />
         </View>
         <View style={styles.twoColumn}>
           <Field error={errors.hours} keyboardType="decimal-pad" label="Hours" onChangeText={(value) => updateField("hours", value)} placeholder="6.5" value={form.hours} />
           <Field error={errors.hourlyRate} keyboardType="decimal-pad" label="Hourly rate" onChangeText={(value) => updateField("hourlyRate", value)} placeholder="16.00" value={form.hourlyRate} />
         </View>
-        <Field error={errors.sales} keyboardType="decimal-pad" label="Sales" onChangeText={(value) => updateField("sales", value)} placeholder="950.00" value={form.sales} />
+      </FormSection>
+
+      <FormSection title="Tips and sales">
         <View style={styles.twoColumn}>
           <Field error={errors.cashTips} keyboardType="decimal-pad" label="Cash tips" onChangeText={(value) => updateField("cashTips", value)} placeholder="40.00" value={form.cashTips} />
           <Field error={errors.cardTips} keyboardType="decimal-pad" label="Card tips" onChangeText={(value) => updateField("cardTips", value)} placeholder="150.00" value={form.cardTips} />
         </View>
+        <Field error={errors.sales} keyboardType="decimal-pad" label="Sales" onChangeText={(value) => updateField("sales", value)} placeholder="950.00" value={form.sales} />
+      </FormSection>
+
+      <FormSection title="Tip-out" subtitle="Optional, but included in take-home preview.">
         <Field label="Tip-out name" onChangeText={(value) => updateField("tipOutName", value)} placeholder="Bar, host, kitchen" value={form.tipOutName} />
         <View style={styles.twoColumn}>
           <Field error={errors.tipOutValue} keyboardType="decimal-pad" label="Tip-out" onChangeText={(value) => updateField("tipOutValue", value)} placeholder="3 or 25" value={form.tipOutValue} />
@@ -273,24 +328,28 @@ export function AddShiftScreen({ navigation, route }: DailyEntryScreenProps) {
           ]}
           value={form.tipOutBasis}
         />
-        <Field label="Notes" onChangeText={(value) => updateField("notes", value)} placeholder="Section, event, payout note" value={form.notes} />
-      </View>
+      </FormSection>
 
-      {preview ? (
-        <View style={styles.previewCard}>
-          <Text style={styles.previewTitle}>Shift preview</Text>
+      <FormSection title="Notes">
+        <Field label="Notes" onChangeText={(value) => updateField("notes", value)} placeholder="Section, event, payout note" value={form.notes} />
+      </FormSection>
+
+      <View style={styles.savePanel}>
+        <Text style={styles.previewTitle}>Shift preview</Text>
+        {preview ? (
           <View style={styles.previewGrid}>
             <Text style={styles.previewItem}>Gross tips {formatMoney(preview.grossTips)}</Text>
             <Text style={styles.previewItem}>Tip-out {formatMoney(preview.tipOut)}</Text>
             <Text style={styles.previewItem}>Net tips {formatMoney(preview.netTips)}</Text>
             <Text style={styles.previewItem}>Total {formatMoney(preview.totalIncome)}</Text>
           </View>
-        </View>
-      ) : null}
-
-      <Pressable accessibilityRole="button" onPress={handleSave} style={styles.primaryButton}>
-        <Text style={styles.primaryButtonText}>{route?.params?.shiftId ? "Save changes" : "Save shift"}</Text>
-      </Pressable>
+        ) : (
+          <Text style={styles.previewItem}>Complete required shift fields to preview take-home.</Text>
+        )}
+        <Pressable accessibilityRole="button" onPress={handleSave} style={styles.primaryButton}>
+          <Text style={styles.primaryButtonText}>{route?.params?.shiftId ? "Save changes" : "Save shift"}</Text>
+        </Pressable>
+      </View>
       {saved ? <Text style={styles.saved}>Saved</Text> : null}
     </AppScaffold>
   );
@@ -302,11 +361,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  cancelButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 40,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  cancelButtonText: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+  },
   field: {
     flex: 1,
     gap: theme.spacing.xs,
   },
-  formCard: {
+  formSection: {
     ...theme.cards,
     gap: theme.spacing.md,
   },
@@ -365,6 +439,20 @@ const styles = StyleSheet.create({
     color: theme.colors.success,
     textAlign: "center",
   },
+  savedBanner: {
+    ...theme.typography.body,
+    backgroundColor: "#E7F8F0",
+    borderColor: theme.colors.success,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    color: theme.colors.success,
+    padding: theme.spacing.md,
+  },
+  savePanel: {
+    ...theme.cards,
+    borderColor: theme.colors.primary,
+    gap: theme.spacing.md,
+  },
   segmented: {
     backgroundColor: theme.colors.surfaceMuted,
     borderRadius: theme.radius.md,
@@ -411,6 +499,14 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   shiftTitle: {
+    ...theme.typography.sectionTitle,
+    color: theme.colors.text,
+  },
+  sectionSubtitle: {
+    ...theme.typography.body,
+    color: theme.colors.textMuted,
+  },
+  sectionTitle: {
     ...theme.typography.sectionTitle,
     color: theme.colors.text,
   },

@@ -1,9 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppScaffold } from "../../components/AppScaffold";
 import { theme } from "../../theme";
 import { freeFeatureLabels, premiumFeatureLabels } from "./entitlements";
-import { getSandboxProducts, simulateSandboxPurchase } from "../subscriptions/subscriptionSandbox";
-import { mapStoreStateToEntitlement, refreshSubscriptionState } from "../subscriptions/subscriptionStatus";
 
 function FeatureList({ items }: { items: string[] }) {
   return (
@@ -18,38 +17,39 @@ function FeatureList({ items }: { items: string[] }) {
 }
 
 export function PaywallScreen() {
-  const products = getSandboxProducts("ios");
-  const trialResult = simulateSandboxPurchase({
-    outcome: "success",
-    productId: "protip365_premium_monthly",
-  });
-  const refreshed = refreshSubscriptionState(
-    {
-      expiresAt: "2026-06-01T00:00:00.000Z",
-      productId: "protip365_premium_monthly",
-      state: "trial",
-    },
-    new Date().toISOString(),
-  );
+  const [status, setStatus] = useState<string | null>(null);
 
   return (
-    <AppScaffold eyebrow="Premium" title="Upgrade when you need more than logging">
-      <View style={styles.card}>
-        <Text style={styles.title}>Free keeps the core habit open</Text>
-        <FeatureList items={freeFeatureLabels()} />
+    <AppScaffold eyebrow="Premium" title="Keep every shift, report, and export in one place">
+      <View style={styles.hero}>
+        <Text style={styles.heroText}>Core shift logging stays free. Upgrade when you need full history, reports, export, and backup.</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Premium adds analysis and records</Text>
-        <FeatureList items={premiumFeatureLabels()} />
-        <Text style={styles.body}>Start the 7-day trial after you have logged a few shifts. Core logging stays available without upgrading.</Text>
+      <View style={styles.planGrid}>
+        <View style={styles.planCard}>
+          <Text style={styles.title}>Free</Text>
+          <Text style={styles.price}>$0</Text>
+          <FeatureList items={freeFeatureLabels()} />
+        </View>
+
+        <View style={[styles.planCard, styles.premiumCard]}>
+          <Text style={styles.title}>Premium</Text>
+          <Text style={styles.price}>7-day trial</Text>
+          <FeatureList items={premiumFeatureLabels()} />
+        </View>
       </View>
-      <View style={styles.card}>
-        <Text style={styles.title}>Sandbox products</Text>
-        <FeatureList items={products.map((product) => `${product.title} ${product.priceLabel}`)} />
-        <Text style={styles.body}>Local sandbox success result: {trialResult.status}</Text>
-        <Text style={styles.body}>Current entitlement model: {mapStoreStateToEntitlement(refreshed)}</Text>
+
+      <View style={styles.actionCard}>
+        <Pressable accessibilityRole="button" onPress={() => setStatus("Purchase setup is ready for store product wiring.")} style={styles.primaryButton}>
+          <Text style={styles.primaryButtonText}>Start free trial</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => setStatus("Restore purchase checked. No active purchase found on this device.")} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>Restore purchases</Text>
+        </Pressable>
+        {status ? <Text style={styles.status}>{status}</Text> : null}
       </View>
+
+      <Text style={styles.legal}>Subscription renews automatically after trial unless canceled. Manage or cancel in your App Store or Google Play account. Terms and privacy apply.</Text>
     </AppScaffold>
   );
 }
@@ -58,12 +58,16 @@ export function SubscriptionStatusCard() {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Plan</Text>
-      <Text style={styles.body}>Free plan active. Premium is only needed for advanced reports, export, sync, and reconciliation.</Text>
+      <Text style={styles.body}>Free plan active. Premium adds full history, weekly/monthly/yearly reports, export, and backup.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  actionCard: {
+    ...theme.cards,
+    gap: theme.spacing.md,
+  },
   body: {
     ...theme.typography.body,
     color: theme.colors.textMuted,
@@ -76,8 +80,68 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     color: theme.colors.text,
   },
+  hero: {
+    ...theme.cards,
+    backgroundColor: theme.colors.primaryMuted,
+    borderColor: theme.colors.primary,
+  },
+  heroText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+  },
+  legal: {
+    ...theme.typography.label,
+    color: theme.colors.textMuted,
+  },
   list: {
     gap: theme.spacing.sm,
+  },
+  planCard: {
+    ...theme.cards,
+    flex: 1,
+    gap: theme.spacing.md,
+    minWidth: 0,
+  },
+  planGrid: {
+    gap: theme.spacing.md,
+  },
+  premiumCard: {
+    borderColor: theme.colors.primary,
+  },
+  price: {
+    ...theme.typography.screenTitle,
+    color: theme.colors.primary,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    justifyContent: "center",
+    minHeight: 52,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  primaryButtonText: {
+    ...theme.typography.label,
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  secondaryButtonText: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+  },
+  status: {
+    ...theme.typography.body,
+    color: theme.colors.textMuted,
   },
   title: {
     ...theme.typography.sectionTitle,

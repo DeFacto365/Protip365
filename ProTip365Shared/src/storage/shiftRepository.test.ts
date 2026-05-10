@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { clearShiftRecords, loadShiftRecords, saveShiftRecord } from "./shiftRepository";
+import {
+  clearShiftRecords,
+  consumeShiftSaveConfirmation,
+  loadShiftRecords,
+  saveShiftRecord,
+  setShiftSaveConfirmation,
+} from "./shiftRepository";
 import { ShiftRecord } from "../domain";
 
 const store = new Map<string, string>();
@@ -68,5 +74,12 @@ describe("shiftRepository", () => {
     await clearShiftRecords();
 
     expect(await loadShiftRecords()).toEqual([]);
+  });
+
+  it("consumes save confirmation once", async () => {
+    await setShiftSaveConfirmation("Shift saved");
+
+    await expect(consumeShiftSaveConfirmation()).resolves.toBe("Shift saved");
+    await expect(consumeShiftSaveConfirmation()).resolves.toBeNull();
   });
 });
