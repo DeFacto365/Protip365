@@ -9,6 +9,7 @@ export type ReportViewModel = {
   title: string;
   subtitle: string;
   empty: boolean;
+  insight: string;
   primaryMetrics: ReportMetric[];
   secondaryMetrics: ReportMetric[];
   progressMetrics: ReportMetric[];
@@ -36,8 +37,24 @@ function reportTitle(kind: ReportPeriodKind) {
 }
 
 export function buildReportViewModel(summary: ReportSummary): ReportViewModel {
+  const bestShift = [...summary.records]
+    .map((record) => ({
+      date: record.plannedShift.shiftDate,
+      total: calculateReportSummary({
+        anchorDate: record.plannedShift.shiftDate,
+        kind: "today",
+        records: [record],
+      }).totals.totalIncome,
+    }))
+    .sort((first, second) => second.total - first.total)[0];
+
   return {
     empty: summary.records.length === 0,
+    insight: summary.records.length === 0
+      ? "No shifts in this period yet."
+      : bestShift && bestShift.total > 0
+        ? `Best shift: ${bestShift.date} at ${formatMoney(bestShift.total)} take-home.`
+        : `Net tips this period: ${formatMoney(summary.totals.netTips)}.`,
     primaryMetrics: [
       { label: "Take-home", value: formatMoney(summary.totals.totalIncome) },
       { label: "Net tips", value: formatMoney(summary.totals.netTips) },

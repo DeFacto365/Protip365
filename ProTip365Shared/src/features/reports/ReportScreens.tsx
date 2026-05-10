@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { ClipboardList, History, ReceiptText } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, ClipboardList, History, Pencil, ReceiptText } from "lucide-react-native";
 import { ActionList } from "../../components/ActionList";
 import { AppScaffold, Card } from "../../components/AppScaffold";
 import { ReportPeriodKind, ShiftRecord } from "../../domain";
@@ -14,6 +14,20 @@ import { buildHistoryItems, ShiftListItem } from "../history/historyViewModel";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function shiftAnchorDate(anchorDate: string, kind: ReportPeriodKind, direction: -1 | 1) {
+  const date = new Date(`${anchorDate}T00:00:00.000Z`);
+  if (kind === "week") {
+    date.setUTCDate(date.getUTCDate() + direction * 7);
+  } else if (kind === "month") {
+    date.setUTCMonth(date.getUTCMonth() + direction);
+  } else if (kind === "year") {
+    date.setUTCFullYear(date.getUTCFullYear() + direction);
+  } else {
+    date.setUTCDate(date.getUTCDate() + direction);
+  }
+  return date.toISOString().slice(0, 10);
 }
 
 function useShiftRecords() {
@@ -57,34 +71,57 @@ function ReportBody({ model }: { model: ReportViewModel }) {
     <>
       <View style={styles.headerCard}>
         <Text style={styles.period}>{model.subtitle}</Text>
-        <MetricGrid metrics={model.primaryMetrics} />
+        {model.empty ? (
+          <Text style={styles.historyBody}>No entries in this period. Add a shift or change period to review income here.</Text>
+        ) : (
+          <MetricGrid metrics={model.primaryMetrics} />
+        )}
       </View>
 
-      {model.empty ? <Card body="Log or plan a shift to see this report." title="No entries in this period" /> : null}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Details</Text>
-        <MetricGrid metrics={model.secondaryMetrics} />
+      <View style={styles.insightCard}>
+        <Text style={styles.sectionTitle}>Insight</Text>
+        <Text style={styles.historyBody}>{model.insight}</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Targets</Text>
-        <MetricGrid metrics={model.progressMetrics} />
-      </View>
+      {!model.empty ? (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Details</Text>
+            <MetricGrid metrics={model.secondaryMetrics} />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Targets</Text>
+            <MetricGrid metrics={model.progressMetrics} />
+          </View>
+        </>
+      ) : null}
     </>
   );
 }
 
 function PeriodReportScreen({ kind }: { kind: ReportPeriodKind }) {
   const records = useShiftRecords();
+  const [anchorDate, setAnchorDate] = useState(todayISO());
   const model = buildReportViewModelForPeriod({
-    anchorDate: todayISO(),
+    anchorDate,
     kind,
     records,
   });
 
   return (
     <AppScaffold title={model.title}>
+      <View style={styles.periodControls}>
+        <Pressable accessibilityRole="button" onPress={() => setAnchorDate((current) => shiftAnchorDate(current, kind, -1))} style={styles.periodButton}>
+          <ChevronLeft color={theme.colors.primary} size={20} />
+          <Text style={styles.periodButtonText}>Previous</Text>
+        </Pressable>
+        <Text style={styles.periodControlLabel}>{model.subtitle}</Text>
+        <Pressable accessibilityRole="button" onPress={() => setAnchorDate((current) => shiftAnchorDate(current, kind, 1))} style={styles.periodButton}>
+          <Text style={styles.periodButtonText}>Next</Text>
+          <ChevronRight color={theme.colors.primary} size={20} />
+        </Pressable>
+      </View>
       <ReportBody model={model} />
     </AppScaffold>
   );
@@ -172,8 +209,16 @@ export function HistoryScreen({ navigation }: NativeStackScreenProps<ReportsStac
         <View style={styles.list}>
           {historyItems.map((item) => (
             <Pressable accessibilityRole="button" key={item.id} onPress={() => openHistoryItem(item)} style={styles.historyRow}>
-              <Text style={styles.historyTitle}>{item.title}</Text>
-              <Text style={styles.historyBody}>{item.statusLabel}</Text>
+              <View style={styles.historyHeader}>
+                <View style={styles.historyTitleBlock}>
+                  <Text style={styles.historyTitle}>{item.date}</Text>
+                  <Text style={styles.historyBody}>{item.time}</Text>
+                </View>
+                <View style={styles.historyActions}>
+                  <Text style={[styles.statusChip, styles[`status_${item.status}`]]}>{item.statusLabel}</Text>
+                  <Pencil color={theme.colors.primary} size={18} />
+                </View>
+              </View>
               <Text style={styles.historyBody}>{item.subtitle}</Text>
             </Pressable>
           ))}
@@ -188,9 +233,20 @@ const styles = StyleSheet.create({
     ...theme.cards,
     gap: theme.spacing.lg,
   },
+  historyActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
   historyBody: {
     ...theme.typography.body,
     color: theme.colors.textMuted,
+  },
+  historyHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: theme.spacing.md,
   },
   historyRow: {
     ...theme.cards,
@@ -199,6 +255,14 @@ const styles = StyleSheet.create({
   historyTitle: {
     ...theme.typography.sectionTitle,
     color: theme.colors.text,
+  },
+  historyTitleBlock: {
+    flex: 1,
+  },
+  insightCard: {
+    ...theme.cards,
+    backgroundColor: theme.colors.primaryMuted,
+    gap: theme.spacing.sm,
   },
   list: {
     gap: theme.spacing.md,
@@ -231,11 +295,60 @@ const styles = StyleSheet.create({
     ...theme.typography.label,
     color: theme.colors.primary,
   },
+  periodButton: {
+    alignItems: "center",
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: theme.spacing.xs,
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.md,
+  },
+  periodButtonText: {
+    ...theme.typography.label,
+    color: theme.colors.primary,
+  },
+  periodControlLabel: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+    flex: 1,
+    textAlign: "center",
+  },
+  periodControls: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
   section: {
     gap: theme.spacing.md,
   },
   sectionTitle: {
     ...theme.typography.sectionTitle,
     color: theme.colors.text,
+  },
+  status_completed: {
+    backgroundColor: "#E7F8F0",
+    color: theme.colors.success,
+  },
+  status_did_not_work: {
+    backgroundColor: theme.colors.surfaceMuted,
+    color: theme.colors.textMuted,
+  },
+  status_missed: {
+    backgroundColor: "#FEECEC",
+    color: theme.colors.danger,
+  },
+  status_planned: {
+    backgroundColor: theme.colors.primaryMuted,
+    color: theme.colors.primary,
+  },
+  statusChip: {
+    ...theme.typography.label,
+    borderRadius: theme.radius.sm,
+    overflow: "hidden",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
   },
 });

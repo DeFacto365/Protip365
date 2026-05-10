@@ -1,4 +1,5 @@
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { useEffect, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CalendarDays, CirclePlus, ClipboardList, Home, Settings } from "lucide-react-native";
@@ -29,6 +30,8 @@ import {
   YearlyReportScreen,
 } from "../features/reports/ReportScreens";
 import { theme } from "../theme";
+import { isOnboardingComplete } from "../features/onboarding/onboardingState";
+import { AppScaffold, Card } from "../components/AppScaffold";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
@@ -181,11 +184,36 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
+  const [onboardingComplete, setOnboardingCompleteState] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    isOnboardingComplete().then((complete) => {
+      if (active) {
+        setOnboardingCompleteState(complete);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (onboardingComplete === null) {
+    return (
+      <AppScaffold title="ProTip365">
+        <Card body="Preparing your workspace." title="Loading" />
+      </AppScaffold>
+    );
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      <RootStack.Navigator screenOptions={stackScreenOptions}>
+      <RootStack.Navigator initialRouteName={onboardingComplete ? "MainTabs" : "Onboarding"} screenOptions={stackScreenOptions}>
         <RootStack.Screen component={MainTabs} name="MainTabs" />
-        <RootStack.Screen component={OnboardingScreen} name="Onboarding" />
+        <RootStack.Screen name="Onboarding">
+          {(props) => <OnboardingScreen {...props} onComplete={() => setOnboardingCompleteState(true)} />}
+        </RootStack.Screen>
         <RootStack.Screen component={PaywallScreen} name="Paywall" />
       </RootStack.Navigator>
     </NavigationContainer>

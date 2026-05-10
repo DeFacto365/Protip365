@@ -64,6 +64,18 @@ function Field({
   );
 }
 
+function groupItemsByDate(items: ShiftListItem[]) {
+  return items.reduce<Array<{ date: string; items: ShiftListItem[] }>>((groups, item) => {
+    const existingGroup = groups.find((group) => group.date === item.date);
+    if (existingGroup) {
+      existingGroup.items.push(item);
+    } else {
+      groups.push({ date: item.date, items: [item] });
+    }
+    return groups;
+  }, []);
+}
+
 export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarStackParamList, "CalendarHome">) {
   const [records, setRecords] = useState<ShiftRecord[]>([]);
 
@@ -83,6 +95,7 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
   );
 
   const calendarItems = buildCalendarItems(records);
+  const groupedItems = groupItemsByDate(calendarItems);
 
   function openCalendarItem(item: ShiftListItem) {
     if (item.editTarget === "dailyEntry") {
@@ -103,25 +116,31 @@ export function CalendarScreen({ navigation }: NativeStackScreenProps<CalendarSt
         <Card body="No shifts saved yet. Add a planned shift or log today's shift." title="Calendar" />
       ) : (
         <View style={styles.list}>
-          {calendarItems.map((item) => (
-            <Pressable
-              accessibilityRole="button"
-              key={item.id}
-              onPress={() => openCalendarItem(item)}
-              style={styles.shiftRow}
-            >
-              <View style={styles.shiftRowHeader}>
-                <View>
-                  <Text style={styles.shiftTitle}>{item.date}</Text>
-                  <Text style={styles.shiftSubtitle}>{item.time}</Text>
-                </View>
-                <View style={styles.rowStatus}>
-                  <Text style={styles.statusBadge}>{item.statusLabel}</Text>
-                  <Pencil color={theme.colors.primary} size={18} />
-                </View>
+          {groupedItems.map((group) => (
+            <View key={group.date} style={styles.dateGroup}>
+              <Text style={styles.dateHeader}>{group.date}</Text>
+              <View style={styles.list}>
+                {group.items.map((item) => (
+                  <Pressable
+                    accessibilityRole="button"
+                    key={item.id}
+                    onPress={() => openCalendarItem(item)}
+                    style={styles.shiftRow}
+                  >
+                    <View style={styles.shiftRowHeader}>
+                      <View style={styles.shiftTitleBlock}>
+                        <Text style={styles.shiftTitle}>{item.time}</Text>
+                        <Text style={styles.shiftSubtitle}>{item.subtitle}</Text>
+                      </View>
+                      <View style={styles.rowStatus}>
+                        <Text style={[styles.statusBadge, styles[`status_${item.status}`]]}>{item.statusLabel}</Text>
+                        <Pencil color={theme.colors.primary} size={18} />
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
               </View>
-              <Text style={styles.shiftSubtitle}>{item.subtitle}</Text>
-            </Pressable>
+            </View>
           ))}
         </View>
       )}
@@ -236,24 +255,38 @@ export function PlannedShiftScreen({ navigation, route }: PlannedShiftScreenProp
       <Pressable accessibilityRole="button" onPress={handleSave} style={styles.primaryButton}>
         <Text style={styles.primaryButtonText}>{route?.params?.shiftId ? "Save changes" : "Save planned shift"}</Text>
       </Pressable>
-      <View style={styles.statusActions}>
-        <Pressable accessibilityRole="button" onPress={() => handleStatus("did_not_work")} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Did not work</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => handleStatus("missed")} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Missed</Text>
-        </Pressable>
-        {route?.params?.shiftId ? (
+      {route?.params?.shiftId ? (
+        <View style={styles.statusActions}>
+          <Pressable accessibilityRole="button" onPress={() => handleStatus("did_not_work")} style={[styles.secondaryButton, styles.warningButton]}>
+            <Text style={[styles.secondaryButtonText, styles.warningButtonText]}>Did not work</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => handleStatus("missed")} style={[styles.secondaryButton, styles.dangerButton]}>
+            <Text style={[styles.secondaryButtonText, styles.dangerButtonText]}>Missed</Text>
+          </Pressable>
           <Pressable accessibilityRole="button" onPress={() => handleStatus("planned")} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Restore planned</Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </AppScaffold>
   );
 }
 
 const styles = StyleSheet.create({
+  dangerButton: {
+    borderColor: theme.colors.danger,
+  },
+  dangerButtonText: {
+    color: theme.colors.danger,
+  },
+  dateGroup: {
+    gap: theme.spacing.sm,
+  },
+  dateHeader: {
+    ...theme.typography.label,
+    color: theme.colors.textMuted,
+    textTransform: "uppercase",
+  },
   error: {
     color: theme.colors.danger,
     fontSize: 12,
@@ -352,6 +385,9 @@ const styles = StyleSheet.create({
     ...theme.typography.sectionTitle,
     color: theme.colors.text,
   },
+  shiftTitleBlock: {
+    flex: 1,
+  },
   statusActions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -359,10 +395,35 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     ...theme.typography.label,
+    borderRadius: theme.radius.sm,
+    overflow: "hidden",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  status_completed: {
+    backgroundColor: "#E7F8F0",
+    color: theme.colors.success,
+  },
+  status_did_not_work: {
+    backgroundColor: theme.colors.surfaceMuted,
+    color: theme.colors.textMuted,
+  },
+  status_missed: {
+    backgroundColor: "#FEECEC",
+    color: theme.colors.danger,
+  },
+  status_planned: {
+    backgroundColor: theme.colors.primaryMuted,
     color: theme.colors.primary,
   },
   twoColumn: {
     flexDirection: "row",
     gap: theme.spacing.md,
+  },
+  warningButton: {
+    borderColor: theme.colors.warning,
+  },
+  warningButtonText: {
+    color: theme.colors.warning,
   },
 });
