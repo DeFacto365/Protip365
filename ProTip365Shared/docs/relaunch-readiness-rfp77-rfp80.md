@@ -5,7 +5,7 @@
 | Item | Status | Evidence |
 | --- | --- | --- |
 | App status | Blocked | App is local/shared Expo implementation, not ready for store submission until RFP-139 and native purchase setup are complete. |
-| Bundle ID | Missing | `app.json` has no `ios.bundleIdentifier`. |
+| Bundle ID | Ready | `app.json` uses existing native identifier `com.protip365.monthly`. |
 | Subscription products | Blocked | Sandbox model exists; real App Store products must be created. |
 | Privacy labels | Blocked | Final data collection policy must match Supabase/account/subscription implementation. |
 | Screenshots | Partial | UX screenshot strategy documented in RFP-75; final screenshots must be captured after release build. |
@@ -20,7 +20,7 @@
 
 | Item | Status | Evidence |
 | --- | --- | --- |
-| Package name | Missing | `app.json` has no `android.package`. |
+| Package name | Ready | `app.json` uses existing native identifier `com.protip365.monthly`. |
 | Signing | Missing | No EAS/Play signing evidence in repo. |
 | Subscription products | Blocked | Real Google Play subscriptions must be created. |
 | Data safety | Blocked | Must match final Supabase/account/subscription data flow. |
@@ -42,6 +42,7 @@
   - `/tmp/protip365-rfp118-120-export`
   - `/tmp/protip365-rfp121-123-export`
   - `/tmp/protip365-security-fixes-export-final`
+  - `/tmp/protip365-rfp77-80-export-final`
 - iOS launch screenshot:
   - `/tmp/protip365-qa/rfp114-ios-launch.png`
 - Android runtime:
@@ -51,7 +52,6 @@
 
 - RFP-139: Public privacy, terms, and account deletion URLs resolve to suspended hosting page and fail TLS validation without `-k`.
 - Real iOS and Android subscription products are not configured.
-- `ios.bundleIdentifier` and `android.package` are missing in `app.json`.
 - Signed release builds are not produced yet.
 
 ## Release Notes Draft
