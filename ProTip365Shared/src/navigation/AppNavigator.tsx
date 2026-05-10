@@ -15,17 +15,19 @@ import {
 import {
   AddHomeScreen,
   AddIncomeScreen,
-  HistoryScreen,
-  MonthlyReportScreen,
   OnboardingScreen,
   PaywallScreen,
-  ReportsScreen,
   SettingsScreen,
-  WeeklyReportScreen,
-  YearlyReportScreen,
 } from "../screens/PlaceholderScreens";
 import { AddShiftScreen, TodayScreen } from "../features/dailyEntry/DailyEntryScreen";
 import { CalendarScreen, PlannedShiftScreen } from "../features/plannedShift/PlannedShiftScreen";
+import {
+  HistoryScreen,
+  MonthlyReportScreen,
+  ReportsScreen,
+  WeeklyReportScreen,
+  YearlyReportScreen,
+} from "../features/reports/ReportScreens";
 import { theme } from "../theme";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
