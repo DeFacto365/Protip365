@@ -16,10 +16,10 @@ import {
   AddHomeScreen,
   AddIncomeScreen,
   OnboardingScreen,
-  PaywallScreen,
   SettingsScreen,
 } from "../screens/PlaceholderScreens";
 import { AddShiftScreen, TodayScreen } from "../features/dailyEntry/DailyEntryScreen";
+import { PaywallScreen } from "../features/entitlements/EntitlementScreens";
 import { CalendarScreen, PlannedShiftScreen } from "../features/plannedShift/PlannedShiftScreen";
 import {
   HistoryScreen,

@@ -5,6 +5,7 @@ import { AppScaffold, Card } from "../components/AppScaffold";
 import { getStrings } from "../localization";
 import { AddStackParamList } from "../navigation/types";
 import { theme } from "../theme";
+import { SubscriptionStatusCard } from "../features/entitlements/EntitlementScreens";
 
 const strings = getStrings();
 
@@ -46,6 +47,7 @@ export function AddIncomeScreen() {
 export function SettingsScreen() {
   return (
     <AppScaffold title={strings.screens.settings}>
+      <SubscriptionStatusCard />
       <Card body={strings.placeholders.settings} title={strings.screens.settings} />
     </AppScaffold>
   );
@@ -55,14 +57,6 @@ export function OnboardingScreen() {
   return (
     <AppScaffold title={strings.screens.onboarding}>
       <Card body={strings.placeholders.onboarding} title={strings.screens.onboarding} />
-    </AppScaffold>
-  );
-}
-
-export function PaywallScreen() {
-  return (
-    <AppScaffold title={strings.screens.paywall}>
-      <Card body={strings.placeholders.paywall} title={strings.screens.paywall} />
     </AppScaffold>
   );
 }
