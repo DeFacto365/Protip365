@@ -3,9 +3,12 @@ import {
   calculateActualHours,
   calculateHoursFromTimes,
   calculatePlannedHours,
+  calculateReportSummary,
   calculateReportTotals,
   calculateShift,
   calculateTipOutTotal,
+  filterRecordsForPeriod,
+  getReportPeriod,
 } from "./calculations";
 import { PlannedShift, ShiftRecord } from "./models";
 
@@ -40,6 +43,24 @@ function workedShift(overrides: Partial<ShiftRecord> = {}): ShiftRecord {
     },
     ...overrides,
   };
+}
+
+function shiftOn(date: string, id: string, overrides: Partial<ShiftRecord> = {}): ShiftRecord {
+  return workedShift({
+    plannedShift: {
+      ...plannedShift,
+      id,
+      shiftDate: date,
+    },
+    entry: {
+      ...workedShift().entry!,
+      id: `entry-${id}`,
+      sales: 100,
+      tipOuts: [],
+      tips: { card: 20, cash: 5 },
+    },
+    ...overrides,
+  });
 }
 
 describe("time and hour calculations", () => {
@@ -183,5 +204,120 @@ describe("report totals", () => {
     expect(totals.totalIncome).toBe(406.5);
     expect(totals.tipPercentage).toBe(20);
     expect(totals.realHourlyRate).toBe(36.95);
+  });
+});
+
+describe("report periods", () => {
+  it("builds today, week, month, and year periods", () => {
+    expect(getReportPeriod("today", "2026-05-09")).toMatchObject({
+      endDate: "2026-05-09",
+      startDate: "2026-05-09",
+    });
+    expect(getReportPeriod("week", "2026-05-09", 1)).toMatchObject({
+      endDate: "2026-05-10",
+      startDate: "2026-05-04",
+    });
+    expect(getReportPeriod("month", "2026-02-14")).toMatchObject({
+      endDate: "2026-02-28",
+      startDate: "2026-02-01",
+    });
+    expect(getReportPeriod("year", "2026-05-09")).toMatchObject({
+      endDate: "2026-12-31",
+      startDate: "2026-01-01",
+    });
+  });
+
+  it("supports custom week-start rules", () => {
+    expect(getReportPeriod("week", "2026-05-09", 0)).toMatchObject({
+      endDate: "2026-05-09",
+      startDate: "2026-05-03",
+    });
+  });
+
+  it("filters date boundaries inclusively", () => {
+    const period = getReportPeriod("week", "2026-05-09", 1);
+    const records = [
+      shiftOn("2026-05-03", "before"),
+      shiftOn("2026-05-04", "start"),
+      shiftOn("2026-05-10", "end"),
+      shiftOn("2026-05-11", "after"),
+    ];
+
+    expect(filterRecordsForPeriod(records, period).map((record) => record.plannedShift.id)).toEqual(["start", "end"]);
+  });
+
+  it("returns empty totals for empty periods", () => {
+    const summary = calculateReportSummary({
+      anchorDate: "2026-05-09",
+      kind: "today",
+      records: [],
+      target: { income: 100, sales: 1000 },
+    });
+
+    expect(summary.records).toHaveLength(0);
+    expect(summary.totals.totalIncome).toBe(0);
+    expect(summary.targetProgress.income).toBe(0);
+  });
+
+  it("aggregates mixed employers and edited records within the requested period", () => {
+    const summary = calculateReportSummary({
+      anchorDate: "2026-05-09",
+      kind: "month",
+      records: [
+        shiftOn("2026-05-01", "bar", {
+          employer: { active: true, hourlyRate: 15, id: "emp-1", name: "Bar", userId: "user-1" },
+        }),
+        shiftOn("2026-05-09", "bistro", {
+          employer: { active: true, hourlyRate: 18, id: "emp-2", name: "Bistro", userId: "user-1" },
+          entry: {
+            ...workedShift().entry!,
+            id: "entry-bistro-edited",
+            sales: 250,
+            shiftId: "bistro",
+            tipOuts: [],
+            tips: { card: 50, cash: 10 },
+          },
+          plannedShift: {
+            ...plannedShift,
+            id: "bistro",
+            shiftDate: "2026-05-09",
+          },
+        }),
+        shiftOn("2026-06-01", "next-month"),
+      ],
+      target: { hours: 20, income: 500, sales: 1000, tips: 200 },
+    });
+
+    expect(summary.records.map((record) => record.plannedShift.id)).toEqual(["bar", "bistro"]);
+    expect(summary.totals.sales).toBe(350);
+    expect(summary.totals.grossTips).toBe(85);
+    expect(summary.totals.netTips).toBe(85);
+    expect(summary.totals.hours).toBe(11);
+    expect(summary.targetProgress.sales).toBe(35);
+    expect(summary.targetProgress.tips).toBe(42.5);
+    expect(summary.targetProgress.hours).toBe(55);
+  });
+
+  it("includes missed shifts in period counts without adding income", () => {
+    const summary = calculateReportSummary({
+      anchorDate: "2026-05-09",
+      kind: "week",
+      records: [
+        shiftOn("2026-05-09", "worked"),
+        {
+          plannedShift: {
+            ...plannedShift,
+            id: "missed",
+            shiftDate: "2026-05-10",
+            status: "missed",
+          },
+        },
+      ],
+    });
+
+    expect(summary.totals.shiftCount).toBe(2);
+    expect(summary.totals.workedShiftCount).toBe(1);
+    expect(summary.totals.missedShiftCount).toBe(1);
+    expect(summary.totals.totalIncome).toBe(117.5);
   });
 });

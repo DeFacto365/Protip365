@@ -91,3 +91,35 @@ export type ReportTotals = Omit<ShiftCalculation, "status" | "worked"> & {
   workedShiftCount: number;
   missedShiftCount: number;
 };
+
+export type ReportPeriodKind = "today" | "week" | "month" | "year";
+
+export type WeekStartsOn = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type ReportPeriod = {
+  kind: ReportPeriodKind;
+  startDate: ISODate;
+  endDate: ISODate;
+  label: string;
+};
+
+export type ReportTarget = {
+  income?: CurrencyAmount;
+  tips?: CurrencyAmount;
+  sales?: CurrencyAmount;
+  hours?: number;
+};
+
+export type ReportTargetProgress = {
+  income: number;
+  tips: number;
+  sales: number;
+  hours: number;
+};
+
+export type ReportSummary = {
+  period: ReportPeriod;
+  records: ShiftRecord[];
+  totals: ReportTotals;
+  targetProgress: ReportTargetProgress;
+};

@@ -1,10 +1,16 @@
 import {
   PlannedShift,
+  ReportPeriod,
+  ReportPeriodKind,
+  ReportSummary,
+  ReportTarget,
+  ReportTargetProgress,
   ReportTotals,
   ShiftCalculation,
   ShiftEntry,
   ShiftRecord,
   TipOut,
+  WeekStartsOn,
 } from "./models";
 
 const MINUTES_PER_DAY = 24 * 60;
@@ -19,6 +25,37 @@ function roundMetric(value: number) {
 
 function safeNumber(value: number | undefined): number {
   return value !== undefined && Number.isFinite(value) ? value : 0;
+}
+
+function parseISODate(date: string) {
+  const [year = "0", month = "1", day = "1"] = date.split("-");
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+}
+
+function toISODate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return nextDate;
+}
+
+function formatPeriodLabel(kind: ReportPeriodKind, startDate: string, endDate: string) {
+  if (kind === "today") {
+    return startDate;
+  }
+
+  if (kind === "month") {
+    return startDate.slice(0, 7);
+  }
+
+  if (kind === "year") {
+    return startDate.slice(0, 4);
+  }
+
+  return `${startDate} - ${endDate}`;
 }
 
 function parseTimeToMinutes(time: string) {
@@ -202,5 +239,88 @@ export function calculateReportTotals(records: ShiftRecord[]): ReportTotals {
     ...roundedTotals,
     realHourlyRate: roundedTotals.hours > 0 ? roundMoney(roundedTotals.totalIncome / roundedTotals.hours) : 0,
     tipPercentage: roundedTotals.sales > 0 ? roundMetric((roundedTotals.grossTips / roundedTotals.sales) * 100) : 0,
+  };
+}
+
+export function getReportPeriod(kind: ReportPeriodKind, anchorDate: string, weekStartsOn: WeekStartsOn = 1): ReportPeriod {
+  const anchor = parseISODate(anchorDate);
+  let startDate: string;
+  let endDate: string;
+
+  if (kind === "today") {
+    startDate = toISODate(anchor);
+    endDate = startDate;
+  } else if (kind === "week") {
+    const offset = (anchor.getUTCDay() - weekStartsOn + 7) % 7;
+    const start = addDays(anchor, -offset);
+    const end = addDays(start, 6);
+    startDate = toISODate(start);
+    endDate = toISODate(end);
+  } else if (kind === "month") {
+    const start = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1));
+    const end = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() + 1, 0));
+    startDate = toISODate(start);
+    endDate = toISODate(end);
+  } else {
+    const start = new Date(Date.UTC(anchor.getUTCFullYear(), 0, 1));
+    const end = new Date(Date.UTC(anchor.getUTCFullYear(), 11, 31));
+    startDate = toISODate(start);
+    endDate = toISODate(end);
+  }
+
+  return {
+    endDate,
+    kind,
+    label: formatPeriodLabel(kind, startDate, endDate),
+    startDate,
+  };
+}
+
+export function filterRecordsForPeriod(records: ShiftRecord[], period: ReportPeriod) {
+  return records.filter((record) => {
+    const date = record.plannedShift.shiftDate;
+    return date >= period.startDate && date <= period.endDate;
+  });
+}
+
+function calculateTargetProgressValue(actual: number, target: number | undefined) {
+  if (!target || target <= 0) {
+    return 0;
+  }
+
+  return roundMetric((actual / target) * 100);
+}
+
+export function calculateTargetProgress(totals: ReportTotals, target: ReportTarget = {}): ReportTargetProgress {
+  return {
+    hours: calculateTargetProgressValue(totals.hours, target.hours),
+    income: calculateTargetProgressValue(totals.totalIncome, target.income),
+    sales: calculateTargetProgressValue(totals.sales, target.sales),
+    tips: calculateTargetProgressValue(totals.netTips, target.tips),
+  };
+}
+
+export function calculateReportSummary({
+  anchorDate,
+  kind,
+  records,
+  target,
+  weekStartsOn = 1,
+}: {
+  anchorDate: string;
+  kind: ReportPeriodKind;
+  records: ShiftRecord[];
+  target?: ReportTarget;
+  weekStartsOn?: WeekStartsOn;
+}): ReportSummary {
+  const period = getReportPeriod(kind, anchorDate, weekStartsOn);
+  const periodRecords = filterRecordsForPeriod(records, period);
+  const totals = calculateReportTotals(periodRecords);
+
+  return {
+    period,
+    records: periodRecords,
+    targetProgress: calculateTargetProgress(totals, target),
+    totals,
   };
 }
