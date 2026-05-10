@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppScaffold } from "../../components/AppScaffold";
 import { theme } from "../../theme";
 import { freeFeatureLabels, premiumFeatureLabels } from "./entitlements";
+import { getSandboxProducts, simulateSandboxPurchase } from "../subscriptions/subscriptionSandbox";
 
 function FeatureList({ items }: { items: string[] }) {
   return (
@@ -16,6 +17,12 @@ function FeatureList({ items }: { items: string[] }) {
 }
 
 export function PaywallScreen() {
+  const products = getSandboxProducts("ios");
+  const trialResult = simulateSandboxPurchase({
+    outcome: "success",
+    productId: "protip365_premium_monthly",
+  });
+
   return (
     <AppScaffold eyebrow="Premium" title="Upgrade when you need more than logging">
       <View style={styles.card}>
@@ -27,6 +34,11 @@ export function PaywallScreen() {
         <Text style={styles.title}>Premium adds analysis and records</Text>
         <FeatureList items={premiumFeatureLabels()} />
         <Text style={styles.body}>Start the 7-day trial after you have logged a few shifts. Core logging stays available without upgrading.</Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.title}>Sandbox products</Text>
+        <FeatureList items={products.map((product) => `${product.title} ${product.priceLabel}`)} />
+        <Text style={styles.body}>Local sandbox success result: {trialResult.status}</Text>
       </View>
     </AppScaffold>
   );
