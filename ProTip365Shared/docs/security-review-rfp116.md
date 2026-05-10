@@ -87,6 +87,19 @@
   - Upgrade Expo/Metro dependency chain to a version that resolves PostCSS to `>=8.5.10`.
   - Re-run `npm audit`, Expo doctor, tests, typecheck, and export.
 
+### High: Website FTP credentials committed in deployment docs/scripts
+
+- Evidence:
+  - `Docs/website/upload.sh` contained FTP host, username, and password literals.
+  - `Docs/website/ftp-upload-guide.md` contained FTP host and username literals.
+  - `_Backups/2025-12-08_Pre_Optimization/Docs/website/upload.sh` contained the same FTP credential literals.
+- Impact: Anyone with repository access or git history access could retrieve deployment credentials and modify the public ProTip365 website.
+- Recommended fix:
+  - Rotate the exposed FTP credential in Bluehost immediately.
+  - Keep deployment credentials in a password manager or CI secret store.
+  - Use environment variables for local upload scripts.
+  - Consider purging the secret from git history if this repository is shared outside trusted maintainers.
+
 ## False Positives / No Finding
 
 - Shared app secrets: no hardcoded production API keys were identified in the shared app source during this pass.
@@ -100,6 +113,7 @@
 - Plaintext password reset tokens.
 - Sensitive shift/subscription data in AsyncStorage.
 - PostCSS vulnerable dependency.
+- Website FTP credentials committed in deployment docs/scripts.
 
 ## Remediation Status
 
@@ -111,6 +125,11 @@ Fixed in the RFP-116 dev pass:
 - Password reset token schema now stores `token_hash`; existing plaintext tokens are invalidated during migration.
 - Shared app shift and subscription repositories now use SecureStore-backed storage instead of AsyncStorage.
 - `npm audit --json` reports zero vulnerabilities after the PostCSS override and lockfile refresh.
+- Website FTP credentials were removed from current docs/scripts and backup copies; upload scripts now require environment variables.
+
+Remaining manual security action:
+
+- Rotate the exposed Bluehost FTP credential. The repository no longer contains the plaintext value in the working tree, but the credential may still exist in git history.
 
 Final verification commands:
 

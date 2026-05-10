@@ -1,9 +1,9 @@
 # FTP Upload Guide for ProTip365 Website
 
-## Your FTP Credentials
-- **FTP Host:** zzw.muu.mybluehost.me (or 50.6.153.246)
-- **FTP Username:** claude@protip365.com
-- **FTP Password:** [Use the password you set]
+## FTP Credentials
+- Keep FTP credentials in a password manager or deployment secret store.
+- Do not commit hostnames, usernames, or passwords to this repository.
+- Rotate any credential that has previously appeared in git history.
 - **Port:** 21 (standard FTP)
 - **Directory:** /home2/zzwmuumy/public_html
 
@@ -16,10 +16,10 @@
 
 ### Step 2: Connect to Your Server
 1. Open your FTP client
-2. Enter the connection details:
-   - Host: `zzw.muu.mybluehost.me`
-   - Username: `claude@protip365.com`
-   - Password: [Your password]
+2. Enter the connection details from the password manager:
+   - Host
+   - Username
+   - Password
    - Port: `21`
 3. Click Connect
 
@@ -42,7 +42,7 @@
 cd /Users/jacquesbolduc/Github/ProTip365/Docs/website/
 
 # Upload all HTML files using FTP
-ftp claude@protip365.com@zzw.muu.mybluehost.me
+ftp <username>@<host>
 # Enter password when prompted
 # Then run these commands:
 cd public_html
@@ -56,7 +56,7 @@ quit
 
 1. Open Finder
 2. Press Cmd+K (Go > Connect to Server)
-3. Enter: `ftp://claude@protip365.com@zzw.muu.mybluehost.me`
+3. Enter: `ftp://<username>@<host>`
 4. Enter your password
 5. Navigate to public_html folder
 6. Drag and drop the HTML files
