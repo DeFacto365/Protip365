@@ -30,6 +30,10 @@ CREATE INDEX IF NOT EXISTS idx_entries_employer_id ON public.entries(employer_id
 -- Enable RLS on entries table
 ALTER TABLE public.entries ENABLE ROW LEVEL SECURITY;
 
+-- Explicit Data API grants
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.entries TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.entries TO service_role;
+
 -- Create RLS policies for entries table
 DROP POLICY IF EXISTS "Users can view own entries" ON public.entries;
 CREATE POLICY "Users can view own entries" ON public.entries

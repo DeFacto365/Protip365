@@ -4,6 +4,7 @@ import Supabase
 
 struct DashboardView: View {
     @EnvironmentObject var supabaseManager: SupabaseManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @State private var todayStats = DashboardMetrics.Stats()
     @State private var weekStats = DashboardMetrics.Stats()
     @State private var monthStats = DashboardMetrics.Stats()
@@ -115,22 +116,40 @@ struct DashboardView: View {
     }
 
     private var customHeaderView: some View {
-        HStack {
-            NotificationBell(alertManager: alertManager)
+        VStack(spacing: 8) {
+            HStack {
+                NotificationBell(alertManager: alertManager)
 
-            Spacer()
+                Spacer()
 
-            Text(localization.proTip365Text)
-                .font(.headline)
-                .foregroundColor(.primary)
+                Text(localization.proTip365Text)
+                    .font(.headline)
+                    .foregroundColor(.primary)
 
-            Spacer()
+                Spacer()
 
-            Image("Logo2")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 50, height: 50)
-                .padding(0)
+                Image("Logo2")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 50, height: 50)
+                    .padding(0)
+            }
+
+            // Trial Timer
+            if subscriptionManager.isInTrialPeriod {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock")
+                        .font(.caption)
+                    Text("\(subscriptionManager.trialDaysRemaining) \(localization.daysLeftInTrialText)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color.orange.opacity(0.15))
+                .foregroundColor(.orange)
+                .clipShape(Capsule())
+            }
         }
         .padding(.horizontal)
         .padding(.top, 8)

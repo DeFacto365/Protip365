@@ -4,7 +4,8 @@ import Supabase
 
 enum SubscriptionTier: String {
     case none = "none"
-    case premium = "premium" // Single tier
+    case premium = "premium" // Yearly tier
+    case lifetime = "lifetime" // Lifetime purchase
     case free = "free" // For testing purposes
 }
 
@@ -16,7 +17,7 @@ class SubscriptionManager: ObservableObject {
     @Published var currentTier: SubscriptionTier = .none
     @Published var trialDaysRemaining: Int = 0
     @Published var subscriptionExpirationDate: Date? = nil
-    @Published var productMonthly: Product?
+    @Published var productLifetime: Product?
     @Published var productYearly: Product?
 
     // NEW: Error handling for UI feedback
@@ -24,8 +25,9 @@ class SubscriptionManager: ObservableObject {
     @Published var purchaseError: String?
     
     // Single product ID for simplified pricing (must match App Store Connect exactly)
-    let premiumMonthlyId = "com.protip365.premium.monthly"
+    // Single product ID for simplified pricing (must match App Store Connect exactly)
     let premiumYearlyId = "com.protip365.premium.yearly"
+    let premiumLifetimeId = "com.protip365.premium.lifetime"
 
     // CRITICAL: Add your App Store Connect shared secret here
     // Get this from: App Store Connect > Your App > Features > In-App Purchases > App-Specific Shared Secret
@@ -33,7 +35,7 @@ class SubscriptionManager: ObservableObject {
     private var sharedSecret: String { ConfigManager.shared.appStoreSharedSecret }
 
     private var allProductIds: [String] {
-        [premiumMonthlyId, premiumYearlyId]
+        [premiumYearlyId, premiumLifetimeId]
     }
 
     private var transactionListener: Task<Void, Error>?
@@ -84,8 +86,10 @@ class SubscriptionManager: ObservableObject {
 
     private func getTierForProductId(_ productId: String) -> SubscriptionTier {
         switch productId {
-        case premiumMonthlyId, premiumYearlyId:
+        case premiumYearlyId:
             return .premium
+        case premiumLifetimeId:
+            return .lifetime
         default:
             return .none
         }
@@ -104,7 +108,7 @@ class SubscriptionManager: ObservableObject {
             self.trialDaysRemaining = 0
             self.isCheckingSubscription = false
             self.products = []
-            self.productMonthly = nil
+            self.productLifetime = nil
             self.productYearly = nil
             self.loadingError = nil
             self.purchaseError = nil
@@ -127,8 +131,8 @@ class SubscriptionManager: ObservableObject {
 
             await MainActor.run {
                 self.products = products
-                self.productMonthly = products.first(where: { $0.id == premiumMonthlyId })
                 self.productYearly = products.first(where: { $0.id == premiumYearlyId })
+                self.productLifetime = products.first(where: { $0.id == premiumLifetimeId })
 
                 if products.isEmpty {
                     self.loadingError = "No subscription products available. Please check your internet connection and try again."
@@ -505,7 +509,8 @@ class SubscriptionManager: ObservableObject {
                         self.currentTier = tier
 
                         if let purchaseDate = subscription.purchase_date, tier == .premium {
-                            let trialDuration: TimeInterval = 7 * 24 * 60 * 60
+                            // 1 Month Trial (30 days)
+                            let trialDuration: TimeInterval = 30 * 24 * 60 * 60
                             let timeSincePurchase = Date().timeIntervalSince(purchaseDate)
                             self.isInTrialPeriod = timeSincePurchase <= trialDuration
 
@@ -710,7 +715,7 @@ class SubscriptionManager: ObservableObject {
         if isInTrialPeriod {
             return "Trial - \(trialDaysRemaining) days left"
         } else if isSubscribed {
-            return "Premium"
+            return currentTier == .lifetime ? "Lifetime Premium" : "Premium Yearly"
         } else {
             return "Free Trial Available"
         }

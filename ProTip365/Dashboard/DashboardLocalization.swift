@@ -22,6 +22,14 @@ struct DashboardLocalization {
         return "ProTip365" // App name should not be translated
     }
 
+    var daysLeftInTrialText: String {
+        switch language {
+        case "fr": return "jours d'essai restants"
+        case "es": return "días de prueba restantes"
+        default: return "days left in trial"
+        }
+    }
+
     // MARK: - Period Selection
 
     var weekText: String {

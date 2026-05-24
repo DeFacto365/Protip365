@@ -108,18 +108,42 @@ struct SubscriptionTiersView: View {
                         }
                         .padding(.vertical, 40)
                     } else {
-                        // Single Premium tier
+                        // Yearly Tier (with Trial)
                         VStack(spacing: 20) {
+                            Text(selectPlanText)
+                                .font(.headline)
+                                .padding(.top, 10)
+
+                            // Yearly Option
                             SubscriptionTierCard(
-                                tierName: premiumTitle,
-                                description: premiumDescription,
+                                tierName: yearlyTitle,
+                                description: yearlyDescription,
                                 features: premiumFeatures,
-                                monthlyPrice: subscriptionManager.productMonthly?.displayPrice ?? "$3.99",
-                                yearlyPrice: subscriptionManager.productYearly?.displayPrice ?? "$34.99", // No yearly option for now
-                                monthlyProductId: subscriptionManager.premiumMonthlyId,
-                                yearlyProductId: subscriptionManager.premiumYearlyId,
+                                price: subscriptionManager.productYearly?.displayPrice ?? "$9.99/yr",
+                                priceDetail: perYearText,
+                                productId: subscriptionManager.premiumYearlyId,
                                 isCurrentTier: subscriptionManager.currentTier == .premium,
                                 hasTrial: true,
+                                isBestValue: false,
+                                isLoading: $isLoading,
+                                selectedProductId: $selectedProductId,
+                                language: language,
+                                onPurchase: { productId in
+                                    await purchase(productId: productId)
+                                }
+                            )
+
+                            // Lifetime Option
+                            SubscriptionTierCard(
+                                tierName: lifetimeTitle,
+                                description: lifetimeDescription,
+                                features: [], // Features are same, maybe hide list for layout compactness
+                                price: subscriptionManager.productLifetime?.displayPrice ?? "$29.99",
+                                priceDetail: oneTimeText,
+                                productId: subscriptionManager.premiumLifetimeId,
+                                isCurrentTier: subscriptionManager.currentTier == .lifetime,
+                                hasTrial: false, // Lifetime usually doesn't have trial, immediate purchase
+                                isBestValue: true,
                                 isLoading: $isLoading,
                                 selectedProductId: $selectedProductId,
                                 language: language,
@@ -203,14 +227,14 @@ struct SubscriptionTiersView: View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                .foregroundStyle(.green)
                 Text(currentPlanText)
-                    .fontWeight(.medium)
+                .fontWeight(.medium)
             }
 
             Text(enjoyingPremiumText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -277,7 +301,7 @@ struct SubscriptionTiersView: View {
     }
 
     private var termsText: some View {
-        Text(termsString(for: subscriptionManager.productMonthly))
+        Text(termsString(for: subscriptionManager.productLifetime ?? subscriptionManager.productYearly))
             .font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -323,7 +347,7 @@ struct SubscriptionTiersView: View {
 
         do {
             try await subscriptionManager.purchase(productId: productId)
-            
+
             await MainActor.run {
                 isLoading = false
                 selectedProductId = nil
@@ -485,32 +509,40 @@ struct SubscriptionTiersView: View {
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Auto-localized by App Store region
         } else {
-            priceString = "$3.99" // Fallback
+            priceString = "$9.99" // Fallback
         }
 
-        // Detect yearly or monthly based on product ID or subscription period
+        // Detect yearly, monthly, or lifetime based on product ID
         let isYearly = product?.id.lowercased().contains("year") == true
+        let isLifetime = product?.id.lowercased().contains("lifetime") == true
 
         switch language {
         case "fr":
-            if isYearly {
-                return "Essai gratuit de 7 jours, puis \(priceString)/an. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+            if isLifetime {
+                return "Paiement unique de \(priceString). Accès à vie."
+            } else if isYearly {
+                return "1 mois gratuit, puis \(priceString)/an. L'abonnement se renouvelle automatiquement. Annulez à tout moment."
             } else {
-                return "Essai gratuit de 7 jours, puis \(priceString)/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les paramètres de l'App Store."
+                return "1 mois gratuit, puis \(priceString)/mois. L'abonnement se renouvelle automatiquement. Annulez à tout moment."
             }
 
         case "es":
-            if isYearly {
-                return "Prueba gratuita de 7 días, luego \(priceString)/año. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+            if isLifetime {
+                return "Pago único de \(priceString). Acceso de por vida."
+            } else if isYearly {
+                return "1 mes gratis, luego \(priceString)/año. La suscripción se renueva automáticamente. Cancela en cualquier momento."
             } else {
-                return "Prueba gratuita de 7 días, luego \(priceString)/mes. La suscripción se renueva automáticamente. Cancele en cualquier momento en la configuración de App Store."
+                return "1 mes gratis, luego \(priceString)/mes. La suscripción se renueva automáticamente. Cancela en cualquier momento."
             }
 
         default:
-            if isYearly {
-                return "7-day free trial, then \(priceString)/year. Subscription auto-renews. Cancel anytime in App Store settings."
+            if isLifetime {
+                return "One-time payment of \(priceString). Lifetime access."
+            } else if isYearly {
+                return "1 month free trial, then \(priceString)/year. Subscription auto-renews. Cancel anytime."
             } else {
-                return "7-day free trial, then \(priceString)/month. Subscription auto-renews. Cancel anytime in App Store settings."
+               // Default terms
+               return "Subscription auto-renews. Cancel anytime."
             }
         }
     }
@@ -570,20 +602,61 @@ struct SubscriptionTiersView: View {
         default: return "No subscription found. Make sure you're connected to App Store."
         }
     }
+
+    var selectPlanText: String {
+        switch language {
+        case "fr": return "Choisissez votre plan"
+        case "es": return "Elige tu plan"
+        default: return "Choose Your Plan"
+        }
+    }
+
+    var yearlyTitle: String { "ProTip365 Premium Yearly" }
+    var lifetimeTitle: String { "ProTip365 Premium Lifetime" }
+
+    var yearlyDescription: String {
+        switch language {
+        case "fr": return "Payez annuellement, économisez plus"
+        case "es": return "Pague anualmente, ahorre más"
+        default: return "Pay yearly, save more"
+        }
+    }
+
+    var lifetimeDescription: String {
+        switch language {
+        case "fr": return "Paiement unique, accès à vie"
+        case "es": return "Pago único, acceso de por vida"
+        default: return "One-time payment, lifetime access"
+        }
+    }
+
+    var perYearText: String {
+        switch language {
+        case "fr": return "/an"
+        case "es": return "/año"
+        default: return "/year"
+        }
+    }
+
+    var oneTimeText: String {
+        switch language {
+        case "fr": return "une fois"
+        case "es": return "una vez"
+        default: return "one time"
+        }
+    }
 }
 
-// Simplified Subscription Tier Card for single tier
 struct SubscriptionTierCard: View {
     let tierName: String
     let description: String
     let features: [String]
-    let monthlyPrice: String
-    let yearlyPrice: String?
-    let monthlyProductId: String
-    let yearlyProductId: String?
+    let price: String
+    let priceDetail: String
+    let productId: String
     let isCurrentTier: Bool
-    var isUpgrade: Bool = false
     var hasTrial: Bool = false
+    var isBestValue: Bool = false
     @Binding var isLoading: Bool
     @Binding var selectedProductId: String?
     let language: String
@@ -593,6 +666,18 @@ struct SubscriptionTierCard: View {
         VStack(spacing: 20) {
             // Header
             VStack(spacing: 8) {
+                if isBestValue {
+                    Text(bestValueText)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.blue)
+                        .clipShape(Capsule())
+                        .padding(.bottom, 4)
+                }
+
                 Text(tierName)
                     .font(.title2)
                     .fontWeight(.bold)
@@ -611,15 +696,16 @@ struct SubscriptionTierCard: View {
                 Text(description)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
 
             // Price
             VStack(spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(monthlyPrice)
+                    Text(price)
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    Text(perMonthText)
+                    Text(priceDetail)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -631,31 +717,33 @@ struct SubscriptionTierCard: View {
                 }
             }
 
-            // Features
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(features, id: \.self) { feature in
-                    HStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.system(size: 20))
-                        Text(feature)
-                            .font(.subheadline)
-                        Spacer()
+            // Features (Only show if provided)
+            if !features.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(features, id: \.self) { feature in
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.system(size: 20))
+                            Text(feature)
+                                .font(.subheadline)
+                            Spacer()
+                        }
                     }
                 }
+                .padding()
+                .background(Color(.tertiarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .padding()
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
 
             // Purchase button
             if !isCurrentTier {
                 Button(action: {
                     Task {
-                        await onPurchase(monthlyProductId)
+                        await onPurchase(productId)
                     }
                 }) {
-                    if isLoading && selectedProductId == monthlyProductId {
+                    if isLoading && selectedProductId == productId {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
@@ -665,7 +753,7 @@ struct SubscriptionTierCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
-                .background(Color.blue)
+                .background(isBestValue ? Color.blue : Color.gray.opacity(0.8)) // Highlight Best Value
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .disabled(isLoading)
@@ -683,14 +771,26 @@ struct SubscriptionTierCard: View {
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(isBestValue ? Color.blue : Color.clear, lineWidth: 2)
+        )
     }
 
-    // Localization
+    // Localization passed down
+    var bestValueText: String {
+        switch language {
+        case "fr": return "MEILLEURE VALEUR"
+        case "es": return "MEJOR VALOR"
+        default: return "BEST VALUE"
+        }
+    }
+
     var trialBadgeText: String {
         switch language {
-        case "fr": return "7 JOURS GRATUITS"
-        case "es": return "7 DÍAS GRATIS"
-        default: return "7 DAYS FREE"
+        case "fr": return "1 MOIS GRATUIT"
+        case "es": return "1 MES GRATIS"
+        default: return "1 MONTH FREE"
         }
     }
 
@@ -711,10 +811,18 @@ struct SubscriptionTierCard: View {
     }
 
     var subscribeButtonText: String {
-        switch language {
-        case "fr": return "Commencer l'essai gratuit"
-        case "es": return "Comenzar prueba gratis"
-        default: return "Start Free Trial"
+        if hasTrial {
+            switch language {
+            case "fr": return "Commencer l'essai gratuit"
+            case "es": return "Comenzar prueba gratis"
+            default: return "Start Free Trial"
+            }
+        } else {
+            switch language {
+            case "fr": return "Acheter maintenant"
+            case "es": return "Comprar ahora"
+            default: return "Buy Now"
+            }
         }
     }
 

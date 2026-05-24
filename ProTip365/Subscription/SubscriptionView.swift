@@ -161,17 +161,17 @@ struct SubscriptionView: View {
                         .disabled(isLoadingYearly)
                         .padding(.horizontal, 30)
                         
-                        // Monthly Plan Button
+                        // Lifetime Plan Button
                         Button(action: {
                             if subscriptionManager.products.isEmpty {
                                 print("❌ Cannot purchase - no products loaded")
                                 return
                             }
 
-                            isLoadingMonthly = true
+                            isLoadingMonthly = true // Reuse variable or rename later
                             Task {
                                 do {
-                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumMonthlyId)
+                                    try await subscriptionManager.purchase(productId: subscriptionManager.premiumLifetimeId)
                                     await MainActor.run {
                                         isLoadingMonthly = false
                                         if subscriptionManager.isSubscribed || subscriptionManager.isInTrialPeriod {
@@ -191,14 +191,14 @@ struct SubscriptionView: View {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 } else {
-                                    Text(subscribeButtonMonthly(for: subscriptionManager.productMonthly))
+                                    Text(buyButtonLifetime(for: subscriptionManager.productLifetime))
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
-                            .background(Color.blue)
+                            .background(Color.green) // Distinct color for Lifetime
                             .foregroundColor(.white)
                             .cornerRadius(12)
                         }
@@ -358,21 +358,21 @@ struct SubscriptionView: View {
         }
     }
 
-    func subscribeButtonMonthly(for product: Product?) -> String {
+    func buyButtonLifetime(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice
         } else {
-            priceString = "$3.99"
+            priceString = "$29.99"
         }
 
         switch language {
         case "fr":
-            return "Forfait mensuel - \(priceString)/mois"
+            return "À vie - \(priceString) (Paiement unique)"
         case "es":
-            return "Plan mensual - \(priceString)/mes"
+            return "De por vida - \(priceString) (Pago único)"
         default:
-            return "Monthly Plan - \(priceString)/month"
+            return "Lifetime - \(priceString) (One-time payment)"
         }
     }
 

@@ -72,23 +72,23 @@ struct SubscriptionSettingsSection: View {
 
                 // Action button
                 if subscriptionManager.currentTier == .none {
-                    // Subscribe button with trial info
+                    // Subscribe button for Lifetime
                     Button(action: {
                         HapticFeedback.selection()
                         showSubscriptionView = true
                     }) {
                         VStack(spacing: 4) {
                             HStack {
-                                Text(localization.startFreeTrialButton)
+                                Text(localization.getLifetimeAccess)
                                     .foregroundStyle(.white)
                                     .font(.body)
                                     .fontWeight(.medium)
                                 Spacer()
-                                Image(systemName: "arrow.right.circle.fill")
+                                Image(systemName: "infinity.circle.fill")
                                     .foregroundStyle(.white)
                                     .font(.body)
                             }
-                            Text(localization.trialInfoTextMonthly(for: subscriptionManager.productMonthly))
+                            Text(localization.lifetimeInfoText(for: subscriptionManager.productLifetime))
                                 .font(.caption2)
                                 .foregroundStyle(.white.opacity(0.9))
                         }
@@ -97,7 +97,7 @@ struct SubscriptionSettingsSection: View {
                     .padding()
                     .background(
                         LinearGradient(
-                            colors: [Color.blue, Color.purple],
+                            colors: [Color.green, Color.teal],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -146,7 +146,7 @@ struct SubscriptionSettingsSection: View {
                                 .foregroundStyle(.primary)
                                 .font(.body)
                             Spacer()
-                            Text(localization.priceTextMonthly(for: subscriptionManager.productMonthly))
+                            Text(localization.lifetimeInfoText(for: subscriptionManager.productLifetime))
                                 .foregroundStyle(.secondary)
                                 .font(.caption)
                             Image(systemName: IconNames.Form.next)
@@ -216,6 +216,8 @@ struct SubscriptionSettingsSection: View {
             } else {
                 return localization.premiumPlanText
             }
+        case .lifetime:
+            return localization.premiumPlanText + " (Lifetime)"
         case .free:
             return localization.noPlanText
         }
@@ -227,6 +229,8 @@ struct SubscriptionSettingsSection: View {
             return .secondary
         case .premium:
             return subscriptionManager.isInTrialPeriod ? .blue : .green
+        case .lifetime:
+            return .orange
         case .free:
             return .secondary
         }
@@ -262,21 +266,29 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    func trialInfoTextMonthly(for product: Product?) -> String {
+    var getLifetimeAccess: String {
+        switch language {
+        case "fr": return "Obtenir l'accès à vie"
+        case "es": return "Obtener acceso de por vida"
+        default: return "Get Lifetime Access"
+        }
+    }
+
+    func lifetimeInfoText(for product: Product?) -> String {
         let priceString: String
         if let displayPrice = product?.displayPrice {
-            priceString = displayPrice // Localized per country
+            priceString = displayPrice
         } else {
-            priceString = "$3.99" // Fallback if unavailable
+            priceString = "$29.99"
         }
 
         switch language {
         case "fr":
-            return "7 jours gratuits, puis \(priceString)/mois"
+            return "Paiement unique de \(priceString)"
         case "es":
-            return "7 días gratis, luego \(priceString)/mes"
+            return "Pago único de \(priceString)"
         default:
-            return "7 days free, then \(priceString)/month"
+            return "One-time payment of \(priceString)"
         }
     }
     
@@ -308,23 +320,7 @@ struct SubscriptionSectionLocalization {
         }
     }
 
-    func priceTextMonthly(for product: Product?) -> String {
-        let priceString: String
-        if let displayPrice = product?.displayPrice {
-            priceString = displayPrice // Automatically localized
-        } else {
-            priceString = "$3.99" // Fallback
-        }
 
-        switch language {
-        case "fr":
-            return "\(priceString)/mois"
-        case "es":
-            return "\(priceString)/mes"
-        default:
-            return "\(priceString)/mo"
-        }
-    }
     
     func priceTextYearly(for product: Product?) -> String {
         let priceString: String

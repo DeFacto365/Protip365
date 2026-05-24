@@ -23,6 +23,10 @@ CREATE INDEX IF NOT EXISTS idx_achievements_type ON public.achievements(achievem
 -- Enable RLS
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 
+-- Explicit Data API grants
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.achievements TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.achievements TO service_role;
+
 -- Create RLS policies
 CREATE POLICY "Users can view own achievements" ON public.achievements
     FOR SELECT USING (auth.uid() = user_id);
@@ -60,6 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON public.alerts(created_at DES
 
 -- Enable RLS
 ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
+
+-- Explicit Data API grants
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.alerts TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.alerts TO service_role;
 
 -- Create RLS policies
 CREATE POLICY "Users can view own alerts" ON public.alerts
@@ -99,6 +107,10 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_expires_at ON public.user_subs
 
 -- Enable RLS
 ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Explicit Data API grants
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.user_subscriptions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.user_subscriptions TO service_role;
 
 -- Create RLS policies
 CREATE POLICY "Users can view own subscription" ON public.user_subscriptions

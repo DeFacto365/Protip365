@@ -27,21 +27,8 @@ struct AuthView: View {
         NavigationStack {
             ZStack {
                 // Background
-                Color(.systemBackground)
+                Color.white
                     .ignoresSafeArea()
-
-                // Gradient overlay
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.6, green: 0.8, blue: 1.0),     // Light blue
-                        Color(red: 1.0, green: 0.7, blue: 0.9),     // Light pink
-                        Color(red: 0.8, green: 0.7, blue: 1.0)      // Light purple
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .opacity(0.2)
-                .ignoresSafeArea()
 
                 VStack(spacing: 0) {
                 // Language selector at top

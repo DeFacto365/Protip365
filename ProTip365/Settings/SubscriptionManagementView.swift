@@ -43,7 +43,7 @@ struct SubscriptionManagementView: View {
                                 Text(localization.upgradeToPremium)
                                     .foregroundColor(.blue)
                                 Spacer()
-                                Text(subscriptionManager.productMonthly?.displayPrice ?? "N/A")
+                                Text(subscriptionManager.productYearly?.displayPrice ?? "N/A")
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -97,7 +97,7 @@ struct SubscriptionManagementView: View {
                 Button("Upgrade") {
                     Task {
                         do {
-                            try await subscriptionManager.purchase(productId: "com.protip365.premium.monthly")
+                            try await subscriptionManager.purchase(productId: subscriptionManager.premiumYearlyId)
                         } catch {
                             await MainActor.run {
                                 showErrorAlert = true
@@ -106,7 +106,7 @@ struct SubscriptionManagementView: View {
                     }
                 }
             } message: {
-                Text(localization.upgradeMessage(for: subscriptionManager.productMonthly))
+                Text(localization.upgradeMessage(for: subscriptionManager.productYearly))
             }
             .alert("Purchase Failed", isPresented: $showErrorAlert) {
                         Button("OK", role: .cancel) { }
@@ -269,13 +269,13 @@ struct SubscriptionFAQView: View {
         List {
             Section(localization.trialSection) {
                 FAQRow(question: localization.trialQuestion,
-                       answer: localization.trialAnswer(for: subscriptionManager.productMonthly))
+                       answer: localization.trialAnswer(for: subscriptionManager.productYearly))
 
                 FAQRow(question: localization.cancelQuestion,
                        answer: localization.cancelAnswer)
 
                 FAQRow(question: localization.afterTrialQuestion,
-                       answer: localization.afterTrialAnswer(for: subscriptionManager.productMonthly))
+                       answer: localization.afterTrialAnswer(for: subscriptionManager.productYearly))
             }
 
             Section(localization.featuresSection) {
