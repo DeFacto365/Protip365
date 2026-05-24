@@ -15,8 +15,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 object SupabaseConfig {
-    const val SUPABASE_URL = "https://ztzpjsbfzcccvbacgskc.supabase.co"
-    const val SUPABASE_ANON_KEY = "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
+    const val SUPABASE_URL = "YOUR_SUPABASE_URL"
+    const val SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY"
 }
 
 val supabaseClient = createSupabaseClient(

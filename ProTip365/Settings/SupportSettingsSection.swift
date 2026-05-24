@@ -346,8 +346,10 @@ struct SupportSettingsSection: View {
             do {
                 let session = try await SupabaseManager.shared.client.auth.session
 
-                // Get Supabase URL from your SupabaseManager
-                let supabaseURL = "https://ztzpjsbfzcccvbacgskc.supabase.co" // Your actual Supabase URL
+                let supabaseURL = ConfigManager.shared.supabaseURL
+                guard !supabaseURL.isEmpty else {
+                    throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Missing Supabase URL"])
+                }
                 guard let url = URL(string: "\(supabaseURL)/functions/v1/send-suggestion") else {
                     throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }

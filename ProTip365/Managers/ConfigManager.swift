@@ -9,52 +9,33 @@ class ConfigManager {
     }
 
     // MARK: - Supabase Configuration
-    // These values can be overridden in build configurations or Info.plist
+    // Values are injected through build settings into Info.plist.
 
     public var supabaseURL: String {
-        // Try Info.plist first
-        if let url = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String {
+        if let url = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+           isConfigured(url) {
             return url
         }
 
-        // Fallback to build-time configuration
-        #if DEBUG
-        return "https://ztzpjsbfzcccvbacgskc.supabase.co"
-        #else
-        return "https://ztzpjsbfzcccvbacgskc.supabase.co"
-        #endif
+        return ""
     }
 
     public var supabaseAnonKey: String {
-        // Try Info.plist first
         if let key = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String,
-           key != "YOUR_SUPABASE_ANON_KEY_HERE",
-           !key.isEmpty {
+           isConfigured(key) {
             return key
         }
 
-        // IMPORTANT: You need to add your actual Supabase anon key
-        // Get it from: https://supabase.com/dashboard/project/ztzpjsbfzcccvbacgskc/settings/api
-        // The anon key should be a JWT token that starts with "eyJ"
-
-        // Fallback to the actual anon key
-        #if DEBUG
-        return "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
-        #else
-        return "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
-        #endif
+        return ""
     }
 
     public var appStoreSharedSecret: String {
-        // Try Info.plist first
         if let secret = Bundle.main.object(forInfoDictionaryKey: "APP_STORE_SHARED_SECRET") as? String,
-           secret != "YOUR_SHARED_SECRET_HERE",
-           !secret.isEmpty {
+           isConfigured(secret) {
             return secret
         }
-        
-        // Fallback to the hardcoded secret (moved from SubscriptionManager)
-        return "0b3c33127296426f9846d484f520f693"
+
+        return ""
     }
 
     // MARK: - Configuration Status
@@ -107,5 +88,10 @@ class ConfigManager {
         print("✅ Configuration validation passed")
         #endif
         return true
+    }
+
+    private func isConfigured(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !trimmed.hasPrefix("$(") && !trimmed.contains("_HERE")
     }
 }

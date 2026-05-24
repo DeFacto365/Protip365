@@ -29,9 +29,7 @@ class SubscriptionManager: ObservableObject {
     let premiumYearlyId = "com.protip365.premium.yearly"
     let premiumLifetimeId = "com.protip365.premium.lifetime"
 
-    // CRITICAL: Add your App Store Connect shared secret here
-    // Get this from: App Store Connect > Your App > Features > In-App Purchases > App-Specific Shared Secret
-    // Accessed via ConfigManager for security
+    // Receipt validation secret is injected through Info.plist build settings.
     private var sharedSecret: String { ConfigManager.shared.appStoreSharedSecret }
 
     private var allProductIds: [String] {
@@ -378,10 +376,14 @@ class SubscriptionManager: ObservableObject {
 
         print("🌐 Calling: \(urlString)")
 
-        // CRITICAL FIX: Include the shared secret for auto-renewable subscriptions
+        guard !sharedSecret.isEmpty else {
+            print("❌ Missing App Store shared secret")
+            return .failed
+        }
+
         let requestBody: [String: Any] = [
             "receipt-data": receiptString,
-            "password": sharedSecret, // Must not be empty for subscriptions!
+            "password": sharedSecret,
             "exclude-old-transactions": true
         ]
 

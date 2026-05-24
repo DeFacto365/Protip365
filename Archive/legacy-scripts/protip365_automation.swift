@@ -123,7 +123,7 @@ class ProTip365Automation {
     
     private func setupServerNotificationsTesting() {
         print("     🔔 Setting up App Store Server Notifications...")
-        print("     • Webhook URL: https://ztzpjsbfzcccvbacgskc.supabase.co/functions/v1/app-store-notifications")
+        print("     • Webhook URL: YOUR_SUPABASE_URL/functions/v1/app-store-notifications")
         print("     • Sandbox environment: Enabled")
         print("     • Notification types: All subscription events")
     }

@@ -11,6 +11,10 @@ build/
 
 # Note: Configuration is now handled through Info.plist and build settings
 # No .env files are used in this iOS project
+.env
+.env.*
+!.env.example
+!ProTip365Shared/.env.example
 
 # IDE files
 .vscode/

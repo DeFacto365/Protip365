@@ -102,7 +102,7 @@ ProTip365Android/
 - Using exact database field names (e.g., `active` not `is_active`)
 - `shifts.other` is DOUBLE not DECIMAL
 - All timestamps as String in ISO format
-- Supabase URL: https://ztzpjsbfzcccvbacgskc.supabase.co
+- Supabase URL: YOUR_SUPABASE_URL
 - Bundle ID must be: com.protip365.monthly
 
 ## 🎯 Next Immediate Tasks

@@ -192,7 +192,7 @@ This function:
 ## Supabase Configuration
 
 ### Connection Details
-- **Project URL**: https://ztzpjsbfzcccvbacgskc.supabase.co
+- **Project URL**: YOUR_SUPABASE_URL
 - **Anon Key**: Stored in app configuration
 - **Database**: PostgreSQL 15+
 - **Region**: US East 1

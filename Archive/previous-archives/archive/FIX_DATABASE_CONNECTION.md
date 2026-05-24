@@ -1,7 +1,7 @@
 # Fix Database Connection Issue for ProTip365
 
 ## Problem Identified
-The app is failing to create users because of an invalid Supabase API key configuration. The current key format `sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c` is not a valid Supabase anon key.
+The app is failing to create users because of an invalid Supabase API key configuration. The current key format `YOUR_SUPABASE_PUBLISHABLE_KEY` is not a valid Supabase anon key.
 
 ## Solution Steps
 

@@ -97,9 +97,11 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>SUPABASE_URL</key>
-	<string>https://ztzpjsbfzcccvbacgskc.supabase.co</string>
+	<string>$(SUPABASE_URL)</string>
 	<key>SUPABASE_ANON_KEY</key>
-	<string>sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c</string>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>APP_STORE_SHARED_SECRET</key>
+	<string>$(APP_STORE_SHARED_SECRET)</string>
 	<key>CFBundleGetInfoString</key>
 	<string>ProTip365 - Professional Tip Tracking</string>
 	<key>CFBundleSignature</key>

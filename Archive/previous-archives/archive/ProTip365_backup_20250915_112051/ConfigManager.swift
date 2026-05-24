@@ -19,9 +19,9 @@ class ConfigManager {
 
         // Fallback to build-time configuration
         #if DEBUG
-        return "https://ztzpjsbfzcccvbacgskc.supabase.co"
+        return "YOUR_SUPABASE_URL"
         #else
-        return "https://ztzpjsbfzcccvbacgskc.supabase.co"
+        return "YOUR_SUPABASE_URL"
         #endif
     }
 
@@ -33,9 +33,9 @@ class ConfigManager {
 
         // Fallback to build-time configuration
         #if DEBUG
-        return "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
+        return "YOUR_SUPABASE_PUBLISHABLE_KEY"
         #else
-        return "sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c"
+        return "YOUR_SUPABASE_PUBLISHABLE_KEY"
         #endif
     }
 

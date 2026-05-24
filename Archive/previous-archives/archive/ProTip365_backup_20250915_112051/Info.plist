@@ -105,8 +105,8 @@
 
 	<!-- Supabase Configuration -->
 	<key>SUPABASE_URL</key>
-	<string>https://ztzpjsbfzcccvbacgskc.supabase.co</string>
+	<string>YOUR_SUPABASE_URL</string>
 	<key>SUPABASE_ANON_KEY</key>
-	<string>sb_publishable_6lBH6DSnvQ9hTY_3k5Gsfg_RdGVc95c</string>
+	<string>YOUR_SUPABASE_PUBLISHABLE_KEY</string>
 </dict>
 </plist>
