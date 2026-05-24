@@ -2,7 +2,7 @@
 
 ## Summary
 
-Release readiness is not complete. The local website compliance pages are present and Expo shared app static checks pass, but launch is blocked by public hosting/SSL, native iOS build environment evidence, tracked secret/config hygiene, support-function input handling, a tracked third-party API key in website template files, and Expo dependency advisories.
+Release readiness is not complete only because the public website is still serving an expired/suspended hosting target and operational secret rotation/deployment confirmation is still required. Repo-side blockers found during this pass were fixed in commit `0dc8029`: native simulator builds pass, Expo checks pass, tracked secret scans are clean for the known exposed patterns, and local website compliance routes pass.
 
 Linear tracking was synced under `RFP-113`.
 
@@ -10,7 +10,7 @@ Linear tracking was synced under `RFP-113`.
 
 - Repo: `/Users/jacquesbolduc/Github/ProTip365`
 - Branch: `main`
-- Commit: `4ecb6b21d17a2715bf57a2679c2005977ed57c5a`
+- Commit: `0dc8029`
 - Existing local changes before validation: `.DS_Store`, Xcode `UserInterfaceState.xcuserstate`, and dirty marker in `browser-tools-mcp` from nested `.DS_Store`.
 - Release-readiness scope: native app, Expo shared app, Supabase/security, website/store compliance, and Linear follow-up.
 
@@ -19,42 +19,41 @@ Linear tracking was synced under `RFP-113`.
 ### Passed
 
 - `ProTip365Shared`: `npm run typecheck` passed.
-- `ProTip365Shared`: `npx expo-doctor` passed all 18 checks.
-- `ProTip365Shared`: `npx expo install --check` reported dependencies are up to date for the current Expo SDK.
-- Local website routes returned HTTP 200 for `/`, `/privacy/`, `/terms/`, `/delete-account/`, `/privacy-policy.html`, and `/terms-of-service.html`.
+- Native iOS simulator builds passed for `ProTip365`, `ProTip365_StoreKit`, and `ProTip365_StoreKitTest`.
+- `ProTip365` installed and launched on iPhone 16 Pro simulator with bundle id `com.protip365.monthly`.
+- `ProTip365Shared`: `npx expo-doctor` passed all 21 checks.
+- `ProTip365Shared`: `npm audit --audit-level=moderate` passed with 0 vulnerabilities.
+- Local website routes returned HTTP 200 for `/`, `/privacy/`, `/terms/`, and `/delete-account/`.
 - `bash -n Docs/website/upload.sh` passed.
 - Current website FTP upload script uses environment variables rather than literal FTP credentials.
+- `deno check supabase/functions/send-support/index.ts` passed.
+- Tracked-file secret scan returned no hits for the known Supabase URL/key, App Store shared secret, Google API key pattern, FTP password variable assignment, or Supabase service-role assignment.
 
 ### Blocked Or Failed
 
-- Native iOS build/simulator smoke could not be proven. Xcode listed only an ineligible destination for the schemes because the required iOS 26.5 simulator runtime is not installed, while local runtimes are iOS 26.4, 26.2, 26.0, and 18.6.
 - Public URLs still fail store compliance:
-  - `curl -L https://protip365.com/`, `/privacy`, `/terms`, and `/delete-account` failed SSL verification with an expired certificate.
+  - `curl -L https://protip365.com/privacy`, `/terms`, and `/delete-account` failed SSL verification.
   - `curl -k -L` reached `https://protip365.com/cgi-sys/suspendedpage.cgi`.
-- `npm audit --audit-level=moderate` in `ProTip365Shared` reported 12 moderate vulnerabilities through Expo tooling: `postcss`, `uuid`, and `ws`.
-- Tracked app config contains hardcoded release-sensitive values, including an App Store shared secret fallback.
-- `supabase/functions/send-support/index.ts` interpolates user-controlled `subject` and `message` into HTML email without validation or escaping.
-- Tracked website template files under `Docs/website/Codeytech - Applify - App Landing Page HTML v2/` contain a Google Maps API key.
+- Exposed credentials/secrets still need provider-side rotation confirmation. The repo no longer tracks the known literals, but this pass cannot prove the external secrets were rotated.
+- Supabase function changes pass local type-checking, but this pass did not deploy the updated function to Supabase.
 - No Swift test or UI test files were found under `ProTip365`.
 
 ## Linear Updates
 
-- `RFP-139`: commented with fresh local/public website evidence; remains open as hosting/SSL blocker.
-- `RFP-140`: commented with fresh native build evidence; remains open as native release/build evidence blocker.
-- `RFP-141`: commented that current repo FTP literals are gone; remains open pending provider-side credential rotation confirmation.
-- `RFP-157`: created for hardcoded app secrets/config in tracked files.
-- `RFP-158`: created for support email input validation and HTML escaping.
-- `RFP-159`: created for tracked Google Maps API key in website template files.
-- `RFP-129`: reopened because Expo dependency advisories remain.
+- `RFP-139`: remains open as external hosting/SSL blocker.
+- `RFP-140`: native simulator build and launch evidence now passes locally; signed release build evidence is still external.
+- `RFP-141`: repo literals are gone; remains open pending provider-side credential rotation confirmation.
+- `RFP-157`: repo-side hardcoded config/secret exposure fixed.
+- `RFP-158`: repo-side support input validation and escaping fixed; deployment still pending.
+- `RFP-159`: repo-side tracked Google Maps key exposure fixed.
+- `RFP-129`: Expo audit and doctor now pass.
 
 ## Next Fix Order
 
-1. Fix `RFP-157` first. Remove hardcoded secret fallback, clean tracked env handling, document config injection, and rotate exposed secrets.
-2. Fix `RFP-139` externally. Restore hosting and SSL so public compliance URLs resolve to the repo pages.
-3. Fix `RFP-158` and redeploy Supabase functions. Validate support email input, escape HTML, require POST, and return generic errors.
-4. Fix `RFP-159`. Remove or replace the tracked Google Maps API key and exclude unused template files from release upload.
-5. Fix or formally accept `RFP-129`. Avoid a blind Expo major upgrade without a tested migration.
-6. Fix the local Xcode runtime/destination mismatch and rerun all three native scheme builds plus simulator launch.
+1. Fix `RFP-139` externally. Restore hosting and SSL so public compliance URLs resolve to the repo pages.
+2. Rotate exposed provider credentials/secrets externally and record proof on `RFP-141`/`RFP-157`.
+3. Deploy the updated Supabase `send-support` function and record deployment evidence on `RFP-158`.
+4. Produce signed release build evidence for `RFP-140`.
 
 ## Commands Run
 
@@ -68,11 +67,16 @@ xcodebuild -project ProTip365.xcodeproj -scheme ProTip365_StoreKit -showdestinat
 xcodebuild -project ProTip365.xcodeproj -scheme ProTip365_StoreKitTest -showdestinations
 xcodebuild -showsdks
 xcrun simctl list runtimes
+xcodebuild -downloadPlatform iOS -buildVersion 26.5 -architectureVariant universal
+xcodebuild -project ProTip365.xcodeproj -scheme ProTip365 -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/ProTip365DerivedData-ProTip365 -skipPackagePluginValidation SUPABASE_URL=https://example.supabase.co SUPABASE_ANON_KEY=placeholder_publishable_key_for_build_only APP_STORE_SHARED_SECRET=placeholder_shared_secret_for_build_only build
+xcodebuild -project ProTip365.xcodeproj -scheme ProTip365_StoreKit -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/ProTip365DerivedData-StoreKit -skipPackagePluginValidation SUPABASE_URL=https://example.supabase.co SUPABASE_ANON_KEY=placeholder_publishable_key_for_build_only APP_STORE_SHARED_SECRET=placeholder_shared_secret_for_build_only build
+xcodebuild -project ProTip365.xcodeproj -scheme ProTip365_StoreKitTest -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/ProTip365DerivedData-StoreKitTest -skipPackagePluginValidation SUPABASE_URL=https://example.supabase.co SUPABASE_ANON_KEY=placeholder_publishable_key_for_build_only APP_STORE_SHARED_SECRET=placeholder_shared_secret_for_build_only build
+xcrun simctl install 2CC69716-9882-453C-B851-523363955DC9 /tmp/ProTip365DerivedData-ProTip365/Build/Products/Debug-iphonesimulator/ProTip365.app
+xcrun simctl launch 2CC69716-9882-453C-B851-523363955DC9 com.protip365.monthly
 cd ProTip365Shared && npm run typecheck
 cd ProTip365Shared && npm audit --audit-level=moderate
 cd ProTip365Shared && npx expo-doctor
-cd ProTip365Shared && npx expo config --type public
-cd ProTip365Shared && npx expo install --check
+deno check supabase/functions/send-support/index.ts
 bash -n Docs/website/upload.sh
 python3 -m http.server 8765 --directory Docs/website
 curl checks for local and public website URLs
