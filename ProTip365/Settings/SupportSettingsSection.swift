@@ -204,7 +204,7 @@ struct SupportSettingsSection: View {
                 .padding()
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        showSuggestIdeas = false
+                        closeFeedbackSheet()
                         showThankYouMessage = false
                         suggestionText = ""
                         suggestionEmail = ""
@@ -350,7 +350,7 @@ struct SupportSettingsSection: View {
                 guard !supabaseURL.isEmpty else {
                     throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Missing Supabase URL"])
                 }
-                guard let url = URL(string: "\(supabaseURL)/functions/v1/send-suggestion") else {
+                guard let url = URL(string: "\(supabaseURL)/functions/v1/send-support") else {
                     throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }
 
@@ -359,10 +359,11 @@ struct SupportSettingsSection: View {
                 request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+                let subject = showSupport ? "Support request" : "Product suggestion"
+                let replyTo = suggestionEmail.isEmpty ? userEmail : suggestionEmail
                 let body = [
-                    "suggestion": suggestionText,
-                    "userEmail": suggestionEmail.isEmpty ? userEmail : suggestionEmail,
-                    "replyEmail": suggestionEmail
+                    "subject": subject,
+                    "message": "\(suggestionText)\n\nReply email: \(replyTo)"
                 ]
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -377,7 +378,7 @@ struct SupportSettingsSection: View {
 
                             // Auto-close the form after showing the message for 2 seconds
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                showSuggestIdeas = false
+                                closeFeedbackSheet()
                                 showThankYouMessage = false
                                 suggestionText = ""
                                 suggestionEmail = ""
@@ -396,6 +397,11 @@ struct SupportSettingsSection: View {
                 }
             }
         }
+    }
+
+    private func closeFeedbackSheet() {
+        showSuggestIdeas = false
+        showSupport = false
     }
 }
 

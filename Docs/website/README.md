@@ -44,7 +44,8 @@ The following ProTip365 screenshots are included:
 - Maintain aspect ratios for best display
 
 ### Updating Links
-- Update App Store and Google Play links in the hero section
+- Update the App Store link in the hero section only after verifying it opens the live listing
+- Do not add Google Play links until the Android app is production-ready and the store URL is verified
 - Update social media links in the footer
 - Update contact email addresses
 
@@ -82,5 +83,3 @@ The landing page is built with modern web standards and supports:
 ## Support
 
 For technical support or customization requests, contact the development team.
-
-

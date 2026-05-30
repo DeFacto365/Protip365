@@ -333,20 +333,20 @@ struct SubscriptionView: View {
 
     var detailedDescription: String {
         switch language {
-        case "fr": return "ProTip365 transforme la gestion des données de pourboires pour serveurs, barmans, livreurs et professionnels du service. Remplacez les papiers éparpillés et fichiers Excel obsolètes par une gestion en temps réel des pourboires, planification des quarts et rapports complets quotidiens/hebdomadaires/mensuels/annuels accessibles depuis iPhone, Android, tablette ou iPad, n'importe où."
-        case "es": return "ProTip365 transforma cómo meseros, cantineros, repartidores y profesionales del servicio gestionan sus datos de propinas. Reemplace papeles dispersos y archivos Excel obsoletos con gestión de propinas en tiempo real, programación de turnos e informes completos diarios/semanales/mensuales/anuales accesibles desde iPhone, Android, tableta o iPad en cualquier lugar."
-        default: return "ProTip365 transforms how servers, bartenders, delivery drivers, and service professionals manage their tip data. Replace scattered paper slips and outdated Excel files with real-time tip management, shift scheduling, and comprehensive daily/weekly/monthly/yearly reports accessible from iPhone, Android, tablet, or iPad anywhere."
+        case "fr": return "ProTip365 aide les serveurs, barmans et travailleurs à pourboires à suivre les quarts, pourboires, salaires, ventes, partages et employeurs sans papiers éparpillés ni tableurs."
+        case "es": return "ProTip365 ayuda a meseros, bartenders y trabajadores con propinas a registrar turnos, propinas, salarios, ventas, repartos y empleadores sin papeles ni hojas de cálculo."
+        default: return "ProTip365 helps servers, bartenders, and tipped workers track shifts, tips, wages, sales, tip-outs, and employers without paper slips or spreadsheets."
         }
     }
 
     var trialText: String {
         switch language {
         case "fr":
-            return "Les deux forfaits incluent un essai gratuit de 7 jours. Annulez à tout moment."
+            return "Les conditions d'essai et de prix sont affichées par l'App Store avant l'achat. Annulez à tout moment."
         case "es":
-            return "Ambos planes incluyen una prueba gratuita de 7 días. Cancela en cualquier momento."
+            return "La prueba y el precio se muestran en App Store antes de comprar. Cancela en cualquier momento."
         default:
-            return "Both plans include a 7-day free trial. Cancel anytime."
+            return "Trial and pricing terms are shown by the App Store before purchase. Cancel anytime."
         }
     }
 
@@ -381,16 +381,16 @@ struct SubscriptionView: View {
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice
         } else {
-            priceString = "$34.99"
+            priceString = "$9.99"
         }
 
         switch language {
         case "fr":
-            return "Forfait annuel - \(priceString)/an (Économisez 27 %)"
+            return "Forfait annuel - \(priceString)/an"
         case "es":
-            return "Plan anual - \(priceString)/año (Ahorra 27 %)"
+            return "Plan anual - \(priceString)/año"
         default:
-            return "Annual Plan - \(priceString)/year (Save 27%)"
+            return "Annual Plan - \(priceString)/year"
         }
     }
 
@@ -426,5 +426,3 @@ struct SubscriptionView: View {
         }
     }
 }
-
-

@@ -10,7 +10,7 @@ struct OnboardingView: View {
     @AppStorage("language") private var language = "en"
     @FocusState private var focusedField: Field?
 
-    private let totalSteps = 3
+    private let totalSteps = 4
     private var localization: OnboardingLocalization {
         return OnboardingLocalization(language: language)
     }
@@ -34,9 +34,9 @@ struct OnboardingView: View {
                                 switch state.currentStep {
                                 case 1:
                                     WelcomeStep(state: state, language: language)
-                                case 2:
-                                    SetupStep(state: state, language: language)
-                                case 3:
+                                case 2, 3:
+                                    PermissionsStep(state: state, language: language)
+                                case 4:
                                     CompletionStep(state: state, language: language)
                                 default:
                                     EmptyView()
@@ -148,15 +148,11 @@ struct OnboardingView: View {
                 let userId = try await SupabaseManager.shared.client.auth.session.user.id
 
                 // Save single employer if not using multiple employers
-                // ALWAYS create an employer if one doesn't exist, using a default name if needed
-                if !state.useMultipleEmployers {
-                    let defaultName = state.selectedLanguage == "fr" ? "Mon Employeur" : (state.selectedLanguage == "es" ? "Mi Empleador" : "My Employer")
-                    let nameToUse = state.singleEmployerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? defaultName : state.singleEmployerName
-                    
+                if !state.useMultipleEmployers && !state.singleEmployerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     let employer = Employer(
                         id: UUID(),
                         user_id: userId,
-                        name: nameToUse,
+                        name: state.singleEmployerName.trimmingCharacters(in: .whitespacesAndNewlines),
                         hourly_rate: 15.00,  // Default hourly rate
                         active: true,
                         created_at: Date()

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ProTip365 helps waiters, waitresses, bartenders, and service workers track tips, shifts, goals, employers, and export-ready earnings records.">
-  <title>ProTip365 - Tip tracking for every shift</title>
+  <meta name="description" content="ProTip365 is a fast tip and shift tracker for servers and bartenders. Log tips, hours, tip-outs, employers, and real hourly rate on iPhone and iPad.">
+  <title>ProTip365 - Tip tracker for servers and bartenders</title>
   <link rel="icon" href="images/protip365-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,9 +19,7 @@
       --mint: #22b966;
       --mint-dark: #087a3a;
       --peach: #ffb36b;
-      --rose: #f46f8f;
       --sky: #22a8ff;
-      --violet: #7864ff;
       --cream: #fff7ea;
       --charcoal: #101914;
       --white: #ffffff;
@@ -29,7 +27,6 @@
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-
     body {
       margin: 0;
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -38,24 +35,18 @@
       letter-spacing: 0;
       overflow-x: hidden;
     }
-
-    img, video { display: block; max-width: 100%; }
+    img { display: block; max-width: 100%; }
     a { color: inherit; }
-
-    .container {
-      width: min(1160px, calc(100% - 40px));
-      margin: 0 auto;
-    }
+    .container { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
 
     .site-header {
       position: sticky;
       top: 0;
       z-index: 30;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.92);
       border-bottom: 1px solid rgba(24, 33, 28, 0.08);
       backdrop-filter: blur(18px);
     }
-
     .nav {
       min-height: 72px;
       display: flex;
@@ -63,7 +54,6 @@
       justify-content: space-between;
       gap: 22px;
     }
-
     .brand {
       display: flex;
       align-items: center;
@@ -72,14 +62,12 @@
       font-size: 1.15rem;
       font-weight: 900;
     }
-
     .brand img {
       width: 44px;
       height: 44px;
       border-radius: 13px;
       box-shadow: 0 12px 28px rgba(8, 122, 58, 0.2);
     }
-
     .nav-links {
       display: flex;
       align-items: center;
@@ -90,9 +78,7 @@
       color: #36443c;
       font-weight: 800;
     }
-
     .nav-links a { text-decoration: none; }
-
     .nav-cta {
       padding: 10px 15px;
       border-radius: 999px;
@@ -109,7 +95,6 @@
       color: var(--white);
       background: var(--charcoal);
     }
-
     .hero-bg {
       position: absolute;
       inset: 0;
@@ -117,27 +102,23 @@
       height: 100%;
       object-fit: cover;
     }
-
     .hero::after {
       content: "";
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(90deg, rgba(16, 25, 20, 0.96) 0%, rgba(16, 25, 20, 0.78) 44%, rgba(16, 25, 20, 0.2) 100%),
-        linear-gradient(0deg, rgba(16, 25, 20, 0.44), rgba(16, 25, 20, 0));
+        linear-gradient(90deg, rgba(16, 25, 20, 0.96) 0%, rgba(16, 25, 20, 0.78) 44%, rgba(16, 25, 20, 0.18) 100%),
+        linear-gradient(0deg, rgba(16, 25, 20, 0.42), rgba(16, 25, 20, 0));
       z-index: 1;
     }
-
     .hero-content {
       position: relative;
       z-index: 2;
-      max-width: 660px;
+      max-width: 680px;
       padding: 82px 0 62px;
     }
-
     .eyebrow {
       display: inline-flex;
-      align-items: center;
       padding: 9px 13px;
       border-radius: 999px;
       color: #d9ffe8;
@@ -146,115 +127,60 @@
       font-size: 0.84rem;
       font-weight: 900;
       text-transform: uppercase;
-      max-width: 100%;
-      white-space: normal;
     }
-
     .hero h1 {
       margin: 22px 0 18px;
-      font-size: clamp(3rem, 7vw, 6.25rem);
-      line-height: 0.94;
-      letter-spacing: 0;
+      font-size: clamp(3rem, 7vw, 6.1rem);
+      line-height: 0.96;
     }
-
     .hero p {
       margin: 0 0 30px;
-      max-width: 600px;
+      max-width: 610px;
       color: rgba(255, 255, 255, 0.84);
       font-size: clamp(1.05rem, 2vw, 1.26rem);
       line-height: 1.55;
     }
-
     .store-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 14px;
     }
-
     .store-badge {
       display: inline-flex;
       height: 58px;
       transition: transform 180ms ease, filter 180ms ease;
     }
-
     .store-badge:hover {
       transform: translateY(-2px);
       filter: brightness(1.06);
     }
-
     .store-badge img { height: 100%; width: auto; }
-
     .hero-points {
       display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
       gap: 18px;
       margin-top: 18px;
     }
-
     .hero-point {
       display: inline-flex;
       align-items: baseline;
       gap: 7px;
-      padding: 0;
-      border-radius: 0;
-      background: transparent;
-      border: 0;
     }
-
-    .hero-point strong {
-      display: inline;
-      color: #c7ffd9;
-      font-size: 1rem;
-      line-height: 1;
-    }
-
-    .hero-point span {
-      display: inline;
-      margin-top: 0;
-      color: rgba(255, 255, 255, 0.74);
-      font-size: 0.74rem;
-      line-height: 1.35;
-    }
+    .hero-point strong { color: #c7ffd9; font-size: 1rem; }
+    .hero-point span { color: rgba(255, 255, 255, 0.74); font-size: 0.78rem; }
 
     .section { padding: 88px 0; }
-
-    #features {
-      background:
-        linear-gradient(135deg, #ffffff 0%, #f0fbff 45%, #fff6f7 100%);
-    }
-
-    .section-heading {
-      max-width: 760px;
-      margin-bottom: 40px;
-    }
-
-    .section-heading.center {
-      text-align: center;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .section-heading h2 {
-      margin: 0 0 14px;
-      font-size: clamp(2rem, 4vw, 3.4rem);
-      line-height: 1.02;
-    }
-
-    .section-heading p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.08rem;
-      line-height: 1.6;
-    }
-
+    #features { background: linear-gradient(135deg, #ffffff 0%, #f0fbff 45%, #fff6f7 100%); }
+    .section-heading { max-width: 760px; margin-bottom: 40px; }
+    .section-heading.center { text-align: center; margin-left: auto; margin-right: auto; }
+    .section-heading h2 { margin: 0 0 14px; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.02; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 1.08rem; line-height: 1.6; }
     .feature-showcase {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 18px;
     }
-
     .feature-card {
       display: grid;
       grid-template-columns: 1fr 108px;
@@ -268,31 +194,12 @@
       box-shadow: 0 16px 34px rgba(31, 82, 120, 0.16);
       overflow: hidden;
     }
-
-    .feature-card:nth-child(1) {
-      background: linear-gradient(135deg, #ffffff 0%, #effff6 100%);
-    }
-
-    .feature-card:nth-child(2) {
-      background: linear-gradient(135deg, #ffffff 0%, #fff3e5 100%);
-    }
-
-    .feature-card:nth-child(3) {
-      background: linear-gradient(135deg, #ffffff 0%, #fff0f7 100%);
-    }
-
-    .feature-card:nth-child(4) {
-      background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%);
-    }
-
-    .feature-card:nth-child(5) {
-      background: linear-gradient(135deg, #ffffff 0%, #effff5 100%);
-    }
-
-    .feature-card:nth-child(6) {
-      background: linear-gradient(135deg, #ffffff 0%, #fff1f8 100%);
-    }
-
+    .feature-card:nth-child(1) { background: linear-gradient(135deg, #ffffff 0%, #effff6 100%); }
+    .feature-card:nth-child(2) { background: linear-gradient(135deg, #ffffff 0%, #fff3e5 100%); }
+    .feature-card:nth-child(3) { background: linear-gradient(135deg, #ffffff 0%, #fff0f7 100%); }
+    .feature-card:nth-child(4) { background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%); }
+    .feature-card:nth-child(5) { background: linear-gradient(135deg, #ffffff 0%, #effff5 100%); }
+    .feature-card:nth-child(6) { background: linear-gradient(135deg, #ffffff 0%, #fff1f8 100%); }
     .feature-icon {
       width: 42px;
       height: 42px;
@@ -305,29 +212,8 @@
       font-size: 0.72rem;
       font-weight: 900;
     }
-
-    .feature-card:nth-child(2n) .feature-icon {
-      color: #a54713;
-      background: linear-gradient(135deg, #ffead2, #fff8f0);
-    }
-
-    .feature-card:nth-child(3n) .feature-icon {
-      color: #a0224d;
-      background: linear-gradient(135deg, #ffe0ec, #fff5f8);
-    }
-
-    .feature-card h3 {
-      margin: 0 0 7px;
-      font-size: 1.05rem;
-    }
-
-    .feature-card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.48;
-      font-size: 0.92rem;
-    }
-
+    .feature-card h3 { margin: 0 0 7px; font-size: 1.05rem; }
+    .feature-card p { margin: 0; color: var(--muted); line-height: 1.48; font-size: 0.92rem; }
     .feature-shot {
       width: 104px;
       height: auto;
@@ -340,24 +226,17 @@
     }
 
     .showcase {
-      background:
-        linear-gradient(135deg, #eaf7ff 0%, #f0fff5 48%, #fff3f8 100%);
+      background: linear-gradient(135deg, #eaf7ff 0%, #f0fff5 48%, #fff3f8 100%);
       border-top: 1px solid #d8edf7;
       border-bottom: 1px solid #d8edf7;
     }
-
     .showcase-layout {
       display: grid;
       grid-template-columns: 0.86fr 1.14fr;
       gap: 54px;
       align-items: center;
     }
-
-    .phone-stack {
-      position: relative;
-      min-height: 680px;
-    }
-
+    .phone-stack { position: relative; min-height: 680px; }
     .phone-frame {
       position: absolute;
       width: min(310px, 46vw);
@@ -367,34 +246,10 @@
       background: #111815;
       box-shadow: 0 32px 80px rgba(24, 88, 128, 0.22);
     }
-
-    .phone-frame.main {
-      left: 52px;
-      top: 0;
-      z-index: 3;
-    }
-
-    .phone-frame.back {
-      right: 0;
-      top: 112px;
-      z-index: 2;
-      transform: rotate(5deg);
-      opacity: 0.88;
-    }
-
-    .phone-frame.low {
-      left: 0;
-      bottom: 0;
-      z-index: 1;
-      transform: rotate(-4deg);
-      opacity: 0.74;
-    }
-
-    .screen-list {
-      display: grid;
-      gap: 14px;
-    }
-
+    .phone-frame.main { left: 52px; top: 0; z-index: 3; }
+    .phone-frame.back { right: 0; top: 112px; z-index: 2; transform: rotate(5deg); opacity: 0.88; }
+    .phone-frame.low { left: 0; bottom: 0; z-index: 1; transform: rotate(-4deg); opacity: 0.74; }
+    .screen-list { display: grid; gap: 14px; }
     .screen-item {
       display: grid;
       grid-template-columns: auto 1fr;
@@ -406,19 +261,8 @@
       border: 1px solid var(--line);
       box-shadow: 0 10px 26px rgba(31, 82, 120, 0.1);
     }
-
-    .screen-item strong {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 1.05rem;
-    }
-
-    .screen-item p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-
+    .screen-item strong { display: block; margin-bottom: 4px; font-size: 1.05rem; }
+    .screen-item p { margin: 0; color: var(--muted); line-height: 1.55; }
     .number {
       width: 34px;
       height: 34px;
@@ -431,11 +275,33 @@
       font-weight: 900;
     }
 
+    .pricing {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .price-card {
+      padding: 28px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 14px 34px rgba(31, 82, 120, 0.1);
+    }
+    .price-card h3 { margin: 0 0 8px; font-size: 1.15rem; }
+    .price { margin: 0; font-size: 2.2rem; font-weight: 900; line-height: 1; }
+    .price span { font-size: 0.9rem; color: var(--muted); font-weight: 700; }
+    .price-card p:last-child { margin: 12px 0 0; color: var(--muted); line-height: 1.5; }
+
     .download {
       background: linear-gradient(135deg, #e8f8ff 0%, #ffffff 45%, #ffeef4 100%);
       border-top: 1px solid var(--line);
     }
-
     .download-panel {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
@@ -447,20 +313,8 @@
       border: 1px solid var(--line);
       box-shadow: 0 28px 80px rgba(31, 82, 120, 0.1);
     }
-
-    .download-panel h2 {
-      margin: 0 0 12px;
-      font-size: clamp(2rem, 4vw, 3.6rem);
-      line-height: 1;
-    }
-
-    .download-panel p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.08rem;
-      line-height: 1.6;
-    }
-
+    .download-panel h2 { margin: 0 0 12px; font-size: clamp(2rem, 4vw, 3.6rem); line-height: 1; }
+    .download-panel p { margin: 0; color: var(--muted); font-size: 1.08rem; line-height: 1.6; }
     .download-badges { justify-content: flex-end; }
 
     footer {
@@ -469,20 +323,8 @@
       background: var(--charcoal);
       font-size: 0.95rem;
     }
-
-    .footer-inner {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
     .footer-links a { text-decoration: none; }
 
     @media (max-width: 900px) {
@@ -496,13 +338,11 @@
       .phone-frame.main { left: 44px; }
       .download-badges { justify-content: flex-start; }
     }
-
     @media (max-width: 620px) {
       .container { width: min(100% - 28px, 1160px); }
       .nav { min-height: 64px; }
       .brand span { display: none; }
-      .nav-links li:first-child,
-      .nav-links li:nth-child(2) { display: none; }
+      .nav-links li:first-child { display: none; }
       .nav-cta { padding: 9px 12px; }
       .store-badge { height: 48px; }
       .eyebrow { font-size: 0.72rem; line-height: 1.35; }
@@ -510,7 +350,7 @@
       .hero p { font-size: 1rem; }
       .section-heading h2 { font-size: 1.95rem; }
       .section { padding: 64px 0; }
-      .feature-showcase { grid-template-columns: 1fr; }
+      .feature-showcase, .pricing-grid { grid-template-columns: 1fr; }
       .feature-card { min-height: 188px; grid-template-columns: 1fr 86px; }
       .feature-shot { width: 78px; border-radius: 15px; border-width: 4px; }
       .phone-stack { min-height: 520px; }
@@ -533,6 +373,7 @@
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
         <li><a href="#screens">Screens</a></li>
+        <li><a href="#pricing">Pricing</a></li>
         <li><a class="nav-cta" href="#download">Download</a></li>
       </ul>
     </nav>
@@ -542,20 +383,18 @@
     <section class="hero" aria-labelledby="hero-title">
       <img class="hero-bg" src="images/protip365-hero-visual.png" alt="Server reviewing shift earnings on a phone after work">
       <div class="container hero-content">
-        <span class="eyebrow">For waitresses, waiters, and bartenders</span>
-        <h1 id="hero-title">End every shift knowing what you made.</h1>
-        <p>ProTip365 helps you track tips, shifts, goals, and reports without paper slips or messy spreadsheets. Built for busy service workers who want their numbers clear.</p>
+        <span class="eyebrow">For servers, waiters, waitresses, and bartenders</span>
+        <h1 id="hero-title">Know what you made tonight.</h1>
+        <p>ProTip365 helps you log tips, shifts, tip-outs, employers, and real hourly rate without paper slips or messy spreadsheets.</p>
         <div class="store-row" aria-label="Download ProTip365">
-          <a class="store-badge" href="https://apps.apple.com/app/protip365/id6736957977" title="Download ProTip365 on the App Store">
+          <a class="store-badge" href="itms-apps://apps.apple.com/app/id6751759695" title="Download ProTip365 on the App Store">
             <img src="images/app-store-badge.svg" alt="Download on the App Store">
-          </a>
-          <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.protip365.app" title="Get ProTip365 on Google Play">
-            <img src="images/google-play-badge.svg" alt="Get it on Google Play">
           </a>
         </div>
         <div class="hero-points" aria-label="Product highlights">
-          <div class="hero-point"><strong>7-day</strong><span>free trial for new users</span></div>
-          <div class="hero-point"><strong>3</strong><span>languages: English, French, Spanish</span></div>
+          <div class="hero-point"><strong>Free trial</strong><span>when offered at checkout</span></div>
+          <div class="hero-point"><strong>iPhone + iPad</strong><span>iOS-first tracking</span></div>
+          <div class="hero-point"><strong>3 languages</strong><span>English, French, Spanish</span></div>
         </div>
       </div>
     </section>
@@ -564,14 +403,14 @@
       <div class="container">
         <div class="section-heading center">
           <h2>Made for real shift life.</h2>
-          <p>Quick enough after a long night. Detailed enough when tax season, budgeting, or a second job makes clean records matter.</p>
+          <p>Quick enough after a long night. Detailed enough when budgeting or sharing organized income records with a tax professional matters.</p>
         </div>
         <div class="feature-showcase">
           <article class="feature-card">
             <div>
               <div class="feature-icon">$</div>
-              <h3>Fast tip tracking</h3>
-              <p>Log tips, wages, sales, tip-outs, and deductions in seconds.</p>
+              <h3>10-second shift log</h3>
+              <p>Record tips, wages, sales, tip-outs, deductions, and notes fast.</p>
             </div>
             <img class="feature-shot" src="images/IphoneProEdittEntry.png" alt="Tip entry screen">
           </article>
@@ -593,9 +432,9 @@
           </article>
           <article class="feature-card">
             <div>
-              <div class="feature-icon">Trend</div>
-              <h3>Income dashboard</h3>
-              <p>See daily, weekly, monthly, and yearly trends.</p>
+              <div class="feature-icon">Rate</div>
+              <h3>Real hourly rate</h3>
+              <p>See what each shift really paid after tips and hours.</p>
             </div>
             <img class="feature-shot" src="images/IphoneProDashboard.png" alt="Income dashboard screen">
           </article>
@@ -628,14 +467,35 @@
         </div>
         <div>
           <div class="section-heading">
-            <h2>Your shift, your tips, your proof.</h2>
-            <p>Use real app screens to move from quick entry to clear reports without digging through old notes.</p>
+            <h2>Your shift, your tips, your records.</h2>
+            <p>Use real app screens to move from quick entry to clear history without digging through old notes.</p>
           </div>
           <div class="screen-list">
-            <div class="screen-item"><span class="number">1</span><div><strong>Dashboard at a glance</strong><p>Check earnings, goals, alerts, achievements, and progress from one clean screen.</p></div></div>
-            <div class="screen-item"><span class="number">2</span><div><strong>Calendar that remembers</strong><p>Color-coded shift history makes planned, completed, and missed shifts easy to spot.</p></div></div>
-            <div class="screen-item"><span class="number">3</span><div><strong>Reports for tax season</strong><p>Export clean records for accounting, taxes, or your own income review.</p></div></div>
+            <div class="screen-item"><span class="number">1</span><div><strong>Know what you made tonight</strong><p>Check earnings, hours, tips, and progress from one clean dashboard.</p></div></div>
+            <div class="screen-item"><span class="number">2</span><div><strong>Track cash, card, tip-out, and rate</strong><p>Keep the details that matter for real shift income.</p></div></div>
+            <div class="screen-item"><span class="number">3</span><div><strong>Review organized income records</strong><p>Use clean records for personal review or sharing with your tax professional.</p></div></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section pricing">
+      <div class="container">
+        <div class="section-heading center">
+          <h2>Simple pricing.</h2>
+          <p>Apple shows the exact trial, renewal, and regional pricing before purchase.</p>
+        </div>
+        <div class="pricing-grid">
+          <article class="price-card">
+            <h3>Premium subscription</h3>
+            <p class="price">App Store <span>pricing</span></p>
+            <p>Renewing premium access for servers and bartenders who want ongoing tracking.</p>
+          </article>
+          <article class="price-card">
+            <h3>Lifetime access</h3>
+            <p class="price">One-time <span>when offered</span></p>
+            <p>A non-renewing option may be available in the App Store checkout.</p>
+          </article>
         </div>
       </div>
     </section>
@@ -643,15 +503,12 @@
     <section id="download" class="section download">
       <div class="container download-panel">
         <div>
-          <h2>Start your 7-day free trial.</h2>
-          <p>Download ProTip365 and replace paper slips, forgotten tips, and spreadsheet cleanup with one simple app.</p>
+          <h2>Start tracking your shifts.</h2>
+          <p>Download ProTip365 for iPhone and iPad. Android is not promoted here until the production app is verified.</p>
         </div>
         <div class="store-row download-badges" aria-label="Download app links">
-          <a class="store-badge" href="https://apps.apple.com/app/protip365/id6736957977" title="Download ProTip365 on the App Store">
+          <a class="store-badge" href="itms-apps://apps.apple.com/app/id6751759695" title="Download ProTip365 on the App Store">
             <img src="images/app-store-badge.svg" alt="Download on the App Store">
-          </a>
-          <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.protip365.app" title="Get ProTip365 on Google Play">
-            <img src="images/google-play-badge.svg" alt="Get it on Google Play">
           </a>
         </div>
       </div>
@@ -662,10 +519,10 @@
     <div class="container footer-inner">
       <span>&copy; 2026 ProTip365. All rights reserved.</span>
       <div class="footer-links">
-        <a href="privacy-policy.html">Privacy Policy</a>
-        <a href="terms-of-service.html">Terms of Service</a>
+        <a href="privacy/">Privacy Policy</a>
+        <a href="terms/">Terms of Service</a>
         <a href="delete-account/">Delete Account</a>
-        <a href="mailto:support@protip365.com">Support</a>
+        <a href="support/">Support</a>
       </div>
     </div>
   </footer>

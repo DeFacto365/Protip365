@@ -465,7 +465,7 @@ struct SubscriptionTiersView: View {
             "Suivi illimité des quarts de travail par jour",
             "Gestion de plusieurs employeurs",
             "Analyses avancées et rapports détaillés",
-            "Export de données (CSV/PDF)",
+            "Export de données CSV",
             "Synchronisation automatique dans le cloud",
             "Support prioritaire"
         ]
@@ -473,7 +473,7 @@ struct SubscriptionTiersView: View {
             "Turnos ilimitados por día",
             "Gestión de múltiples empleadores",
             "Análisis avanzados e informes detallados",
-            "Exportación de datos (CSV/PDF)",
+            "Exportación de datos CSV",
             "Sincronización automática en la nube",
             "Soporte prioritario"
         ]
@@ -481,7 +481,7 @@ struct SubscriptionTiersView: View {
             "Unlimited shifts per day",
             "Multiple employer management",
             "Advanced analytics and detailed reports",
-            "Data export (CSV/PDF)",
+            "CSV data export",
             "Automatic cloud synchronization",
             "Priority support"
         ]

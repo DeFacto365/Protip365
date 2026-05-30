@@ -7,6 +7,7 @@ All files are located in `/Users/jacquesbolduc/Github/ProTip365/Docs/website/`:
 - `terms-of-service.html` - Terms of Service
 - `privacy/index.html` - Short privacy route for app/store links
 - `terms/index.html` - Short terms route for app/store links
+- `support/index.html` - Support route for app/store links
 - `delete-account/index.html` - Account deletion instructions
 
 ## Method 1: Using cPanel File Manager
@@ -16,7 +17,7 @@ All files are located in `/Users/jacquesbolduc/Github/ProTip365/Docs/website/`:
 3. Navigate to the public web root for `protip365.com`
 4. Click "Upload" button
 5. Select and upload the root HTML files
-6. Create `privacy`, `terms`, and `delete-account` folders if they do not exist
+6. Create `privacy`, `terms`, `support`, and `delete-account` folders if they do not exist
 7. Upload each folder's `index.html`
 8. Verify at https://protip365.com
 
@@ -29,7 +30,7 @@ All files are located in `/Users/jacquesbolduc/Github/ProTip365/Docs/website/`:
    - Password: current password
    - Port: 21
 3. Navigate to the domain's public web root
-4. Upload the root HTML files and the `privacy`, `terms`, and `delete-account` folders
+4. Upload the root HTML files and the `privacy`, `terms`, `support`, and `delete-account` folders
 5. Verify at https://protip365.com
 
 ## Method 3: Using Command Line (if you have SSH access)
@@ -40,6 +41,7 @@ scp /Users/jacquesbolduc/Github/ProTip365/Docs/website/*.html \
   YOUR_USER@YOUR_HOST:/path/to/public_html/
 scp -r /Users/jacquesbolduc/Github/ProTip365/Docs/website/privacy \
   /Users/jacquesbolduc/Github/ProTip365/Docs/website/terms \
+  /Users/jacquesbolduc/Github/ProTip365/Docs/website/support \
   /Users/jacquesbolduc/Github/ProTip365/Docs/website/delete-account \
   YOUR_USER@YOUR_HOST:/path/to/public_html/
 ```
@@ -52,10 +54,12 @@ scp -r /Users/jacquesbolduc/Github/ProTip365/Docs/website/privacy \
    - https://protip365.com/privacy-policy.html
    - https://protip365.com/terms
    - https://protip365.com/terms-of-service.html
+   - https://protip365.com/support
    - https://protip365.com/delete-account
 
 2. **Update App Store Connect**:
    - Privacy Policy URL: `https://protip365.com/privacy`
+   - Support URL: `https://protip365.com/support`
    - Terms of Service URL: `https://protip365.com/terms`
    - Account deletion URL: `https://protip365.com/delete-account`
 
@@ -63,9 +67,7 @@ scp -r /Users/jacquesbolduc/Github/ProTip365/Docs/website/privacy \
    - Privacy Policy link
    - Terms of Service link
 
-4. **Update Placeholders**:
-   - Replace `[Your Address]` with your business address
-   - Replace `[Your State]` with your state
+4. **Update Contact Details**:
    - Update `support@protip365.com` if using different email
 
 ## Domain Setup (if needed)

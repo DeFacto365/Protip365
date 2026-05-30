@@ -26,6 +26,7 @@ files = [
     "terms-of-service.html",
     "privacy/index.html",
     "terms/index.html",
+    "support/index.html",
     "delete-account/index.html",
 ]
 
@@ -70,6 +71,7 @@ try:
     print("- https://protip365.com/privacy-policy.html")
     print("- https://protip365.com/terms")
     print("- https://protip365.com/terms-of-service.html")
+    print("- https://protip365.com/support")
     print("- https://protip365.com/delete-account")
 
 except ftplib.error_perm as e:

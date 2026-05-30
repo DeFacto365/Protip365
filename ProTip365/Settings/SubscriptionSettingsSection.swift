@@ -297,16 +297,16 @@ struct SubscriptionSectionLocalization {
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Localized per country
         } else {
-            priceString = "$34.99" // Fallback if unavailable
+            priceString = "$9.99" // Fallback if unavailable
         }
 
         switch language {
         case "fr":
-            return "7 jours gratuits, puis \(priceString)/an"
+            return "Essai gratuit si offert, puis \(priceString)/an"
         case "es":
-            return "7 días gratis, luego \(priceString)/año"
+            return "Prueba gratis si se ofrece, luego \(priceString)/año"
         default:
-            return "7 days free, then \(priceString)/year"
+            return "Free trial if offered, then \(priceString)/year"
         }
     }
 
@@ -327,7 +327,7 @@ struct SubscriptionSectionLocalization {
         if let displayPrice = product?.displayPrice {
             priceString = displayPrice // Automatically localized
         } else {
-            priceString = "$34.99" // Fallback
+            priceString = "$9.99" // Fallback
         }
 
         switch language {

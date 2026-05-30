@@ -502,9 +502,16 @@ class SubscriptionManager: ObservableObject {
 
             let subscriptions = try decoder.decode([ServerSubscription].self, from: response.data)
             if let subscription = subscriptions.first {
-                if let expiresAt = subscription.expires_at, expiresAt > Date() {
-                    print("✅ Found valid server subscription, expires: \(expiresAt)")
-                    let tier = getTierForProductId(subscription.product_id ?? "")
+                let tier = getTierForProductId(subscription.product_id ?? "")
+                let hasValidDate = tier == .lifetime || (subscription.expires_at.map { $0 > Date() } ?? false)
+                let hasStoreKitEntitlement = await hasMatchingCurrentEntitlement(for: subscription)
+
+                if hasValidDate && hasStoreKitEntitlement {
+                    if let expiresAt = subscription.expires_at {
+                        print("✅ Found valid server subscription, expires: \(expiresAt)")
+                    } else {
+                        print("✅ Found valid lifetime server subscription")
+                    }
 
                     await MainActor.run {
                         self.isSubscribed = true
@@ -525,7 +532,7 @@ class SubscriptionManager: ObservableObject {
 
                     return true
                 } else {
-                    print("⚠️ Server subscription found but expired")
+                    print("⚠️ Server subscription found but not locally verified")
                 }
             } else {
                 print("ℹ️ No server subscription found")
@@ -533,6 +540,23 @@ class SubscriptionManager: ObservableObject {
         } catch {
             print("⚠️ Server subscription check failed: \(error)")
         }
+        return false
+    }
+
+    private func hasMatchingCurrentEntitlement(for subscription: ServerSubscription) async -> Bool {
+        guard let productId = subscription.product_id else { return false }
+
+        for await result in StoreKit.Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+            guard transaction.productID == productId else { continue }
+
+            if let transactionId = subscription.transaction_id, transactionId != String(transaction.id) {
+                continue
+            }
+
+            return true
+        }
+
         return false
     }
 
@@ -544,11 +568,15 @@ class SubscriptionManager: ObservableObject {
 
             let dateFormatter = ISO8601DateFormatter()
 
+            let expiresAt = transaction.expirationDate
+                ?? Calendar.current.date(byAdding: .year, value: 100, to: transaction.purchaseDate)
+                ?? Date().addingTimeInterval(100 * 365 * 24 * 60 * 60)
+
             let subscriptionRecord = SubscriptionRecord(
                 user_id: userId.uuidString,
                 product_id: transaction.productID,
                 status: "active",
-                expires_at: dateFormatter.string(from: transaction.expirationDate ?? Date().addingTimeInterval(30 * 24 * 60 * 60)),
+                expires_at: dateFormatter.string(from: expiresAt),
                 transaction_id: String(transaction.id),
                 purchase_date: dateFormatter.string(from: transaction.purchaseDate),
                 environment: transaction.environment == StoreKit.AppStore.Environment.xcode ? "sandbox" : "production"

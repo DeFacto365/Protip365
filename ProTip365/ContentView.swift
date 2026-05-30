@@ -28,13 +28,13 @@ struct ContentView: View {
                     if isCheckingSubscription {
                         // Show loading while checking subscription (with timeout safeguard)
                         SubscriptionCheckingView(isCheckingSubscription: $isCheckingSubscription)
+                    } else if showOnboarding {
+                        // Let new users complete setup before showing the subscription screen.
+                        OnboardingView(isAuthenticated: $isAuthenticated, showOnboarding: $showOnboarding)
+                            .environmentObject(securityManager)
                     } else if !subscriptionManager.isSubscribed && !subscriptionManager.isInTrialPeriod {
                         // Show subscription screen - subscription required to access app
                         SubscriptionView(subscriptionManager: subscriptionManager, showOnboarding: $showOnboarding)
-                    } else if showOnboarding {
-                        // Has valid subscription but needs onboarding
-                        OnboardingView(isAuthenticated: $isAuthenticated, showOnboarding: $showOnboarding)
-                            .environmentObject(securityManager)
                     } else {
                         // Has valid subscription and completed onboarding - show main app
                         mainAppView
@@ -522,4 +522,3 @@ struct SubscriptionCheckingView: View {
         }
     }
 }
-

@@ -1,177 +1,91 @@
 # ProTip365 - App Store Description
 
-## 📱 App Name
-**ProTip365 - Tip Tracker & Income Manager**
+## App Name
+**ProTip365 - Tip Tracker**
 
-## 📝 Subtitle (30 characters)
-Track Tips. Boost Income.
+## Subtitle (30 characters)
+**Server & Bartender Shifts**
 
----
+## Promotional Text (170 characters)
+Track every shift, tip-out, and real hourly rate. Built for servers and bartenders who want clean income records without spreadsheets.
 
-## 📋 Full Description
+## Full Description
 
 ### Main Description (4000 characters max)
 
-**Transform Your Tips into Financial Success**
+**Know what you made after every shift.**
 
-ProTip365 is the ultimate tip tracking and income management app designed specifically for service industry professionals. Whether you're a server, bartender, delivery driver, or any professional who earns tips, ProTip365 helps you maximize your earning potential with powerful analytics and smart insights.
+ProTip365 is a fast tip and shift tracker for servers, bartenders, waiters, waitresses, and tipped service workers. Log tips, wages, hours, sales, tip-outs, deductions, notes, and employers without relying on paper slips or messy spreadsheets.
 
-**📊 COMPREHENSIVE INCOME TRACKING**
-• Record tips, hourly wages, and sales in seconds
-• Track cash and credit card tips separately
-• Monitor tip-outs and deductions automatically
-• Add notes and details to remember important shifts
-• Handle multiple currencies and payment types
+**LOG TIPS IN SECONDS**
+- Record cash tips, card tips, wages, sales, and tip-outs
+- Track hours worked and real hourly rate
+- Add notes for busy shifts, events, sections, or special details
+- Keep each shift organized in one place
 
-**📅 SMART SHIFT MANAGEMENT**
-• Visual calendar with color-coded performance indicators
-• Plan future shifts and compare with actual results
-• Track lunch breaks and actual hours worked
-• Set up recurring shifts for easy planning
-• View at-a-glance which days are most profitable
+**TRACK EVERY SHIFT**
+- Use a visual calendar for planned and completed shifts
+- See daily, weekly, monthly, and yearly income summaries
+- Compare expected and actual results
+- Spot the shifts and days that earn the most
 
-**📈 POWERFUL ANALYTICS DASHBOARD**
-Get actionable insights with our comprehensive dashboard:
-• Daily, weekly, monthly, and yearly income summaries
-• Track progress toward your financial goals
-• Identify trends in your earning patterns
-• Compare performance across different time periods
-• See your best and worst performing shifts instantly
+**BUILT FOR SERVICE WORKERS**
+- Made for servers, bartenders, restaurant staff, hospitality workers, and tipped professionals
+- Manage multiple employers or jobs separately
+- Track different pay rates and work patterns
+- Use English, French, or Spanish
 
-**🎯 GOAL SETTING & ACHIEVEMENTS**
-Stay motivated and reach your financial targets:
-• Set daily, weekly, and monthly income goals
-• Track tip percentage targets
-• Monitor sales goals for commission-based earnings
-• Receive notifications when you hit milestones
-• Celebrate personal bests and achievements
+**PRIVATE BY DEFAULT**
+- Protect the app with Face ID, Touch ID, or a PIN
+- Keep personal income details organized and private
+- Sign in to keep records available across supported devices
 
-**👥 MULTI-EMPLOYER MANAGEMENT**
-Perfect for professionals working multiple jobs:
-• Track earnings from different employers
-• Compare hourly rates and tip averages
-• See which job is most profitable
-• Manage different pay structures and schedules
-• Export reports per employer for easy record-keeping
+**CURRENT SUBSCRIPTION**
+- Free trial for new users when offered in the App Store checkout
+- Premium access renews through Apple subscriptions
+- Lifetime access may be offered as a one-time purchase
+- Current regional pricing is shown by Apple before purchase
+- Cancel anytime through your App Store subscription settings
 
-**💰 FLEXIBLE SUBSCRIPTION PLANS**
+ProTip365 is for tipped workers who want one simple answer after every shift: what did I really make?
 
-*Part-Time Plan ($2.99/month or $30/year)*
-• Track up to 3 shifts per week
-• Record up to 3 entries per week
-• Full analytics and reporting features
-• Cloud sync across devices
-• Save 20% with annual subscription
+Download ProTip365 and start tracking your shifts with clear, organized records.
 
-*Full Access Plan ($4.99/month)*
-• Unlimited shift tracking
-• Unlimited entry recording
-• Multiple employer support
-• Advanced analytics
-• Priority customer support
-• 7-day free trial included
+## Keywords (100 characters)
+tip,tracker,server,bartender,waiter,waitress,shift,tips,income,earnings,restaurant,wage,money
 
-**🔒 PRIVACY & SECURITY**
-Your financial data deserves protection:
-• Face ID and Touch ID support
-• Optional PIN code protection
-• End-to-end encryption
-• Private cloud sync
-• Your data is never shared or sold
+## What's New (Version Notes)
 
-**📊 TAX SEASON MADE EASY**
-• Export detailed reports for tax preparation
-• Track deductible expenses
-• Separate cash and credit tips for accurate reporting
-• Generate year-end summaries
-• Keep digital records of all earnings
+### Suggested Notes
+Improved shift tracking, subscription handling, and multilingual support for English, French, and Spanish users.
 
-**🌍 INTERNATIONAL SUPPORT**
-• Available in English, French, and Spanish
-• Multiple currency support
-• Localized date and number formats
-• Region-specific tax considerations
-
-**⭐ WHY PROFESSIONALS CHOOSE PROTIP365**
-• Increase earnings by 15-20% through data insights
-• Save hours during tax season
-• Make informed decisions about your work schedule
-• Track earnings across multiple jobs effortlessly
-• Join thousands of service professionals optimizing their income
-
-**🆕 LATEST FEATURES**
-• iOS 18 optimized with native widgets
-• iPad support with optimized layouts
-• Apple Watch companion app (coming soon)
-• Siri shortcuts for quick entry
-• iCloud backup and sync
-
-Download ProTip365 today and take control of your financial future. Start with our 7-day free trial and see why thousands of service professionals trust ProTip365 to maximize their earning potential.
-
----
-
-## 🔍 Keywords (100 characters)
-tip,tracker,server,waiter,bartender,tips,income,earnings,restaurant,delivery,shift,money,finance
-
----
-
-## 📰 What's New (Version Notes)
-
-### Version 1.0.22
-**Major Update - New Subscription Tiers & Enhanced Features**
-
-🆕 NEW FEATURES:
-• Part-time subscription plan - perfect for part-time workers
-• Weekly limits indicator for part-time users
-• Improved subscription management interface
-• Enhanced French Canadian and Spanish translations
-
-🔧 IMPROVEMENTS:
-• Faster app launch and data loading
-• Improved shift entry workflow
-• Better calendar performance
-• Enhanced security features
-• Refined UI with iOS 18 design language
-
-🐛 BUG FIXES:
-• Fixed language persistence issues
-• Resolved calendar display bugs
-• Fixed shift editing conflicts
-• Improved data sync reliability
-
-Thank you for your feedback! Keep it coming at support@protip365.com
-
----
-
-## 🖼️ Screenshots Order & Captions
+## Screenshots Order & Captions
 
 1. **Dashboard Overview**
-   Caption: "Track daily, weekly, and monthly earnings at a glance"
+   Caption: "Know what you made tonight"
 
-2. **Calendar View**
-   Caption: "Visualize your earnings with color-coded calendar"
+2. **Add Entry Screen**
+   Caption: "Track cash, card, tip-out, and real hourly rate"
 
-3. **Add Entry Screen**
-   Caption: "Record tips and earnings in seconds"
+3. **Calendar View**
+   Caption: "See your best shifts at a glance"
 
-4. **Analytics Charts**
-   Caption: "Discover patterns and optimize your schedule"
+4. **Tip Calculator**
+   Caption: "Calculate tips and splits fast"
 
-5. **Goals & Achievements**
-   Caption: "Set targets and track your progress"
+5. **Multi-Employer Support**
+   Caption: "Keep every job separate"
 
-6. **Multi-Employer Support**
-   Caption: "Manage multiple jobs effortlessly"
+6. **Reports / Summary**
+   Caption: "Review clean income records"
 
-7. **Security Features**
-   Caption: "Protect your data with Face ID"
+7. **Security Settings**
+   Caption: "Protect private income data"
 
-8. **Export Reports**
-   Caption: "Generate reports for taxes instantly"
+8. **Subscription**
+   Caption: "Start with clear App Store pricing"
 
----
-
-## 📊 App Information
+## App Information
 
 ### Category
 Primary: **Finance**
@@ -181,61 +95,46 @@ Secondary: **Productivity**
 **4+** (No objectionable content)
 
 ### Privacy Policy URL
-https://protip365.com/privacy
+https://protip365.com/privacy/
 
 ### Support URL
-https://protip365.com/support
+https://protip365.com/support/
 
 ### Marketing URL
-https://protip365.com
+https://protip365.com/
 
----
-
-## 🌍 Localization
+## Localization
 
 ### French (Canada)
-**Nom:** ProTip365 - Suivi de Pourboires
-**Sous-titre:** Suivez. Analysez. Gagnez plus.
-**Description:** (French version of main description)
+**Nom:** ProTip365 - Suivi Pourboires
+**Sous-titre:** Quarts serveur et bar
+**Positioning:** Suivez vos pourboires, quarts, taux horaire réel et employeurs sans papier ni tableur.
 
 ### Spanish
-**Nombre:** ProTip365 - Registro de Propinas
-**Subtítulo:** Registra. Analiza. Gana más.
-**Descripción:** (Spanish version of main description)
+**Nombre:** ProTip365 - Registro Propinas
+**Subtítulo:** Turnos mesero y bar
+**Positioning:** Registra propinas, turnos, ingreso real por hora y empleadores sin papel ni hojas de calculo.
 
----
-
-## 💬 Review Responses Templates
+## Review Response Templates
 
 ### 5-Star Response
-"Thank you for the amazing review! We're thrilled ProTip365 is helping you maximize your earnings. Your success is our success! 🎉"
+Thank you for the review. We are glad ProTip365 is helping you keep your shift income organized.
 
 ### 4-Star Response
-"Thanks for the great feedback! We'd love to earn that 5th star - please email us at support@protip365.com with any suggestions."
+Thanks for the feedback. Send suggestions to support@protip365.com so we can keep improving the app.
 
 ### 3-Star or Below
-"We appreciate your feedback and want to improve your experience. Please contact us at support@protip365.com so we can help resolve any issues."
+Thanks for reporting this. Please contact support@protip365.com with details so we can help.
 
----
+## ASO Rules
 
-## 🏷️ App Store Optimization (ASO) Tips
+1. Lead with tip tracker, server, bartender, shift tracker, and real hourly rate.
+2. Do not use unsupported claims such as "thousands," "15-20% increase," Apple Watch, Siri shortcuts, iCloud backup, or end-to-end encryption unless verified in the live app.
+3. Do not promote Android equally until the production Android app is verified.
+4. Do not promise export or tax automation while in-app export is marked "Coming soon."
+5. Keep screenshots focused on one benefit each; buyers should understand the first three in seconds.
 
-1. **Update regularly** - Monthly updates improve ranking
-2. **Respond to reviews** - Within 24-48 hours
-3. **Seasonal keywords** - Add "tax" keywords in Q1
-4. **Localize fully** - Complete translations boost international downloads
-5. **A/B test screenshots** - Test different caption styles
-6. **Monitor competitors** - Track similar apps' keywords
-7. **Feature graphics** - Highlight free trial prominently
-
----
-
-## 📈 Promotional Text (170 characters)
-🎉 NEW: Part-time plan now available! Start your 7-day FREE trial today. Join thousands of service professionals boosting their income with ProTip365! 💰📊
-
----
-
-## 🎯 Target Markets
+## Target Markets
 
 ### Primary Markets
 - United States
@@ -247,34 +146,25 @@ https://protip365.com
 - France
 - Spain
 - Mexico
-- Germany
 
 ### Industry Focus
-- Restaurants & Bars
-- Food Delivery
-- Beauty & Wellness
-- Rideshare & Delivery
+- Restaurants and bars
 - Hospitality
+- Food delivery
+- Beauty and wellness
+- Other tipped service work
 
----
-
-## 📞 Contact Information
+## Contact Information
 
 **Developer:** ProTip365 Inc.
 **Email:** support@protip365.com
 **Website:** https://protip365.com
-**Twitter:** @ProTip365App
-**Instagram:** @protip365app
 
----
+## Submission Checklist
 
-## Notes for App Store Submission
-
-1. Ensure all screenshots are 6.5" (iPhone 15 Pro Max) and 12.9" (iPad Pro)
-2. Include at least one screenshot showing subscription options
-3. Clearly display "Free trial available" on relevant screenshots
-4. Test all URLs before submission
-5. Have customer support ready for launch day
-6. Prepare press kit for media outreach
-7. Set up app analytics tracking
-8. Configure StoreKit for subscription management
+1. Verify every URL returns `200 OK` over HTTPS before submission.
+2. Confirm pricing matches App Store Connect and the in-app paywall.
+3. Confirm screenshots match live app behavior.
+4. Confirm the support URL exists.
+5. Confirm privacy and terms pages are accessible.
+6. Confirm no unsupported claims remain in metadata.
