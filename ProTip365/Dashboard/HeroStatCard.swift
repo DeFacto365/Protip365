@@ -19,7 +19,11 @@ struct HeroStatCard: View {
             
             RollingNumberText(value: rawValue, font: .system(size: 42, weight: .heavy, design: .rounded), weight: .heavy, color: .clear) // Color clear because we overlay gradient
                 .foregroundStyle(
-                    BreathingGradient(colors: [color, color.opacity(0.7), color.opacity(0.9)])
+                    LinearGradient(
+                        colors: [color, color.opacity(0.7), color.opacity(0.9)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)

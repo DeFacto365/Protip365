@@ -55,6 +55,7 @@ struct DashboardStatsCards: View {
     }
 
     private var unifiedCompactCards: some View {
+        VStack(spacing: 16) {
             // Performance Card (Keeping as is, or maybe moving below Hero?)
             // Let's put Hero First
             
@@ -65,7 +66,6 @@ struct DashboardStatsCards: View {
                 rawValue: currentStats.totalRevenue,
                 subtitle: periodText,
                 color: .green
-            )
             )
             .padding(.bottom, 8)
 
@@ -420,8 +420,8 @@ struct DashboardStatsCards: View {
     
     private func calculateTotal(for shift: ShiftIncome) -> Double {
         // Approximate total earnings for trend visual
-        let hourlyIncome = (shift.hours ) * (shift.hourly_rate )
-        let grossIncome = hourlyIncome + (shift.tips )
+        let hourlyIncome = (shift.hours ?? 0) * shift.hourly_rate
+        let grossIncome = hourlyIncome + (shift.tips ?? 0)
         return grossIncome
     }
 }
