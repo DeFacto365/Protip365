@@ -1,23 +1,75 @@
 #!/bin/bash
 
-echo "Starting FTP upload to protip365.com..."
+echo "Starting secure upload to protip365.com..."
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 
 : "${PROTIP365_FTP_HOST:?Set PROTIP365_FTP_HOST before running this script}"
 : "${PROTIP365_FTP_USER:?Set PROTIP365_FTP_USER before running this script}"
-: "${PROTIP365_FTP_PASSWORD:?Set PROTIP365_FTP_PASSWORD before running this script}"
 : "${PROTIP365_FTP_REMOTE_DIR:=/www}"
+: "${PROTIP365_UPLOAD_PROTOCOL:=sftp}"
 
-# Using Python's built-in FTP library since macOS doesn't have ftp command by default
+case "$PROTIP365_UPLOAD_PROTOCOL" in
+  sftp)
+    : "${PROTIP365_SFTP_PORT:=22}"
+    ;;
+  ftps)
+    : "${PROTIP365_FTP_PASSWORD:?Set PROTIP365_FTP_PASSWORD before running FTPS upload}"
+    : "${PROTIP365_FTPS_PORT:?Set PROTIP365_FTPS_PORT to the FTPS port shown in Bluehost/cPanel}"
+    ;;
+  *)
+    echo "Plain FTP is disabled. Set PROTIP365_UPLOAD_PROTOCOL to sftp or ftps."
+    exit 1
+    ;;
+esac
+
+if [ "$PROTIP365_UPLOAD_PROTOCOL" = "sftp" ]; then
+  command -v sftp >/dev/null 2>&1 || {
+    echo "sftp command not found"
+    exit 1
+  }
+
+  batch_file="$(mktemp)"
+  trap 'rm -f "$batch_file"' EXIT
+
+  cat > "$batch_file" <<EOF
+cd $PROTIP365_FTP_REMOTE_DIR
+put index.html
+put privacy-policy.html
+put terms-of-service.html
+-mkdir privacy
+cd privacy
+put privacy/index.html index.html
+cd ..
+-mkdir terms
+cd terms
+put terms/index.html index.html
+cd ..
+-mkdir support
+cd support
+put support/index.html index.html
+cd ..
+-mkdir delete-account
+cd delete-account
+put delete-account/index.html index.html
+EOF
+
+  sftp -b "$batch_file" -P "$PROTIP365_SFTP_PORT" "$PROTIP365_FTP_USER@$PROTIP365_FTP_HOST"
+  echo "Secure SFTP upload complete."
+  exit 0
+fi
+
 python3 << 'EOF'
 import ftplib
 import os
 import sys
 
-# FTP credentials are read from environment variables.
 host = os.environ["PROTIP365_FTP_HOST"]
 username = os.environ["PROTIP365_FTP_USER"]
 password = os.environ["PROTIP365_FTP_PASSWORD"]
 remote_dir = os.environ.get("PROTIP365_FTP_REMOTE_DIR", "/www")
+port = int(os.environ["PROTIP365_FTPS_PORT"])
 
 # Files to upload
 files = [
@@ -31,11 +83,12 @@ files = [
 ]
 
 try:
-    # Connect to FTP server
-    print(f"Connecting to {host}...")
-    ftp = ftplib.FTP(host)
+    print(f"Connecting securely to {host} with FTPS...")
+    ftp = ftplib.FTP_TLS()
+    ftp.connect(host, port)
     ftp.login(username, password)
-    print("Connected successfully!")
+    ftp.prot_p()
+    print("Connected securely!")
 
     # Change to public_html directory
     ftp.cwd(remote_dir)
@@ -43,7 +96,7 @@ try:
 
     # Upload each file
     for filename in files:
-        filepath = f"/Users/jacquesbolduc/Github/ProTip365/Docs/website/{filename}"
+        filepath = os.path.join(os.getcwd(), filename)
         if os.path.exists(filepath):
             dirname = os.path.dirname(filename)
             if dirname:
@@ -75,8 +128,8 @@ try:
     print("- https://protip365.com/delete-account")
 
 except ftplib.error_perm as e:
-    print(f"❌ FTP Permission Error: {e}")
-    print("Please check your FTP credentials and permissions")
+    print(f"❌ FTPS Permission Error: {e}")
+    print("Please check your credentials and permissions")
     sys.exit(1)
 except Exception as e:
     print(f"❌ Error: {e}")

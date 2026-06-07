@@ -21,19 +21,20 @@ All files are located in `/Users/jacquesbolduc/Github/ProTip365/Docs/website/`:
 7. Upload each folder's `index.html`
 8. Verify at https://protip365.com
 
-## Method 2: Using FTP Client (FileZilla, Cyberduck, etc.)
+## Method 2: Using a Secure Transfer Client (FileZilla, Cyberduck, etc.)
 
-1. Open your FTP client
+1. Open your transfer client
 2. Connect with:
-   - Host: current Bluehost FTP host
-   - Username: current Bluehost FTP user
+   - Protocol: SFTP preferred, or FTPS if SFTP is unavailable
+   - Host: current Bluehost secure transfer host
+   - Username: current Bluehost transfer user
    - Password: current password
-   - Port: 21
+   - Port: use the SFTP/FTPS port shown in Bluehost/cPanel
 3. Navigate to the domain's public web root
 4. Upload the root HTML files and the `privacy`, `terms`, `support`, and `delete-account` folders
 5. Verify at https://protip365.com
 
-## Method 3: Using Command Line (if you have SSH access)
+## Method 3: Using Command Line (if you have SSH/SFTP access)
 
 ```bash
 # From your local machine
@@ -45,6 +46,8 @@ scp -r /Users/jacquesbolduc/Github/ProTip365/Docs/website/privacy \
   /Users/jacquesbolduc/Github/ProTip365/Docs/website/delete-account \
   YOUR_USER@YOUR_HOST:/path/to/public_html/
 ```
+
+Plain FTP is not approved for this site. Use SFTP, SCP, or FTPS only.
 
 ## After Upload
 

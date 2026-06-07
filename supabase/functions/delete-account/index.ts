@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const jsonResponse = (body: Record<string, unknown>, status: number) =>
+  new Response(
+    JSON.stringify(body),
+    {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    },
+  );
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -28,13 +37,7 @@ Deno.serve(async (req: Request) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return jsonResponse({ error: 'No authorization header' }, 401);
     }
 
     // Verify the JWT token and get the user
@@ -43,72 +46,33 @@ Deno.serve(async (req: Request) => {
     );
 
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return jsonResponse({ error: 'Invalid or expired token' }, 401);
     }
 
     const userId = user.id;
 
-    // Delete user data in the correct order (respecting foreign key constraints)
-    // 1. Delete shift_income first (they reference shifts)
-    await supabaseClient
-      .from('shift_income')
-      .delete()
-      .eq('user_id', userId);
+    // Cleanup is transactional in Postgres and covers both current and legacy
+    // user-owned tables. Do not remove the auth user unless this succeeds.
+    const { error: cleanupError } = await supabaseClient.rpc('delete_user_owned_data', {
+      target_user_id: userId,
+    });
 
-    // 2. Delete shifts
-    await supabaseClient
-      .from('shifts')
-      .delete()
-      .eq('user_id', userId);
+    if (cleanupError) {
+      console.error('Error deleting user-owned data:', cleanupError);
+      return jsonResponse({ error: 'Failed to delete user data' }, 500);
+    }
 
-    // 3. Delete employers
-    await supabaseClient
-      .from('employers')
-      .delete()
-      .eq('user_id', userId);
-
-    // 4. Delete user profile
-    await supabaseClient
-      .from('user_profiles')
-      .delete()
-      .eq('id', userId);
-
-    // 5. Finally, delete the auth user
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId);
 
     if (deleteError) {
       console.error('Error deleting user:', deleteError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to delete user account' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return jsonResponse({ error: 'Failed to delete user account' }, 500);
     }
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'Account deleted successfully' }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return jsonResponse({ success: true, message: 'Account deleted successfully' }, 200);
 
   } catch (error) {
     console.error('Error in delete-account function:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return jsonResponse({ error: 'Internal server error' }, 500);
   }
 });

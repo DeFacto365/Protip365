@@ -57,12 +57,34 @@ const stackScreenOptions = {
   headerShown: false,
 };
 
+const pushedScreenOptions = {
+  ...stackScreenOptions,
+  headerShown: true,
+  headerStyle: {
+    backgroundColor: theme.colors.surface,
+  },
+  headerTintColor: theme.colors.text,
+  headerTitleStyle: {
+    color: theme.colors.text,
+    fontSize: theme.typography.sectionTitle.fontSize,
+    fontWeight: theme.typography.sectionTitle.fontWeight,
+  },
+};
+
 function TodayStackNavigator() {
   return (
     <TodayStack.Navigator screenOptions={stackScreenOptions}>
       <TodayStack.Screen component={TodayScreen} name="TodayHome" />
-      <TodayStack.Screen component={AddShiftScreen} name="AddShift" />
-      <TodayStack.Screen component={AddIncomeScreen} name="AddIncome" />
+      <TodayStack.Screen
+        component={AddShiftScreen}
+        name="AddShift"
+        options={{ ...pushedScreenOptions, title: strings.screens.addShift }}
+      />
+      <TodayStack.Screen
+        component={AddIncomeScreen}
+        name="AddIncome"
+        options={{ ...pushedScreenOptions, title: strings.screens.addIncome }}
+      />
     </TodayStack.Navigator>
   );
 }
@@ -71,7 +93,11 @@ function CalendarStackNavigator() {
   return (
     <CalendarStack.Navigator screenOptions={stackScreenOptions}>
       <CalendarStack.Screen component={CalendarScreen} name="CalendarHome" />
-      <CalendarStack.Screen component={AddShiftScreen} name="AddShift" />
+      <CalendarStack.Screen
+        component={AddShiftScreen}
+        name="AddShift"
+        options={{ ...pushedScreenOptions, title: strings.screens.addShift }}
+      />
     </CalendarStack.Navigator>
   );
 }
@@ -80,8 +106,16 @@ function AddStackNavigator() {
   return (
     <AddStack.Navigator screenOptions={stackScreenOptions}>
       <AddStack.Screen component={AddHomeScreen} name="AddHome" />
-      <AddStack.Screen component={AddShiftScreen} name="AddShift" />
-      <AddStack.Screen component={AddIncomeScreen} name="AddIncome" />
+      <AddStack.Screen
+        component={AddShiftScreen}
+        name="AddShift"
+        options={{ ...pushedScreenOptions, title: strings.screens.addShift }}
+      />
+      <AddStack.Screen
+        component={AddIncomeScreen}
+        name="AddIncome"
+        options={{ ...pushedScreenOptions, title: strings.screens.addIncome }}
+      />
     </AddStack.Navigator>
   );
 }
@@ -90,10 +124,26 @@ function ReportsStackNavigator() {
   return (
     <ReportsStack.Navigator screenOptions={stackScreenOptions}>
       <ReportsStack.Screen component={ReportsScreen} name="ReportsHome" />
-      <ReportsStack.Screen component={WeeklyReportScreen} name="WeeklyReport" />
-      <ReportsStack.Screen component={MonthlyReportScreen} name="MonthlyReport" />
-      <ReportsStack.Screen component={YearlyReportScreen} name="YearlyReport" />
-      <ReportsStack.Screen component={HistoryScreen} name="History" />
+      <ReportsStack.Screen
+        component={WeeklyReportScreen}
+        name="WeeklyReport"
+        options={{ ...pushedScreenOptions, title: strings.screens.weeklyReport }}
+      />
+      <ReportsStack.Screen
+        component={MonthlyReportScreen}
+        name="MonthlyReport"
+        options={{ ...pushedScreenOptions, title: strings.screens.monthlyReport }}
+      />
+      <ReportsStack.Screen
+        component={YearlyReportScreen}
+        name="YearlyReport"
+        options={{ ...pushedScreenOptions, title: strings.screens.yearlyReport }}
+      />
+      <ReportsStack.Screen
+        component={HistoryScreen}
+        name="History"
+        options={{ ...pushedScreenOptions, title: strings.screens.history }}
+      />
     </ReportsStack.Navigator>
   );
 }
@@ -180,8 +230,16 @@ export function AppNavigator() {
     <NavigationContainer theme={navigationTheme}>
       <RootStack.Navigator screenOptions={stackScreenOptions}>
         <RootStack.Screen component={MainTabs} name="MainTabs" />
-        <RootStack.Screen component={OnboardingScreen} name="Onboarding" />
-        <RootStack.Screen component={PaywallScreen} name="Paywall" />
+        <RootStack.Screen
+          component={OnboardingScreen}
+          name="Onboarding"
+          options={{ ...pushedScreenOptions, title: strings.screens.onboarding }}
+        />
+        <RootStack.Screen
+          component={PaywallScreen}
+          name="Paywall"
+          options={{ ...pushedScreenOptions, title: strings.screens.paywall }}
+        />
       </RootStack.Navigator>
     </NavigationContainer>
   );

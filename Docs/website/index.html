@@ -151,11 +151,15 @@
       height: 58px;
       transition: transform 180ms ease, filter 180ms ease;
     }
-    .store-badge:hover {
+    a.store-badge:hover {
       transform: translateY(-2px);
       filter: brightness(1.06);
     }
     .store-badge img { height: 100%; width: auto; }
+    .store-badge.unavailable {
+      cursor: default;
+      filter: grayscale(1) opacity(0.78);
+    }
     .hero-points {
       display: flex;
       flex-wrap: wrap;
@@ -387,9 +391,9 @@
         <h1 id="hero-title">Know what you made tonight.</h1>
         <p>ProTip365 helps you log tips, shifts, tip-outs, employers, and real hourly rate without paper slips or messy spreadsheets.</p>
         <div class="store-row" aria-label="Download ProTip365">
-          <a class="store-badge" href="itms-apps://apps.apple.com/app/id6751759695" title="Download ProTip365 on the App Store">
+          <span class="store-badge unavailable" role="img" aria-label="ProTip365 App Store listing coming soon" title="App Store listing coming soon">
             <img src="images/app-store-badge.svg" alt="Download on the App Store">
-          </a>
+          </span>
         </div>
         <div class="hero-points" aria-label="Product highlights">
           <div class="hero-point"><strong>Free trial</strong><span>when offered at checkout</span></div>
@@ -507,9 +511,9 @@
           <p>Download ProTip365 for iPhone and iPad. Android is not promoted here until the production app is verified.</p>
         </div>
         <div class="store-row download-badges" aria-label="Download app links">
-          <a class="store-badge" href="itms-apps://apps.apple.com/app/id6751759695" title="Download ProTip365 on the App Store">
+          <span class="store-badge unavailable" role="img" aria-label="ProTip365 App Store listing coming soon" title="App Store listing coming soon">
             <img src="images/app-store-badge.svg" alt="Download on the App Store">
-          </a>
+          </span>
         </div>
       </div>
     </section>

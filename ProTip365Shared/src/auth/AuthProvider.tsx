@@ -33,16 +33,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setSession(data.session);
-        setIsLoading(false);
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (mounted) {
+          setSession(data.session);
+        }
+      })
+      .catch((error) => {
+        console.warn("Failed to restore Supabase session", error);
+        if (mounted) {
+          setSession(null);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      });
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setIsLoading(false);
+      if (mounted) {
+        setSession(nextSession);
+        setIsLoading(false);
+      }
     });
 
     return () => {
