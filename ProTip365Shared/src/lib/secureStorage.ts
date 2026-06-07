@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 
 const memoryStorage = new Map<string, string>();
 const CHUNK_SIZE = 1800;
+const SECURE_STORE_KEY_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 type ChunkMetadata =
   | {
@@ -17,11 +18,25 @@ type ChunkMetadata =
     };
 
 function chunksKey(key: string) {
-  return `${key}:chunks`;
+  return `${nativeBaseKey(key)}.chunks`;
 }
 
 function chunkKey(key: string, chunkId: string | null, index: number) {
-  return chunkId ? `${key}:chunk:${chunkId}:${index}` : `${key}:chunk:${index}`;
+  return chunkId ? `${nativeBaseKey(key)}.chunk.${chunkId}.${index}` : `${nativeBaseKey(key)}.chunk.${index}`;
+}
+
+function nativeBaseKey(key: string) {
+  if (SECURE_STORE_KEY_PATTERN.test(key)) {
+    return key;
+  }
+
+  const encodedKey = Array.from(key)
+    .map((character) =>
+      SECURE_STORE_KEY_PATTERN.test(character) ? character : `_${character.charCodeAt(0).toString(16)}_`,
+    )
+    .join("");
+
+  return `key.${encodedKey}`;
 }
 
 function getChunkMetadata(value: string | null): ChunkMetadata | null {
@@ -87,7 +102,7 @@ async function removeNativeItem(key: string) {
   const metadata = getChunkMetadata(await SecureStore.getItemAsync(chunksKey(key)));
 
   await Promise.all([
-    SecureStore.deleteItemAsync(key),
+    SecureStore.deleteItemAsync(nativeBaseKey(key)),
     SecureStore.deleteItemAsync(chunksKey(key)),
     removeNativeChunks(key, metadata),
   ]);
@@ -102,7 +117,7 @@ export const supabaseSecureStorage = {
     const metadata = getChunkMetadata(await SecureStore.getItemAsync(chunksKey(key)));
 
     if (!metadata) {
-      return SecureStore.getItemAsync(key);
+      return SecureStore.getItemAsync(nativeBaseKey(key));
     }
 
     const chunks = await Promise.all(
@@ -147,7 +162,7 @@ export const supabaseSecureStorage = {
     await SecureStore.setItemAsync(chunksKey(key), JSON.stringify(nextMetadata));
 
     await Promise.all([
-      SecureStore.deleteItemAsync(key),
+      SecureStore.deleteItemAsync(nativeBaseKey(key)),
       removeNativeChunks(key, previousMetadata),
     ]);
   },
