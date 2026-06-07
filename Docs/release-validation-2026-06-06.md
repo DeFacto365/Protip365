@@ -2,7 +2,9 @@
 
 ## Summary
 
-ProTip365 is not 100% complete for release. The repo-side validation pass is green after updating Expo to the current SDK-compatible patch and fixing a Deno type-check issue in the legacy `delete-user` function. External release blockers remain open for public SSL/hosting, credential rotation proof, Supabase deployment proof, and signed store build evidence.
+ProTip365 is not 100% complete for release. The repo-side validation pass is green after the shared Expo app cleanup and archive cleanup. External release blockers remain open for public SSL/hosting, credential rotation proof, Supabase deployment proof, and signed store build evidence.
+
+Current validation refresh: 2026-06-06 22:28 EDT.
 
 ## Linear Status Checked
 
@@ -17,10 +19,14 @@ ProTip365 is not 100% complete for release. The repo-side validation pass is gre
 - `RFP-158` support email function sanitization: In Review.
 - `RFP-25` relaunch readiness: Backlog.
 
+`RFP-158` appears fixed in the repo: `supabase/functions/send-support/index.ts` validates subject/message length, escapes rendered HTML, and returns a generic error response. Linear status still needs review/closure.
+
 ## Changes Made
 
 - Updated `ProTip365Shared` from `expo@~56.0.8` to `expo@~56.0.9`, matching the version expected by the current Expo SDK checks.
 - Fixed `ProTip365/supabase/functions/delete-user/index.ts` catch handling so Deno can type-check the function under strict unknown catch semantics.
+- Archived legacy native iOS/Xcode material, root legacy docs, backups, unused website templates/demo assets, WordPress exports, older ProTip365 landing variants, and obsolete browser tooling reference material under `Archive/`.
+- Kept current active website material limited to `Docs/website/index.html`, legal/support/delete-account pages, upload docs/scripts, and referenced `Docs/website/images/` assets.
 
 ## Validation Passed
 
@@ -32,16 +38,12 @@ ProTip365 is not 100% complete for release. The repo-side validation pass is gre
 - `cd ProTip365Shared && npx expo export --platform all`
 - `deno check --node-modules-dir=auto supabase/functions/send-support/index.ts`
 - `deno check --node-modules-dir=auto supabase/functions/delete-account/index.ts`
-- `deno check --node-modules-dir=auto ProTip365/supabase/functions/send-suggestion/index.ts`
-- `deno check --node-modules-dir=auto ProTip365/supabase/functions/delete-user/index.ts`
-- `xcodebuild -quiet -scheme ProTip365 -project ProTip365.xcodeproj -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath .derivedData-validation build`
+- Active website static asset reference check: passed, no missing local assets in current pages.
+- Active-path secret scan: no tracked literal service-role key, App Store shared secret, Google Maps API key, FTP password, or Resend API key found. Remaining hits are placeholders, docs, or environment-variable reads.
 
 ## Native Build Warnings
 
-- `SubscriptionManager.swift`: unreachable `catch` warning.
-- `SubscriptionManager.swift`: `appStoreReceiptURL` deprecated in iOS 18.
-- `SubscriptionManagementView.swift`: unused `priceString`.
-- `AlertManager.swift`: `dateComponents` can be `let`.
+The legacy native Swift project is archived and no longer the active app source. The current source of truth is `ProTip365Shared/`.
 
 ## Security Review
 
@@ -57,7 +59,7 @@ No active tracked literal service-role key, App Store shared secret, Google Maps
 
 ## Remaining External Blockers
 
-- Public URLs still fail SSL certificate verification:
+- Public URLs still fail SSL certificate verification with expired certificate result `ssl_verify=10`:
   - `https://protip365.com/`
   - `https://protip365.com/privacy`
   - `https://protip365.com/privacy-policy.html`
