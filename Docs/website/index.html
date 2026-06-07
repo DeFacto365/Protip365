@@ -160,6 +160,25 @@
       cursor: default;
       filter: grayscale(1) opacity(0.78);
     }
+    .availability-note {
+      display: inline-flex;
+      align-items: center;
+      min-height: 58px;
+      padding: 0 16px;
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .download .availability-note {
+      border-color: rgba(15, 32, 25, 0.16);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--charcoal);
+      box-shadow: var(--shadow);
+    }
     .hero-points {
       display: flex;
       flex-wrap: wrap;
@@ -392,8 +411,9 @@
         <p>ProTip365 helps you log tips, shifts, tip-outs, employers, and real hourly rate without paper slips or messy spreadsheets.</p>
         <div class="store-row" aria-label="Download ProTip365">
           <span class="store-badge unavailable" role="img" aria-label="ProTip365 App Store listing coming soon" title="App Store listing coming soon">
-            <img src="images/app-store-badge.svg" alt="Download on the App Store">
+            <img src="images/app-store-badge.svg" alt="App Store listing coming soon">
           </span>
+          <span class="availability-note">Coming soon</span>
         </div>
         <div class="hero-points" aria-label="Product highlights">
           <div class="hero-point"><strong>Free trial</strong><span>when offered at checkout</span></div>
@@ -508,12 +528,13 @@
       <div class="container download-panel">
         <div>
           <h2>Start tracking your shifts.</h2>
-          <p>Download ProTip365 for iPhone and iPad. Android is not promoted here until the production app is verified.</p>
+          <p>ProTip365 for iPhone and iPad is being prepared. Android is not promoted here until the production app is verified.</p>
         </div>
         <div class="store-row download-badges" aria-label="Download app links">
           <span class="store-badge unavailable" role="img" aria-label="ProTip365 App Store listing coming soon" title="App Store listing coming soon">
-            <img src="images/app-store-badge.svg" alt="Download on the App Store">
+            <img src="images/app-store-badge.svg" alt="App Store listing coming soon">
           </span>
+          <span class="availability-note">Coming soon</span>
         </div>
       </div>
     </section>
