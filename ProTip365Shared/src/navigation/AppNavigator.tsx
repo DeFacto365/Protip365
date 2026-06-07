@@ -2,6 +2,8 @@ import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CalendarDays, CirclePlus, ClipboardList, Home, Settings } from "lucide-react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useAuth } from "../auth/AuthProvider";
 import { getStrings } from "../localization";
 import {
   AddStackParamList,
@@ -27,6 +29,7 @@ import {
   WeeklyReportScreen,
   YearlyReportScreen,
 } from "../screens/PlaceholderScreens";
+import { AuthScreen } from "../screens/AuthScreen";
 import { theme } from "../theme";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -226,6 +229,20 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
+  const { isLoading, isSignedIn } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={theme.colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <AuthScreen />;
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <RootStack.Navigator screenOptions={stackScreenOptions}>
@@ -244,3 +261,12 @@ export function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    alignItems: "center",
+    backgroundColor: theme.colors.background,
+    flex: 1,
+    justifyContent: "center",
+  },
+});
