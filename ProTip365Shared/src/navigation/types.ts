@@ -1,7 +1,9 @@
 export type RootStackParamList = {
+  Auth: undefined;
   MainTabs: undefined;
   Onboarding: undefined;
   Paywall: undefined;
+  UpdatePassword: undefined;
 };
 
 export type TodayStackParamList = {

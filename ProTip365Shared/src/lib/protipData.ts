@@ -22,9 +22,15 @@ export type UserProfile = {
   target_hours_monthly: number;
   week_start: number;
   language: string;
+  preferred_language?: string | null;
   name: string | null;
   use_multiple_employers: boolean;
+  default_employer_id?: string | null;
+  tip_target_percentage?: number | null;
+  has_variable_schedule?: boolean | null;
   average_deduction_percentage?: number | null;
+  default_alert_minutes?: number | null;
+  onboarding_completed?: boolean | null;
 };
 
 export type ShiftIncome = {
@@ -49,7 +55,9 @@ export type ShiftIncome = {
   start_time: string | null;
   end_time: string | null;
   shift_status?: "planned" | "completed" | "missed";
+  alert_minutes?: number | null;
   has_earnings?: boolean;
+  notes?: string | null;
 };
 
 export type ShiftDraftInput = {
@@ -60,6 +68,7 @@ export type ShiftDraftInput = {
   employerId: string | null;
   hourlyRate: number;
   notes: string;
+  alertMinutes?: number | null;
 };
 
 export type IncomeInput = {
@@ -74,6 +83,10 @@ export type IncomeInput = {
   incomeId?: string | null;
 };
 
+export type ShiftUpdateInput = ShiftDraftInput & {
+  shiftId: string;
+};
+
 type ExpectedShiftRow = {
   id: string;
   user_id: string;
@@ -83,7 +96,9 @@ type ExpectedShiftRow = {
   end_time: string | null;
   expected_hours: number;
   hourly_rate: number;
+  notes?: string | null;
   status?: "planned" | "completed" | "missed";
+  alert_minutes?: number | null;
 };
 
 type ShiftEntryRow = {
@@ -101,7 +116,11 @@ type ShiftEntryRow = {
   gross_income?: number | null;
   total_income?: number | null;
   deduction_percentage?: number | null;
+  notes?: string | null;
 };
+
+const SHIFT_INCOME_PAGE_SIZE = 1000;
+const SHIFT_ENTRY_LOOKUP_CHUNK_SIZE = 200;
 
 const defaultProfile: Omit<UserProfile, "user_id"> = {
   default_hourly_rate: 15,
@@ -142,7 +161,13 @@ export async function getCurrentUserId() {
 }
 
 export async function getProfile() {
-  const userId = await getCurrentUserId();
+  const { data: userData, error: userError } = await client().auth.getUser();
+
+  if (userError || !userData.user) {
+    throw userError ?? new Error("No signed-in user.");
+  }
+
+  const userId = userData.user.id;
   const { data, error } = await client()
     .from("users_profile")
     .select()
@@ -163,6 +188,7 @@ export async function getProfile() {
 
   const profile = {
     ...defaultProfile,
+    name: typeof userData.user.user_metadata?.name === "string" ? userData.user.user_metadata.name : null,
     user_id: userId,
   };
 
@@ -219,44 +245,31 @@ export async function addEmployer(name: string, hourlyRate: number) {
 }
 
 export async function deleteEmployer(id: string) {
-  const { error } = await client().from("employers").delete().eq("id", id);
+  const userId = await getCurrentUserId();
+  const { error } = await client().from("employers").update({ active: false }).eq("id", id).eq("user_id", userId);
 
   if (error) {
     throw error;
   }
 }
 
-export async function listShiftIncome(limit = 100) {
+export async function listShiftIncome(limit?: number) {
   const userId = await getCurrentUserId();
-  const [{ data: shifts, error: shiftsError }, { data: employers, error: employersError }] = await Promise.all([
-    client().from("expected_shifts").select().eq("user_id", userId).order("shift_date", { ascending: false }).limit(limit),
-    client().from("employers").select().eq("user_id", userId),
-  ]);
-
-  if (shiftsError) {
-    throw shiftsError;
-  }
+  const shifts = await listExpectedShiftRows(userId, limit);
+  const { data: employers, error: employersError } = await client().from("employers").select().eq("user_id", userId);
 
   if (employersError) {
     throw employersError;
   }
 
-  const typedShifts = (shifts ?? []) as ExpectedShiftRow[];
+  const typedShifts = shifts;
   const shiftIds = typedShifts.map((shift) => shift.id);
   const entriesByShiftId = new Map<string, ShiftEntryRow>();
 
   if (shiftIds.length > 0) {
-    const { data: entries, error: entriesError } = await client()
-      .from("shift_entries")
-      .select()
-      .eq("user_id", userId)
-      .in("shift_id", shiftIds);
+    const entries = await listShiftEntryRows(userId, shiftIds);
 
-    if (entriesError) {
-      throw entriesError;
-    }
-
-    for (const entry of (entries ?? []) as ShiftEntryRow[]) {
+    for (const entry of entries) {
       entriesByShiftId.set(entry.shift_id, entry);
     }
   }
@@ -266,14 +279,14 @@ export async function listShiftIncome(limit = 100) {
   return typedShifts.map((shift) => {
     const entry = entriesByShiftId.get(shift.id);
     const employer = shift.employer_id ? employersById.get(shift.employer_id) : null;
-    const hours = Number(entry?.actual_hours ?? shift.expected_hours ?? 0);
+    const hours = entry ? Number(entry.actual_hours ?? shift.expected_hours ?? 0) : 0;
     const hourlyRate = Number(entry?.hourly_rate ?? shift.hourly_rate ?? employer?.hourly_rate ?? 0);
     const sales = Number(entry?.sales ?? 0);
     const tips = Number(entry?.tips ?? 0);
     const cashOut = Number(entry?.cash_out ?? 0);
     const other = Number(entry?.other ?? 0);
-    const baseIncome = Number(entry?.gross_income ?? hours * hourlyRate);
-    const totalIncome = Number(entry?.total_income ?? baseIncome + tips + other - cashOut);
+    const baseIncome = entry ? Number(entry.gross_income ?? hours * hourlyRate) : 0;
+    const totalIncome = entry ? Number(entry.total_income ?? baseIncome + tips + other - cashOut) : 0;
 
     return {
       base_income: baseIncome,
@@ -288,11 +301,13 @@ export async function listShiftIncome(limit = 100) {
       id: shift.id,
       income_id: entry?.id ?? null,
       net_tips: tips - cashOut,
+      notes: normalizedNote(shift.notes) ?? normalizedNote(entry?.notes) ?? null,
       other,
       sales,
       shift_date: shift.shift_date,
       shift_id: shift.id,
       shift_status: shift.status ?? (entry ? "completed" : "planned"),
+      alert_minutes: shift.alert_minutes ?? null,
       start_time: entry?.actual_start_time ?? shift.start_time,
       tip_percentage: sales > 0 ? (tips / sales) * 100 : 0,
       tips,
@@ -302,10 +317,92 @@ export async function listShiftIncome(limit = 100) {
   });
 }
 
+async function listExpectedShiftRows(userId: string, limit?: number) {
+  const rows: ExpectedShiftRow[] = [];
+  const pageSize = limit ? Math.min(limit, SHIFT_INCOME_PAGE_SIZE) : SHIFT_INCOME_PAGE_SIZE;
+  let from = 0;
+
+  while (limit === undefined || rows.length < limit) {
+    const remaining = limit === undefined ? pageSize : Math.min(pageSize, limit - rows.length);
+    const to = from + remaining - 1;
+    const { data, error } = await client()
+      .from("expected_shifts")
+      .select()
+      .eq("user_id", userId)
+      .order("shift_date", { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const page = (data ?? []) as ExpectedShiftRow[];
+    rows.push(...page);
+
+    if (page.length < remaining) {
+      break;
+    }
+
+    from += page.length;
+  }
+
+  return rows;
+}
+
+async function listShiftEntryRows(userId: string, shiftIds: string[]) {
+  const rows: ShiftEntryRow[] = [];
+
+  for (let index = 0; index < shiftIds.length; index += SHIFT_ENTRY_LOOKUP_CHUNK_SIZE) {
+    const chunk = shiftIds.slice(index, index + SHIFT_ENTRY_LOOKUP_CHUNK_SIZE);
+    const { data, error } = await client()
+      .from("shift_entries")
+      .select()
+      .eq("user_id", userId)
+      .in("shift_id", chunk);
+
+    if (error) {
+      throw error;
+    }
+
+    rows.push(...((data ?? []) as ShiftEntryRow[]));
+  }
+
+  return rows;
+}
+
+function normalizedNote(value: string | null | undefined) {
+  const note = value?.trim();
+
+  return note ? note : null;
+}
+
+async function assertEmployerBelongsToUser(employerId: string | null, userId: string) {
+  if (!employerId) {
+    return;
+  }
+
+  const { data: employer, error } = await client()
+    .from("employers")
+    .select("id")
+    .eq("id", employerId)
+    .eq("user_id", userId)
+    .maybeSingle<{ id: string }>();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!employer) {
+    throw new Error("Selected employer was not found.");
+  }
+}
+
 export async function createShift(input: ShiftDraftInput) {
   const userId = await getCurrentUserId();
-  const { error } = await client().from("expected_shifts").insert({
-    alert_minutes: null,
+  await assertEmployerBelongsToUser(input.employerId, userId);
+
+  const { data, error } = await client().from("expected_shifts").insert({
+    alert_minutes: input.alertMinutes ?? null,
     employer_id: input.employerId,
     expected_hours: input.expectedHours,
     hourly_rate: input.hourlyRate,
@@ -316,9 +413,157 @@ export async function createShift(input: ShiftDraftInput) {
     end_time: input.endTime,
     status: "planned",
     user_id: userId,
-  });
+  }).select("id").single<{ id: string }>();
 
   if (error) {
+    throw error;
+  }
+
+  return data.id;
+}
+
+export async function updateShift(input: ShiftUpdateInput) {
+  const userId = await getCurrentUserId();
+  await assertEmployerBelongsToUser(input.employerId, userId);
+  const { data: entry, error: entryError } = await client()
+    .from("shift_entries")
+    .select("id,tips,cash_out,other")
+    .eq("shift_id", input.shiftId)
+    .eq("user_id", userId)
+    .maybeSingle<Pick<ShiftEntryRow, "id" | "tips" | "cash_out" | "other">>();
+
+  if (entryError) {
+    throw entryError;
+  }
+
+  const { error } = await client()
+    .from("expected_shifts")
+    .update({
+      alert_minutes: input.alertMinutes ?? null,
+      employer_id: input.employerId,
+      expected_hours: input.expectedHours,
+      hourly_rate: input.hourlyRate,
+      notes: input.notes,
+      shift_date: input.shiftDate,
+      start_time: input.startTime,
+      end_time: input.endTime,
+    })
+    .eq("id", input.shiftId)
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+
+  if (entry?.id) {
+    const profile = await getProfile();
+    const other = Number(entry.other ?? 0);
+    const grossIncome = input.expectedHours * input.hourlyRate;
+    const totalIncome = grossIncome + Number(entry.tips ?? 0) + other - Number(entry.cash_out ?? 0);
+    const deductionPercentage = Number(profile.average_deduction_percentage ?? 0);
+    const { error: incomeError } = await client()
+      .from("shift_entries")
+      .update({
+        actual_end_time: input.endTime,
+        actual_hours: input.expectedHours,
+        actual_start_time: input.startTime,
+        deduction_percentage: deductionPercentage,
+        gross_income: grossIncome,
+        hourly_rate: input.hourlyRate,
+        net_income: totalIncome * (1 - deductionPercentage / 100),
+        notes: input.notes,
+        total_income: totalIncome,
+      })
+      .eq("id", entry.id)
+      .eq("user_id", userId);
+
+    if (incomeError) {
+      throw incomeError;
+    }
+  }
+}
+
+export async function deleteShift(shiftId: string) {
+  const userId = await getCurrentUserId();
+  const { error } = await client().from("expected_shifts").delete().eq("id", shiftId).eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function markShiftMissed(shiftId: string, reason: string) {
+  const userId = await getCurrentUserId();
+  const { data: previousShift, error: previousShiftError } = await client()
+    .from("expected_shifts")
+    .select("status,notes")
+    .eq("id", shiftId)
+    .eq("user_id", userId)
+    .maybeSingle<Pick<ExpectedShiftRow, "status" | "notes">>();
+
+  if (previousShiftError) {
+    throw previousShiftError;
+  }
+
+  const { error: statusError } = await client()
+    .from("expected_shifts")
+    .update({
+      notes: reason,
+      status: "missed",
+    })
+    .eq("id", shiftId)
+    .eq("user_id", userId);
+
+  if (statusError) {
+    throw statusError;
+  }
+
+  const { error: entryError } = await client().from("shift_entries").delete().eq("shift_id", shiftId).eq("user_id", userId);
+
+  if (entryError) {
+    await client()
+      .from("expected_shifts")
+      .update({
+        notes: previousShift?.notes ?? null,
+        status: previousShift?.status ?? "planned",
+      })
+      .eq("id", shiftId)
+      .eq("user_id", userId);
+    throw entryError;
+  }
+}
+
+export async function deleteIncome(incomeId: string, shiftId: string) {
+  const userId = await getCurrentUserId();
+  const { data: previousShift, error: previousShiftError } = await client()
+    .from("expected_shifts")
+    .select("status")
+    .eq("id", shiftId)
+    .eq("user_id", userId)
+    .maybeSingle<Pick<ExpectedShiftRow, "status">>();
+
+  if (previousShiftError) {
+    throw previousShiftError;
+  }
+
+  const { error: statusError } = await client()
+    .from("expected_shifts")
+    .update({ status: "planned" })
+    .eq("id", shiftId)
+    .eq("user_id", userId)
+    .eq("status", "completed");
+
+  if (statusError) {
+    throw statusError;
+  }
+
+  const { error } = await client().from("shift_entries").delete().eq("id", incomeId).eq("shift_id", shiftId).eq("user_id", userId);
+
+  if (error) {
+    if (previousShift?.status) {
+      await client().from("expected_shifts").update({ status: previousShift.status }).eq("id", shiftId).eq("user_id", userId);
+    }
+
     throw error;
   }
 }
@@ -371,7 +616,25 @@ export async function saveIncome(input: IncomeInput) {
     throw error;
   }
 
-  await client().from("expected_shifts").update({ status: "completed" }).eq("id", input.shiftId).eq("user_id", userId);
+  const { error: notesError } = await client()
+    .from("expected_shifts")
+    .update({ notes: input.notes })
+    .eq("id", input.shiftId)
+    .eq("user_id", userId);
+
+  if (notesError) {
+    throw notesError;
+  }
+
+  const { error: statusError } = await client()
+    .from("expected_shifts")
+    .update({ status: "completed" })
+    .eq("id", input.shiftId)
+    .eq("user_id", userId);
+
+  if (statusError) {
+    throw statusError;
+  }
 }
 
 export function formatCurrency(amount: number) {

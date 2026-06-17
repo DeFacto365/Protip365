@@ -2,6 +2,7 @@
   "expo": {
     "name": "ProTip365Shared",
     "slug": "ProTip365Shared",
+    "scheme": "protip365",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,9 +22,25 @@
     },
     "plugins": [
       "expo-localization",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow ProTip365 to use Face ID to unlock the app."
+        }
+      ],
+      "expo-notifications",
       "expo-secure-store",
       "expo-status-bar",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F7F9",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }
