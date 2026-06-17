@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import DateTimePicker, { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 import { AppScaffold, Card } from "../../components/AppScaffold";
 import {
   Employer,
@@ -56,9 +57,13 @@ export function shiftId(shift: ShiftIncome) {
   return shift.shift_id ?? shift.id ?? "";
 }
 
+function timeLabel(value: string) {
+  return value.slice(0, 5);
+}
+
 export function visibleShiftLabel(shift: ShiftIncome) {
   const employer = shift.employer_name ? ` - ${shift.employer_name}` : "";
-  const time = shift.start_time && shift.end_time ? `, ${shift.start_time}-${shift.end_time}` : "";
+  const time = shift.start_time && shift.end_time ? `, ${timeLabel(shift.start_time)}-${timeLabel(shift.end_time)}` : "";
 
   return `${shift.shift_date}${time}${employer}`;
 }
@@ -69,7 +74,7 @@ export function useAppData() {
   const [shifts, setShifts] = useState<ShiftIncome[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function reload() {
+  const reload = useCallback(async () => {
     setIsLoading(true);
 
     try {
@@ -82,11 +87,13 @@ export function useAppData() {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  useEffect(() => {
-    void reload();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   return { employers, isLoading, profile, reload, setProfile, shifts };
 }
@@ -95,6 +102,7 @@ export function DataScaffold({ children, isLoading, onRefresh, title }: { childr
   return (
     <ScrollView
       contentContainerStyle={styles.screen}
+      keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={isLoading} />}
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
@@ -233,7 +241,7 @@ export function DatePickerModal({ endTime, picker, setEndTime, setPicker, setShi
   const value = picker === "date" ? shiftDate : picker === "start" ? startTime : endTime;
   const mode = picker === "date" ? "date" : "time";
 
-  function onChange(_event: DateTimePickerEvent, selectedDate?: Date) {
+  function onValueChange(_event: DateTimePickerChangeEvent, selectedDate: Date) {
     setPicker(null);
 
     if (!selectedDate) {
@@ -249,7 +257,15 @@ export function DatePickerModal({ endTime, picker, setEndTime, setPicker, setShi
     }
   }
 
-  return <DateTimePicker mode={mode} onChange={onChange} value={value} />;
+  return (
+    <DateTimePicker
+      mode={mode}
+      onDismiss={() => setPicker(null)}
+      onNeutralButtonPress={() => setPicker(null)}
+      onValueChange={onValueChange}
+      value={value}
+    />
+  );
 }
 
 export function EmployerModal({ employers, onClose, onSelect, selectedId, visible }: { employers: Employer[]; onClose: () => void; onSelect: (id: string | null) => void; selectedId: string | null; visible: boolean }) {

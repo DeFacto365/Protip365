@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
 
 export type ShiftReminderInput = {
   alertMinutes: number | null;
@@ -11,15 +10,33 @@ export type ShiftReminderInput = {
 
 export const MISSING_ENTRY_GRACE_MINUTES = 60;
 
-if (Platform.OS !== "web") {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+let notificationsModule: any | null = null;
+let notificationHandlerConfigured = false;
+
+async function getNotifications(): Promise<any | null> {
+  if (Platform.OS === "web" || (Platform.OS === "android" && __DEV__)) {
+    return null;
+  }
+
+  try {
+    notificationsModule ??= await import("expo-notifications");
+  } catch {
+    return null;
+  }
+
+  if (!notificationHandlerConfigured) {
+    notificationsModule.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    notificationHandlerConfigured = true;
+  }
+
+  return notificationsModule;
 }
 
 export function parseLocalShiftDateTime(shiftDate: string, time: string) {
@@ -58,20 +75,22 @@ export function missingEntryReminderDate(shiftDate: string, startTime: string, e
 }
 
 export async function scheduleShiftReminders(input: ShiftReminderInput) {
-  if (Platform.OS === "web") {
-    return { scheduled: false, reason: "Local reminders are not supported on web." };
+  const notifications = await getNotifications();
+
+  if (!notifications) {
+    return { scheduled: false, reason: "Local reminders are not available in this runtime." };
   }
 
   await cancelShiftReminders(input.shiftId);
 
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("shift-reminders", {
-      importance: Notifications.AndroidImportance.DEFAULT,
+    await notifications.setNotificationChannelAsync("shift-reminders", {
+      importance: notifications.AndroidImportance.DEFAULT,
       name: "Shift reminders",
     });
   }
 
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } = await notifications.requestPermissionsAsync();
 
   if (status !== "granted") {
     return { scheduled: false, reason: "Notification permission was not granted." };
@@ -104,7 +123,7 @@ export async function scheduleShiftReminders(input: ShiftReminderInput) {
 
   await Promise.all(
     reminders.map((reminder) =>
-      Notifications.scheduleNotificationAsync({
+      notifications.scheduleNotificationAsync({
         content: {
           body: reminder.body,
           data: { shiftId: input.shiftId },
@@ -113,7 +132,7 @@ export async function scheduleShiftReminders(input: ShiftReminderInput) {
         trigger: {
           channelId: "shift-reminders",
           date: reminder.date,
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          type: notifications.SchedulableTriggerInputTypes.DATE,
         },
       }),
     ),
@@ -123,15 +142,18 @@ export async function scheduleShiftReminders(input: ShiftReminderInput) {
 }
 
 export async function cancelShiftReminders(shiftId: string) {
-  if (Platform.OS === "web") {
+  const notifications = await getNotifications();
+
+  if (!notifications) {
     return;
   }
 
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const scheduled: { content: { data?: { shiftId?: string } }; identifier: string }[] =
+    await notifications.getAllScheduledNotificationsAsync();
 
   await Promise.all(
     scheduled
       .filter((notification) => notification.content.data?.shiftId === shiftId)
-      .map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)),
+      .map((notification) => notifications.cancelScheduledNotificationAsync(notification.identifier)),
   );
 }
