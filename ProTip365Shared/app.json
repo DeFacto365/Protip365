@@ -22,6 +22,13 @@
     },
     "plugins": [
       "expo-localization",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow ProTip365 to use Face ID to unlock the app."
+        }
+      ],
+      "expo-notifications",
       "expo-secure-store",
       "expo-status-bar",
       "@react-native-community/datetimepicker"

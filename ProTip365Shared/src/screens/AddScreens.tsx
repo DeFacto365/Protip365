@@ -18,6 +18,7 @@ import {
   updateShift,
 } from "../lib/protipData";
 import { AddStackParamList } from "../navigation/types";
+import { cancelShiftReminders, scheduleShiftReminders } from "../lib/shiftReminders";
 import { theme } from "../theme";
 import {
   DataScaffold,
@@ -77,6 +78,14 @@ export function AddHomeScreen({ navigation }: NativeStackScreenProps<AddStackPar
   );
 }
 
+async function cancelShiftRemindersQuietly(targetShiftId: string) {
+  try {
+    await cancelShiftReminders(targetShiftId);
+  } catch {
+    // Reminder cleanup should not make a completed data save look failed.
+  }
+}
+
 export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackParamList, "AddShift">) {
   const { employers, isLoading, profile, reload, shifts } = useAppData();
   const [shiftDate, setShiftDate] = useState(new Date());
@@ -85,6 +94,8 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
   const [selectedEmployerId, setSelectedEmployerId] = useState<string | null>(null);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [alertMinutes, setAlertMinutes] = useState("");
+  const [didSeedDefaultAlert, setDidSeedDefaultAlert] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [picker, setPicker] = useState<"date" | "start" | "end" | null>(null);
   const [showEmployerPicker, setShowEmployerPicker] = useState(false);
@@ -95,6 +106,17 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
   const selectedEmployer = employers.find((employer) => employer.id === selectedEmployerId);
   const hourlyRate = selectedEmployer?.hourly_rate ?? profile?.default_hourly_rate ?? 15;
   const expectedHours = hoursBetween(startValue, endValue);
+  const defaultAlertMinutes = profile?.default_alert_minutes ?? null;
+  const parsedAlertMinutes = alertMinutes.trim() ? Math.max(0, Math.round(parseMoney(alertMinutes))) : null;
+
+  useEffect(() => {
+    if (didSeedDefaultAlert || selectedShiftId || defaultAlertMinutes === null || defaultAlertMinutes === undefined) {
+      return;
+    }
+
+    setAlertMinutes(`${defaultAlertMinutes}`);
+    setDidSeedDefaultAlert(true);
+  }, [defaultAlertMinutes, didSeedDefaultAlert, selectedShiftId]);
 
   function resetForm() {
     setSelectedShiftId(null);
@@ -103,6 +125,8 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
     setEndTime(timeFromString("23:30"));
     setSelectedEmployerId(null);
     setNotes("");
+    setAlertMinutes(defaultAlertMinutes === null ? "" : `${defaultAlertMinutes}`);
+    setDidSeedDefaultAlert(true);
   }
 
   function dateFromValue(value: string) {
@@ -124,6 +148,8 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
     setEndTime(timeFromString(shift.end_time ?? "23:30"));
     setSelectedEmployerId(shift.employer_id);
     setNotes(shift.notes ?? "");
+    setAlertMinutes(shift.alert_minutes === null || shift.alert_minutes === undefined ? "" : `${shift.alert_minutes}`);
+    setDidSeedDefaultAlert(true);
   }
 
   async function handleSave() {
@@ -135,18 +161,33 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
         endTime: endValue,
         expectedHours,
         hourlyRate,
+        alertMinutes: parsedAlertMinutes,
         notes,
         shiftDate: toDateValue(shiftDate),
         startTime: startValue,
       };
 
+      let savedShiftId = selectedShift ? shiftId(selectedShift) : "";
+
       if (selectedShift) {
         await updateShift({ ...payload, shiftId: shiftId(selectedShift) });
       } else {
-        await createShift(payload);
+        savedShiftId = await createShift(payload);
       }
 
-      Alert.alert(selectedShift ? "Shift updated" : "Shift saved", "The shift is ready for income entry.");
+      const reminderResult = await scheduleShiftReminders({
+        alertMinutes: parsedAlertMinutes,
+        endTime: endValue,
+        shiftDate: toDateValue(shiftDate),
+        shiftId: savedShiftId,
+        startTime: startValue,
+      });
+      Alert.alert(
+        selectedShift ? "Shift updated" : "Shift saved",
+        reminderResult.scheduled
+          ? "The shift is ready for income entry and local reminders are scheduled."
+          : `The shift is ready for income entry. ${reminderResult.reason}`,
+      );
       setNotes("");
       await reload();
       navigation.goBack();
@@ -169,7 +210,9 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
           setIsSaving(true);
 
           try {
-            await deleteShift(shiftId(selectedShift));
+            const selectedShiftIdValue = shiftId(selectedShift);
+            await deleteShift(selectedShiftIdValue);
+            await cancelShiftRemindersQuietly(selectedShiftIdValue);
             await reload();
             navigation.goBack();
           } catch (error) {
@@ -201,7 +244,9 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
           setIsSaving(true);
 
           try {
-            await markShiftMissed(shiftId(selectedShift), notes.trim());
+            const selectedShiftIdValue = shiftId(selectedShift);
+            await markShiftMissed(selectedShiftIdValue, notes.trim());
+            await cancelShiftRemindersQuietly(selectedShiftIdValue);
             await reload();
             navigation.goBack();
           } catch (error) {
@@ -233,6 +278,8 @@ export function AddShiftScreen({ navigation }: NativeStackScreenProps<AddStackPa
         />
         <InfoRow label="Expected hours" value={expectedHours.toFixed(2)} />
         <InfoRow label="Hourly rate" value={formatCurrency(hourlyRate)} />
+        <FormInput keyboardType="decimal-pad" label="Alert minutes before shift" onChangeText={setAlertMinutes} placeholder="Blank = off" value={alertMinutes} />
+        <InfoRow label="Missing-entry alert" value="1 hour after planned end time" />
         <FormInput label="Notes" multiline onChangeText={setNotes} placeholder="Optional notes or missed reason" value={notes} />
         <PrimaryButton isLoading={isSaving} label={selectedShift ? "Update shift" : "Save shift"} onPress={handleSave} />
         {selectedShift ? (
@@ -282,6 +329,7 @@ export function AddIncomeScreen({ navigation }: NativeStackScreenProps<AddStackP
     setIsSaving(true);
 
     try {
+      const selectedShiftIdValue = shiftId(selectedShift);
       await saveIncome({
         actualEndTime: selectedShift.end_time ?? "",
         actualHours: selectedShift.expected_hours ?? selectedShift.hours ?? 0,
@@ -290,9 +338,10 @@ export function AddIncomeScreen({ navigation }: NativeStackScreenProps<AddStackP
         incomeId: selectedShift.income_id,
         notes,
         sales: parseMoney(sales),
-        shiftId: shiftId(selectedShift),
+        shiftId: selectedShiftIdValue,
         tips: parseMoney(tips),
       });
+      await cancelShiftRemindersQuietly(selectedShiftIdValue);
       Alert.alert("Income saved", "Income was attached to the selected shift.");
       setSelectedShiftId(null);
       setSales("");

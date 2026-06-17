@@ -4,6 +4,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "./src/auth/AuthProvider";
 import { SetupErrorScreen } from "./src/components/SetupErrorScreen";
 import { getSupabaseConfig } from "./src/config/env";
+import { AppLockGate } from "./src/lib/appLock";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
 export default function App() {
@@ -13,7 +14,9 @@ export default function App() {
     <SafeAreaProvider>
       {supabaseConfig.ok ? (
         <AuthProvider>
-          <AppNavigator />
+          <AppLockGate>
+            <AppNavigator />
+          </AppLockGate>
         </AuthProvider>
       ) : (
         <SetupErrorScreen missingKeys={supabaseConfig.missingKeys} />

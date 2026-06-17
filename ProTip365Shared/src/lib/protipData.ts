@@ -55,6 +55,7 @@ export type ShiftIncome = {
   start_time: string | null;
   end_time: string | null;
   shift_status?: "planned" | "completed" | "missed";
+  alert_minutes?: number | null;
   has_earnings?: boolean;
   notes?: string | null;
 };
@@ -67,6 +68,7 @@ export type ShiftDraftInput = {
   employerId: string | null;
   hourlyRate: number;
   notes: string;
+  alertMinutes?: number | null;
 };
 
 export type IncomeInput = {
@@ -96,6 +98,7 @@ type ExpectedShiftRow = {
   hourly_rate: number;
   notes?: string | null;
   status?: "planned" | "completed" | "missed";
+  alert_minutes?: number | null;
 };
 
 type ShiftEntryRow = {
@@ -304,6 +307,7 @@ export async function listShiftIncome(limit?: number) {
       shift_date: shift.shift_date,
       shift_id: shift.id,
       shift_status: shift.status ?? (entry ? "completed" : "planned"),
+      alert_minutes: shift.alert_minutes ?? null,
       start_time: entry?.actual_start_time ?? shift.start_time,
       tip_percentage: sales > 0 ? (tips / sales) * 100 : 0,
       tips,
@@ -397,8 +401,8 @@ export async function createShift(input: ShiftDraftInput) {
   const userId = await getCurrentUserId();
   await assertEmployerBelongsToUser(input.employerId, userId);
 
-  const { error } = await client().from("expected_shifts").insert({
-    alert_minutes: null,
+  const { data, error } = await client().from("expected_shifts").insert({
+    alert_minutes: input.alertMinutes ?? null,
     employer_id: input.employerId,
     expected_hours: input.expectedHours,
     hourly_rate: input.hourlyRate,
@@ -409,11 +413,13 @@ export async function createShift(input: ShiftDraftInput) {
     end_time: input.endTime,
     status: "planned",
     user_id: userId,
-  });
+  }).select("id").single<{ id: string }>();
 
   if (error) {
     throw error;
   }
+
+  return data.id;
 }
 
 export async function updateShift(input: ShiftUpdateInput) {
@@ -433,6 +439,7 @@ export async function updateShift(input: ShiftUpdateInput) {
   const { error } = await client()
     .from("expected_shifts")
     .update({
+      alert_minutes: input.alertMinutes ?? null,
       employer_id: input.employerId,
       expected_hours: input.expectedHours,
       hourly_rate: input.hourlyRate,
