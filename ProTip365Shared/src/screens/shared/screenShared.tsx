@@ -253,13 +253,15 @@ export function DatePickerModal({ endTime, picker, setEndTime, setPicker, setShi
 }
 
 export function EmployerModal({ employers, onClose, onSelect, selectedId, visible }: { employers: Employer[]; onClose: () => void; onSelect: (id: string | null) => void; selectedId: string | null; visible: boolean }) {
+  const visibleEmployers = employers.filter((employer) => employer.active !== false || employer.id === selectedId);
+
   return (
     <Modal animationType="slide" transparent visible={visible}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <Text style={styles.formTitle}>Select employer</Text>
           <ModalOption label="No employer" onPress={() => { onSelect(null); onClose(); }} selected={!selectedId} />
-          {employers.map((employer) => (
+          {visibleEmployers.map((employer) => (
             <ModalOption key={employer.id} label={`${employer.name} - ${formatCurrency(employer.hourly_rate)}/hr`} onPress={() => { onSelect(employer.id); onClose(); }} selected={selectedId === employer.id} />
           ))}
           <PrimaryButton label="Close" onPress={onClose} />
@@ -475,6 +477,11 @@ export const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
+    gap: theme.spacing.md,
+  },
+  rowWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.md,
   },
   screen: {

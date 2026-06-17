@@ -46,6 +46,24 @@ export function SettingsScreen() {
     }
   }
 
+  function confirmArchiveEmployer(id: string, name: string) {
+    Alert.alert("Archive employer?", `${name} will be hidden from new shifts but stays visible on existing history.`, [
+      { style: "cancel", text: "Cancel" },
+      {
+        onPress: async () => {
+          try {
+            await deleteEmployer(id);
+            await reload();
+          } catch (error) {
+            Alert.alert("Archive failed", error instanceof Error ? error.message : "Could not archive employer.");
+          }
+        },
+        style: "destructive",
+        text: "Archive",
+      },
+    ]);
+  }
+
   async function signOut() {
     await getSupabaseClient()?.auth.signOut();
   }
@@ -104,11 +122,15 @@ export function SettingsScreen() {
           <View key={employer.id} style={styles.listRow}>
             <View>
               <Text style={styles.listTitle}>{employer.name}</Text>
-              <Text style={styles.body}>{formatCurrency(employer.hourly_rate)}/hr</Text>
+              <Text style={styles.body}>
+                {formatCurrency(employer.hourly_rate)}/hr{employer.active === false ? " - archived" : ""}
+              </Text>
             </View>
-            <Pressable accessibilityRole="button" onPress={() => void deleteEmployer(employer.id).then(reload)}>
-              <Text style={styles.dangerText}>Delete</Text>
-            </Pressable>
+            {employer.active === false ? null : (
+              <Pressable accessibilityRole="button" onPress={() => confirmArchiveEmployer(employer.id, employer.name)}>
+                <Text style={styles.dangerText}>Archive</Text>
+              </Pressable>
+            )}
           </View>
         ))}
       </View>

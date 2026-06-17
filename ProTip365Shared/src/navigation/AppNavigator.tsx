@@ -1,4 +1,4 @@
-import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { DefaultTheme, LinkingOptions, NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CalendarDays, CirclePlus, ClipboardList, Home, Settings } from "lucide-react-native";
@@ -30,6 +30,7 @@ import {
   YearlyReportScreen,
 } from "../screens/PlaceholderScreens";
 import { AuthScreen } from "../screens/AuthScreen";
+import { UpdatePasswordScreen } from "../screens/UpdatePasswordScreen";
 import { theme } from "../theme";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -51,6 +52,19 @@ const navigationTheme = {
     primary: theme.colors.primary,
     text: theme.colors.text,
   },
+};
+
+const linking: LinkingOptions<RootStackParamList> = {
+  config: {
+    screens: {
+      Auth: "",
+      MainTabs: "app",
+      Onboarding: "onboarding",
+      Paywall: "paywall",
+      UpdatePassword: "reset-password",
+    },
+  },
+  prefixes: ["protip365://"],
 };
 
 const stackScreenOptions = {
@@ -239,23 +253,30 @@ export function AppNavigator() {
     );
   }
 
-  if (!isSignedIn) {
-    return <AuthScreen />;
-  }
-
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <RootStack.Navigator screenOptions={stackScreenOptions}>
-        <RootStack.Screen component={MainTabs} name="MainTabs" />
+    <NavigationContainer linking={linking} theme={navigationTheme}>
+      <RootStack.Navigator initialRouteName={isSignedIn ? "MainTabs" : "Auth"} screenOptions={stackScreenOptions}>
+        {isSignedIn ? (
+          <>
+            <RootStack.Screen component={MainTabs} name="MainTabs" />
+            <RootStack.Screen
+              component={OnboardingScreen}
+              name="Onboarding"
+              options={{ ...pushedScreenOptions, title: strings.screens.onboarding }}
+            />
+            <RootStack.Screen
+              component={PaywallScreen}
+              name="Paywall"
+              options={{ ...pushedScreenOptions, title: strings.screens.paywall }}
+            />
+          </>
+        ) : (
+          <RootStack.Screen component={AuthScreen} name="Auth" />
+        )}
         <RootStack.Screen
-          component={OnboardingScreen}
-          name="Onboarding"
-          options={{ ...pushedScreenOptions, title: strings.screens.onboarding }}
-        />
-        <RootStack.Screen
-          component={PaywallScreen}
-          name="Paywall"
-          options={{ ...pushedScreenOptions, title: strings.screens.paywall }}
+          component={UpdatePasswordScreen}
+          name="UpdatePassword"
+          options={{ ...pushedScreenOptions, title: "Update password" }}
         />
       </RootStack.Navigator>
     </NavigationContainer>

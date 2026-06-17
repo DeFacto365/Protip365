@@ -2,6 +2,7 @@
   "expo": {
     "name": "ProTip365Shared",
     "slug": "ProTip365Shared",
+    "scheme": "protip365",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
