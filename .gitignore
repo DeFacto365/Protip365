@@ -8,6 +8,8 @@
 # Build artifacts
 build/
 *.xcscmblueprint
+*.keystore
+*.jks
 
 # Note: Configuration is now handled through Info.plist and build settings
 # No .env files are used in this iOS project
@@ -40,6 +42,8 @@ Carthage/
 
 # Firebase
 GoogleService-Info.plist
+google-services.json
+google-services.json.backup
 
 # Supabase
 .supabase/
@@ -47,3 +51,10 @@ GoogleService-Info.plist
 # Temporary files
 *.tmp
 *.bak
+
+# Archived backup material must not reintroduce secrets.
+Archive/**/.env
+Archive/**/*.env
+Archive/**/*.keystore
+Archive/**/*.jks
+Archive/**/google-services.json*
