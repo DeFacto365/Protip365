@@ -17,7 +17,7 @@ The landing page includes:
 3. **Accordion Showcase** - Interactive showcase with device slider
 4. **How It Works** - Step-by-step guide
 5. **App Screens** - Carousel of app screenshots
-6. **Pricing** - Subscription plans (Free, Pro Monthly, Pro Annual)
+6. **Pricing** - 30-day local trial, $19.99 one-time lifetime unlock, and Cloud Sync marked `Coming Soon`
 7. **Footer** - Links and contact information
 
 ## App Screenshots
@@ -35,7 +35,8 @@ The following ProTip365 screenshots are included:
 
 ### Updating Content
 - Edit `protip365-landing.html` to modify text content
-- Update pricing information in the pricing section
+- Keep Phase I pricing at `30 days free` and `Local lifetime — $19.99 one-time`
+- Show `Cloud Sync — Coming Soon · planned $2.99/month`; do not provide a purchase button before launch
 - Modify feature descriptions in the features section
 
 ### Updating Screenshots
