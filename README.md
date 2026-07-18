@@ -4,9 +4,9 @@ ProTip365 is being reset around a single Android-first, iOS-compatible product: 
 
 ## Current status
 
-V4 product planning and design are active. The new application has not been scaffolded yet.
+V4 implementation is in progress (owner-authorized 2026-07-17). The Phase I MVP is being built in [`app/`](app/) per [`Docs/ADR-001-v4-architecture.md`](Docs/ADR-001-v4-architecture.md) — Expo React Native + TypeScript, local SQLite, no account/network. Build to-do list: [Linear · Protip365 project](https://linear.app/defacto365/project/protip365-e3ed5a412e11/overview) (RFP-213 … RFP-217).
 
-There is intentionally no active app, Supabase runtime, or public website implementation at the repository root. The superseded V3 implementation is preserved under `Archive/v3-legacy-2026-07-17/`.
+There is intentionally no Supabase runtime or public website implementation at the repository root. The superseded V3 implementation is preserved under `Archive/v3-legacy-2026-07-17/`.
 
 ## Source of truth
 

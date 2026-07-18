@@ -97,8 +97,8 @@ Area: growth
 Acceptance:
 
 - Approve or revise “Plan every shift. Know what it actually paid.”
-- Validate the confirmed 30-day trial and USD $19.99 one-time local unlock.
-- Present future Cloud Sync as `Coming Soon` at a planned USD $2.99/month.
+- Validate the confirmed 30-day trial and the local pricing options: USD $19.99 one-time or USD $2.99/month.
+- Present future Cloud Sync as `Coming Soon`.
 - No paid acquisition is approved before retention gate.
 
 ### V4-007 — Define Phase I payout-reconciliation semantics
@@ -503,7 +503,7 @@ Acceptance:
 - Key-parity, fallback, long-string, accent, pluralization, and formatting tests pass.
 - Native-speaker review covers restaurant, tip-pool, payout, and missed-shift terms.
 
-### V4-218 — Implement 30-day trial and $19.99 lifetime unlock
+### V4-218 — Implement 30-day trial, $19.99 lifetime unlock, and $2.99/month subscription
 
 Priority: blocker
 Area: mobile/growth
@@ -512,7 +512,8 @@ Acceptance:
 
 - Every new installation receives all Phase I functionality for 30 days.
 - Apple/Google one-time product unlocks local lifetime access at the configured regional equivalent of USD $19.99.
-- After expiry, existing records remain readable and exportable while creation/editing requires unlock.
+- Apple/Google auto-renewing subscription unlocks the same local access at the configured regional equivalent of USD $2.99/month; both paid options include every Phase I feature.
+- After trial expiry or a lapsed subscription, existing records remain readable and exportable while creation/editing requires the lifetime unlock or an active subscription.
 - Purchase restore restores entitlement but never claims to restore local records.
 - Trial-reset limitations without an account are documented and tested against store capabilities.
 - No Cloud Sync subscription is sold in Phase I.
@@ -680,8 +681,8 @@ Acceptance:
 
 - Homepage, privacy, terms, support, and deletion pages return successfully over valid HTTPS.
 - Content matches actual data practices.
-- Pricing shows `30 days free` and `Local lifetime — $19.99 one-time`.
-- Cloud Sync is visibly tagged `Coming Soon · planned $2.99/month` and cannot be purchased.
+- Pricing shows `30 days free`, `Local lifetime — $19.99 one-time`, and `Local monthly — $2.99/month`.
+- Cloud Sync is visibly tagged `Coming Soon` and cannot be purchased.
 - Uptime/certificate monitoring is enabled.
 - Store listings link to the correct pages.
 
@@ -694,7 +695,7 @@ Acceptance:
 - Listing tells the six-frame PRD story.
 - Data Safety form matches implementation.
 - Privacy/support URLs and local-data-erasure instructions work.
-- One-time lifetime product and 30-day trial behavior match the app.
+- One-time lifetime product, $2.99/month subscription, and 30-day trial behavior match the app.
 - Cloud subscription is not offered.
 - Closed/open testing and production checklists pass.
 
@@ -730,7 +731,7 @@ Acceptance:
 
 - Gate 4 evidence is reviewed.
 - Retention and reliability justify launch.
-- Thirty-day trial and $19.99 local lifetime unlock are verified in both stores.
+- Thirty-day trial, $19.99 local lifetime unlock, and $2.99/month local subscription are verified in both stores.
 - Decision is explicitly launch, iterate, reposition, or stop.
 
 ## M5 — Cloud Sync (`Coming Soon`)

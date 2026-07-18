@@ -20,7 +20,7 @@ When sources disagree, flag the conflict. Do not silently choose one interpretat
 
 ## Current product boundaries
 
-- V4 is a fresh product; the active application has not been scaffolded yet.
+- V4 is a fresh product; the Phase I MVP is being scaffolded in `app/` per the approved `Docs/ADR-001-v4-architecture.md` (owner-authorized 2026-07-17).
 - Use one shared cross-platform mobile codebase.
 - Android ships first, while critical workflows must also work on iOS.
 - Phase I is local-first and uses encrypted on-device SQLite.

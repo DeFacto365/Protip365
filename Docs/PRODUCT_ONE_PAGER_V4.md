@@ -32,10 +32,10 @@ ProTip365 is a private, local-first schedule and earnings app for servers, barte
 ### Local
 
 - **30 days free**
-- **$19.99 one-time lifetime unlock**
+- **$19.99 one-time lifetime unlock — or $2.99/month**
 - One device at a time; transfer data manually with encrypted backup/restore.
-- All Phase I features, employers, shifts, statistics, languages, and exports included.
-- After trial expiry, existing records remain readable and exportable.
+- All Phase I features, employers, shifts, statistics, languages, and exports included on either paid option.
+- After trial expiry or a lapsed monthly plan, existing records remain readable and exportable.
 
 ### Cloud Sync — Coming Soon
 

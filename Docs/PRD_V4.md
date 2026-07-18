@@ -710,11 +710,22 @@ It passed typecheck, 17 tests, and Expo export for Android, iOS, and web in an i
 Recommended direction: **Shift Ledger**.
 
 - Calm, trustworthy, financial-record feel.
-- Warm off-white and dark ink surfaces with cobalt as the main action color.
+- Light mode uses a pure white background with cool lavender `#E8E7F7` cards, soft card shadows, cool-neutral secondary text, and cobalt `#2B4BD7` as the main action color (owner direction, 2026-07-17; supersedes the earlier warm off-white direction).
 - Green is reserved for confirmed positive states, not general decoration.
 - Strong numeric typography and restrained charts.
+- No rounded corners: cards, buttons, chips, and inputs use square (0-radius) corners (owner direction, 2026-07-18).
 - Large touch targets and one clear primary action per screen.
-- Dark mode is important for after-shift use.
+- Dark mode is important for after-shift use. Dark surfaces are deep cool charcoal (blue-black), never brown-on-black; primary text is white, and secondary text must keep WCAG AA contrast — no grey-on-brown combinations (owner direction, 2026-07-17).
+
+Android platform conventions (Material 3):
+
+- Use a Material 3 navigation bar with an active-indicator pill and always-visible labels.
+- Use an extended floating action button labeled `Add shift`, positioned bottom-right above the navigation bar; do not center-dock the FAB.
+- Support system and predictive back everywhere; back or dismissal never discards an in-progress actual-entry draft.
+- Use Material segmented buttons or tabs for view switching, and Material date/time pickers and exposed dropdown menus for form fields.
+- Scale all text in sp and lay out edge-to-edge with correct status-bar and gesture insets (Android 15+).
+- The fixed brand palette is an explicit decision; Material You dynamic color is not used.
+- iOS keeps the same structure with platform-appropriate navigation transitions and Human Interface touch-target minimums.
 
 Avoid:
 
@@ -734,7 +745,7 @@ Accessibility requirements:
 - reduced-motion support;
 - status communicated by text/icon as well as color;
 - keyboard-safe forms;
-- minimum 44×44 point touch targets.
+- minimum 48×48 dp touch targets on Android and 44×44 pt on iOS.
 
 ## 16. Success metrics and instrumentation
 
@@ -856,9 +867,10 @@ Proceed when:
 ### Phase I — Local
 
 - Give every new installation a 30-day free trial of all Phase I functionality.
-- After the trial, offer a USD $19.99 one-time lifetime unlock through Apple/Google in-app purchase.
-- Do not limit employers, shifts, statistics, languages, or exports during the trial or after purchase.
-- When the trial expires without purchase, keep existing data readable and exportable; disable new creation/editing until unlock.
+- After the trial, offer either a USD $19.99 one-time lifetime unlock or a USD $2.99/month auto-renewing subscription through Apple/Google in-app purchase.
+- Do not limit employers, shifts, statistics, languages, or exports during the trial or on either paid option.
+- When the trial expires without purchase, keep existing data readable and exportable; disable new creation/editing until unlock or subscription.
+- When a monthly subscription lapses, apply the same rule: existing data stays readable and exportable; new creation/editing requires resubscribing or the lifetime unlock.
 - Restoring the purchase restores the entitlement on supported store devices, not the local database.
 - Keep manual CSV export and encrypted full backup/restore available to every user, including after trial expiry.
 - Validate equivalent regional pricing in App Store Connect and Google Play before release.
@@ -867,7 +879,7 @@ Proceed when:
 
 - Planned price: USD $2.99/month.
 - Includes account-based multi-device synchronization, automatic cloud backup, recovery, and device migration.
-- All Phase I product functionality remains available in the local lifetime version.
+- All Phase I product functionality remains available in the local lifetime and monthly versions.
 - Do not sell, preorder, or start the Cloud subscription until synchronization and recovery pass release gates.
 - If a future Cloud subscription expires, preserve the current local database and disable only synchronization.
 
@@ -901,7 +913,8 @@ One-pager pricing block:
 
 - `30 days free`
 - `Local lifetime — $19.99 one-time`
-- `Cloud Sync — Coming Soon · planned $2.99/month`
+- `Local monthly — $2.99/month`
+- `Cloud Sync — Coming Soon`
 
 Proposed store title: `ProTip365 – Tip Tracker`
 Proposed subtitle: `Shifts & Real Hourly Pay`
@@ -938,7 +951,7 @@ Proposed subtitle: `Shifts & Real Hourly Pay`
 - Weekly goals, basic trends, and best-day/employer comparisons.
 - English, Canadian French, and Spanish.
 - CSV export and encrypted full backup/restore.
-- Thirty-day trial and $19.99 one-time unlock.
+- Thirty-day trial, $19.99 one-time unlock, and $2.99/month local subscription.
 - Draft recovery and idempotent local transactions.
 - Android/iOS critical-path testing.
 

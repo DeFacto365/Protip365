@@ -7,7 +7,7 @@
 **What it does:** ProTip365 gives restaurant workers one private schedule across multiple employers, then compares scheduled hours and expected earnings with user-reported start/end times, breaks, tips, payouts, and estimated net results.
 **Product category:** Tip tracker, shift tracker, server income tracker, bartender earnings tracker.
 **Product type:** Android-first mobile app with iOS parity, one Expo React Native codebase, and encrypted local-only Phase I storage.
-**Business model:** All Phase I features free for 30 days, followed by a USD $19.99 one-time lifetime unlock through Apple/Google in-app purchase. Cloud Sync is `Coming Soon`, planned at USD $2.99/month, and must not be sold before release.
+**Business model:** All Phase I features free for 30 days, followed by either a USD $19.99 one-time lifetime unlock or a USD $2.99/month subscription through Apple/Google in-app purchase. Cloud Sync is `Coming Soon` and must not be sold before release.
 
 ## Target Audience
 **Target companies:** Not company-led; buyer is the individual service worker.
@@ -65,7 +65,7 @@
 | Objection | Response |
 |-----------|----------|
 | I can use notes or a spreadsheet. | ProTip365 is faster after a shift and understands tips, sales, tip-outs, and employers without manual formulas. |
-| I do not want another subscription. | Phase I uses a 30-day trial and one USD $19.99 lifetime purchase, not a recurring subscription. |
+| I do not want another subscription. | The subscription is optional: a single USD $19.99 purchase unlocks everything for life. The USD $2.99/month plan exists only for people who prefer a lower upfront cost. |
 | I do not want my income data exposed. | Phase I needs no account and stores encrypted records locally unless the user exports them. |
 
 **Anti-persona:** Users who need full bookkeeping, payroll filing, business accounting, or employer-managed workforce scheduling.
@@ -112,6 +112,6 @@
 | Install clarity | Website and App Store copy should lead with server/bartender tip tracking |
 
 ## Goals
-**Business goal:** Validate retained local usage and convert qualified users to the lifetime unlock.
-**Conversion action:** Install, begin the 30-day trial, plan the first schedule, and purchase the local lifetime unlock after experiencing value.
+**Business goal:** Validate retained local usage and convert qualified users to the lifetime unlock or monthly plan.
+**Conversion action:** Install, begin the 30-day trial, plan the first schedule, and purchase the lifetime unlock or start the monthly plan after experiencing value.
 **Current metrics:** Unknown. Add analytics before making performance claims.

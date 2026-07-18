@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ProTip365 — Plan every shift. Know what it actually paid.</title>
 <!--
-  DRAFT — landing-page exploration (Claude, 2026-07-17). Not approved.
+  DRAFT — landing-page exploration (Claude, 2026-07-17, rev 2). Not approved.
+  Rev 2: pricing per owner direction ($19.99 once OR $2.99/month) — NOTE: this
+  conflicts with PRD/one-pager/product-marketing (single lifetime unlock only);
+  those docs must be reconciled. Added EN / FR-CA / ES language switcher and
+  lifted dark-box text contrast per Codex review.
   Before implementation:
   - Google Play URL is not verified; the CTA is a placeholder (#).
   - iOS must remain "Coming soon" until an App Store release exists.
-  - Privacy wording assumes encrypted local SQLite ships and passes release tests.
-  - Employer names in the phone mock are fictional (per UX audit: no corporate logos/brands).
+  - Privacy wording assumes encrypted local storage passes release tests.
+  - Employer names in the phone mock are fictional.
   - Fonts load from Google Fonts; self-host before production.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +27,6 @@
     --ink:#33241E;
     --ink-soft:#6B5A52;
     --coral:#D64530;
-    --coral-deep:#B93А26;
     --coral-deep:#B93826;
     --peach:#FFD9C4;
     --rose:#F6C6CE;
@@ -51,14 +54,17 @@
 
   /* ---------- header ---------- */
   header{position:sticky;top:0;z-index:20;background:rgba(251,246,239,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:68px;gap:14px}
   .logo{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:700;text-decoration:none}
   .logo em{font-style:normal;color:var(--coral)}
-  .nav-right{display:flex;align-items:center;gap:22px;font-size:.95rem}
+  .nav-right{display:flex;align-items:center;gap:18px;font-size:.95rem}
   .nav-right a{text-decoration:none;color:var(--ink-soft)}
   .nav-right a:hover{color:var(--ink)}
   .nav-cta{background:var(--ink);color:var(--cream)!important;padding:9px 18px;border-radius:999px;font-weight:600}
   .nav-cta:hover{background:#000}
+  .lang{display:flex;gap:2px;background:var(--cream-deep);border-radius:999px;padding:3px}
+  .lang button{border:0;background:transparent;font:inherit;font-size:.8rem;font-weight:600;color:var(--ink-soft);padding:5px 10px;border-radius:999px;cursor:pointer}
+  .lang button.on{background:#fff;color:var(--ink);box-shadow:0 2px 5px rgba(51,36,30,.15)}
 
   /* ---------- hero ---------- */
   .hero{position:relative;overflow:hidden}
@@ -112,7 +118,7 @@
   .shift .init{width:30px;height:30px;border-radius:9px;background:var(--cream-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.72rem;flex-shrink:0}
   .shift .who{flex:1;min-width:0}
   .shift .who b{display:block;font-size:.76rem}
-  .shift .who span{font-size:.62rem;color:var(--ink-soft)}
+  .shift .who span{font-size:.6rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   .shift .amt{text-align:right}
   .shift .amt b{font-size:.8rem;display:block}
   .shift .amt span{font-size:.58rem;color:var(--ink-soft)}
@@ -152,9 +158,9 @@
   }
   .assure h2{font-size:clamp(1.5rem,2.8vw,2rem);margin-bottom:12px}
   .assure .price em{font-style:normal;color:var(--peach)}
-  .assure p{color:#D9CCC0;font-size:.98rem;max-width:26rem}
+  .assure p{color:#F2ECE5;font-size:.98rem;max-width:26rem}
   .assure ul{list-style:none;display:grid;gap:14px}
-  .assure li{display:flex;gap:12px;align-items:flex-start;font-size:.97rem}
+  .assure li{display:flex;gap:12px;align-items:flex-start;font-size:.97rem;color:#FBF6EF}
   .assure li svg{flex-shrink:0;margin-top:3px}
 
   /* ---------- final cta ---------- */
@@ -177,6 +183,10 @@
     .b-grid{grid-template-columns:1fr;max-width:30rem;margin:0 auto}
     .assure-box{grid-template-columns:1fr;padding:36px 30px}
   }
+  @media (max-width:560px){
+    .nav-right a:not(.nav-cta){display:none}
+    .chip.cash{display:none}
+  }
 </style>
 </head>
 <body>
@@ -185,9 +195,14 @@
   <div class="wrap nav">
     <a class="logo" href="#">Pro<em>Tip</em>365</a>
     <nav class="nav-right" aria-label="Site">
-      <a href="#privacy-pricing">Privacy &amp; pricing</a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="on">EN</button>
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="es">ES</button>
+      </div>
+      <a href="#privacy-pricing" data-i18n="nav_privacy">Privacy &amp; pricing</a>
       <!-- Production Google Play URL not verified — placeholder link -->
-      <a class="nav-cta" href="#">Get the app</a>
+      <a class="nav-cta" href="#" data-i18n="nav_cta">Get the app</a>
     </nav>
   </div>
 </header>
@@ -196,13 +211,16 @@
   <section class="hero">
     <div class="wrap hero-grid">
       <div>
-        <p class="eyebrow">For servers &amp; bartenders</p>
-        <h1>Plan every shift.<br>Know what it
-          <span class="accent">actually
+        <p class="eyebrow" data-i18n="eyebrow">For servers &amp; bartenders</p>
+        <h1>
+          <span data-i18n="h1_l1">Plan every shift.</span><br>
+          <span data-i18n="h1_pre">Know what it</span>
+          <span class="accent"><span data-i18n="h1_accent">actually</span>
             <svg viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10 C 30 3, 60 12, 117 5" fill="none" stroke="#D64530" stroke-width="4" stroke-linecap="round"/></svg>
           </span>
-        paid.</h1>
-        <p class="lead">One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.</p>
+          <span data-i18n="h1_post">paid.</span>
+        </h1>
+        <p class="lead" data-i18n="lead">One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.</p>
         <div class="cta-row">
           <!-- Production Google Play URL not verified — placeholder link -->
           <a class="play-btn" href="#" aria-label="Get ProTip365 on Google Play">
@@ -212,74 +230,74 @@
               <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#C9BCE8"/>
               <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D64530"/>
             </svg>
-            <span><small>GET IT ON</small><span class="big">Google Play</span></span>
+            <span><small data-i18n="play_small">GET IT ON</small><span class="big">Google Play</span></span>
           </a>
-          <p class="ios-note"><strong>Coming soon for iOS.</strong><br>Same app, same records.</p>
+          <p class="ios-note" data-i18n-html="ios_note"><strong>Coming soon for iOS.</strong><br>Same app, same records.</p>
         </div>
       </div>
 
       <div class="phone-zone">
         <div class="phone" role="img" aria-label="ProTip365 schedule screen showing shifts from three employers with expected and actual earnings">
           <div class="p-status"><span>9:41</span><span>100%</span></div>
-          <div class="p-head"><h3>Schedule</h3><span class="plus" aria-hidden="true">+</span></div>
-          <div class="p-tabs" aria-hidden="true"><span class="on">Agenda</span><span>Week</span><span>Day</span></div>
+          <div class="p-head"><h3 data-i18n="m_schedule">Schedule</h3><span class="plus" aria-hidden="true">+</span></div>
+          <div class="p-tabs" aria-hidden="true"><span class="on" data-i18n="m_tab1">Agenda</span><span data-i18n="m_tab2">Week</span><span data-i18n="m_tab3">Day</span></div>
           <div class="p-week" aria-hidden="true">
-            <span class="dot">M<b>13</b></span><span>T<b>14</b></span><span class="dot">W<b>15</b></span>
-            <span class="dot">T<b>16</b></span><span class="today dot">F<b>17</b></span><span class="dot">S<b>18</b></span><span>S<b>19</b></span>
+            <span class="dot"><span data-i18n="m_w1">M</span><b>13</b></span><span><span data-i18n="m_w2">T</span><b>14</b></span><span class="dot"><span data-i18n="m_w3">W</span><b>15</b></span>
+            <span class="dot"><span data-i18n="m_w4">T</span><b>16</b></span><span class="today dot"><span data-i18n="m_w5">F</span><b>17</b></span><span class="dot"><span data-i18n="m_w6">S</span><b>18</b></span><span><span data-i18n="m_w7">S</span><b>19</b></span>
           </div>
           <div class="p-sum" aria-hidden="true">
-            <div><b>26.5 h</b><small>SCHEDULED</small></div>
-            <div><b>$718</b><small>EXPECTED</small></div>
+            <div><b>26.5 h</b><small data-i18n="m_sched">SCHEDULED</small></div>
+            <div><b>$718</b><small data-i18n="m_exp">EXPECTED</small></div>
           </div>
-          <div class="p-day" aria-hidden="true"><span>Friday, Jul 17</span><span>$172 expected</span></div>
+          <div class="p-day" aria-hidden="true"><span data-i18n="m_day1">Friday, Jul 17</span><span data-i18n="m_day1r">$172 expected</span></div>
           <div class="shift" aria-hidden="true">
             <span class="init">MR</span>
-            <span class="who"><b>Maple Room</b><span>Server · 5:00 PM – 11:00 PM</span></span>
-            <span class="amt"><span class="badge sched">SCHEDULED</span><b>$172</b><span>expected</span></span>
+            <span class="who"><b>Maple Room</b><span data-i18n="m_role1">Server · 5:00 PM – 11:00 PM</span></span>
+            <span class="amt"><span class="badge sched" data-i18n="m_badge_s">SCHEDULED</span><b>$172</b><span data-i18n="m_expsm">expected</span></span>
           </div>
-          <div class="p-day" aria-hidden="true"><span>Saturday, Jul 18</span><span>$210 expected</span></div>
+          <div class="p-day" aria-hidden="true"><span data-i18n="m_day2">Saturday, Jul 18</span><span data-i18n="m_day2r">$210 expected</span></div>
           <div class="shift rose" aria-hidden="true">
             <span class="init">BC</span>
-            <span class="who"><b>Bar Céleste</b><span>Bartender · 8:00 PM – 2:00 AM</span></span>
-            <span class="amt"><span class="badge sched">SCHEDULED</span><b>$210</b><span>expected</span></span>
+            <span class="who"><b>Bar Céleste</b><span data-i18n="m_role2">Bartender · 8 PM – 2 AM</span></span>
+            <span class="amt"><span class="badge sched" data-i18n="m_badge_s2">SCHEDULED</span><b>$210</b><span data-i18n="m_expsm2">expected</span></span>
           </div>
-          <div class="p-day" aria-hidden="true"><span>Thursday, Jul 16</span><span>done</span></div>
+          <div class="p-day" aria-hidden="true"><span data-i18n="m_day3">Thursday, Jul 16</span><span data-i18n="m_day3r">done</span></div>
           <div class="shift teal" aria-hidden="true">
             <span class="init">JP</span>
-            <span class="who"><b>Juniper's</b><span>Server · 6:00 PM – 12:00 AM</span></span>
-            <span class="amt"><span class="badge done">COMPLETED</span><b>$181</b><span>vs $158 expected</span></span>
+            <span class="who"><b>Juniper's</b><span data-i18n="m_role3">Server · 6:00 PM – 12:00 AM</span></span>
+            <span class="amt"><span class="badge done" data-i18n="m_badge_d">COMPLETED</span><b>$181</b><span data-i18n="m_vs">vs $158 expected</span></span>
           </div>
         </div>
-        <div class="chip up" aria-hidden="true"><span class="pos">+$23</span> vs expected<small>Juniper's · Thursday</small></div>
-        <div class="chip cash" aria-hidden="true">$86 cash · $95 card<small>logged in 20 seconds</small></div>
+        <div class="chip up" aria-hidden="true" data-i18n-html="chip_up"><span class="pos">+$23</span> vs expected<small>Juniper's · Thursday</small></div>
+        <div class="chip cash" aria-hidden="true" data-i18n-html="chip_cash">$86 cash · $95 card<small>logged in 20 seconds</small></div>
       </div>
     </div>
   </section>
 
   <section class="benefits" aria-labelledby="benefits-title">
     <div class="wrap">
-      <h2 id="benefits-title">Made for the way tipped work actually works</h2>
+      <h2 id="benefits-title" data-i18n="ben_h2">Made for the way tipped work actually works</h2>
       <div class="b-grid">
         <article class="b-card">
           <div class="b-icon a" aria-hidden="true">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B4622A" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           </div>
-          <h3>Every job, one week</h3>
-          <p>Two jobs? Three? See all your shifts in one calendar, color-coded by employer — and copy a week forward when the schedule repeats.</p>
+          <h3 data-i18n="b1_h">Every job, one week</h3>
+          <p data-i18n="b1_p">Two jobs? Three? See all your shifts in one calendar, color-coded by employer — and copy a week forward when the schedule repeats.</p>
         </article>
         <article class="b-card">
           <div class="b-icon b" aria-hidden="true">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B4384E" stroke-width="2" stroke-linecap="round"><path d="M4 19V10M10 19V5M16 19v-8M21 19H3"/></svg>
           </div>
-          <h3>Tonight, in real numbers</h3>
-          <p>After close, enter your actual start, end, breaks, and tips. ProTip365 shows your real hourly rate and how the night compared with what you expected.</p>
+          <h3 data-i18n="b2_h">Tonight, in real numbers</h3>
+          <p data-i18n="b2_p">After close, enter your actual start, end, breaks, and tips. ProTip365 shows your real hourly rate and how the night compared with what you expected.</p>
         </article>
         <article class="b-card">
           <div class="b-icon c" aria-hidden="true">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5B4A96" stroke-width="2" stroke-linecap="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
           </div>
-          <h3>Yours alone</h3>
-          <p>No account, no login, no cloud. Your records stay encrypted on your phone — export a CSV or an encrypted backup whenever you want.</p>
+          <h3 data-i18n="b3_h">Yours alone</h3>
+          <p data-i18n="b3_p">No account, no login, no cloud. Your records stay encrypted on your phone — export a CSV or an encrypted backup whenever you want.</p>
         </article>
       </div>
     </div>
@@ -289,13 +307,13 @@
     <div class="wrap">
       <div class="assure-box">
         <div>
-          <h2 id="assure-title" class="price">30 days free. Then <em>$19.99 — once.</em></h2>
-          <p>No subscription. If you stop paying attention to us, your records stay readable and exportable. That's the deal.</p>
+          <h2 id="assure-title" class="price" data-i18n-html="price_h2">30 days free. Then <em>$19.99 once — or $2.99/month.</em></h2>
+          <p data-i18n="price_p">Your choice, no pressure. Either way every feature is included — and if you ever stop, your records stay readable and exportable. That's the deal.</p>
         </div>
         <ul>
-          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>Every feature included — employers, tips, tip-outs, stats, export.</li>
-          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>Optional passcode and fingerprint or face unlock.</li>
-          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>English, Français (Canada), and Español.</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg><span data-i18n="li1">Every feature included — employers, tips, tip-outs, stats, export.</span></li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg><span data-i18n="li2">Optional passcode and fingerprint or face unlock.</span></li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD9C4" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg><span data-i18n="li3">English, Français (Canada), and Español.</span></li>
         </ul>
       </div>
     </div>
@@ -303,7 +321,7 @@
 
   <section class="final">
     <div class="wrap">
-      <h2>Your next shift is coming.<br>Know what it pays.</h2>
+      <h2 data-i18n-html="final_h2">Your next shift is coming.<br>Know what it pays.</h2>
       <div class="cta-row">
         <!-- Production Google Play URL not verified — placeholder link -->
         <a class="play-btn" href="#" aria-label="Get ProTip365 on Google Play">
@@ -313,9 +331,9 @@
             <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#C9BCE8"/>
             <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D64530"/>
           </svg>
-          <span><small>GET IT ON</small><span class="big">Google Play</span></span>
+          <span><small data-i18n="play_small2">GET IT ON</small><span class="big">Google Play</span></span>
         </a>
-        <p class="ios-note"><strong>Coming soon for iOS.</strong></p>
+        <p class="ios-note"><strong data-i18n="ios_short">Coming soon for iOS.</strong></p>
       </div>
     </div>
   </section>
@@ -325,11 +343,142 @@
   <div class="wrap foot">
     <span>© 2026 ProTip365</span>
     <nav aria-label="Legal">
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
+      <a href="#" data-i18n="f_privacy">Privacy</a>
+      <a href="#" data-i18n="f_terms">Terms</a>
     </nav>
   </div>
 </footer>
 
+<script>
+(function(){
+  var T = {
+    en: {
+      nav_privacy:"Privacy & pricing", nav_cta:"Get the app",
+      eyebrow:"For servers & bartenders",
+      h1_l1:"Plan every shift.", h1_pre:"Know what it", h1_accent:"actually", h1_post:"paid.",
+      lead:"One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.",
+      play_small:"GET IT ON", play_small2:"GET IT ON",
+      ios_note:"<strong>Coming soon for iOS.</strong><br>Same app, same records.",
+      m_schedule:"Schedule", m_tab1:"Agenda", m_tab2:"Week", m_tab3:"Day",
+      m_w1:"M", m_w2:"T", m_w3:"W", m_w4:"T", m_w5:"F", m_w6:"S", m_w7:"S",
+      m_sched:"SCHEDULED", m_exp:"EXPECTED",
+      m_day1:"Friday, Jul 17", m_day1r:"$172 expected",
+      m_day2:"Saturday, Jul 18", m_day2r:"$210 expected",
+      m_day3:"Thursday, Jul 16", m_day3r:"done",
+      m_role1:"Server · 5:00 PM – 11:00 PM", m_role2:"Bartender · 8 PM – 2 AM", m_role3:"Server · 6:00 PM – 12:00 AM",
+      m_badge_s:"SCHEDULED", m_badge_s2:"SCHEDULED", m_badge_d:"COMPLETED",
+      m_expsm:"expected", m_expsm2:"expected", m_vs:"vs $158 expected",
+      chip_up:'<span class="pos">+$23</span> vs expected<small>Juniper’s · Thursday</small>',
+      chip_cash:"$86 cash · $95 card<small>logged in 20 seconds</small>",
+      ben_h2:"Made for the way tipped work actually works",
+      b1_h:"Every job, one week",
+      b1_p:"Two jobs? Three? See all your shifts in one calendar, color-coded by employer — and copy a week forward when the schedule repeats.",
+      b2_h:"Tonight, in real numbers",
+      b2_p:"After close, enter your actual start, end, breaks, and tips. ProTip365 shows your real hourly rate and how the night compared with what you expected.",
+      b3_h:"Yours alone",
+      b3_p:"No account, no login, no cloud. Your records stay encrypted on your phone — export a CSV or an encrypted backup whenever you want.",
+      price_h2:"30 days free. Then <em>$19.99 once — or $2.99/month.</em>",
+      price_p:"Your choice, no pressure. Either way every feature is included — and if you ever stop, your records stay readable and exportable. That's the deal.",
+      li1:"Every feature included — employers, tips, tip-outs, stats, export.",
+      li2:"Optional passcode and fingerprint or face unlock.",
+      li3:"English, Français (Canada), and Español.",
+      final_h2:"Your next shift is coming.<br>Know what it pays.",
+      ios_short:"Coming soon for iOS.",
+      f_privacy:"Privacy", f_terms:"Terms"
+    },
+    fr: {
+      nav_privacy:"Confidentialité et prix", nav_cta:"Obtenir l’app",
+      eyebrow:"Pour serveuses, serveurs et bartenders",
+      h1_l1:"Planifiez chaque quart.", h1_pre:"Sachez ce qu’il a", h1_accent:"vraiment", h1_post:"rapporté.",
+      lead:"Un seul horaire privé pour tous vos emplois. Entrez vos pourboires après la fermeture — comptant, carte et tip-out — et voyez ce que chaque quart a vraiment rapporté.",
+      play_small:"DISPONIBLE SUR", play_small2:"DISPONIBLE SUR",
+      ios_note:"<strong>Bientôt offert sur iOS.</strong><br>Même app, mêmes données.",
+      m_schedule:"Horaire", m_tab1:"Agenda", m_tab2:"Semaine", m_tab3:"Jour",
+      m_w1:"L", m_w2:"M", m_w3:"M", m_w4:"J", m_w5:"V", m_w6:"S", m_w7:"D",
+      m_sched:"PRÉVU", m_exp:"ATTENDU",
+      m_day1:"vendredi 17 juill.", m_day1r:"172 $ attendus",
+      m_day2:"samedi 18 juill.", m_day2r:"210 $ attendus",
+      m_day3:"jeudi 16 juill.", m_day3r:"fait",
+      m_role1:"Service · 17 h – 23 h", m_role2:"Bar · 20 h – 2 h", m_role3:"Service · 18 h – minuit",
+      m_badge_s:"PRÉVU", m_badge_s2:"PRÉVU", m_badge_d:"TRAVAILLÉ",
+      m_expsm:"attendu", m_expsm2:"attendu", m_vs:"vs 158 $ attendus",
+      chip_up:'<span class="pos">+23 $</span> vs attendu<small>Juniper’s · jeudi</small>',
+      chip_cash:"86 $ comptant · 95 $ carte<small>saisi en 20 secondes</small>",
+      ben_h2:"Pensée pour la vraie réalité du travail au pourboire",
+      b1_h:"Tous vos emplois, une seule semaine",
+      b1_p:"Deux emplois? Trois? Tous vos quarts dans un seul calendrier, codés par couleur selon l’employeur — et copiez la semaine quand l’horaire se répète.",
+      b2_h:"Ce soir, en vrais chiffres",
+      b2_p:"Après la fermeture, entrez vos heures réelles, vos pauses et vos pourboires. ProTip365 calcule votre taux horaire réel et compare la soirée à ce que vous attendiez.",
+      b3_h:"À vous, un point c’est tout",
+      b3_p:"Pas de compte, pas de mot de passe, pas d’infonuagique. Vos données restent chiffrées sur votre téléphone — exportez un CSV ou une sauvegarde chiffrée quand vous voulez.",
+      price_h2:"30 jours gratuits. Ensuite <em>19,99&nbsp;$ une seule fois — ou 2,99&nbsp;$/mois.</em>",
+      price_p:"À votre choix, sans pression. Dans les deux cas, tout est inclus — et si vous arrêtez, vos données restent lisibles et exportables. C’est ça, l’entente.",
+      li1:"Tout est inclus — employeurs, pourboires, tip-out, statistiques, export.",
+      li2:"NIP optionnel et déverrouillage par empreinte ou visage.",
+      li3:"English, Français (Canada) et Español.",
+      final_h2:"Votre prochain quart s’en vient.<br>Sachez ce qu’il paie.",
+      ios_short:"Bientôt offert sur iOS.",
+      f_privacy:"Confidentialité", f_terms:"Conditions"
+    },
+    es: {
+      nav_privacy:"Privacidad y precios", nav_cta:"Descargar la app",
+      eyebrow:"Para meseras, meseros y bartenders",
+      h1_l1:"Planea cada turno.", h1_pre:"Descubre lo que", h1_accent:"de verdad", h1_post:"te dejó.",
+      lead:"Un solo horario privado para todos tus trabajos. Registra tus propinas al cerrar — efectivo, tarjeta y tip-outs — y descubre cuánto valió realmente cada turno.",
+      play_small:"DISPONIBLE EN", play_small2:"DISPONIBLE EN",
+      ios_note:"<strong>Muy pronto en iOS.</strong><br>La misma app, los mismos registros.",
+      m_schedule:"Horario", m_tab1:"Agenda", m_tab2:"Semana", m_tab3:"Día",
+      m_w1:"L", m_w2:"M", m_w3:"M", m_w4:"J", m_w5:"V", m_w6:"S", m_w7:"D",
+      m_sched:"PROGRAMADO", m_exp:"ESPERADO",
+      m_day1:"viernes 17 jul", m_day1r:"$172 esperados",
+      m_day2:"sábado 18 jul", m_day2r:"$210 esperados",
+      m_day3:"jueves 16 jul", m_day3r:"listo",
+      m_role1:"Mesera · 5:00 PM – 11:00 PM", m_role2:"Bartender · 8 PM – 2 AM", m_role3:"Mesera · 6:00 PM – 12:00 AM",
+      m_badge_s:"PROGRAMADO", m_badge_s2:"PROGRAMADO", m_badge_d:"TRABAJADO",
+      m_expsm:"esperado", m_expsm2:"esperado", m_vs:"vs $158 esperados",
+      chip_up:'<span class="pos">+$23</span> vs esperado<small>Juniper’s · jueves</small>',
+      chip_cash:"$86 efectivo · $95 tarjeta<small>registrado en 20 segundos</small>",
+      ben_h2:"Hecha para cómo funciona de verdad el trabajo con propinas",
+      b1_h:"Todos tus trabajos, una sola semana",
+      b1_p:"¿Dos trabajos? ¿Tres? Mira todos tus turnos en un solo calendario, con un color por empleador — y copia la semana cuando el horario se repite.",
+      b2_h:"Esta noche, en números reales",
+      b2_p:"Al cerrar, registra tus horas reales, descansos y propinas. ProTip365 muestra tu tarifa real por hora y cómo salió la noche frente a lo que esperabas.",
+      b3_h:"Tuyo y de nadie más",
+      b3_p:"Sin cuenta, sin contraseña, sin nube. Tus registros quedan cifrados en tu teléfono — exporta un CSV o un respaldo cifrado cuando quieras.",
+      price_h2:"30 días gratis. Luego <em>$19.99 una sola vez — o $2.99 al mes.</em>",
+      price_p:"Tú eliges, sin presión. En ambos casos todo está incluido — y si algún día lo dejas, tus registros siguen legibles y exportables. Ese es el trato.",
+      li1:"Todo incluido — empleadores, propinas, tip-outs, estadísticas, exportación.",
+      li2:"Código opcional y desbloqueo con huella o rostro.",
+      li3:"English, Français (Canada) y Español.",
+      final_h2:"Tu próximo turno ya viene.<br>Sabe cuánto paga.",
+      ios_short:"Muy pronto en iOS.",
+      f_privacy:"Privacidad", f_terms:"Términos"
+    }
+  };
+  function setLang(lang){
+    var t = T[lang] || T.en;
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var k = el.getAttribute('data-i18n');
+      if (t[k] !== undefined) el.textContent = t[k];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){
+      var k = el.getAttribute('data-i18n-html');
+      if (t[k] !== undefined) el.innerHTML = t[k];
+    });
+    document.documentElement.lang = lang === 'fr' ? 'fr-CA' : lang;
+    document.querySelectorAll('.lang button').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-lang') === lang);
+    });
+    try { localStorage.setItem('pt365-lang', lang); } catch(e){}
+  }
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click', function(){ setLang(b.getAttribute('data-lang')); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('pt365-lang'); } catch(e){}
+  var auto = (navigator.language || 'en').slice(0,2).toLowerCase();
+  setLang(saved || (T[auto] ? auto : 'en'));
+})();
+</script>
 </body>
 </html>
