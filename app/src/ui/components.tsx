@@ -14,32 +14,33 @@ import type { ShiftStatus } from '../domain/types';
 import { useTranslation } from 'react-i18next';
 
 import i18n from '../i18n';
+import { getActiveCurrency } from '../domain/currency';
 
-/** DEF-04: locale-aware currency formatting. CAD is the launch default currency. */
-const CURRENCY = 'CAD';
 const formatterCache = new Map<string, Intl.NumberFormat>();
 
 function currencyFormatter(): Intl.NumberFormat {
   const locale = i18n.language || 'en';
-  let cached = formatterCache.get(locale);
+  const currency = getActiveCurrency();
+  const cacheKey = `${locale}|${currency}`;
+  let cached = formatterCache.get(cacheKey);
   if (!cached) {
     try {
       cached = new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: CURRENCY,
+        currency,
         currencyDisplay: 'narrowSymbol',
       });
     } catch {
       // Older Intl implementations may reject narrowSymbol.
-      cached = new Intl.NumberFormat(locale, { style: 'currency', currency: CURRENCY });
+      cached = new Intl.NumberFormat(locale, { style: 'currency', currency });
     }
-    formatterCache.set(locale, cached);
+    formatterCache.set(cacheKey, cached);
   }
   return cached;
 }
 
-export function money(amount: number): string {
-  return currencyFormatter().format(amount);
+export function money(cents: number): string {
+  return currencyFormatter().format(cents / 100);
 }
 
 export function signedMoney(amount: number): string {
@@ -100,7 +101,7 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: danger ? t.danger : t.cobalt,
+          backgroundColor: danger ? t.dangerBg : t.cobalt,
           opacity: disabled ? 0.45 : pressed ? 0.85 : 1,
         },
         style,
@@ -122,8 +123,9 @@ export function GhostButton({
   danger?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { t } = useTokens();
+  const { t, isDark } = useTokens();
   const color = danger ? t.danger : t.cobaltLink;
+  const borderColor = danger ? t.dangerBg : isDark ? t.cobalt : t.cobaltLink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -131,7 +133,7 @@ export function GhostButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: color, opacity: pressed ? 0.7 : 1 },
+        { backgroundColor: 'transparent', borderWidth: 1.5, borderColor, opacity: pressed ? 0.7 : 1 },
         style,
       ]}
     >
@@ -179,7 +181,7 @@ export function statusChipColors(status: ShiftStatus, t: Tokens): { bg: string; 
   switch (status) {
     case 'worked':
       return { bg: t.greenSoft, fg: t.green };
-    case 'scheduled':
+    case 'planned':
       return { bg: t.cobaltSoft, fg: t.cobaltLink };
     case 'missed':
     case 'cancelled':
@@ -221,7 +223,7 @@ export function Field({
           styles.input,
           {
             backgroundColor: t.bg,
-            borderColor: error ? t.danger : t.line,
+            borderColor: error ? t.dangerBg : t.line,
             color: t.ink,
           },
         ]}
@@ -230,16 +232,21 @@ export function Field({
         <Text style={{ color: t.softText, fontSize: 11, marginTop: 3 }}>{hint}</Text>
       ) : null}
       {error ? (
-        <Text style={{ color: t.danger, fontSize: 11, marginTop: 3 }}>{error}</Text>
+        <Text style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 4, fontSize: 11, marginTop: 3 }}>
+          {error}
+        </Text>
       ) : null}
     </View>
   );
 }
 
 export function Avatar({ name, color }: { name: string; color: string }) {
+  const { isDark } = useTokens();
   return (
-    <View style={[styles.avatar, { backgroundColor: `${color}33` }]}>
-      <Text style={{ color, fontWeight: '700', fontSize: 12 }}>{initials(name)}</Text>
+    <View style={[styles.avatar, { backgroundColor: isDark ? color : `${color}33` }]}>
+      <Text style={{ color: isDark ? '#FFFFFF' : color, fontWeight: '700', fontSize: 12 }}>
+        {initials(name)}
+      </Text>
     </View>
   );
 }

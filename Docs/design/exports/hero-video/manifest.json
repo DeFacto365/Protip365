@@ -1,0 +1,57 @@
+{
+  "name": "ProTip365 landing-page hero loop",
+  "generatedAt": "2026-07-18T17:27:03Z",
+  "canvas": {
+    "width": 720,
+    "height": 900,
+    "aspectRatio": "4:5",
+    "framesPerSecond": 30,
+    "durationSeconds": 10.07,
+    "audio": false,
+    "loopFriendly": true
+  },
+  "creative": {
+    "placement": "Right-hand landing-page hero media",
+    "sequence": [
+      "Agenda: all jobs in one week",
+      "Week: $742 expected across 29.5 hours",
+      "Agenda detail: +$13 actual versus expected",
+      "Privacy: no account required"
+    ],
+    "sourceScreens": [
+      "../../approved/schedule-agenda.png",
+      "../../approved/schedule-week.png"
+    ],
+    "brandReference": "https://protip365.vercel.app/"
+  },
+  "files": [
+    {
+      "path": "protip365-hero-loop-720x900.webm",
+      "mimeType": "video/webm",
+      "codec": "VP9",
+      "bytes": 2717347,
+      "sha256": "4638bcbe3a7019b646497ac32853a4bd5270f4b9555e84f40f949ba4ddae2ce6"
+    },
+    {
+      "path": "protip365-hero-loop-720x900.mp4",
+      "mimeType": "video/mp4",
+      "codec": "H.264 baseline",
+      "bytes": 5143995,
+      "sha256": "db6ab19e3cb7cb8a81849efa8dccf85fae6230cce75a1faa32daabe980061f11"
+    },
+    {
+      "path": "protip365-hero-loop-poster-720x900.png",
+      "mimeType": "image/png",
+      "posterTimeSeconds": 4.25,
+      "bytes": 561693,
+      "sha256": "dd3f6721bbb39bfca32e93143b2eec9edf313a5e87e72554d2df723e72b296e3"
+    },
+    {
+      "path": "protip365-hero-loop-source.html",
+      "mimeType": "text/html",
+      "purpose": "Deterministic canvas preview and exporter",
+      "bytes": 12744,
+      "sha256": "9a238af149609f148300054b04b1ec74e79d2248f485897a69f279a33eeac424"
+    }
+  ]
+}

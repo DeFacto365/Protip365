@@ -1,11 +1,25 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Text, type ColorValue } from 'react-native';
+import { Text, View, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTokens } from '../../src/ui/tokens';
 
-function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{glyph}</Text>;
+function TabIcon({ glyph, color, focused }: { glyph: string; color: ColorValue; focused: boolean }) {
+  const { t } = useTokens();
+  return (
+    <View
+      style={{
+        width: 64,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: focused ? t.cobaltSoft : 'transparent',
+      }}
+    >
+      <Text style={{ fontSize: 20, color }}>{glyph}</Text>
+    </View>
+  );
 }
 
 export default function TabsLayout() {
@@ -35,21 +49,21 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: tr('tabs.schedule'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="▦" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon glyph="▦" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
           title: tr('tabs.stats'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="◫" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon glyph="◫" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: tr('tabs.settings'),
-          tabBarIcon: ({ color }) => <TabIcon glyph="⚙" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon glyph="⚙" color={color} focused={focused} />,
         }}
       />
     </Tabs>

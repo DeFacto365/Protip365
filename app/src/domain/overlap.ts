@@ -35,7 +35,7 @@ export function shiftsOverlap(a: OverlapCandidate, b: OverlapCandidate): boolean
 
 /** Statuses that occupy time on the schedule; missed/cancelled shifts do not. */
 function occupiesTime(s: Shift): boolean {
-  return s.status === 'scheduled' || s.status === 'worked';
+  return s.status === 'planned' || s.status === 'worked';
 }
 
 /**

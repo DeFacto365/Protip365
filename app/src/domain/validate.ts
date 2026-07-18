@@ -12,7 +12,9 @@ export type ValidationError =
   | 'break_outside_shift'
   | 'breaks_overlap'
   | 'unpaid_breaks_exceed_shift'
-  | 'negative_amount';
+  | 'negative_amount'
+  | 'rate_not_positive'
+  | 'deduction_out_of_range';
 
 export interface ValidationResult {
   valid: boolean;
@@ -103,6 +105,17 @@ export function validateMoney(
     }
   }
   return { valid: errors.length === 0, errors };
+}
+
+export function validateHourlyRateCents(rate: number | null): ValidationResult {
+  const valid = rate != null && Number.isSafeInteger(rate) && rate > 0;
+  return { valid, errors: valid ? [] : ['rate_not_positive'] };
+}
+
+export function validateDeductionBasisPoints(basisPoints: number): ValidationResult {
+  const valid =
+    Number.isInteger(basisPoints) && basisPoints >= 0 && basisPoints <= 10000;
+  return { valid, errors: valid ? [] : ['deduction_out_of_range'] };
 }
 
 /** Combine several validation results into one. */

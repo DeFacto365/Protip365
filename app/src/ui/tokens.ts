@@ -23,6 +23,8 @@ export interface Tokens {
   /** Pending amounts. */
   amber: string;
   amberSoft: string;
+  /** Destructive background/border; `danger` remains a text foreground. */
+  dangerBg: string;
   danger: string;
   fabText: string;
 }
@@ -41,6 +43,7 @@ export const light: Tokens = {
   greenSoft: '#DFF0E8',
   amber: '#C97A10',
   amberSoft: '#F7E8D2',
+  dangerBg: '#B3362B',
   danger: '#B3362B',
   fabText: '#FFFFFF',
 };
@@ -54,13 +57,14 @@ export const dark: Tokens = {
   ink: '#FFFFFF',
   softText: '#FFFFFF',
   cobalt: '#4C67E8', // buttons
-  cobaltLink: '#9DB1FF', // links/accents
-  cobaltSoft: '#232C4E',
-  green: '#42D99B',
-  greenSoft: '#12332A',
-  amber: '#F5BB55',
-  amberSoft: '#3A3012',
-  danger: '#E06A5A',
+  cobaltLink: '#FFFFFF',
+  cobaltSoft: '#2B4BD7',
+  green: '#FFFFFF',
+  greenSoft: '#1E7A5A',
+  amber: '#FFFFFF',
+  amberSoft: '#875008',
+  dangerBg: '#B3362B',
+  danger: '#FFFFFF',
   fabText: '#FFFFFF',
 };
 

@@ -29,8 +29,8 @@ const baseShift = (overrides: Partial<Shift> = {}): Shift => ({
   startMin: 17 * 60, // 17:00
   endMin: 23 * 60, // 23:00
   breaks: [],
-  hourlyRateSnapshot: 20,
-  status: 'scheduled',
+  hourlyRateSnapshot: 2000,
+  status: 'planned',
   ...overrides,
 });
 
@@ -134,10 +134,10 @@ describe('expectedEarnings', () => {
       startMin: 9 * 60,
       endMin: 17 * 60,
       breaks: [brk(12 * 60, 30, false)],
-      hourlyRateSnapshot: 16,
+      hourlyRateSnapshot: 1600,
     });
     // 7.5h × 16 = 120
-    expect(expectedEarnings(shift)).toBe(120);
+    expect(expectedEarnings(shift)).toBe(12000);
   });
 
   it('overnight expected earnings (18:00–00:20 @ $15, no breaks)', () => {
@@ -145,10 +145,18 @@ describe('expectedEarnings', () => {
       startMin: 18 * 60,
       endMin: 20,
       breaks: [],
-      hourlyRateSnapshot: 15,
+      hourlyRateSnapshot: 1500,
     });
-    expect(expectedEarnings(shift)).toBe(roundCents((380 / 60) * 15)); // 95
-    expect(expectedEarnings(shift)).toBe(95);
+    expect(expectedEarnings(shift)).toBe(roundCents((380 * 1500) / 60));
+    expect(expectedEarnings(shift)).toBe(9500);
+  });
+
+  it('adds explicitly planned tips and other income to expected base wages', () => {
+    const shift = baseShift({
+      plannedExpectedTips: 4000,
+      plannedOtherIncome: 500,
+    });
+    expect(expectedEarnings(shift)).toBe(16500);
   });
 });
 
@@ -158,15 +166,15 @@ describe('actualEarnings', () => {
       actualStartMin: 17 * 60,
       actualEndMin: 23 * 60,
       actualBreaks: [],
-      hourlyRateSnapshot: 20, // 6h → 120 base
-      directTips: 150,
-      tipShareReceived: 25,
-      tipOutPaid: 30,
-      poolContribution: 10,
-      otherIncome: 5,
+      hourlyRateSnapshot: 2000,
+      directTips: 15000,
+      tipShareReceived: 2500,
+      tipOutPaid: 3000,
+      poolContribution: 1000,
+      otherIncome: 500,
     });
     // 120 + 150 + 25 − 30 − 10 + 5 = 260
-    expect(actualEarnings(shift)).toBe(260);
+    expect(actualEarnings(shift)).toBe(26000);
   });
 
   it('treats missing tip fields as zero', () => {
@@ -174,9 +182,9 @@ describe('actualEarnings', () => {
       actualStartMin: 17 * 60,
       actualEndMin: 20 * 60,
       actualBreaks: [],
-      hourlyRateSnapshot: 18,
+      hourlyRateSnapshot: 1800,
     });
-    expect(actualEarnings(shift)).toBe(54);
+    expect(actualEarnings(shift)).toBe(5400);
   });
 
   it('unpaid actual breaks reduce base wage; paid ones do not', () => {
@@ -184,11 +192,20 @@ describe('actualEarnings', () => {
       actualStartMin: 10 * 60,
       actualEndMin: 18 * 60, // 8h span
       actualBreaks: [brk(12 * 60, 60, false), brk(15 * 60, 15, true)],
-      hourlyRateSnapshot: 12,
+      hourlyRateSnapshot: 1200,
       directTips: 0,
     });
     // 7h × 12 = 84
-    expect(actualEarnings(shift)).toBe(84);
+    expect(actualEarnings(shift)).toBe(8400);
+  });
+  it('uses the editable actual hourly-rate snapshot for worked base wages', () => {
+    const shift = baseShift({
+      actualStartMin: 17 * 60,
+      actualEndMin: 23 * 60,
+      actualBreaks: [],
+      actualHourlyRateSnapshot: 2500,
+    });
+    expect(actualEarnings(shift)).toBe(15000);
   });
 });
 
@@ -199,22 +216,27 @@ describe('variance and effectiveHourly', () => {
     actualStartMin: 17 * 60,
     actualEndMin: 23 * 60 + 30, // 6.5h
     actualBreaks: [brk(20 * 60, 30, false)], // −0.5h → 6h × 20 = 120 base
-    directTips: 90,
-    tipOutPaid: 12,
+    directTips: 9000,
+    tipOutPaid: 1200,
+    plannedExpectedTips: 0,
     status: 'worked',
   });
 
   it('variance = actual − expected', () => {
     // actual: 120 + 90 − 12 = 198; expected 120 → +78
-    expect(variance(shift)).toBe(78);
+    expect(variance(shift)).toBe(7800);
   });
 
   it('effectiveHourly = actual ÷ actual paid hours', () => {
-    expect(effectiveHourly(shift)).toBe(33); // 198 / 6
+    expect(effectiveHourly(shift)).toBe(3300);
   });
 
-  it('effectiveHourly is 0 with no actual paid time', () => {
-    expect(effectiveHourly(baseShift())).toBe(0);
+  it('effectiveHourly is null with no actual paid time', () => {
+    expect(effectiveHourly(baseShift())).toBeNull();
+  });
+
+  it('returns null variance when expected tips were never recorded', () => {
+    expect(variance({ ...shift, plannedExpectedTips: null })).toBeNull();
   });
 });
 
@@ -224,14 +246,14 @@ describe('estimatedNet', () => {
       actualStartMin: 9 * 60,
       actualEndMin: 17 * 60,
       actualBreaks: [],
-      hourlyRateSnapshot: 22.5, // 8h → 180
-      directTips: 100,
-      otherIncome: 20,
-      deductionRateSnapshot: 0.4,
+      hourlyRateSnapshot: 2250,
+      directTips: 10000,
+      otherIncome: 2000,
+      deductionRateSnapshotBp: 4000,
     });
     // PRD example: 300 gross, 40% → 180 net
-    expect(actualEarnings(shift)).toBe(300);
-    expect(estimatedNet(shift)).toBe(180);
+    expect(actualEarnings(shift)).toBe(30000);
+    expect(estimatedNet(shift)).toBe(18000);
   });
 
   it('defaults to no deductions when rate is absent', () => {
@@ -239,36 +261,36 @@ describe('estimatedNet', () => {
       actualStartMin: 9 * 60,
       actualEndMin: 10 * 60,
       actualBreaks: [],
-      hourlyRateSnapshot: 30,
+      hourlyRateSnapshot: 3000,
     });
-    expect(estimatedNet(shift)).toBe(30);
+    expect(estimatedNet(shift)).toBe(3000);
   });
 });
 
 describe('derivePayoutStatus', () => {
   it('0 expected → not_expected', () => {
     expect(derivePayoutStatus(0, 0)).toBe('not_expected');
-    expect(derivePayoutStatus(0, 50)).toBe('not_expected');
+    expect(derivePayoutStatus(0, 5000)).toBe('not_expected');
   });
 
   it('expected > 0, received 0 → pending', () => {
-    expect(derivePayoutStatus(100, 0)).toBe('pending');
+    expect(derivePayoutStatus(10000, 0)).toBe('pending');
   });
 
   it('0 < received < expected → partially_received', () => {
-    expect(derivePayoutStatus(100, 0.01)).toBe('partially_received');
-    expect(derivePayoutStatus(100, 99.99)).toBe('partially_received');
+    expect(derivePayoutStatus(10000, 1)).toBe('partially_received');
+    expect(derivePayoutStatus(10000, 9999)).toBe('partially_received');
   });
 
   it('received ≥ expected → received', () => {
-    expect(derivePayoutStatus(100, 100)).toBe('received');
-    expect(derivePayoutStatus(100, 120)).toBe('received');
+    expect(derivePayoutStatus(10000, 10000)).toBe('received');
+    expect(derivePayoutStatus(10000, 12000)).toBe('received');
   });
 });
 
 describe('pendingPayout', () => {
   it('is expected − received, floored at 0', () => {
-    expect(pendingPayout(100, 40)).toBe(60);
-    expect(pendingPayout(100, 120)).toBe(0);
+    expect(pendingPayout(10000, 4000)).toBe(6000);
+    expect(pendingPayout(10000, 12000)).toBe(0);
   });
 });

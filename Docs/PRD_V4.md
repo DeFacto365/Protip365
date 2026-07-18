@@ -729,7 +729,7 @@ Android platform conventions (Material 3):
 
 Avoid:
 
-- cocktail imagery as the main identity;
+- cocktail imagery as the main identity — EXCEPTION (owner decision, 2026-07-18): the app icon/logo is the V3 martini-glass-with-coin mark, explicitly re-approved from `Archive/v3-legacy-2026-07-17/website/images/protip365-logo.png`; in-app UI still avoids cocktail decoration;
 - gender-coded styling;
 - decorative gradients that weaken readability;
 - tiny calendar dots as the only status signal;

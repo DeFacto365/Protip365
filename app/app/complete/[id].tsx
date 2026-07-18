@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +7,7 @@ import { useShiftsStore } from '../../src/state/shiftsStore';
 import { useEmployersStore } from '../../src/state/employersStore';
 import { useSettingsStore } from '../../src/state/settingsStore';
 import { useTokens } from '../../src/ui/tokens';
+import { useWriteAccess, WriteAccessBanner } from '../../src/ui/WriteAccess';
 import {
   Card,
   Chip,
@@ -16,6 +17,7 @@ import {
   PrimaryButton,
   signedMoney,
 } from '../../src/ui/components';
+import { TimePickerField } from '../../src/ui/DateTimeField';
 import {
   actualEarnings,
   derivePayoutStatus,
@@ -25,7 +27,13 @@ import {
   variance as calcVariance,
 } from '../../src/domain/calc';
 import { minutesToHHMM, parseHHMM } from '../../src/domain/dates';
-import { validateMoney, validateShiftWindow, type ValidationError } from '../../src/domain/validate';
+import {
+  validateDeductionBasisPoints,
+  validateHourlyRateCents,
+  validateMoney,
+  validateShiftWindow,
+  type ValidationError,
+} from '../../src/domain/validate';
 import {
   NOT_WORKED_REASONS,
   type NotWorkedReason,
@@ -33,6 +41,7 @@ import {
   type ShiftBreak,
   type TipMethod,
 } from '../../src/domain/types';
+import { centsToInput, parseMoneyToCents } from '../../src/domain/money';
 
 /** DEF-05: breaks are fully editable at completion (start, duration, taken). */
 interface BreakDraft {
@@ -48,14 +57,18 @@ export default function CompleteShiftScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTokens();
   const { t: tr } = useTranslation();
+  const { requireWrite } = useWriteAccess();
 
   const getById = useShiftsStore((s) => s.getById);
   const completeShift = useShiftsStore((s) => s.completeShift);
+  const correctWorkedToPlanned = useShiftsStore((s) => s.correctWorkedToPlanned);
   const markNotWorked = useShiftsStore((s) => s.markNotWorked);
   const employers = useEmployersStore((s) => s.employers);
-  const defaultDeductionRate = useSettingsStore((s) => s.defaultDeductionRate);
+  const roles = useEmployersStore((s) => s.roles);
+  const defaultDeductionRateBp = useSettingsStore((s) => s.defaultDeductionRateBp);
 
   const shift = getById(id);
+  const isEditingActuals = shift?.status === 'worked';
 
   const [step, setStep] = useState<1 | 2>(1);
   const [startText, setStartText] = useState(() =>
@@ -76,21 +89,29 @@ export default function CompleteShiftScreen() {
     }));
   });
   const [tipMethod, setTipMethod] = useState<TipMethod>(shift?.tipMethod ?? 'direct');
-  const [directTipsText, setDirectTipsText] = useState(String(shift?.directTips ?? ''));
-  const [tipOutText, setTipOutText] = useState(String(shift?.tipOutPaid ?? ''));
-  const [tipShareText, setTipShareText] = useState(String(shift?.tipShareReceived ?? ''));
-  const [poolText, setPoolText] = useState(String(shift?.poolContribution ?? ''));
-  const [salesText, setSalesText] = useState(String(shift?.sales ?? ''));
-  const [expectedPayoutText, setExpectedPayoutText] = useState(String(shift?.expectedPayout ?? ''));
-  const [receivedText, setReceivedText] = useState(String(shift?.actualReceived ?? ''));
+  const [directTipsText, setDirectTipsText] = useState(centsToInput(shift?.directTips));
+  const [tipOutText, setTipOutText] = useState(centsToInput(shift?.tipOutPaid));
+  const [tipShareText, setTipShareText] = useState(centsToInput(shift?.tipShareReceived));
+  const [poolText, setPoolText] = useState(centsToInput(shift?.poolContribution));
+  const [salesText, setSalesText] = useState(centsToInput(shift?.sales));
+  const [otherIncomeText, setOtherIncomeText] = useState(centsToInput(shift?.otherIncome));
+  const [actualRateText, setActualRateText] = useState(() => {
+    if (!shift) return '';
+    const roleRate = shift.roleId ? roles.find((role) => role.id === shift.roleId)?.hourlyRate : null;
+    return centsToInput(
+      shift.actualHourlyRateSnapshot ?? roleRate ?? shift.hourlyRateSnapshot
+    );
+  });
+  const [expectedPayoutText, setExpectedPayoutText] = useState(centsToInput(shift?.expectedPayout));
+  const [receivedText, setReceivedText] = useState(centsToInput(shift?.actualReceived));
   // DEF-07: deduction rate editable per shift, prefilled from snapshot → employer → global.
   const [dedRateText, setDedRateText] = useState(() => {
     if (!shift) return '0';
-    const fraction =
-      shift.deductionRateSnapshot ??
-      employers.find((e) => e.id === shift.employerId)?.deductionRate ??
-      defaultDeductionRate;
-    return String(Math.round(fraction * 10000) / 100);
+    const basisPoints =
+      shift.deductionRateSnapshotBp ??
+      employers.find((e) => e.id === shift.employerId)?.deductionRateBp ??
+      defaultDeductionRateBp;
+    return String(basisPoints / 100);
   });
   // DEF-12: manual disputed flag (never derived).
   const [disputed, setDisputed] = useState(shift?.payoutStatus === 'disputed');
@@ -104,10 +125,7 @@ export default function CompleteShiftScreen() {
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
 
-  const num = (text: string): number => {
-    const n = Number(text.replace(',', '.'));
-    return text.trim() !== '' && Number.isFinite(n) ? n : 0;
-  };
+  const num = (text: string): number => parseMoneyToCents(text) ?? 0;
 
   const parsedTimes = useMemo(() => {
     const startMin = parseHHMM(startText);
@@ -152,21 +170,28 @@ export default function CompleteShiftScreen() {
   }
 
   const employer = employers.find((e) => e.id === shift.employerId);
-  const dedFraction = Math.min(Math.max(num(dedRateText) / 100, 0), 1);
+  const actualHourlyRateSnapshot = num(actualRateText);
+  const deductionPercent = Number(dedRateText.replace(',', '.'));
+  const deductionRateBp = Number.isFinite(deductionPercent)
+    ? Math.round(deductionPercent * 100)
+    : Number.NaN;
 
   const draftShift: Shift = {
     ...shift,
     actualStartMin: parsedTimes?.startMin ?? shift.startMin,
     actualEndMin: parsedTimes?.endMin ?? shift.endMin,
     actualBreaks: parsedBreaks.breaks,
+    actualHourlyRateSnapshot,
     tipMethod,
     directTips: num(directTipsText),
     tipOutPaid: num(tipOutText),
     tipShareReceived: num(tipShareText),
     poolContribution: tipMethod === 'direct' ? 0 : num(poolText),
     sales: salesText.trim() === '' ? null : num(salesText),
-    otherIncome: 0,
-    deductionRateSnapshot: dedFraction,
+    otherIncome: num(otherIncomeText),
+    deductionRateSnapshotBp: validateDeductionBasisPoints(deductionRateBp).valid
+      ? deductionRateBp
+      : 0,
     expectedPayout: num(expectedPayoutText),
     actualReceived: num(receivedText),
   };
@@ -185,7 +210,12 @@ export default function CompleteShiftScreen() {
     if (!parsedTimes || parsedBreaks.invalid) {
       errs.push(tr('shiftForm.errors.invalidTime'));
     } else {
-      const result = validateShiftWindow({ ...parsedTimes, breaks: parsedBreaks.breaks });
+      const rawEndMin = parseHHMM(endText) ?? parsedTimes.endMin;
+      const result = validateShiftWindow({
+        ...parsedTimes,
+        endMin: rawEndMin,
+        breaks: parsedBreaks.breaks,
+      });
       for (const code of result.errors) errs.push(tr(`shiftForm.errors.${code as ValidationError}`));
     }
     setErrors(errs);
@@ -208,7 +238,8 @@ export default function CompleteShiftScreen() {
     ]);
   };
 
-  const onSave = () => {
+  const onSave = async () => {
+    if (!requireWrite()) return;
     if (!parsedTimes || savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
@@ -219,9 +250,21 @@ export default function CompleteShiftScreen() {
       tipShareReceived: num(tipShareText),
       poolContribution: num(poolText),
       sales: salesText.trim() === '' ? null : num(salesText),
+      otherIncome: num(otherIncomeText),
       expectedPayout: num(expectedPayoutText),
       actualReceived: num(receivedText),
     });
+    if (!validateHourlyRateCents(parseMoneyToCents(actualRateText)).valid) {
+      errs.push(tr('shiftForm.errors.rate_not_positive'));
+    }
+    if (
+      !Number.isFinite(deductionPercent) ||
+      deductionPercent < 0 ||
+      deductionPercent > 100 ||
+      !validateDeductionBasisPoints(deductionRateBp).valid
+    ) {
+      errs.push(tr('shiftForm.errors.deduction_out_of_range'));
+    }
     for (const code of moneyCheck.errors) errs.push(tr(`shiftForm.errors.${code as ValidationError}`));
     setErrors(errs);
     if (errs.length > 0) {
@@ -230,18 +273,19 @@ export default function CompleteShiftScreen() {
       return;
     }
 
-    completeShift(shift.id, {
+    await completeShift(shift.id, {
       actualStartMin: parsedTimes.startMin,
       actualEndMin: parsedTimes.endMin,
       actualBreaks: parsedBreaks.breaks,
+      actualHourlyRateSnapshot,
       tipMethod,
       directTips: num(directTipsText),
       poolContribution: tipMethod === 'direct' ? 0 : num(poolText),
       tipShareReceived: num(tipShareText),
       tipOutPaid: num(tipOutText),
       sales: salesText.trim() === '' ? null : num(salesText),
-      otherIncome: 0,
-      deductionRateSnapshot: dedFraction,
+      otherIncome: num(otherIncomeText),
+      deductionRateSnapshotBp: deductionRateBp,
       expectedPayout: num(expectedPayoutText),
       actualReceived: num(receivedText),
       payoutStatus,
@@ -252,11 +296,33 @@ export default function CompleteShiftScreen() {
   // DEF-02: canonical reason codes; employer_cancelled → 'cancelled', else 'missed'.
   const noteRequired = reasonCode === 'other';
   const canConfirmNotWorked = reasonCode != null && (!noteRequired || reasonNote.trim() !== '');
-  const onMarkNotWorked = () => {
+  const onMarkNotWorked = async () => {
+    if (!requireWrite()) return;
     if (!canConfirmNotWorked || !reasonCode) return;
     const status = reasonCode === 'employer_cancelled' ? 'cancelled' : 'missed';
-    markNotWorked(shift.id, status, reasonCode, reasonNote.trim() || null);
+    await markNotWorked(shift.id, status, reasonCode, reasonNote.trim() || null);
     router.back();
+  };
+
+  const onCorrectToPlanned = () => {
+    if (!requireWrite()) return;
+    Alert.alert(
+      tr('complete.correctToPlannedTitle'),
+      tr('complete.correctToPlannedMessage'),
+      [
+        { text: tr('common.cancel'), style: 'cancel' },
+        {
+          text: tr('complete.correctToPlannedConfirm'),
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              await correctWorkedToPlanned(shift.id, true);
+              router.back();
+            })();
+          },
+        },
+      ]
+    );
   };
 
   const payoutChipColor =
@@ -274,7 +340,9 @@ export default function CompleteShiftScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Stack.Screen options={{ title: tr('complete.title') }} />
+      <Stack.Screen options={{ title: tr(isEditingActuals ? 'complete.editTitle' : 'complete.title') }} />
+
+      <WriteAccessBanner />
 
       <Text style={{ color: t.softText, fontSize: 13, marginBottom: 12 }}>
         {employer?.name ?? ''} · {shift.date} · {minutesToHHMM(shift.startMin)}–
@@ -288,26 +356,26 @@ export default function CompleteShiftScreen() {
           </Text>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Field
+              <TimePickerField
                 label={tr('complete.actualStart')}
-                value={startText}
-                onChangeText={setStartText}
+                value={parseHHMM(startText) ?? 0}
+                onChange={(minutes) => setStartText(minutesToHHMM(minutes))}
                 hint={tr('shiftForm.timeFormatHint')}
-                autoCapitalize="none"
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Field
+              <TimePickerField
                 label={tr('complete.actualEnd')}
-                value={endText}
-                onChangeText={setEndText}
-                autoCapitalize="none"
+                value={parseHHMM(endText) ?? 0}
+                onChange={(minutes) => setEndText(minutesToHHMM(minutes))}
               />
               {/* DEF-06: explicit overnight cue */}
               {isOvernight ? (
                 <Text
                   style={{
                     color: t.cobaltLink,
+                    backgroundColor: t.cobaltSoft,
+                    paddingHorizontal: 4,
                     fontSize: 12,
                     fontWeight: '700',
                     marginTop: -8,
@@ -348,15 +416,16 @@ export default function CompleteShiftScreen() {
               {b.taken ? (
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
-                    <Field
+                    <TimePickerField
                       label={tr('shiftForm.breakStart')}
-                      value={b.startText}
-                      onChangeText={(text) =>
+                      value={parseHHMM(b.startText) ?? 0}
+                      onChange={(minutes) =>
                         setBreakDrafts((drafts) =>
-                          drafts.map((d, j) => (j === i ? { ...d, startText: text } : d))
+                          drafts.map((d, j) =>
+                            j === i ? { ...d, startText: minutesToHHMM(minutes) } : d
+                          )
                         )
                       }
-                      autoCapitalize="none"
                     />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -383,20 +452,22 @@ export default function CompleteShiftScreen() {
           />
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: t.danger, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}
 
           <PrimaryButton label={tr('common.next')} onPress={goToStep2} style={{ marginTop: 8 }} />
-          <GhostButton
-            label={tr('complete.markNotWorked')}
-            onPress={() => setShowNotWorked((v) => !v)}
-            danger
-            style={{ marginTop: 8 }}
-          />
-          {showNotWorked ? (
-            <Card style={{ padding: 12, marginTop: 8 }}>
+          {!isEditingActuals ? (
+            <>
+              <GhostButton
+                label={tr('complete.markNotWorked')}
+                onPress={() => setShowNotWorked((v) => !v)}
+                danger
+                style={{ marginTop: 8 }}
+              />
+              {showNotWorked ? (
+                <Card style={{ padding: 12, marginTop: 8 }}>
               <Text style={{ color: t.ink, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>
                 {tr('complete.notWorkedReason')}
               </Text>
@@ -424,14 +495,30 @@ export default function CompleteShiftScreen() {
                 danger
                 disabled={!canConfirmNotWorked}
               />
-            </Card>
-          ) : null}
+                </Card>
+              ) : null}
+            </>
+          ) : (
+            <GhostButton
+              label={tr('complete.correctToPlanned')}
+              onPress={onCorrectToPlanned}
+              danger
+              style={{ marginTop: 8 }}
+            />
+          )}
         </>
       ) : (
         <>
           <Text style={{ color: t.ink, fontWeight: '700', fontSize: 17, marginBottom: 12 }}>
             {tr('complete.step2Title')}
           </Text>
+
+          <Field
+            label={tr('complete.actualHourlyRate')}
+            value={actualRateText}
+            onChangeText={setActualRateText}
+            keyboardType="decimal-pad"
+          />
 
           {/* Tip method segmented control */}
           <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>
@@ -480,6 +567,12 @@ export default function CompleteShiftScreen() {
             onChangeText={setSalesText}
             keyboardType="decimal-pad"
           />
+          <Field
+            label={`${tr('complete.otherIncome')} (${tr('common.optional')})`}
+            value={otherIncomeText}
+            onChangeText={setOtherIncomeText}
+            keyboardType="decimal-pad"
+          />
           {/* DEF-07: per-shift editable deduction rate */}
           <Field
             label={tr('complete.deductionRate')}
@@ -526,7 +619,7 @@ export default function CompleteShiftScreen() {
             <Chip
               label={tr('complete.markDisputed')}
               selected={disputed}
-              color={t.danger}
+              color={t.dangerBg}
               onPress={() => setDisputed((v) => !v)}
             />
           </View>
@@ -541,16 +634,21 @@ export default function CompleteShiftScreen() {
             </Text>
             <Text
               style={{
-                color: varianceValue >= 0 ? t.green : t.amber,
+                color: varianceValue == null ? t.softText : varianceValue >= 0 ? t.green : t.amber,
+                backgroundColor: varianceValue == null ? 'transparent' : varianceValue >= 0 ? t.greenSoft : t.amberSoft,
+                paddingHorizontal: varianceValue == null ? 0 : 6,
+                paddingVertical: varianceValue == null ? 0 : 3,
                 fontWeight: '600',
                 fontSize: 13,
               }}
             >
-              {signedMoney(varianceValue)} {tr('complete.variance')} ({money(expected)})
+              {varianceValue == null ? '—' : signedMoney(varianceValue)} {tr('complete.variance')} ({money(expected)})
             </Text>
             <View style={{ flexDirection: 'row', gap: 24, marginTop: 10 }}>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ color: t.ink, fontWeight: '700', fontSize: 15 }}>{money(hourly)}/h</Text>
+                <Text style={{ color: t.ink, fontWeight: '700', fontSize: 15 }}>
+                  {hourly == null ? '\u2014' : `${money(hourly)}/h`}
+                </Text>
                 <Text style={{ color: t.softText, fontSize: 10, fontWeight: '600' }}>
                   {tr('complete.effectiveHourly').toUpperCase()}
                 </Text>
@@ -565,13 +663,13 @@ export default function CompleteShiftScreen() {
           </Card>
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: t.danger, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}
 
           <PrimaryButton
-            label={tr('complete.saveWorked')}
+            label={tr(isEditingActuals ? 'complete.updateActuals' : 'complete.saveWorked')}
             onPress={onSave}
             disabled={saving}
             style={{ marginBottom: 8 }}

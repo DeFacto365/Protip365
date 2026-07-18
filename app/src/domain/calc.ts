@@ -5,13 +5,14 @@
 
 import type { PayoutStatus, Shift, ShiftBreak } from './types';
 
-/**
- * Round a currency amount to cents, half-up, avoiding binary float artifacts
- * (DEF-10: `1.005 * 100` is `100.4999…` in IEEE 754, which naive Math.round
- * turns into 1.00; re-quantizing through toFixed removes the artifact first).
- */
-export function roundCents(amount: number): number {
-  return Math.round(Number((amount * 100).toFixed(6))) / 100;
+/** Round a calculated cent value at an explicitly defined boundary. */
+export function roundCents(amountInCents: number): number {
+  return Math.round(amountInCents);
+}
+
+/** Integer-cent wage boundary for a rate in cents/hour and integer minutes. */
+export function wagesForMinutes(minutes: number, hourlyRateCents: number): number {
+  return roundCents((minutes * hourlyRateCents) / 60);
 }
 
 /**
@@ -55,9 +56,21 @@ export function actualPaidMinutes(
 
 /** Expected base earnings: scheduled paid hours × snapshotted hourly rate. */
 export function expectedEarnings(
-  shift: Pick<Shift, 'startMin' | 'endMin' | 'breaks' | 'hourlyRateSnapshot'>
+  shift: Pick<
+    Shift,
+    | 'startMin'
+    | 'endMin'
+    | 'breaks'
+    | 'hourlyRateSnapshot'
+    | 'plannedExpectedTips'
+    | 'plannedOtherIncome'
+  >
 ): number {
-  return roundCents((scheduledPaidMinutes(shift) / 60) * shift.hourlyRateSnapshot);
+  return (
+    wagesForMinutes(scheduledPaidMinutes(shift), shift.hourlyRateSnapshot) +
+    (shift.plannedExpectedTips ?? 0) +
+    (shift.plannedOtherIncome ?? 0)
+  );
 }
 
 /**
@@ -73,6 +86,7 @@ export function actualEarnings(
     | 'actualEndMin'
     | 'actualBreaks'
     | 'hourlyRateSnapshot'
+    | 'actualHourlyRateSnapshot'
     | 'directTips'
     | 'tipShareReceived'
     | 'tipOutPaid'
@@ -80,34 +94,35 @@ export function actualEarnings(
     | 'otherIncome'
   >
 ): number {
-  const base = (actualPaidMinutes(shift) / 60) * shift.hourlyRateSnapshot;
+  const rate = shift.actualHourlyRateSnapshot ?? shift.hourlyRateSnapshot;
+  const base = wagesForMinutes(actualPaidMinutes(shift), rate);
   const tips =
     (shift.directTips ?? 0) +
     (shift.tipShareReceived ?? 0) -
     (shift.tipOutPaid ?? 0) -
     (shift.poolContribution ?? 0);
-  return roundCents(base + tips + (shift.otherIncome ?? 0));
+  return base + tips + (shift.otherIncome ?? 0);
 }
 
 /** Variance: actual gross earnings − expected base earnings. */
-export function variance(shift: Shift): number {
-  return roundCents(actualEarnings(shift) - expectedEarnings(shift));
+export function variance(shift: Shift): number | null {
+  if (shift.plannedExpectedTips == null) return null;
+  return actualEarnings(shift) - expectedEarnings(shift);
 }
 
-/** Effective hourly rate: actual earnings ÷ actual paid hours. 0 when no paid time. */
-export function effectiveHourly(shift: Shift): number {
+/** Effective hourly rate: actual earnings ÷ actual paid hours. Null when no paid time. */
+export function effectiveHourly(shift: Shift): number | null {
   const minutes = actualPaidMinutes(shift);
-  if (minutes <= 0) return 0;
-  return roundCents(actualEarnings(shift) / (minutes / 60));
+  if (minutes <= 0) return null;
+  return roundCents((actualEarnings(shift) * 60) / minutes);
 }
 
 /**
- * Estimated net: actual earnings × (1 − deduction rate).
- * The rate is a fraction (0–1) snapshotted at completion.
+ * Estimated net from integer cents and a basis-point deduction snapshot.
  */
 export function estimatedNet(shift: Shift): number {
-  const rate = shift.deductionRateSnapshot ?? 0;
-  return roundCents(actualEarnings(shift) * (1 - rate));
+  const rateBp = shift.deductionRateSnapshotBp ?? 0;
+  return roundCents((actualEarnings(shift) * (10000 - rateBp)) / 10000);
 }
 
 /**
@@ -126,5 +141,5 @@ export function derivePayoutStatus(
 
 /** Pending payout amount; never negative. */
 export function pendingPayout(expectedPayout: number, actualReceived: number): number {
-  return roundCents(Math.max(expectedPayout - actualReceived, 0));
+  return Math.max(expectedPayout - actualReceived, 0);
 }

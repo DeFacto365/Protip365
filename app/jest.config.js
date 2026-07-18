@@ -9,4 +9,6 @@ module.exports = {
     ],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js'],
+  // The managed Windows workspace blocks Jest child-process fan-out (EPERM).
+  maxWorkers: 1,
 };

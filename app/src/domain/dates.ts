@@ -47,6 +47,27 @@ export function weekDatesIso(weekStartIso: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDaysIso(weekStartIso, i));
 }
 
+/** Add calendar months and clamp the day to the destination month's last day. */
+export function addMonthsIso(iso: string, months: number): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  return `${target.getUTCFullYear()}-${pad2(target.getUTCMonth() + 1)}-${pad2(
+    Math.min(day, lastDay)
+  )}`;
+}
+
+/** Every ISO date in the calendar month containing `iso`. */
+export function monthDatesIso(iso: string): string[] {
+  const [year, month] = iso.split('-').map(Number);
+  const count = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return Array.from({ length: count }, (_, index) =>
+    `${year}-${pad2(month)}-${pad2(index + 1)}`
+  );
+}
+
 /** Format minutes-from-midnight as 24h `HH:MM` (wraps past midnight). */
 export function minutesToHHMM(min: number): string {
   const norm = ((Math.round(min) % 1440) + 1440) % 1440;

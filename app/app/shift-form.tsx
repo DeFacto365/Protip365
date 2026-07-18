@@ -8,23 +8,32 @@ import { useShiftsStore } from '../src/state/shiftsStore';
 import { useSettingsStore } from '../src/state/settingsStore';
 import { EMPLOYER_PALETTE, useTokens } from '../src/ui/tokens';
 import { Card, Chip, Field, GhostButton, money, PrimaryButton } from '../src/ui/components';
+import { DatePickerField, TimePickerField } from '../src/ui/DateTimeField';
 import { expectedEarnings } from '../src/domain/calc';
+import { selectableEmployers } from '../src/domain/employers';
 import { isValidIsoDate, minutesToHHMM, parseHHMM, todayIso } from '../src/domain/dates';
 import { findOverlaps } from '../src/domain/overlap';
-import { validateShiftWindow, type ValidationError } from '../src/domain/validate';
+import {
+  validateHourlyRateCents,
+  validateShiftWindow,
+  type ValidationError,
+} from '../src/domain/validate';
 import type { ShiftBreak } from '../src/domain/types';
+import { centsToInput, localizedMoneyPlaceholder, parseMoneyToCents } from '../src/domain/money';
+import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
 
 export default function ShiftFormScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; date?: string }>();
+  const params = useLocalSearchParams<{ id?: string; date?: string; unplanned?: string }>();
   const { t } = useTokens();
-  const { t: tr } = useTranslation();
+  const { t: tr, i18n } = useTranslation();
+  const { requireWrite } = useWriteAccess();
 
-  const employers = useEmployersStore((s) => s.employers);
+  const allEmployers = useEmployersStore((s) => s.employers);
   const addEmployer = useEmployersStore((s) => s.addEmployer);
   const rolesAll = useEmployersStore((s) => s.roles);
   const addRole = useEmployersStore((s) => s.addRole);
-  const defaultDeductionRate = useSettingsStore((s) => s.defaultDeductionRate);
+  const defaultDeductionRateBp = useSettingsStore((s) => s.defaultDeductionRateBp);
 
   const shifts = useShiftsStore((s) => s.shifts);
   const getById = useShiftsStore((s) => s.getById);
@@ -33,8 +42,15 @@ export default function ShiftFormScreen() {
   const deleteShift = useShiftsStore((s) => s.deleteShift);
 
   const editing = params.id ? getById(params.id) : undefined;
+  const unplanned = params.unplanned === '1' && !editing;
 
-  const [employerId, setEmployerId] = useState<string | null>(editing?.employerId ?? employers[0]?.id ?? null);
+  const employers = useMemo(
+    () => selectableEmployers(allEmployers, editing?.employerId),
+    [allEmployers, editing?.employerId]
+  );
+  const [employerId, setEmployerId] = useState<string | null>(
+    editing?.employerId ?? employers[0]?.id ?? null
+  );
   const [roleId, setRoleId] = useState<string | null>(editing?.roleId ?? null);
   const [date, setDate] = useState(editing?.date ?? params.date ?? todayIso());
   const [startText, setStartText] = useState(editing ? minutesToHHMM(editing.startMin) : '17:00');
@@ -46,8 +62,15 @@ export default function ShiftFormScreen() {
   );
   const [breakDurText, setBreakDurText] = useState(firstBreak ? String(firstBreak.durationMin) : '30');
   const [rateText, setRateText] = useState(
-    editing ? String(editing.hourlyRateSnapshot) : ''
+    editing ? centsToInput(editing.hourlyRateSnapshot) : ''
   );
+  const [plannedExpectedTipsText, setPlannedExpectedTipsText] = useState(
+    centsToInput(editing?.plannedExpectedTips)
+  );
+  const [plannedOtherIncomeText, setPlannedOtherIncomeText] = useState(
+    centsToInput(editing?.plannedOtherIncome)
+  );
+  const [notes, setNotes] = useState(editing?.notes ?? '');
   const [errors, setErrors] = useState<string[]>([]);
   // DEF-13: re-entrancy guard against double-tap duplicate saves.
   const [saving, setSaving] = useState(false);
@@ -57,13 +80,15 @@ export default function ShiftFormScreen() {
   const [showNewEmployer, setShowNewEmployer] = useState(false);
   const [newEmployerName, setNewEmployerName] = useState('');
   const [newEmployerRate, setNewEmployerRate] = useState('');
-  const [newEmployerError, setNewEmployerError] = useState<string | null>(null);
+  const [newEmployerNameError, setNewEmployerNameError] = useState<string | null>(null);
+  const [newEmployerRateError, setNewEmployerRateError] = useState<string | null>(null);
 
   // Inline "add role" mini-form
   const [showNewRole, setShowNewRole] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleRate, setNewRoleRate] = useState('');
-  const [newRoleError, setNewRoleError] = useState<string | null>(null);
+  const [newRoleNameError, setNewRoleNameError] = useState<string | null>(null);
+  const [newRoleRateError, setNewRoleRateError] = useState<string | null>(null);
 
   const roles = useMemo(
     () => rolesAll.filter((r) => r.employerId === employerId),
@@ -72,11 +97,17 @@ export default function ShiftFormScreen() {
   const employer = employers.find((e) => e.id === employerId);
 
   const effectiveRate = useMemo(() => {
-    const parsed = Number(rateText.replace(',', '.'));
-    if (rateText.trim() !== '' && Number.isFinite(parsed)) return parsed;
+    const parsed = parseMoneyToCents(rateText);
+    if (parsed != null) return parsed;
     const role = roles.find((r) => r.id === roleId);
-    return role?.hourlyRate ?? 0;
-  }, [rateText, roles, roleId]);
+    return role?.hourlyRate ?? employer?.defaultHourlyRate ?? 0;
+  }, [rateText, roles, roleId, employer]);
+  const plannedExpectedTips = plannedExpectedTipsText.trim() === ''
+    ? null
+    : parseMoneyToCents(plannedExpectedTipsText);
+  const plannedOtherIncome = plannedOtherIncomeText.trim() === ''
+    ? null
+    : parseMoneyToCents(plannedOtherIncomeText);
 
   const parsed = useMemo(() => {
     const startMin = parseHHMM(startText);
@@ -127,54 +158,57 @@ export default function ShiftFormScreen() {
       endMin: parsed.endMin,
       breaks: parsed.breaks,
       hourlyRateSnapshot: effectiveRate,
+      plannedExpectedTips,
+      plannedOtherIncome,
     });
-  }, [parsed, effectiveRate]);
+  }, [parsed, effectiveRate, plannedExpectedTips, plannedOtherIncome]);
 
   const nextColor = () => EMPLOYER_PALETTE[employers.length % EMPLOYER_PALETTE.length];
 
   const onAddEmployer = () => {
-    const rate = Number(newEmployerRate.replace(',', '.'));
-    // DEF-11: surface an inline error instead of failing silently.
-    if (!newEmployerName.trim()) {
-      setNewEmployerError(tr('shiftForm.errors.employerNameRequired'));
-      return;
-    }
-    if (!Number.isFinite(rate) || rate < 0) {
-      setNewEmployerError(tr('shiftForm.errors.invalidNumber'));
-      return;
-    }
-    setNewEmployerError(null);
+    if (!requireWrite()) return;
+    const rate = parseMoneyToCents(newEmployerRate);
+    const nameError = newEmployerName.trim()
+      ? null
+      : tr('shiftForm.errors.employerNameRequired');
+    const rateError = validateHourlyRateCents(rate).valid
+      ? null
+      : tr('shiftForm.errors.rate_not_positive');
+    setNewEmployerNameError(nameError);
+    setNewEmployerRateError(rateError);
+    if (nameError || rateError) return;
     const created = addEmployer({
       name: newEmployerName.trim(),
       color: nextColor(),
-      deductionRate: defaultDeductionRate,
+      defaultHourlyRate: rate!,
+      deductionRateBp: defaultDeductionRateBp,
     });
     setEmployerId(created.id);
     setRoleId(null);
-    setRateText(String(rate));
-    // Store the employer default rate as a role-less base by creating a default role.
-    addRole({ employerId: created.id, name: tr('shiftForm.role'), hourlyRate: rate });
+    setRateText(centsToInput(rate));
     setShowNewEmployer(false);
     setNewEmployerName('');
     setNewEmployerRate('');
   };
 
   const onAddRole = () => {
+    if (!requireWrite()) return;
     if (!employerId) return;
-    const rate = Number(newRoleRate.replace(',', '.'));
+    const rate = parseMoneyToCents(newRoleRate);
     // Inline validation (parity with the employer mini-form).
     if (!newRoleName.trim()) {
-      setNewRoleError(tr('shiftForm.errors.roleNameRequired'));
+      setNewRoleNameError(tr('shiftForm.errors.roleNameRequired'));
       return;
     }
-    if (!Number.isFinite(rate) || rate < 0) {
-      setNewRoleError(tr('shiftForm.errors.invalidNumber'));
+    if (!validateHourlyRateCents(rate).valid) {
+      setNewRoleRateError(tr('shiftForm.errors.rate_not_positive'));
       return;
     }
-    setNewRoleError(null);
-    const created = addRole({ employerId, name: newRoleName.trim(), hourlyRate: rate });
+    setNewRoleNameError(null);
+    setNewRoleRateError(null);
+    const created = addRole({ employerId, name: newRoleName.trim(), hourlyRate: rate! });
     setRoleId(created.id);
-    setRateText(String(rate));
+    setRateText(centsToInput(rate));
     setShowNewRole(false);
     setNewRoleName('');
     setNewRoleRate('');
@@ -189,10 +223,22 @@ export default function ShiftFormScreen() {
       setErrors(errs);
       return null;
     }
-    if (effectiveRate < 0 || !Number.isFinite(effectiveRate)) {
+    if (
+      !validateHourlyRateCents(effectiveRate).valid ||
+      (rateText.trim() !== '' && parseMoneyToCents(rateText) == null)
+    ) {
+      errs.push(tr('shiftForm.errors.rate_not_positive'));
+    }
+    if (
+      (plannedExpectedTipsText.trim() !== '' &&
+        (plannedExpectedTips == null || plannedExpectedTips < 0)) ||
+      (plannedOtherIncomeText.trim() !== '' &&
+        (plannedOtherIncome == null || plannedOtherIncome < 0))
+    ) {
       errs.push(tr('shiftForm.errors.invalidNumber'));
     }
-    const result = validateShiftWindow(parsed);
+    const rawEndMin = parseHHMM(endText) ?? parsed.endMin;
+    const result = validateShiftWindow({ ...parsed, endMin: rawEndMin });
     for (const code of result.errors) {
       errs.push(tr(`shiftForm.errors.${code as ValidationError}`));
     }
@@ -208,9 +254,13 @@ export default function ShiftFormScreen() {
     endMin: p.endMin,
     breaks: p.breaks,
     hourlyRateSnapshot: effectiveRate,
+    plannedExpectedTips,
+    plannedOtherIncome,
+    notes: notes.trim() || null,
   });
 
-  const onSave = (addAnother: boolean) => {
+  const onSave = async (addAnother: boolean) => {
+    if (!requireWrite()) return;
     // DEF-13: ignore re-entrant taps while a save is in flight.
     if (savingRef.current) return;
     savingRef.current = true;
@@ -224,22 +274,30 @@ export default function ShiftFormScreen() {
       release();
       return;
     }
-    if (editing) {
-      updateScheduled(editing.id, buildInput(p));
-      router.back();
-      return;
-    }
-    addShift(buildInput(p));
-    if (addAnother) {
-      setErrors([]);
-      // keep employer/role/rate/times; user usually changes the date next
+    try {
+      if (editing) {
+        await updateScheduled(editing.id, buildInput(p));
+        router.back();
+        return;
+      }
+      const created = await addShift(buildInput(p));
+      if (unplanned) {
+        router.replace({ pathname: '/complete/[id]', params: { id: created.id } });
+        return;
+      }
+      if (addAnother) {
+        setErrors([]);
+        // keep employer/role/rate/times; user usually changes the date next
+      } else {
+        router.back();
+      }
+    } finally {
       release();
-    } else {
-      router.back();
     }
   };
 
   const onDelete = () => {
+    if (!requireWrite()) return;
     if (!editing) return;
     Alert.alert(tr('shiftForm.deleteShift'), undefined, [
       { text: tr('common.cancel'), style: 'cancel' },
@@ -247,8 +305,10 @@ export default function ShiftFormScreen() {
         text: tr('common.delete'),
         style: 'destructive',
         onPress: () => {
-          deleteShift(editing.id);
-          router.back();
+          void (async () => {
+            await deleteShift(editing.id);
+            router.back();
+          })();
         },
       },
     ]);
@@ -261,8 +321,14 @@ export default function ShiftFormScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Stack.Screen
-        options={{ title: editing ? tr('shiftForm.editTitle') : tr('shiftForm.addTitle') }}
+        options={{
+          title: editing
+            ? tr('shiftForm.editTitle')
+            : tr(unplanned ? 'shiftForm.unplannedTitle' : 'shiftForm.addTitle'),
+        }}
       />
+
+      <WriteAccessBanner />
 
       {/* Employer */}
       <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>
@@ -278,6 +344,7 @@ export default function ShiftFormScreen() {
             onPress={() => {
               setEmployerId(e.id);
               setRoleId(null);
+              setRateText(centsToInput(e.defaultHourlyRate));
             }}
           />
         ))}
@@ -294,15 +361,19 @@ export default function ShiftFormScreen() {
             value={newEmployerName}
             onChangeText={(text) => {
               setNewEmployerName(text);
-              if (newEmployerError) setNewEmployerError(null);
+              if (newEmployerNameError) setNewEmployerNameError(null);
             }}
-            error={newEmployerError}
+            error={newEmployerNameError}
           />
           <Field
             label={tr('shiftForm.hourlyRate')}
             value={newEmployerRate}
-            onChangeText={setNewEmployerRate}
+            onChangeText={(text) => {
+              setNewEmployerRate(text);
+              if (newEmployerRateError) setNewEmployerRateError(null);
+            }}
             keyboardType="decimal-pad"
+            error={newEmployerRateError}
           />
           <PrimaryButton label={tr('common.save')} onPress={onAddEmployer} />
         </Card>
@@ -318,7 +389,10 @@ export default function ShiftFormScreen() {
             <Chip
               label={tr('shiftForm.noRole')}
               selected={roleId === null}
-              onPress={() => setRoleId(null)}
+              onPress={() => {
+                setRoleId(null);
+                setRateText(centsToInput(employer.defaultHourlyRate));
+              }}
             />
             {roles.map((r) => (
               <Chip
@@ -327,7 +401,7 @@ export default function ShiftFormScreen() {
                 selected={r.id === roleId}
                 onPress={() => {
                   setRoleId(r.id);
-                  setRateText(String(r.hourlyRate));
+                  setRateText(centsToInput(r.hourlyRate));
                 }}
               />
             ))}
@@ -340,15 +414,19 @@ export default function ShiftFormScreen() {
                 value={newRoleName}
                 onChangeText={(text) => {
                   setNewRoleName(text);
-                  if (newRoleError) setNewRoleError(null);
+                  if (newRoleNameError) setNewRoleNameError(null);
                 }}
-                error={newRoleError}
+                error={newRoleNameError}
               />
               <Field
                 label={tr('shiftForm.hourlyRate')}
                 value={newRoleRate}
-                onChangeText={setNewRoleRate}
+                onChangeText={(text) => {
+                  setNewRoleRate(text);
+                  if (newRoleRateError) setNewRoleRateError(null);
+                }}
                 keyboardType="decimal-pad"
+                error={newRoleRateError}
               />
               <PrimaryButton label={tr('common.save')} onPress={onAddRole} />
             </Card>
@@ -361,37 +439,53 @@ export default function ShiftFormScreen() {
         value={rateText}
         onChangeText={setRateText}
         keyboardType="decimal-pad"
-        placeholder="15.00"
+        placeholder={localizedMoneyPlaceholder(i18n.language)}
       />
       <Field
+        label={`${tr('shiftForm.plannedExpectedTips')} (${tr('common.optional')})`}
+        value={plannedExpectedTipsText}
+        onChangeText={setPlannedExpectedTipsText}
+        keyboardType="decimal-pad"
+      />
+      <Field
+        label={`${tr('shiftForm.plannedOtherIncome')} (${tr('common.optional')})`}
+        value={plannedOtherIncomeText}
+        onChangeText={setPlannedOtherIncomeText}
+        keyboardType="decimal-pad"
+      />
+      <Field
+        label={`${tr('templates.notes')} (${tr('common.optional')})`}
+        value={notes}
+        onChangeText={setNotes}
+        multiline
+      />
+      <DatePickerField
         label={tr('shiftForm.date')}
         value={date}
-        onChangeText={setDate}
-        hint={tr('shiftForm.dateFormatHint')}
-        autoCapitalize="none"
+        onChange={setDate}
       />
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <Field
+          <TimePickerField
             label={tr('shiftForm.start')}
-            value={startText}
-            onChangeText={setStartText}
+            value={parseHHMM(startText) ?? 0}
+            onChange={(minutes) => setStartText(minutesToHHMM(minutes))}
             hint={tr('shiftForm.timeFormatHint')}
-            autoCapitalize="none"
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Field
+          <TimePickerField
             label={tr('shiftForm.end')}
-            value={endText}
-            onChangeText={setEndText}
-            autoCapitalize="none"
+            value={parseHHMM(endText) ?? 0}
+            onChange={(minutes) => setEndText(minutesToHHMM(minutes))}
           />
           {/* DEF-06: explicit overnight cue */}
           {isOvernight ? (
             <Text
               style={{
                 color: t.cobaltLink,
+                backgroundColor: t.cobaltSoft,
+                paddingHorizontal: 4,
                 fontSize: 12,
                 fontWeight: '700',
                 marginTop: -8,
@@ -415,11 +509,10 @@ export default function ShiftFormScreen() {
       {hasBreak ? (
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Field
+            <TimePickerField
               label={tr('shiftForm.breakStart')}
-              value={breakStartText}
-              onChangeText={setBreakStartText}
-              autoCapitalize="none"
+              value={parseHHMM(breakStartText) ?? 0}
+              onChange={(minutes) => setBreakStartText(minutesToHHMM(minutes))}
             />
           </View>
           <View style={{ flex: 1 }}>
@@ -463,7 +556,7 @@ export default function ShiftFormScreen() {
       {errors.length > 0 ? (
         <View style={{ marginBottom: 12 }}>
           {errors.map((e) => (
-            <Text key={e} style={{ color: t.danger, fontSize: 13, marginBottom: 2 }}>
+            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 2 }}>
               {e}
             </Text>
           ))}
@@ -476,7 +569,7 @@ export default function ShiftFormScreen() {
         disabled={saving}
         style={{ marginBottom: 8 }}
       />
-      {!editing ? (
+      {!editing && !unplanned ? (
         <GhostButton
           label={tr('shiftForm.saveAndAddAnother')}
           onPress={() => onSave(true)}

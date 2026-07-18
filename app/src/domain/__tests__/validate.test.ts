@@ -1,4 +1,10 @@
-import { combineResults, validateMoney, validateShiftWindow } from '../validate';
+import {
+  combineResults,
+  validateDeductionBasisPoints,
+  validateHourlyRateCents,
+  validateMoney,
+  validateShiftWindow,
+} from '../validate';
 import type { ShiftBreak } from '../types';
 
 const brk = (
@@ -114,7 +120,7 @@ describe('validateShiftWindow — breaks', () => {
 
 describe('validateMoney', () => {
   it('accepts non-negative and missing amounts', () => {
-    const r = validateMoney({ directTips: 0, tipOutPaid: 12.5, sales: null, other: undefined });
+    const r = validateMoney({ directTips: 0, tipOutPaid: 1250, sales: null, other: undefined });
     expect(r.valid).toBe(true);
   });
 
@@ -138,5 +144,22 @@ describe('combineResults', () => {
     );
     expect(combined.valid).toBe(false);
     expect(combined.errors.sort()).toEqual(['end_not_after_start', 'negative_amount']);
+  });
+});
+
+describe('rate and deduction validation', () => {
+  it('rejects zero, negative, fractional-cent, and missing hourly rates', () => {
+    expect(validateHourlyRateCents(1).valid).toBe(true);
+    expect(validateHourlyRateCents(0).errors).toEqual(['rate_not_positive']);
+    expect(validateHourlyRateCents(-1).valid).toBe(false);
+    expect(validateHourlyRateCents(1000.5).valid).toBe(false);
+    expect(validateHourlyRateCents(null).valid).toBe(false);
+  });
+
+  it('accepts only integer deduction basis points from 0 through 10000', () => {
+    expect(validateDeductionBasisPoints(0).valid).toBe(true);
+    expect(validateDeductionBasisPoints(10000).valid).toBe(true);
+    expect(validateDeductionBasisPoints(-1).errors).toEqual(['deduction_out_of_range']);
+    expect(validateDeductionBasisPoints(10001).valid).toBe(false);
   });
 });

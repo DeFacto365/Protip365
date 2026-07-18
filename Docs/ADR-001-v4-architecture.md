@@ -20,8 +20,8 @@ subagents) until superseded.
 | i18n | `i18next` + `react-i18next`; keys only in UI, locales `en`, `fr-CA`, `es` | Phase I requirement |
 | Testing | Jest + ts-jest for domain/data; component smoke tests optional | Testing agent owns coverage |
 | Design tokens | Light: white bg, `#E8E7F7` cards, cobalt `#2B4BD7` actions, cool neutrals; Dark: `#0E1118` bg, ALL text white; green only for confirmed money; M3 extended `Add shift` FAB on Schedule only, nav active-pill, 48 dp targets | Owner-approved mockups rev 3 (`Docs/design/explorations/app-mockups/claude/index.html`) |
-| In MVP (owner ruling, 2026-07-18) | `Save & add another` on the Add Shift form; `Copy week forward` (duplicate a week's scheduled shifts into a future week) | Owner clarification on grey-zone PRD features |
-| Out of MVP (deferred, tracked in backlog) | Reminders/notifications, templates & recurring rules, encrypted backup/restore, passcode/biometrics, trial/paywall & IAP, Month/Day calendar views, CSV import, soft-delete undo (confirm dialog is the MVP substitute), completion draft recovery | Deliver core planning + completion + stats loop first; undo + draft recovery deferred by owner ruling 2026-07-18 |
+| In scope (owner ruling 2026-07-18: "full Phase I in the release") | Everything in PRD §9 Phase I, including: Save & add another; Copy week forward; templates & recurring rules; unplanned shifts; Day/Month views; goals/trends; passcode/biometrics; local reminders; encrypted backup/restore; trial + paywall UI. SQLCipher enabled. | Supersedes the earlier MVP deferral rows; QA plan's "Deferred" section D-01…D-11 is obsolete for these items and they must be actively tested |
+| Still deferred | Real store billing (IAP adapter — trial enforcement stays DISABLED until it ships), CSV import, soft-delete undo (confirm dialog suffices), completion draft recovery, Cloud Sync | Billing needs store products + dev-build testing; undo/draft-recovery per owner ruling 2026-07-18 |
 
 ## Phase I constraints (unchanged)
 

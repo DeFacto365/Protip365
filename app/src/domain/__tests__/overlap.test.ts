@@ -8,8 +8,8 @@ const shift = (overrides: Partial<Shift>): Shift => ({
   startMin: 17 * 60,
   endMin: 23 * 60,
   breaks: [],
-  hourlyRateSnapshot: 15,
-  status: 'scheduled',
+  hourlyRateSnapshot: 1500,
+  status: 'planned',
   ...overrides,
 });
 

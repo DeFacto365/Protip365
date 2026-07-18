@@ -44,3 +44,5 @@ Pods/
 *.bak
 *.log
 *.orig.*
+# Local release artifacts
+/artifacts/*.aab

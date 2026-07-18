@@ -17,6 +17,9 @@
   - Employer names in the phone mock are fictional.
   - Fonts load from Google Fonts; self-host before production.
 -->
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="apple-touch-icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -55,8 +58,9 @@
   /* ---------- header ---------- */
   header{position:sticky;top:0;z-index:20;background:rgba(251,246,239,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:68px;gap:14px}
-  .logo{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:700;text-decoration:none}
+  .logo{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:10px}
   .logo em{font-style:normal;color:var(--coral)}
+  .logo img{width:34px;height:34px;border-radius:9px;box-shadow:0 3px 8px -2px rgba(30,159,255,.5)}
   .nav-right{display:flex;align-items:center;gap:18px;font-size:.95rem}
   .nav-right a{text-decoration:none;color:var(--ink-soft)}
   .nav-right a:hover{color:var(--ink)}
@@ -97,9 +101,13 @@
   /* ---------- phone mock ---------- */
   .phone-zone{position:relative;display:flex;justify-content:center}
   .phone{
-    width:320px;background:#fff;border-radius:38px;border:10px solid var(--ink);
+    position:relative;width:320px;background:#fff;border-radius:38px;border:10px solid var(--ink);
     box-shadow:var(--shadow);transform:rotate(2deg);overflow:hidden;
   }
+  /* App walkthrough loop over the static mock; the mock remains the fallback
+     when the video cannot load or the visitor prefers reduced motion. */
+  .p-demo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  @media (prefers-reduced-motion:reduce){.p-demo{display:none}}
   .p-status{display:flex;justify-content:space-between;font-size:.65rem;font-weight:600;color:var(--ink-soft);padding:10px 18px 2px}
   .p-head{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 4px}
   .p-head h3{font-family:'Fraunces',Georgia,serif;font-size:1.25rem}
@@ -193,14 +201,13 @@
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="#">Pro<em>Tip</em>365</a>
+    <a class="logo" href="#"><img src="/logo.png" alt="" width="34" height="34"><span>Pro<em>Tip</em>365</span></a>
     <nav class="nav-right" aria-label="Site">
       <div class="lang" role="group" aria-label="Language">
         <button type="button" data-lang="en" class="on">EN</button>
         <button type="button" data-lang="fr">FR</button>
         <button type="button" data-lang="es">ES</button>
       </div>
-      <a href="#privacy-pricing" data-i18n="nav_privacy">Privacy &amp; pricing</a>
       <!-- Production Google Play URL not verified — placeholder link -->
       <a class="nav-cta" href="#" data-i18n="nav_cta">Get the app</a>
     </nav>
@@ -267,6 +274,9 @@
             <span class="who"><b>Juniper's</b><span data-i18n="m_role3">Server · 6:00 PM – 12:00 AM</span></span>
             <span class="amt"><span class="badge done" data-i18n="m_badge_d">COMPLETED</span><b>$181</b><span data-i18n="m_vs">vs $158 expected</span></span>
           </div>
+          <video class="p-demo" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+            <source src="demo.webm" type="video/webm">
+          </video>
         </div>
         <div class="chip up" aria-hidden="true" data-i18n-html="chip_up"><span class="pos">+$23</span> vs expected<small>Juniper's · Thursday</small></div>
         <div class="chip cash" aria-hidden="true" data-i18n-html="chip_cash">$86 cash · $95 card<small>logged in 20 seconds</small></div>
@@ -343,8 +353,8 @@
   <div class="wrap foot">
     <span>© 2026 ProTip365</span>
     <nav aria-label="Legal">
-      <a href="#" data-i18n="f_privacy">Privacy</a>
-      <a href="#" data-i18n="f_terms">Terms</a>
+      <a href="/privacy" data-i18n="f_privacy">Privacy</a>
+      <a href="/terms" data-i18n="f_terms">Terms</a>
     </nav>
   </div>
 </footer>

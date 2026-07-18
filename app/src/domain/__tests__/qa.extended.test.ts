@@ -33,8 +33,8 @@ const baseShift = (overrides: Partial<Shift> = {}): Shift => ({
   startMin: 17 * 60,
   endMin: 23 * 60,
   breaks: [],
-  hourlyRateSnapshot: 15,
-  status: 'scheduled',
+  hourlyRateSnapshot: 1500,
+  status: 'planned',
   ...overrides,
 });
 
@@ -45,9 +45,9 @@ describe('TP-046 expectedEarnings rounding', () => {
       startMin: 8 * 60,
       endMin: 17 * 60, // 540 min
       breaks: [brk(10 * 60, 15, true), brk(13 * 60, 30, false)], // → 510 paid
-      hourlyRateSnapshot: 15.75,
+      hourlyRateSnapshot: 1575,
     });
-    expect(expectedEarnings(shift)).toBe(133.88);
+    expect(expectedEarnings(shift)).toBe(13388);
   });
 });
 
@@ -58,17 +58,18 @@ describe('TP-026 completion with +20 min end adjustment', () => {
     actualStartMin: 17 * 60,
     actualEndMin: 23 * 60 + 20, // stayed 20 min late
     actualBreaks: [],
+    plannedExpectedTips: 0,
     status: 'worked',
   });
 
   it('expected stays 90; actual base becomes 95', () => {
-    expect(expectedEarnings(shift)).toBe(90);
-    expect(actualEarnings(shift)).toBe(95);
+    expect(expectedEarnings(shift)).toBe(9000);
+    expect(actualEarnings(shift)).toBe(9500);
   });
 
   it('variance is +5 and effective hourly equals the rate', () => {
-    expect(variance(shift)).toBe(5);
-    expect(effectiveHourly(shift)).toBe(15);
+    expect(variance(shift)).toBe(500);
+    expect(effectiveHourly(shift)).toBe(1500);
   });
 });
 
@@ -84,30 +85,30 @@ describe('TP-035 net tip income per flow', () => {
     });
 
   it('direct tips only: +120', () => {
-    expect(actualEarnings(worked({ directTips: 120 }))).toBe(210);
+    expect(actualEarnings(worked({ directTips: 12000 }))).toBe(21000);
   });
   it('tip-out only: −15', () => {
-    expect(actualEarnings(worked({ tipOutPaid: 15 }))).toBe(75);
+    expect(actualEarnings(worked({ tipOutPaid: 1500 }))).toBe(7500);
   });
   it('tip-share only: +35', () => {
-    expect(actualEarnings(worked({ tipShareReceived: 35 }))).toBe(125);
+    expect(actualEarnings(worked({ tipShareReceived: 3500 }))).toBe(12500);
   });
   it('pool contribution only: −20', () => {
-    expect(actualEarnings(worked({ poolContribution: 20 }))).toBe(70);
+    expect(actualEarnings(worked({ poolContribution: 2000 }))).toBe(7000);
   });
   it('all four combined (PRD §10 model): 120 − 20 + 35 − 15 = +120 net tips', () => {
     expect(
       actualEarnings(
-        worked({ directTips: 120, poolContribution: 20, tipShareReceived: 35, tipOutPaid: 15 })
+        worked({ directTips: 12000, poolContribution: 2000, tipShareReceived: 3500, tipOutPaid: 1500 })
       )
-    ).toBe(210);
+    ).toBe(21000);
   });
   it('all zeros → base only', () => {
     expect(
       actualEarnings(
         worked({ directTips: 0, poolContribution: 0, tipShareReceived: 0, tipOutPaid: 0 })
       )
-    ).toBe(90);
+    ).toBe(9000);
   });
 });
 
@@ -126,16 +127,16 @@ describe('TP-049 deduction-rate boundaries', () => {
       actualStartMin: 9 * 60,
       actualEndMin: 17 * 60,
       actualBreaks: [],
-      hourlyRateSnapshot: 25, // 8h → 200 gross
-      deductionRateSnapshot: rate,
+      hourlyRateSnapshot: 2500,
+      deductionRateSnapshotBp: rate,
       status: 'worked',
     });
 
   it('rate 0 → net equals gross', () => {
-    expect(estimatedNet(worked(0))).toBe(200);
+    expect(estimatedNet(worked(0))).toBe(20000);
   });
   it('rate 1 (100%) → net 0', () => {
-    expect(estimatedNet(worked(1))).toBe(0);
+    expect(estimatedNet(worked(10000))).toBe(0);
   });
 });
 
@@ -147,9 +148,10 @@ describe('TP-051 variance signs', () => {
       actualStartMin: 17 * 60,
       actualEndMin: 22 * 60,
       actualBreaks: [],
+      plannedExpectedTips: 0,
       status: 'worked',
     });
-    expect(variance(shift)).toBe(-15);
+    expect(variance(shift)).toBe(-1500);
   });
 });
 
@@ -160,24 +162,23 @@ describe('TP-053 effective hourly zero-paid-time guard', () => {
       actualStartMin: 600,
       actualEndMin: 660,
       actualBreaks: [brk(600, 60, false)], // paid time 0
-      directTips: 50,
+      directTips: 5000,
       status: 'worked',
     });
-    expect(effectiveHourly(shift)).toBe(0);
-    expect(Number.isFinite(effectiveHourly(shift))).toBe(true);
+    expect(effectiveHourly(shift)).toBeNull();
   });
 });
 
 // TP-054 — payout boundary refinements
 describe('TP-054 payout status boundaries (cent-level)', () => {
   it('one cent short is still partially_received', () => {
-    expect(derivePayoutStatus(150, 149.99)).toBe('partially_received');
+    expect(derivePayoutStatus(15000, 14999)).toBe('partially_received');
   });
   it('one cent over is received', () => {
-    expect(derivePayoutStatus(150, 150.01)).toBe('received');
+    expect(derivePayoutStatus(15000, 15001)).toBe('received');
   });
   it('overpayment keeps pending at 0', () => {
-    expect(pendingPayout(150, 150.01)).toBe(0);
+    expect(pendingPayout(15000, 15001)).toBe(0);
   });
 });
 
@@ -201,11 +202,12 @@ describe('TP-057 zero-hour edges', () => {
       actualStartMin: 600,
       actualEndMin: 660,
       actualBreaks: [],
-      directTips: 40,
+      directTips: 4000,
+      plannedExpectedTips: 0,
       status: 'worked',
     });
     // actual: 1h × 15 + 40 = 55; expected 0
-    expect(variance(shift)).toBe(55);
+    expect(variance(shift)).toBe(5500);
   });
 
   it('validation rejects identical start/end so a true 0-length shift cannot be saved', () => {
@@ -214,26 +216,19 @@ describe('TP-057 zero-hour edges', () => {
 });
 
 // TP-058 — money rounding and float-drift guards
-describe('TP-058 rounding to cents', () => {
-  it('repeated 0.1 additions round clean', () => {
-    const sum = [...Array(10)].reduce((s: number) => s + 0.1, 0); // 0.9999999999999999
-    expect(roundCents(sum)).toBe(1);
+describe('TP-058 integer-cent rounding boundaries', () => {
+  it('7h50m at 1575 cents/hour rounds once to 12338 cents', () => {
+    expect(roundCents((470 * 1575) / 60)).toBe(12338);
   });
 
-  it('7h50m × 15.75 = 123.375 → 123.38', () => {
-    expect(roundCents((470 / 60) * 15.75)).toBe(123.38);
+  it('a 40% deduction on 3333 cents rounds to 1333 cents', () => {
+    expect(roundCents((3333 * 4000) / 10000)).toBe(1333);
   });
 
-  it('deduction on 33.33 at 40% → 13.33', () => {
-    expect(roundCents(33.33 * 0.4)).toBe(13.33);
-  });
-
-  // DEF-10 fix (2026-07-18): roundCents now re-quantizes before rounding so the
-  // IEEE-754 artifact 1.005 → 100.4999… no longer rounds down; half-up applies.
-  it('half-cent values round half-up (1.005 → 1.01)', () => {
-    expect(roundCents(1.005)).toBe(1.01);
-    expect(roundCents(2.675)).toBe(2.68);
-    expect(roundCents(0.125)).toBe(0.13);
+  it('positive half-cent values round up at the defined boundary', () => {
+    expect(roundCents(100.5)).toBe(101);
+    expect(roundCents(267.5)).toBe(268);
+    expect(roundCents(12.5)).toBe(13);
   });
 
   it('break math is integer minutes (no fractional-minute drift)', () => {

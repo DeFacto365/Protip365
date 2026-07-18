@@ -66,6 +66,61 @@ Only when the user explicitly authorizes implementation:
 
 If a safe change requires an architectural decision, stop and provide options with tradeoffs. Do not implement the decision yourself.
 
+## Dispatch implementation to Codex CLI
+
+Codex CLI is the implementation agent for this repository. When the user explicitly authorizes a code or documentation change, delegate the implementation through Codex instead of editing the files yourself.
+
+### Executable
+
+On this Windows host, prefer the verified standalone executable directly:
+
+```text
+C:\Users\jack_\AppData\Local\Programs\OpenAI\Codex\bin\codex.exe
+```
+
+After Claude or the terminal is restarted, `codex` from `PATH` resolves to the same standalone installation. Do not use the packaged executable under `C:\Program Files\WindowsApps`; Windows blocks direct access to it.
+
+The standalone CLI is installed and authenticated through ChatGPT. Do not request or expose an API key.
+
+This Windows host uses Codex's `unelevated` restricted-token sandbox because Windows application control blocks the elevated sandbox helper. Keep sandboxing enabled; do not change this setting or substitute an unsafe bypass flag.
+
+### Dispatch procedure
+
+1. Read this file, `Docs/ADR-001-v4-architecture.md`, and the closest applicable `AGENTS.md` before dispatching.
+2. Run `git status --short` and include any existing worktree changes in the task context so Codex preserves them.
+3. Run only one Codex implementation job at a time in this checkout.
+4. Give Codex the exact scope, acceptance criteria, protected files or folders, and required checks.
+5. Use `--sandbox workspace-write`. Never use `--dangerously-bypass-approvals-and-sandbox` or `--dangerously-bypass-hook-trust`.
+6. Unless the user explicitly requests Git publishing, tell Codex not to stage, commit, push, merge, publish, or deploy.
+7. Wait for Codex to finish. Then inspect the resulting diff and independently verify the reported checks before telling the user the work is complete.
+8. If Codex reports an architectural conflict or missing user decision, return that question to the user. Do not silently resolve it.
+
+PowerShell dispatch template:
+
+```powershell
+$codex = "$env:LOCALAPPDATA\Programs\OpenAI\Codex\bin\codex.exe"
+if (-not (Test-Path -LiteralPath $codex)) {
+  $codex = (Get-Command codex -ErrorAction Stop).Source
+}
+
+$task = @'
+Read the repository instructions and Docs/ADR-001-v4-architecture.md.
+Implement: <exact task>.
+Acceptance criteria: <criteria>.
+Preserve all unrelated and pre-existing changes.
+Run the relevant tests and report the exact results.
+Do not stage, commit, push, publish, or deploy.
+'@
+
+$task | & $codex exec -C "C:\Github\Protip365" --sandbox workspace-write -
+```
+
+For a read-only review of current worktree changes, use:
+
+```powershell
+& $codex exec review --uncommitted "<specific review focus>"
+```
+
 ## Review format
 
 Report findings first, ordered by severity:

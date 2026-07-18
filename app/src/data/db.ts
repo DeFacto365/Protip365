@@ -1,18 +1,42 @@
 // NOTE: `execSync` in this file is expo-sqlite's SQLiteDatabase.execSync (SQL
 // statements on the local database), not Node's child_process. No shell is involved.
-import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
+import { deleteDatabaseSync, openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
+import { getRandomBytes } from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
+import { getLockConfig } from '../security/appLock';
+import {
+  requireDatabaseUnlockCapability,
+  revokeDatabaseUnlockCapability,
+  type DatabaseUnlockCapability,
+} from '../security/databaseCapability';
 
 export const DB_NAME = 'protip365.db';
 
 let db: SQLiteDatabase | null = null;
+const DATABASE_KEY = 'protip365.database-key.v1';
+
+function randomHex(byteCount: number): string {
+  return Array.from(getRandomBytes(byteCount), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function getOrCreateDatabaseKey(_capability: DatabaseUnlockCapability | null): string {
+  const stored = SecureStore.getItem(DATABASE_KEY);
+  if (stored) return stored;
+  const created = randomHex(32);
+  SecureStore.setItem(DATABASE_KEY, created);
+  return created;
+}
 
 /**
  * Idempotent migrations: every statement is CREATE IF NOT EXISTS, guarded by user_version.
  *
  * NOTE (DEF-14, 2026-07-18): deduction rates are stored as INTEGER basis points
  * (0–10000) per PRD §10, in `deduction_rate_bp` / `deduction_rate_snapshot_bp`.
- * The database is unreleased, so this schema change was made in place with no
- * migration-compat path (owner ruling); wipe any pre-existing dev database.
+ * RFP-225 also adds `default_hourly_rate` and the INTEGER `archived` employer
+ * flag. The database is unreleased, so these schema changes were made in place
+ * with no migration-compatibility path (owner ruling); wipe any pre-existing
+ * dev database. All currency and hourly-rate columns are INTEGER cents;
+ * deduction rates remain INTEGER basis points.
  */
 const MIGRATIONS: string[] = [
   // v1 — initial schema
@@ -21,7 +45,9 @@ const MIGRATIONS: string[] = [
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     color TEXT NOT NULL,
-    deduction_rate_bp INTEGER NOT NULL DEFAULT 0,
+    default_hourly_rate INTEGER NOT NULL CHECK (default_hourly_rate > 0),
+    deduction_rate_bp INTEGER NOT NULL DEFAULT 0 CHECK (deduction_rate_bp BETWEEN 0 AND 10000),
+    archived INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -29,39 +55,48 @@ const MIGRATIONS: string[] = [
     id TEXT PRIMARY KEY NOT NULL,
     employer_id TEXT NOT NULL REFERENCES employers(id),
     name TEXT NOT NULL,
-    hourly_rate REAL NOT NULL,
+    hourly_rate INTEGER NOT NULL CHECK (hourly_rate > 0),
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    UNIQUE (id, employer_id)
   );
   CREATE TABLE IF NOT EXISTS shifts (
     id TEXT PRIMARY KEY NOT NULL,
     employer_id TEXT NOT NULL REFERENCES employers(id),
-    role_id TEXT REFERENCES roles(id),
+    role_id TEXT,
     date TEXT NOT NULL,
     start_min INTEGER NOT NULL,
     end_min INTEGER NOT NULL,
     breaks_json TEXT NOT NULL DEFAULT '[]',
-    hourly_rate_snapshot REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'scheduled',
+    hourly_rate_snapshot INTEGER NOT NULL CHECK (hourly_rate_snapshot > 0),
+    planned_expected_tips INTEGER,
+    planned_other_income INTEGER,
+    status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'worked', 'missed', 'cancelled')),
+    transition_at TEXT NOT NULL,
     not_worked_reason TEXT,
     not_worked_note TEXT,
     actual_start_min INTEGER,
     actual_end_min INTEGER,
     actual_breaks_json TEXT,
+    actual_hourly_rate_snapshot INTEGER CHECK (actual_hourly_rate_snapshot IS NULL OR actual_hourly_rate_snapshot > 0),
     tip_method TEXT,
-    direct_tips REAL,
-    pool_contribution REAL,
-    tip_share_received REAL,
-    tip_out_paid REAL,
-    sales REAL,
-    other_income REAL,
-    deduction_rate_snapshot_bp INTEGER,
-    expected_payout REAL,
-    actual_received REAL,
+    direct_tips INTEGER,
+    pool_contribution INTEGER,
+    tip_share_received INTEGER,
+    tip_out_paid INTEGER,
+    sales INTEGER,
+    other_income INTEGER,
+    deduction_rate_snapshot_bp INTEGER CHECK (deduction_rate_snapshot_bp IS NULL OR deduction_rate_snapshot_bp BETWEEN 0 AND 10000),
+    expected_payout INTEGER,
+    actual_received INTEGER,
     payout_status TEXT,
     notes TEXT,
+    source_template_id TEXT,
+    source_recurrence_rule_id TEXT,
+    recurrence_key TEXT UNIQUE,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (role_id, employer_id) REFERENCES roles(id, employer_id)
   );
   CREATE INDEX IF NOT EXISTS idx_shifts_date ON shifts(date);
   CREATE INDEX IF NOT EXISTS idx_shifts_employer ON shifts(employer_id);
@@ -69,6 +104,47 @@ const MIGRATIONS: string[] = [
     key TEXT PRIMARY KEY NOT NULL,
     value TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS schedule_templates (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    employer_id TEXT NOT NULL REFERENCES employers(id),
+    role_id TEXT,
+    start_min INTEGER NOT NULL,
+    end_min INTEGER NOT NULL,
+    breaks_json TEXT NOT NULL DEFAULT '[]',
+    planned_expected_tips INTEGER,
+    planned_other_income INTEGER,
+    notes TEXT,
+    archived INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (role_id, employer_id) REFERENCES roles(id, employer_id)
+  );
+  CREATE TABLE IF NOT EXISTS recurrence_rules (
+    id TEXT PRIMARY KEY NOT NULL,
+    template_id TEXT NOT NULL REFERENCES schedule_templates(id),
+    cadence_weeks INTEGER NOT NULL,
+    weekdays_json TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    occurrence_count INTEGER,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_templates_employer ON schedule_templates(employer_id);
+  CREATE INDEX IF NOT EXISTS idx_recurrence_template ON recurrence_rules(template_id);
+  CREATE TABLE IF NOT EXISTS weekly_goals (
+    id TEXT PRIMARY KEY NOT NULL,
+    week_start TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    target INTEGER NOT NULL CHECK (target > 0),
+    employer_id TEXT REFERENCES employers(id),
+    repeat INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_goals_week ON weekly_goals(week_start);
   `,
 ];
 
@@ -86,22 +162,32 @@ export function migrate(database: SQLiteDatabase): void {
 }
 
 export function getDb(): SQLiteDatabase {
+  const lockEnabled = getLockConfig().enabled;
+  const capability = lockEnabled ? requireDatabaseUnlockCapability() : null;
   if (!db) {
-    db = openDatabaseSync(DB_NAME);
-    migrate(db);
+    // Keychain access is deliberately behind the app-unlock capability gate.
+    const key = getOrCreateDatabaseKey(capability);
+    const opened = openDatabaseSync(DB_NAME);
+    opened.execSync(`PRAGMA key = "x'${key}'";`);
+    migrate(opened);
+    db = opened;
   }
   return db;
 }
 
+/** Close the decrypted database handle when the app returns to a locked state. */
+export function closeDatabaseForLock(): void {
+  db?.closeSync();
+  db = null;
+}
+
 /** Drops all app data (used by Settings → Erase local data). */
 export function eraseAllData(): void {
-  const d = getDb();
-  d.withTransactionSync(() => {
-    d.execSync('DELETE FROM shifts;');
-    d.execSync('DELETE FROM roles;');
-    d.execSync('DELETE FROM employers;');
-    d.execSync('DELETE FROM settings;');
-  });
+  closeDatabaseForLock();
+  revokeDatabaseUnlockCapability();
+  deleteDatabaseSync(DB_NAME);
+  // Synchronous overwrite avoids a race if the app immediately creates a new database.
+  SecureStore.setItem(DATABASE_KEY, '');
 }
 
 export function nowIso(): string {

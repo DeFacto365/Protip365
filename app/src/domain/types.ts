@@ -3,7 +3,7 @@
  * Pure TypeScript — no React Native or database imports.
  */
 
-export type ShiftStatus = 'scheduled' | 'worked' | 'missed' | 'cancelled';
+export type ShiftStatus = 'planned' | 'worked' | 'missed' | 'cancelled';
 
 export type TipMethod = 'direct' | 'pooled' | 'mixed';
 
@@ -44,15 +44,59 @@ export interface Employer {
   name: string;
   /** Hex color from the employer palette. */
   color: string;
-  /** Estimated deduction rate as a fraction (0–1). */
-  deductionRate: number;
+  /** Integer cents/hour. */
+  defaultHourlyRate: number;
+  /** Integer basis points (0-10000). */
+  deductionRateBp: number;
+  /** Archived employers remain available to history but not new-shift pickers. */
+  archived: boolean;
 }
 
 export interface Role {
   id: string;
   employerId: string;
   name: string;
+  /** Integer cents/hour. */
   hourlyRate: number;
+}
+
+export interface ScheduleTemplate {
+  id: string;
+  name: string;
+  employerId: string;
+  roleId?: string | null;
+  startMin: number;
+  endMin: number;
+  breaks: ShiftBreak[];
+  plannedExpectedTips?: number | null;
+  plannedOtherIncome?: number | null;
+  notes?: string | null;
+  archived: boolean;
+}
+
+export interface RecurrenceRule {
+  id: string;
+  templateId: string;
+  cadenceWeeks: 1 | 2;
+  /** Monday = 0 through Sunday = 6. */
+  weekdays: number[];
+  startDate: string;
+  endDate?: string | null;
+  occurrenceCount?: number | null;
+  active: boolean;
+}
+
+export type GoalMetric = 'worked_hours' | 'net_tips' | 'actual_gross' | 'estimated_net';
+
+export interface WeeklyGoal {
+  id: string;
+  weekStart: string;
+  metric: GoalMetric;
+  /** Integer minutes for worked-hours goals; integer cents for money goals. */
+  target: number;
+  employerId?: string | null;
+  /** Explicit user choice to carry this goal into the following week. */
+  repeat: boolean;
 }
 
 export interface ShiftBreak {
@@ -76,9 +120,14 @@ export interface Shift {
   /** Scheduled end, minutes from midnight; may exceed 1440 for overnight shifts. */
   endMin: number;
   breaks: ShiftBreak[];
-  /** Hourly rate snapshotted at scheduling time. */
+  /** Integer cents/hour. */
   hourlyRateSnapshot: number;
+  /** Optional planned amounts in integer cents. Null means not entered. */
+  plannedExpectedTips?: number | null;
+  plannedOtherIncome?: number | null;
   status: ShiftStatus;
+  /** ISO timestamp of the latest lifecycle transition. */
+  transitionAt?: string;
   /** Required reason code when status is `missed` or `cancelled`. */
   notWorkedReason?: NotWorkedReason | null;
   /** Free-text note; required when the reason code is `other`. */
@@ -88,19 +137,27 @@ export interface Shift {
   actualStartMin?: number | null;
   actualEndMin?: number | null;
   actualBreaks?: ShiftBreak[] | null;
+  /** Integer cents/hour captured and editable at completion. */
+  actualHourlyRateSnapshot?: number | null;
   tipMethod?: TipMethod | null;
+  /** Monetary completion fields are integer cents. */
   directTips?: number;
   poolContribution?: number;
   tipShareReceived?: number;
   tipOutPaid?: number;
   sales?: number | null;
   otherIncome?: number;
-  /** Deduction rate snapshotted at completion, as a fraction (0–1). */
-  deductionRateSnapshot?: number;
+  /** Integer basis points snapshotted at completion. */
+  deductionRateSnapshotBp?: number;
   expectedPayout?: number;
   actualReceived?: number;
   payoutStatus?: PayoutStatus;
   notes?: string | null;
+  /** Planned-source metadata; historical validity never depends on the source rows. */
+  sourceTemplateId?: string | null;
+  sourceRecurrenceRuleId?: string | null;
+  /** Stable key used to make recurring generation idempotent. */
+  recurrenceKey?: string | null;
 
   createdAt?: string;
   updatedAt?: string;
@@ -111,6 +168,7 @@ export interface ShiftActualsInput {
   actualStartMin: number;
   actualEndMin: number;
   actualBreaks: ShiftBreak[];
+  actualHourlyRateSnapshot: number;
   tipMethod: TipMethod;
   directTips: number;
   poolContribution: number;
@@ -118,7 +176,7 @@ export interface ShiftActualsInput {
   tipOutPaid: number;
   sales?: number | null;
   otherIncome?: number;
-  deductionRateSnapshot: number;
+  deductionRateSnapshotBp: number;
   expectedPayout: number;
   actualReceived: number;
   payoutStatus: PayoutStatus;
