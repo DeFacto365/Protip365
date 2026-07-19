@@ -1,0 +1,20 @@
+appId: com.defacto365.protip365
+name: 03 Time picker opens without crash (KNOWN CRASH ZONE)
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Schedule"
+    commands:
+      - tapOn: "Add shift"
+- assertVisible: "Start"
+# Tap the start-time value (e.g. "5:00 PM") — this launches MaterialTimePicker
+- tapOn: "5:00.*"
+# Give the crash dialog time to appear if the app is going to die
+- extendedWaitUntil:
+    notVisible: "Start"
+    timeout: 3000
+    optional: true
+- assertNotVisible: ".*keeps stopping.*"
+- assertVisible: "Add shift"
+- takeScreenshot: timepicker-open

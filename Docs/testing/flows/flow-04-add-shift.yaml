@@ -1,0 +1,26 @@
+appId: com.defacto365.protip365
+name: 04 Add scheduled shift with unpaid break (default date/times — pickers crash)
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Schedule"
+    commands:
+      - tapOn: "Add shift"
+- assertVisible: "Unpaid break"
+# NOTE: requested TOMORROW 18:00-23:30, but date/time pickers crash the app
+# (see flow-02/03). Using default date (today) and default times so the rest
+# of the pipeline can be exercised. Break: enable, keep default 30 min.
+- tapOn:
+    text: "Unpaid break"
+    index: 1
+- assertVisible: "Duration (min)"
+- scrollUntilVisible:
+    element:
+      text: "Save"
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible: "Schedule"
+    timeout: 10000
+- assertVisible: ".*Test Bar.*"
+- takeScreenshot: shift-in-agenda

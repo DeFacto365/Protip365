@@ -1,0 +1,22 @@
+appId: com.defacto365.protip365
+name: 09 Trigger CSV export
+---
+- launchApp
+# Unlock first if the passcode lock screen (from flow 08) is showing
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn:
+          below: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: "Export CSV"
+- tapOn: "Export CSV"
+- takeScreenshot: export-triggered

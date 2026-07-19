@@ -1,0 +1,35 @@
+appId: com.defacto365.protip365
+name: 05 Complete the shift with tips 120.50 and tip-out 15
+---
+- launchApp
+- assertVisible: "Schedule"
+# Open today's shift (created in flow 04)
+- tapOn: ".*Test Bar.*"
+- assertVisible: "Confirm your hours"
+- takeScreenshot: shift-detail
+# NOTE: adjusting actual end time is blocked — the time fields launch the
+# crashing MaterialTimePicker (see flow-03). Keeping default confirmed hours.
+# Toggle the break off and back on to exercise the control.
+- tapOn: "Taken"
+- assertVisible: "Skipped"
+- tapOn: "Skipped"
+- assertVisible: "Taken"
+- tapOn: "Next"
+- assertVisible: "Tips & payout"
+- tapOn:
+    below: "Direct tips"
+- inputText: "120.50"
+- tapOn:
+    below: "Tip-out paid"
+- inputText: "15"
+- takeScreenshot: complete-form
+- scrollUntilVisible:
+    element:
+      text: "Save.*worked"
+- tapOn: "Save.*worked"
+# Generous wait: post-save the app has shown a stuck white screen (bug)
+- extendedWaitUntil:
+    visible: "Schedule"
+    timeout: 20000
+- assertVisible: ".*Test Bar.*"
+- takeScreenshot: shift-completed

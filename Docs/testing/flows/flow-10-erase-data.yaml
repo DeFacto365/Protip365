@@ -1,0 +1,33 @@
+appId: com.defacto365.protip365
+name: 10 Erase local data, onboarding returns
+---
+- launchApp
+# Unlock first if the passcode lock screen (from flow 08) is showing
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn:
+          below: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: ".*([Ee]rase|[Dd]elete|[Rr]eset).*"
+    optional: true
+- tapOn: ".*([Ee]rase|[Dd]elete|[Rr]eset).*"
+- takeScreenshot: erase-screen
+# Confirm destructive dialog
+- runFlow:
+    when:
+      visible: ".*([Ee]rase|[Dd]elete|[Cc]onfirm|[Yy]es).*"
+    commands:
+      - tapOn: ".*([Ee]rase|[Dd]elete|[Cc]onfirm|[Yy]es).*"
+- extendedWaitUntil:
+    visible: "Choose your language"
+    timeout: 15000
+- takeScreenshot: onboarding-returned
