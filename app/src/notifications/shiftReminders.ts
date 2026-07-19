@@ -116,3 +116,10 @@ export function cancelAllAppOwnedNotifications(clearStoredIds = true): Promise<v
     if (clearStoredIds) settingsRepo.removeByPrefix(REMINDER_PREFIX);
   });
 }
+
+/** Start native cleanup without ever allowing it to block local data erasure. */
+export function cancelAllAppOwnedNotificationsBestEffort(): void {
+  void cancelAllAppOwnedNotifications(false).catch((error: unknown) => {
+    console.warn('Scheduled reminder cancellation failed; continuing local data erasure.', error);
+  });
+}

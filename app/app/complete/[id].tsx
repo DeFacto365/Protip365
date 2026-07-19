@@ -290,7 +290,9 @@ export default function CompleteShiftScreen() {
       actualReceived: num(receivedText),
       payoutStatus,
     });
-    router.back();
+    // Always land on a renderable Schedule route. dismissTo also replaces the
+    // current route when completion was opened without a usable back stack.
+    router.dismissTo('/');
   };
 
   // DEF-02: canonical reason codes; employer_cancelled → 'cancelled', else 'missed'.

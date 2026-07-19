@@ -3,7 +3,7 @@ import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import { useTranslation } from 'react-i18next';
 
 import { eraseAllData } from '../data/db';
-import { cancelAllAppOwnedNotifications } from '../notifications/shiftReminders';
+import { cancelAllAppOwnedNotificationsBestEffort } from '../notifications/shiftReminders';
 import { useAppLockStore } from '../state/appLockStore';
 import { Card, Field, GhostButton, PrimaryButton } from './components';
 import { useTokens } from './tokens';
@@ -46,11 +46,11 @@ export function LockScreen() {
         onPress: () => {
           void (async () => {
             try {
-              await cancelAllAppOwnedNotifications(false);
+              cancelAllAppOwnedNotificationsBestEffort();
               eraseAllData();
               resetLock();
             } catch {
-              setError(tr('reminders.cancelFailed'));
+              setError(tr('security.resetFailed'));
             }
           })();
         },

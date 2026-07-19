@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { parseMoneyToCents, localizedMoneyPlaceholder } from '../src/domain/money';
-import { normalizeCurrencyCode } from '../src/domain/currency';
+import type { SupportedCurrency } from '../src/domain/currency';
 import { validateHourlyRateCents } from '../src/domain/validate';
 import { useEmployersStore } from '../src/state/employersStore';
 import { useSettingsStore, type Language } from '../src/state/settingsStore';
 import { Card, Chip, Field, PrimaryButton } from '../src/ui/components';
+import { CurrencyDropdown } from '../src/ui/CurrencyDropdown';
 import { EMPLOYER_PALETTE, useTokens } from '../src/ui/tokens';
 
 const LANGUAGES: Language[] = ['en', 'fr-CA', 'es'];
+const WELCOME_VALUES = [
+  { icon: '▦', key: 'schedule' },
+  { icon: '$', key: 'tips' },
+  { icon: '▣', key: 'privacy' },
+] as const;
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -26,10 +32,9 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [employerName, setEmployerName] = useState('');
   const [rateText, setRateText] = useState('');
-  const [currencyText, setCurrencyText] = useState(currencyCode);
+  const [currencySelection, setCurrencySelection] = useState<SupportedCurrency>(currencyCode);
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
-  const [currencyError, setCurrencyError] = useState<string | null>(null);
 
   const saveEmployer = () => {
     const name = employerName.trim();
@@ -51,12 +56,7 @@ export default function OnboardingScreen() {
   };
 
   const confirmCurrency = () => {
-    const normalized = normalizeCurrencyCode(currencyText);
-    if (!normalized) {
-      setCurrencyError(tr('onboarding.currencyInvalid'));
-      return;
-    }
-    setCurrencyCode(normalized);
+    setCurrencyCode(currencySelection);
     router.replace('/shift-form');
   };
 
@@ -67,9 +67,67 @@ export default function OnboardingScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
-      <Text style={{ color: t.ink, fontSize: 26, fontWeight: '700' }}>
-        {tr('onboarding.title')}
-      </Text>
+      {step === 0 ? (
+        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <Image
+            source={require('../assets/splash-logo.png')}
+            accessibilityLabel={tr('onboarding.logoLabel')}
+            resizeMode="contain"
+            style={{ width: 120, height: 120, marginBottom: 14 }}
+          />
+          <Text
+            style={{
+              color: t.ink,
+              fontSize: 26,
+              fontWeight: '700',
+              textAlign: 'center',
+            }}
+          >
+            {tr('onboarding.title')}
+          </Text>
+          <Text
+            style={{
+              color: t.cobalt,
+              fontSize: 18,
+              fontWeight: '700',
+              lineHeight: 24,
+              marginTop: 8,
+              textAlign: 'center',
+            }}
+          >
+            {tr('onboarding.tagline')}
+          </Text>
+          <View style={{ alignSelf: 'stretch', marginTop: 22, gap: 12 }}>
+            {WELCOME_VALUES.map((value) => (
+              <View
+                key={value.key}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: t.cobaltSoft,
+                  }}
+                >
+                  <Text style={{ color: t.cobalt, fontSize: 20, fontWeight: '800' }}>
+                    {value.icon}
+                  </Text>
+                </View>
+                <Text style={{ color: t.ink, flex: 1, fontSize: 15, lineHeight: 21 }}>
+                  {tr(`onboarding.values.${value.key}`)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <Text style={{ color: t.ink, fontSize: 26, fontWeight: '700' }}>
+          {tr('onboarding.title')}
+        </Text>
+      )}
       <Text style={{ color: t.softText, marginTop: 6, marginBottom: 20 }}>
         {tr('onboarding.step', { current: step + 1, total: 3 })}
       </Text>
@@ -140,16 +198,10 @@ export default function OnboardingScreen() {
           <Text style={{ color: t.softText, fontSize: 13, marginBottom: 14 }}>
             {tr('onboarding.currencyHint')}
           </Text>
-          <Field
+          <CurrencyDropdown
             label={tr('onboarding.currencyCode')}
-            value={currencyText}
-            onChangeText={(value) => {
-              setCurrencyText(value.toUpperCase());
-              setCurrencyError(null);
-            }}
-            autoCapitalize="characters"
-            maxLength={3}
-            error={currencyError}
+            value={currencySelection}
+            onChange={setCurrencySelection}
           />
           <PrimaryButton label={tr('onboarding.confirmCurrency')} onPress={confirmCurrency} />
         </Card>

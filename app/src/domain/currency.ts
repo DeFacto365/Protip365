@@ -2,22 +2,23 @@ export interface CurrencyLocale {
   currencyCode?: string | null;
 }
 
-export const DEFAULT_CURRENCY = 'CAD';
+export const SUPPORTED_CURRENCIES = ['USD', 'CAD', 'EUR', 'MXN'] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
-let activeCurrency = DEFAULT_CURRENCY;
+export const DEFAULT_CURRENCY: SupportedCurrency = 'CAD';
 
-export function normalizeCurrencyCode(value: string | null | undefined): string | null {
+let activeCurrency: SupportedCurrency = DEFAULT_CURRENCY;
+
+export function normalizeCurrencyCode(
+  value: string | null | undefined
+): SupportedCurrency | null {
   const code = value?.trim().toUpperCase() ?? '';
-  if (!/^[A-Z]{3}$/.test(code)) return null;
-  try {
-    new Intl.NumberFormat('en', { style: 'currency', currency: code }).format(0);
-    return code;
-  } catch {
-    return null;
-  }
+  return SUPPORTED_CURRENCIES.includes(code as SupportedCurrency)
+    ? (code as SupportedCurrency)
+    : null;
 }
 
-export function currencyForLocales(locales: readonly CurrencyLocale[]): string {
+export function currencyForLocales(locales: readonly CurrencyLocale[]): SupportedCurrency {
   for (const locale of locales) {
     const code = normalizeCurrencyCode(locale.currencyCode);
     if (code) return code;
@@ -31,6 +32,6 @@ export function setActiveCurrency(code: string): void {
   activeCurrency = normalized;
 }
 
-export function getActiveCurrency(): string {
+export function getActiveCurrency(): SupportedCurrency {
   return activeCurrency;
 }

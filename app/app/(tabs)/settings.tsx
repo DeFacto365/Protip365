@@ -14,6 +14,7 @@ import { useAppLockStore } from '../../src/state/appLockStore';
 import { useEntitlementStore } from '../../src/state/entitlementStore';
 import { useTokens } from '../../src/ui/tokens';
 import { Chip, Field, GhostButton, PrimaryButton } from '../../src/ui/components';
+import { CurrencyDropdown } from '../../src/ui/CurrencyDropdown';
 import {
   actualEarnings,
   actualPaidMinutes,
@@ -58,6 +59,8 @@ export default function SettingsScreen() {
   const { t: tr } = useTranslation();
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
+  const currencyCode = useSettingsStore((s) => s.currencyCode);
+  const setCurrencyCode = useSettingsStore((s) => s.setCurrencyCode);
   const defaultDeductionRateBp = useSettingsStore((s) => s.defaultDeductionRateBp);
   const setDefaultDeductionRateBp = useSettingsStore((s) => s.setDefaultDeductionRateBp);
   const reminderEnabled = useSettingsStore((s) => s.postShiftReminderEnabled);
@@ -228,7 +231,7 @@ export default function SettingsScreen() {
               rehydrateEntitlement();
               setRateText('0');
             } catch {
-              Alert.alert(tr('reminders.cancelFailed'));
+              Alert.alert(tr('settings.eraseFailed'));
             }
           })();
         },
@@ -256,6 +259,13 @@ export default function SettingsScreen() {
           />
         ))}
       </View>
+
+      <CurrencyDropdown
+        label={tr('settings.currency')}
+        hint={tr('settings.currencyHint')}
+        value={currencyCode}
+        onChange={setCurrencyCode}
+      />
 
       {/* Default deduction rate */}
       <Field

@@ -56,6 +56,13 @@ java.lang.UnsupportedOperationException: Failed to resolve attribute at index 0:
   app). No crash in logcat — the process stays alive; it is a navigation/render hang.
   The data IS saved: after relaunch, Stats correctly shows the entered tips ($120.50).
 
+**RFP-235 regression note (implemented; pending on-device re-test):** once the atomic
+completion transaction and in-memory refresh succeed, native reminder cancellation must run
+best-effort without blocking the completion promise. The completion route must dismiss to the
+Schedule root (`/`), with replacement fallback when no usable back-stack entry exists. Re-test
+that tapping **Save — mark shift worked** immediately renders the agenda and that the completed
+amount remains visible after relaunch.
+
 ### BUG 3 — "Erase local data" fails (major)
 - **What the user does:** Settings → **Erase local data** → confirm.
 - **What happens:** dialog "Scheduled reminders could not be canceled. Your local data was

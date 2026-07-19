@@ -16,6 +16,14 @@ export default {
       optional: 'facultatif',
       hours: 'h',
     },
+    currency: {
+      options: {
+        USD: 'USD (États-Unis)',
+        CAD: 'CAD (Canada)',
+        EUR: 'EUR (Espagne)',
+        MXN: 'MXN (Mexique)',
+      },
+    },
     status: {
       planned: 'PRÉVU',
       worked: 'TRAVAILLÉ',
@@ -163,6 +171,13 @@ export default {
     },
     onboarding: {
       title: 'Bienvenue dans ProTip365',
+      logoLabel: 'Logo ProTip365',
+      tagline: 'Planifiez chaque quart. Sachez ce qu’il a vraiment rapporté.',
+      values: {
+        schedule: 'Voyez tous vos employeurs dans un seul horaire.',
+        tips: 'Suivez vos pourboires et ce que chaque quart a vraiment rapporté.',
+        privacy: 'Gardez vos dossiers privés sur cet appareil.',
+      },
       step: 'Étape {{current}} sur {{total}}',
       languageTitle: 'Choisissez votre langue',
       languageHint: 'La langue de votre appareil est présélectionnée si elle est offerte.',
@@ -246,6 +261,8 @@ export default {
     settings: {
       title: 'Réglages',
       language: 'Langue',
+      currency: 'Devise',
+      currencyHint: 'Tous les montants de l’app utilisent cette devise ISO.',
       defaultDeductionRate: 'Taux de retenues par défaut (%)',
       deductionHint:
         'Sert à estimer le revenu net. Estimation seulement — pas un conseil fiscal.',
@@ -260,6 +277,7 @@ export default {
       eraseConfirmMessage:
         'Cette action supprime définitivement tous les employeurs, quarts et réglages sur cet appareil. Elle est irréversible.',
       eraseConfirmAction: 'Tout effacer',
+      eraseFailed: 'Les données locales n’ont pas pu être effacées.',
       languages: {
         en: 'English',
         'fr-CA': 'Français (Canada)',
@@ -299,6 +317,7 @@ export default {
       resetTitle: 'Réinitialiser l’accès local?',
       resetWarning: 'Cette action efface définitivement les employeurs, quarts, revenus, réglages et la clé de chiffrement.',
       resetAction: 'Effacer les données et réinitialiser',
+      resetFailed: 'L’accès local n’a pas pu être réinitialisé.',
     },
     backup: {
       title: 'Sauvegarde chiffrée et restauration',

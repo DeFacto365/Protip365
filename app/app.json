@@ -23,7 +23,8 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -34,10 +35,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "backgroundColor": "#2B4BD7",
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
           "dark": {
-            "image": "./assets/splash-icon.png",
+            "image": "./assets/splash-logo.png",
             "backgroundColor": "#0E1118"
           }
         }
@@ -59,7 +62,8 @@
         {
           "faceIDPermission": "Allow ProTip365 to unlock your private shift and earnings records."
         }
-      ]
+      ],
+      "./plugins/withMaterial3AndroidTheme"
     ],
     "extra": {
       "router": {},

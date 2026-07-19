@@ -5,12 +5,13 @@ import { settingsRepo } from '../data/repositories';
 import { eraseAllData } from '../data/db';
 import { languageForDeviceCodes, type Language } from '../domain/language';
 import { validateDeductionBasisPoints } from '../domain/validate';
-import { cancelAllAppOwnedNotifications } from '../notifications/shiftReminders';
+import { cancelAllAppOwnedNotificationsBestEffort } from '../notifications/shiftReminders';
 import {
   currencyForLocales,
   DEFAULT_CURRENCY,
   normalizeCurrencyCode,
   setActiveCurrency,
+  type SupportedCurrency,
 } from '../domain/currency';
 
 export type { Language } from '../domain/language';
@@ -33,7 +34,7 @@ function detectDeviceLanguage(): Language {
   return 'en';
 }
 
-function detectDeviceCurrency(): string {
+function detectDeviceCurrency(): SupportedCurrency {
   try {
     return currencyForLocales(getLocales());
   } catch {
@@ -43,7 +44,7 @@ function detectDeviceCurrency(): string {
 
 interface SettingsState {
   language: Language;
-  currencyCode: string;
+  currencyCode: SupportedCurrency;
   /** Default deduction rate as integer basis points (0–10000). */
   defaultDeductionRateBp: number;
   postShiftReminderEnabled: boolean;
@@ -51,7 +52,7 @@ interface SettingsState {
   hydrated: boolean;
   hydrate: () => void;
   setLanguage: (language: Language) => void;
-  setCurrencyCode: (currencyCode: string) => void;
+  setCurrencyCode: (currencyCode: SupportedCurrency) => void;
   setDefaultDeductionRateBp: (basisPoints: number) => void;
   setPostShiftReminderEnabled: (enabled: boolean) => void;
   setPostShiftReminderDelayMinutes: (minutes: number) => void;
@@ -127,7 +128,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   eraseAll: async () => {
-    await cancelAllAppOwnedNotifications(false);
+    cancelAllAppOwnedNotificationsBestEffort();
     eraseAllData();
     set({
       language: 'en',

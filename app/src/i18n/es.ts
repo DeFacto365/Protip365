@@ -16,6 +16,14 @@ export default {
       optional: 'opcional',
       hours: 'h',
     },
+    currency: {
+      options: {
+        USD: 'USD (Estados Unidos)',
+        CAD: 'CAD (Canadá)',
+        EUR: 'EUR (España)',
+        MXN: 'MXN (México)',
+      },
+    },
     status: {
       planned: 'PROGRAMADO',
       worked: 'TRABAJADO',
@@ -164,6 +172,13 @@ export default {
     },
     onboarding: {
       title: 'Te damos la bienvenida a ProTip365',
+      logoLabel: 'Logotipo de ProTip365',
+      tagline: 'Planifica cada turno. Conoce lo que realmente pagó.',
+      values: {
+        schedule: 'Consulta todos tus empleadores en un solo horario.',
+        tips: 'Registra las propinas y lo que realmente pagó cada turno.',
+        privacy: 'Mantén tus registros privados en este dispositivo.',
+      },
       step: 'Paso {{current}} de {{total}}',
       languageTitle: 'Elige tu idioma',
       languageHint: 'El idioma de tu dispositivo está preseleccionado cuando está disponible.',
@@ -247,6 +262,8 @@ export default {
     settings: {
       title: 'Ajustes',
       language: 'Idioma',
+      currency: 'Moneda',
+      currencyHint: 'Todos los importes de la app usan esta moneda ISO.',
       defaultDeductionRate: 'Tasa de deducción predeterminada (%)',
       deductionHint:
         'Se usa para estimar el ingreso neto. Solo una estimación — no es asesoría fiscal.',
@@ -261,6 +278,7 @@ export default {
       eraseConfirmMessage:
         'Esto elimina permanentemente todos los empleadores, turnos y ajustes de este dispositivo. No se puede deshacer.',
       eraseConfirmAction: 'Borrar todo',
+      eraseFailed: 'No se pudieron borrar los datos locales.',
       languages: {
         en: 'English',
         'fr-CA': 'Français (Canada)',
@@ -300,6 +318,7 @@ export default {
       resetTitle: '¿Restablecer el acceso local?',
       resetWarning: 'Esto borra permanentemente empleadores, turnos, ingresos, ajustes y la clave de cifrado.',
       resetAction: 'Borrar datos y restablecer',
+      resetFailed: 'No se pudo restablecer el acceso local.',
     },
     backup: {
       title: 'Copia cifrada y restauración',

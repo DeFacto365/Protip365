@@ -16,6 +16,14 @@ export default {
       optional: 'optional',
       hours: 'h',
     },
+    currency: {
+      options: {
+        USD: 'USD (United States)',
+        CAD: 'CAD (Canada)',
+        EUR: 'EUR (Spain)',
+        MXN: 'MXN (Mexico)',
+      },
+    },
     status: {
       planned: 'PLANNED',
       worked: 'WORKED',
@@ -163,6 +171,13 @@ export default {
     },
     onboarding: {
       title: 'Welcome to ProTip365',
+      logoLabel: 'ProTip365 logo',
+      tagline: 'Plan every shift. Know what it actually paid.',
+      values: {
+        schedule: 'See every employer in one schedule.',
+        tips: 'Track tips and what each shift really paid.',
+        privacy: 'Keep your records private and on this device.',
+      },
       step: 'Step {{current}} of {{total}}',
       languageTitle: 'Choose your language',
       languageHint: 'Your device language is preselected when available.',
@@ -246,6 +261,8 @@ export default {
     settings: {
       title: 'Settings',
       language: 'Language',
+      currency: 'Currency',
+      currencyHint: 'Money throughout the app uses this ISO currency.',
       defaultDeductionRate: 'Default deduction rate (%)',
       deductionHint: 'Used to estimate net earnings. Estimates only — not tax advice.',
       manageEmployers: 'Manage employers',
@@ -259,6 +276,7 @@ export default {
       eraseConfirmMessage:
         'This permanently deletes all employers, shifts, and settings on this device. This cannot be undone.',
       eraseConfirmAction: 'Erase everything',
+      eraseFailed: 'Local data could not be erased.',
       languages: {
         en: 'English',
         'fr-CA': 'Français (Canada)',
@@ -298,6 +316,7 @@ export default {
       resetTitle: 'Reset local access?',
       resetWarning: 'This permanently erases all local employers, shifts, earnings, settings, and the encryption key.',
       resetAction: 'Erase data and reset access',
+      resetFailed: 'Local access could not be reset.',
     },
     backup: {
       title: 'Encrypted backup & restore',

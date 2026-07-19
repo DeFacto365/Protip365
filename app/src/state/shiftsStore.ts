@@ -77,7 +77,9 @@ export const useShiftsStore = create<ShiftsState>((set, get) => ({
     }
     const updated = shiftsRepo.completeShift(id, actuals, expectedStatus);
     set({ shifts: reload() });
-    await cancelShiftReminder(id).catch(() => undefined);
+    // Native notification cleanup is best-effort and must never hold the
+    // completed transaction or its post-save navigation open.
+    void cancelShiftReminder(id).catch(() => undefined);
     return updated;
   },
 

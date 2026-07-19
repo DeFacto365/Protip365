@@ -31,7 +31,9 @@ import * as Notifications from 'expo-notifications';
 import { settingsRepo } from '../../data/repositories';
 import {
   cancelAllAppOwnedNotifications,
+  cancelAllAppOwnedNotificationsBestEffort,
   cancelShiftReminder,
+  requestReminderPermission,
   syncShiftReminder,
 } from '../../notifications/shiftReminders';
 import type { Shift } from '../types';
@@ -60,6 +62,14 @@ beforeEach(() => {
 });
 
 describe('native reminder lifecycle serialization', () => {
+  it('requests native permission when reminders are enabled without a grant', async () => {
+    notifications.getPermissionsAsync.mockResolvedValueOnce({ granted: false } as never);
+    notifications.requestPermissionsAsync.mockResolvedValueOnce({ granted: true } as never);
+
+    await expect(requestReminderPermission()).resolves.toBe(true);
+    expect(notifications.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+  });
+
   it('retains the notification ID when native cancellation fails', async () => {
     reminderSettings.get.mockReturnValue('native-id');
     notifications.cancelScheduledNotificationAsync.mockRejectedValueOnce(
@@ -116,5 +126,21 @@ describe('native reminder lifecycle serialization', () => {
       'native_cancel_all_failed'
     );
     expect(reminderSettings.removeByPrefix).not.toHaveBeenCalled();
+  });
+
+  it('logs and ignores native cancellation failure during local data erasure', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    notifications.cancelAllScheduledNotificationsAsync.mockRejectedValueOnce(
+      new Error('native_cancel_all_failed')
+    );
+
+    expect(cancelAllAppOwnedNotificationsBestEffort()).toBeUndefined();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(warn).toHaveBeenCalledWith(
+      'Scheduled reminder cancellation failed; continuing local data erasure.',
+      expect.any(Error)
+    );
+    warn.mockRestore();
   });
 });
