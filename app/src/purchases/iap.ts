@@ -12,6 +12,20 @@ export interface InAppPurchaseClient {
   restore(): Promise<PurchaseEntitlement>;
 }
 
+export type PurchaseFlowErrorCode =
+  | 'iap_busy'
+  | 'iap_cancelled'
+  | 'iap_pending'
+  | 'iap_product_unavailable'
+  | 'iap_store_unavailable';
+
+export class PurchaseFlowError extends Error {
+  constructor(public readonly code: PurchaseFlowErrorCode) {
+    super(code);
+    this.name = 'PurchaseFlowError';
+  }
+}
+
 /**
  * Phase I seam for Google Play / App Store billing. The production adapter will
  * replace this stub after store products and receipt validation are configured.
@@ -36,4 +50,9 @@ export function purchasesAreAvailable(): boolean {
 export function setInAppPurchaseClient(client: InAppPurchaseClient): void {
   inAppPurchaseClient = client;
   purchaseAdapterAvailable = true;
+}
+
+export function resetInAppPurchaseClient(): void {
+  inAppPurchaseClient = new StubInAppPurchaseClient();
+  purchaseAdapterAvailable = false;
 }

@@ -34,6 +34,7 @@ interface EntitlementState {
   refresh: () => void;
   purchase: (productId: PurchaseProductId) => Promise<void>;
   restorePurchases: () => Promise<void>;
+  applyStoreEntitlement: (entitlement: PurchaseEntitlement) => void;
   rehydrateAfterDataChange: () => void;
 }
 
@@ -135,11 +136,13 @@ export const useEntitlementStore = create<EntitlementState>((set, get) => ({
   },
   purchase: async (productId) => {
     const entitlement = await inAppPurchaseClient.purchase(productId);
-    persistPurchase(entitlement);
-    set(evaluatedState());
+    get().applyStoreEntitlement(entitlement);
   },
   restorePurchases: async () => {
     const entitlement = await inAppPurchaseClient.restore();
+    get().applyStoreEntitlement(entitlement);
+  },
+  applyStoreEntitlement: (entitlement) => {
     persistPurchase(entitlement);
     set(evaluatedState());
   },

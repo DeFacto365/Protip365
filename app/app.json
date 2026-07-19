@@ -63,7 +63,8 @@
           "faceIDPermission": "Allow ProTip365 to unlock your private shift and earnings records."
         }
       ],
-      "./plugins/withMaterial3AndroidTheme"
+      "./plugins/withMaterial3AndroidTheme",
+      "expo-iap"
     ],
     "extra": {
       "router": {},

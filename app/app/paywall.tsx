@@ -7,8 +7,9 @@ import {
   LIFETIME_PRODUCT_ID,
   MONTHLY_PRODUCT_ID,
 } from '../src/domain/entitlements';
-import { purchasesAreAvailable } from '../src/purchases/iap';
+import { PurchaseFlowError } from '../src/purchases/iap';
 import { useEntitlementStore } from '../src/state/entitlementStore';
+import { usePurchaseStore } from '../src/state/purchaseStore';
 import { Card, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 
@@ -19,15 +20,21 @@ export default function PaywallScreen() {
   const days = useEntitlementStore((state) => state.trialDaysRemaining);
   const purchase = useEntitlementStore((state) => state.purchase);
   const restorePurchases = useEntitlementStore((state) => state.restorePurchases);
+  const purchasesAvailable = usePurchaseStore((state) => state.ready);
+  const prices = usePurchaseStore((state) => state.prices);
   const [busy, setBusy] = useState(false);
-  const purchasesAvailable = purchasesAreAvailable();
 
   const runPurchase = async (productId: typeof LIFETIME_PRODUCT_ID | typeof MONTHLY_PRODUCT_ID) => {
     setBusy(true);
     try {
       await purchase(productId);
       Alert.alert(tr('paywall.purchaseComplete'));
-    } catch {
+    } catch (error) {
+      if (error instanceof PurchaseFlowError && error.code === 'iap_cancelled') return;
+      if (error instanceof PurchaseFlowError && error.code === 'iap_pending') {
+        Alert.alert(tr('paywall.purchasePending'));
+        return;
+      }
       Alert.alert(tr('paywall.storeUnavailable'));
     } finally {
       setBusy(false);
@@ -78,7 +85,9 @@ export default function PaywallScreen() {
       ) : null}
 
       <Card style={{ padding: 16, marginBottom: 12 }}>
-        <Text style={{ color: t.ink, fontSize: 20, fontWeight: '800' }}>{tr('paywall.lifetimePrice')}</Text>
+        <Text style={{ color: t.ink, fontSize: 20, fontWeight: '800' }}>
+          {prices[LIFETIME_PRODUCT_ID] ?? tr('paywall.lifetimePrice')}
+        </Text>
         <Text style={{ color: t.softText, lineHeight: 20, marginVertical: 8 }}>{tr('paywall.lifetimeDescription')}</Text>
         <PrimaryButton
           label={purchasesAvailable ? tr('paywall.lifetimeAction') : tr('paywall.comingAtLaunchAction')}
@@ -88,7 +97,9 @@ export default function PaywallScreen() {
       </Card>
 
       <Card style={{ padding: 16, marginBottom: 16 }}>
-        <Text style={{ color: t.ink, fontSize: 20, fontWeight: '800' }}>{tr('paywall.monthlyPrice')}</Text>
+        <Text style={{ color: t.ink, fontSize: 20, fontWeight: '800' }}>
+          {prices[MONTHLY_PRODUCT_ID] ?? tr('paywall.monthlyPrice')}
+        </Text>
         <Text style={{ color: t.softText, lineHeight: 20, marginVertical: 8 }}>{tr('paywall.monthlyDescription')}</Text>
         <PrimaryButton
           label={purchasesAvailable ? tr('paywall.monthlyAction') : tr('paywall.comingAtLaunchAction')}

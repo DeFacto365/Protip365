@@ -14,6 +14,7 @@ import { useGoalsStore } from '../src/state/goalsStore';
 import { useAppLockStore } from '../src/state/appLockStore';
 import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
+import { IapBootstrap } from '../src/purchases/IapBootstrap';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -75,6 +76,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <IapBootstrap />
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{

@@ -544,7 +544,7 @@ Bracketed `[...]` items are placeholders the owner must fill in before this goes
 
 ## 9. Pricing setup
 
-**Do not create these yet if you're only doing internal testing tonight** — see Section 10. When ready to sell:
+The app itself remains **Free**. After uploading a signed build that contains the Billing permission, create these in-app products:
 
 In Play Console → Monetize → Products → In-app products, create two products matching `.agents/product-marketing.md` and PRD §18 exactly:
 
@@ -553,12 +553,13 @@ In Play Console → Monetize → Products → In-app products, create two produc
 | `lifetime_unlock` | One-time (managed) product | USD $19.99 | "Local lifetime" unlock per PRD §18/one-pager. Set regional pricing via Play Console's automatic conversion, then review a few key markets (Canada, major EU/UK/AU/regional) manually before publishing, since PRD §18 calls for validating "equivalent regional pricing." |
 | `monthly` | Subscription | USD $2.99 / month | Auto-renewing. No free trial configured *inside the subscription itself* — the 30-day free period is app-level trial logic (every install gets 30 days free before either paid option is required), not a Play Billing free-trial phase on the subscription. Decide with Codex whether to also configure a Play Billing-level trial/intro price on top of that, or keep the 30-day trial purely in app logic; doing both risks a confusing double-trial experience. |
 
-**Current blocker: the app has no billing integration.** There is no `react-native-iap`, `expo-in-app-purchases`, or Play Billing library anywhere in `app/package.json`. Creating these products in Play Console is safe to do at any time (it doesn't require an app release), but they are non-functional and unsellable until:
-1. A billing library is added to the app,
-2. Purchase, restore, and entitlement-check flows are built and tested per PRD §12/§18 (expired-trial users can still view/export data; restoring a purchase restores entitlement, not local data), and
-3. That flow is tested against these exact product IDs in a closed track before any production release with a paywall.
+**Implementation status (2026-07-19):** `expo-iap` is installed and its Expo config plugin adds `com.android.vending.BILLING` to the generated Android manifest. The existing entitlement seam now connects to Google Play / StoreKit, fetches localized prices, handles pending purchases, acknowledges non-consumable purchases and subscriptions, restores owned products, and refreshes subscription status when the app returns to the foreground.
 
-**Recommendation for tonight:** do not create the in-app products yet, or create them as drafts but do not activate them, since inactive product listings can sit in Play Console indefinitely without needing to be attached to a release. Revisit this once the billing library and purchase flow exist.
+Remaining release gates:
+1. Build and upload a new signed AAB; the current Play upload predates the Billing integration, so Play Console will continue to show `Upload a new APK` until this happens.
+2. Create `lifetime_unlock` and `monthly` exactly as listed above, with no store-level free trial.
+3. Test purchase, pending-payment, acknowledgement, restore, subscription lapse, and offline refresh from a Play testing track on a real device.
+4. Keep `ENTITLEMENT_ENFORCEMENT_ENABLED` set to `false` until those tests pass. Client-side store status is suitable for testing but is not a substitute for server-side purchase-token verification if fraud-resistant production entitlement becomes a requirement.
 
 ---
 

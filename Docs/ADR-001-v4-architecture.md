@@ -21,7 +21,8 @@ subagents) until superseded.
 | Testing | Jest + ts-jest for domain/data; component smoke tests optional | Testing agent owns coverage |
 | Design tokens | Light: white bg, `#E8E7F7` cards, cobalt `#2B4BD7` actions, cool neutrals; Dark: `#0E1118` bg, ALL text white; green only for confirmed money; M3 extended `Add shift` FAB on Schedule only, nav active-pill, 48 dp targets | Owner-approved mockups rev 3 (`Docs/design/explorations/app-mockups/claude/index.html`) |
 | In scope (owner ruling 2026-07-18: "full Phase I in the release") | Everything in PRD §9 Phase I, including: Save & add another; Copy week forward; templates & recurring rules; unplanned shifts; Day/Month views; goals/trends; passcode/biometrics; local reminders; encrypted backup/restore; trial + paywall UI. SQLCipher enabled. | Supersedes the earlier MVP deferral rows; QA plan's "Deferred" section D-01…D-11 is obsolete for these items and they must be actively tested |
-| Still deferred | Real store billing (IAP adapter — trial enforcement stays DISABLED until it ships), CSV import, soft-delete undo (confirm dialog suffices), completion draft recovery, Cloud Sync | Billing needs store products + dev-build testing; undo/draft-recovery per owner ruling 2026-07-18 |
+| Billing implementation (owner-authorized 2026-07-19) | `expo-iap` provides the shared Google Play / StoreKit adapter. Trial enforcement stays DISABLED until signed testing-track builds complete purchase, pending-payment, acknowledgement, restore, lapse, and offline-refresh testing. | Store products and signed-store testing are still release gates; local data remains usable without a network connection. |
+| Still deferred | CSV import, soft-delete undo (confirm dialog suffices), completion draft recovery, Cloud Sync | Undo/draft-recovery per owner ruling 2026-07-18; Cloud Sync remains `Coming Soon`. |
 
 ## Phase I constraints (unchanged)
 
