@@ -21,6 +21,8 @@
       "package": "com.defacto365.protip365",
       "permissions": [
         "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ]
     },
@@ -40,7 +42,6 @@
           }
         }
       ],
-      "./plugins/withExternalReleaseSigning",
       [
         "expo-sqlite",
         {
@@ -66,6 +67,12 @@
         "projectId": "c1a2f4a8-14ee-4093-a4ee-a96bbe9317e2"
       }
     },
-    "owner": "defacto365"
+    "owner": "defacto365",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c1a2f4a8-14ee-4093-a4ee-a96bbe9317e2"
+    }
   }
 }

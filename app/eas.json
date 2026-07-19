@@ -9,21 +9,24 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk",
         "credentialsSource": "local"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "local"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
