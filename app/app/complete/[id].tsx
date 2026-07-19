@@ -43,6 +43,8 @@ import {
 } from '../../src/domain/types';
 import { centsToInput, parseMoneyToCents } from '../../src/domain/money';
 
+const SCHEDULE_ROUTE = '/(tabs)' as const;
+
 /** DEF-05: breaks are fully editable at completion (start, duration, taken). */
 interface BreakDraft {
   label: string;
@@ -69,6 +71,10 @@ export default function CompleteShiftScreen() {
 
   const shift = getById(id);
   const isEditingActuals = shift?.status === 'worked';
+  const [initialIsEditingActuals] = useState(() => shift?.status === 'worked');
+  const [screenTitle] = useState(() =>
+    tr(initialIsEditingActuals ? 'complete.editTitle' : 'complete.title')
+  );
 
   const [step, setStep] = useState<1 | 2>(1);
   const [startText, setStartText] = useState(() =>
@@ -290,9 +296,7 @@ export default function CompleteShiftScreen() {
       actualReceived: num(receivedText),
       payoutStatus,
     });
-    // Always land on a renderable Schedule route. dismissTo also replaces the
-    // current route when completion was opened without a usable back stack.
-    router.dismissTo('/');
+    router.dismissTo(SCHEDULE_ROUTE);
   };
 
   // DEF-02: canonical reason codes; employer_cancelled → 'cancelled', else 'missed'.
@@ -303,7 +307,7 @@ export default function CompleteShiftScreen() {
     if (!canConfirmNotWorked || !reasonCode) return;
     const status = reasonCode === 'employer_cancelled' ? 'cancelled' : 'missed';
     await markNotWorked(shift.id, status, reasonCode, reasonNote.trim() || null);
-    router.back();
+    router.dismissTo(SCHEDULE_ROUTE);
   };
 
   const onCorrectToPlanned = () => {
@@ -319,7 +323,7 @@ export default function CompleteShiftScreen() {
           onPress: () => {
             void (async () => {
               await correctWorkedToPlanned(shift.id, true);
-              router.back();
+              router.dismissTo(SCHEDULE_ROUTE);
             })();
           },
         },
@@ -342,7 +346,7 @@ export default function CompleteShiftScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Stack.Screen options={{ title: tr(isEditingActuals ? 'complete.editTitle' : 'complete.title') }} />
+      <Stack.Screen options={{ title: screenTitle }} />
 
       <WriteAccessBanner />
 

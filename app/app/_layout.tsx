@@ -15,6 +15,10 @@ import { useAppLockStore } from '../src/state/appLockStore';
 import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
 export default function RootLayout() {
   const { t, isDark } = useTokens();
   const { t: tr } = useTranslation();

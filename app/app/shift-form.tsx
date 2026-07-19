@@ -22,6 +22,8 @@ import type { ShiftBreak } from '../src/domain/types';
 import { centsToInput, localizedMoneyPlaceholder, parseMoneyToCents } from '../src/domain/money';
 import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
 
+const SCHEDULE_ROUTE = '/(tabs)' as const;
+
 export default function ShiftFormScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; date?: string; unplanned?: string }>();
@@ -42,6 +44,16 @@ export default function ShiftFormScreen() {
   const deleteShift = useShiftsStore((s) => s.deleteShift);
 
   const editing = params.id ? getById(params.id) : undefined;
+  const [initialScreenMode] = useState<'edit' | 'unplanned' | 'add'>(() => {
+    if (params.id) return 'edit';
+    return params.unplanned === '1' ? 'unplanned' : 'add';
+  });
+  const [screenTitle] = useState(() => {
+    if (initialScreenMode === 'edit') return tr('shiftForm.editTitle');
+    return tr(
+      initialScreenMode === 'unplanned' ? 'shiftForm.unplannedTitle' : 'shiftForm.addTitle'
+    );
+  });
   const unplanned = params.unplanned === '1' && !editing;
 
   const employers = useMemo(
@@ -277,7 +289,7 @@ export default function ShiftFormScreen() {
     try {
       if (editing) {
         await updateScheduled(editing.id, buildInput(p));
-        router.back();
+        router.dismissTo(SCHEDULE_ROUTE);
         return;
       }
       const created = await addShift(buildInput(p));
@@ -289,7 +301,7 @@ export default function ShiftFormScreen() {
         setErrors([]);
         // keep employer/role/rate/times; user usually changes the date next
       } else {
-        router.back();
+        router.dismissTo(SCHEDULE_ROUTE);
       }
     } finally {
       release();
@@ -307,7 +319,7 @@ export default function ShiftFormScreen() {
         onPress: () => {
           void (async () => {
             await deleteShift(editing.id);
-            router.back();
+            router.dismissTo(SCHEDULE_ROUTE);
           })();
         },
       },
@@ -322,9 +334,7 @@ export default function ShiftFormScreen() {
     >
       <Stack.Screen
         options={{
-          title: editing
-            ? tr('shiftForm.editTitle')
-            : tr(unplanned ? 'shiftForm.unplannedTitle' : 'shiftForm.addTitle'),
+          title: screenTitle,
         }}
       />
 
