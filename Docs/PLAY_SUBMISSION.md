@@ -1,30 +1,22 @@
 # ProTip365 V4 — Google Play Submission Guide
 
-Status: first-draft submission playbook, written for an owner who has never published to Google Play.
-Date: 2026-07-17
+Status: active submission playbook, updated from the live Google Play Console state.
+Date: 2026-07-20
 Scope: Android only. This guide does not cover the Apple App Store.
 
-Read this top to bottom once before touching Play Console. Section 11 is the short version for the morning of submission.
+Read this top to bottom once before changing Play Console. Section 11 is the current owner/tester checklist.
 
 ---
 
-## 0. What this guide is based on, and the discrepancies you need to know about first
+## 0. Current verified state
 
-This guide was built by reading `.agents/product-marketing.md`, `Docs/PRD_V4.md`, `Docs/PRODUCT_ONE_PAGER_V4.md`, `Docs/ADR-001-v4-architecture.md`, `Docs/LINEAR_BACKLOG_V4.md`, and the actual code in `app/` (not just the plans). Three things came up that change what can honestly go on the store listing tonight. Read this before you paste anything into Play Console.
+This guide is based on `.agents/product-marketing.md`, the active V4 product and architecture documents, the code in `app/`, and the live Google Play Console.
 
-**1. The Android package name is still Expo's placeholder.**
-`app/app.json` line 21 currently has:
-```json
-"package": "com.anonymous.protip365"
-```
-`com.anonymous.*` is the value Expo assigns automatically to a project that has never had a custom application identifier configured — it is not a real, ownable package name, and Google generally rejects or discourages `com.anonymous.*` submissions. This must be changed **before the first upload** — the package name is permanent once a Play Console app entry is created and the first release is uploaded; it can never be changed later without publishing an entirely new app. Section 1 covers exactly what to set.
-
-**2. The PRD's Phase I feature list and the app's actual code disagree on what's built.**
-`Docs/ADR-001-v4-architecture.md` (owner-approved, 2026-07-18) explicitly defers these out of the current MVP: *reminders/notifications, templates & recurring rules, encrypted backup/restore, passcode/biometrics, trial/paywall & IAP, month/day calendar views, CSV import, soft-delete undo, completion draft recovery.* I confirmed this against the code in `app/`: there is no encryption library (no SQLCipher, no `op-sqlite`), no passcode/biometric screen, no reminder/notification code, no templates or recurrence code, and no billing/IAP library in `app/package.json`. What **is** implemented and working in the code: weekly schedule (`app/(tabs)/index.tsx`), add/edit shift (`app/shift-form.tsx`), shift completion with plan-vs-actual (`app/complete/[id].tsx`), current-week expected-vs-actual stats (`app/(tabs)/stats.tsx`), employers/roles, copy-week-forward (`src/domain/copyWeek.ts`), CSV export and Erase All Local Data (both in `app/(tabs)/settings.tsx`), and three languages (`en`, `fr-CA`, `es`).
-
-**Consequence for this guide:** `.agents/product-marketing.md` states, under Proof Points, that the "Private income data" claim requires "encrypted SQLite plus optional passcode/biometrics before this claim is used publicly," and the "Multi-job clarity" claim requires the multi-employer/expected-vs-actual flows to "pass Phase I tests" first. Since encryption and passcode/biometrics are not implemented, **the store copy in Section 4 does not claim the app is encrypted or passcode-protected**, even though the PRD and one-pager describe those as Phase I requirements. It also omits reminders, templates/recurring rules, weekly goals/trends, and backup/restore, since none of those exist yet. This is a deliberate, conservative choice, not an oversight — flagging it per CLAUDE.md's conflict rule rather than silently picking a side. **Codex/the owner should decide:** either (a) keep shipping this conservative copy as features land and expand it later, or (b) hold the Play submission until the ADR-deferred items ship so the PRD's full feature list can be used truthfully. This guide assumes (a).
-
-**3. IAP is not wired into the app.** No billing library exists in `app/package.json`, and `.agents/product-marketing.md`/PRD's 30-day-trial-then-$19.99-or-$2.99/month monetization is a plan, not working code. Section 9 and Section 10 cover what this means for tonight's build (short answer: internal testing, not production, and no real purchase flow yet).
+1. **Package and app entry are final.** The V4 package is `com.defacto365.protip365`, and the dedicated V4 Play Console app entry has accepted signed releases.
+2. **Phase I implementation is present.** The owner-authorized full Phase I scope in `Docs/ADR-001-v4-architecture.md` is implemented in `app/`. Public claims still depend on signed-build testing; do not claim a workflow is proven until its release test passes.
+3. **Billing is integrated and configured.** `expo-iap` provides the store adapter. Google Play products `lifetime_unlock` and `monthly` are active. Entitlement enforcement remains disabled until the signed-store purchase test matrix passes.
+4. **Internal testing is active.** Release 8 (`1.0.0`) is active on the internal track. Tester lists are assigned, and the same lists are enabled for licence testing.
+5. **Privacy and terms are live.** `https://protip365.vercel.app/privacy` and `https://protip365.vercel.app/terms` both returned HTTP 200 on 2026-07-20.
 
 ---
 
@@ -40,27 +32,21 @@ The owner's Play Console developer account already exists: **developer ID `63202
 - **Create a brand-new app entry for V4.** This is not just a precaution — it is required, because V4's Android package name (Section 1.2) is different from whatever the V3 app used, and Play Console ties one app entry to one immutable package name for its lifetime. A new package name means a new app entry regardless of preference.
 - If you are unsure whether the V3 entry is still "yours" to leave alone or needs to be explicitly closed out (e.g., "Unpublish" or leave as an orphaned draft), that is a judgment call only the owner can make after looking at it — flagged in Section 11.
 
-### 1.2 Fix the package name before anything else
+### 1.2 Final package name
 
-Change `app/app.json`:
-```json
-"android": {
-  "package": "com.anonymous.protip365"
-}
-```
-to a real, reverse-DNS identifier you own. Suggested, matching the domain implied by the developer's email (`defacto365.com`):
+`app/app.json` and the V4 Play Console entry use:
 ```json
 "android": {
   "package": "com.defacto365.protip365"
 }
 ```
-This is a one-line code change (not covered by this document's "no code" scope — hand it to Codex or make it yourself, then confirm before building). Whatever you choose, treat it as permanent: once the first `.aab` is uploaded to the new Play Console app entry, this string can never change without creating yet another new app (losing reviews, install counts, and the store URL, once any of those exist).
+This identifier is now permanent for this app entry. Changing it would require publishing a separate app.
 
 ### 1.3 Accounts and identity checklist
 
 - [ ] Google account with access to developer ID `6320222294638558312` — confirm login works.
 - [ ] Registration fee status confirmed paid (see 1.1).
-- [ ] Decide the package name (1.2) and get it changed in `app/app.json` before building.
+- [x] Package name finalized as `com.defacto365.protip365`.
 - [ ] Decide who is the "developer" identity shown on the store listing (individual or business name) — this affects the account type Play Console asks about and cannot be trivially changed later.
 
 ---
@@ -169,8 +155,8 @@ This produces `app/android/app/build/outputs/bundle/release/app-release.aab`, si
 
 ### 3.3 Either way, before you build
 
-- [ ] `app/app.json` `android.package` is `com.defacto365.protip365` (or your chosen final value), not `com.anonymous.protip365`.
-- [ ] `app/app.json` `version` (currently `1.0.0`) and the Android `versionCode` are set sensibly — Expo auto-manages `versionCode` increments under EAS by default (`"android": { "versionCode": ... }` or EAS's remote version source); confirm this is configured so each build gets a unique, incrementing code, since Play Console rejects an `.aab` with a `versionCode` it has already seen.
+- [x] `app/app.json` `android.package` is `com.defacto365.protip365`.
+- [x] Play accepted internal release version code 8 (`1.0.0`). Increment the version code for every later upload.
 - [ ] You've run `npm test` and `npm run typecheck` in `app/` and both pass, so you're not uploading a build with known-broken logic.
 
 ---
@@ -444,14 +430,16 @@ Expected outcome: **Everyone** (or the regional equivalent, e.g. "3+"/"PEGI 3").
 
 ## 8. App content declarations
 
-### 8.1 Privacy policy URL — required, and currently blocked
+### 8.1 Privacy policy URL — live
 
-Google Play **requires** a live, publicly accessible privacy policy URL before you can submit any release, including internal testing in most cases (Play Console will not let the listing be marked complete without one). Per this task's brief and confirmed in the repo: **`Docs/design/explorations/landing-page/claude/index.html`** (the source for `https://protip365.vercel.app`) currently has placeholder `href="#"` links for both "Privacy" and "Terms" in its footer (lines 346–347), and a placeholder nav CTA link (line 205, marked "Production Google Play URL not verified"). **This is a hard blocker** — a real, published privacy policy page must exist at a stable URL before Play Console submission can proceed past the App Content section.
+The public policy pages are live:
 
-A complete privacy policy draft, matching the actual local-only architecture (Section 0.2), is below. This needs to be:
-1. Reviewed by the owner (and ideally a lawyer familiar with PIPEDA, since PRD §13 flags Canadian privacy review as an open pre-beta requirement),
-2. Published at a real, stable URL (e.g., `https://protip365.vercel.app/privacy`), replacing the placeholder `#` link, and
-3. Pasted into Play Console's App Content → Privacy Policy field as that URL.
+- Privacy: `https://protip365.vercel.app/privacy`
+- Terms: `https://protip365.vercel.app/terms`
+
+Both URLs returned HTTP 200 on 2026-07-20. Keep the Play Console privacy-policy field pointed at the privacy URL, and update the policy before any release changes data collection, analytics, advertising, accounts, or cloud behavior.
+
+The policy text below remains a reference copy. The deployed page is the operational version and should still receive appropriate owner/legal review for Canadian and Québec requirements.
 
 Do not paste the raw text into Play Console — Play wants a URL, not the policy text itself.
 
@@ -544,22 +532,22 @@ Bracketed `[...]` items are placeholders the owner must fill in before this goes
 
 ## 9. Pricing setup
 
-The app itself remains **Free**. After uploading a signed build that contains the Billing permission, create these in-app products:
+The app download remains **Free**. The live Play Console products match PRD §18:
 
-In Play Console → Monetize → Products → In-app products, create two products matching `.agents/product-marketing.md` and PRD §18 exactly:
+| Product ID | Type | Purchase/base plan | United States | Canada | Availability | Status |
+|---|---|---|---|---|---|---|
+| `lifetime_unlock` | One-time product | `lifetime` (Buy) | USD $19.99 | CAD $27.99 | 173 countries/regions | Active |
+| `monthly` | Subscription | `local-monthly`, monthly auto-renewing | USD $2.99/month | CAD $4.19/month | 174 countries/regions | Active |
 
-| Product ID (suggested) | Type | Price | Notes |
-|---|---|---|---|
-| `lifetime_unlock` | One-time (managed) product | USD $19.99 | "Local lifetime" unlock per PRD §18/one-pager. Set regional pricing via Play Console's automatic conversion, then review a few key markets (Canada, major EU/UK/AU/regional) manually before publishing, since PRD §18 calls for validating "equivalent regional pricing." |
-| `monthly` | Subscription | USD $2.99 / month | Auto-renewing. No free trial configured *inside the subscription itself* — the 30-day free period is app-level trial logic (every install gets 30 days free before either paid option is required), not a Play Billing free-trial phase on the subscription. Decide with Codex whether to also configure a Play Billing-level trial/intro price on top of that, or keep the 30-day trial purely in app logic; doing both risks a confusing double-trial experience. |
+No Play Billing free-trial or introductory offer is configured. This is intentional: the app supplies its own 30-day trial and should not create a second, overlapping store trial.
 
-**Implementation status (2026-07-19):** `expo-iap` is installed and its Expo config plugin adds `com.android.vending.BILLING` to the generated Android manifest. The existing entitlement seam now connects to Google Play / StoreKit, fetches localized prices, handles pending purchases, acknowledges non-consumable purchases and subscriptions, restores owned products, and refreshes subscription status when the app returns to the foreground.
+**Implementation status (2026-07-20):** `expo-iap` adds the Billing permission and connects the entitlement seam to Google Play. Internal release 8 contains the billing adapter, localized product lookup, pending-purchase handling, acknowledgement, restore, and foreground subscription refresh.
 
 Remaining release gates:
-1. Build and upload a new signed AAB; the current Play upload predates the Billing integration, so Play Console will continue to show `Upload a new APK` until this happens.
-2. Create `lifetime_unlock` and `monthly` exactly as listed above, with no store-level free trial.
-3. Test purchase, pending-payment, acknowledgement, restore, subscription lapse, and offline refresh from a Play testing track on a real device.
-4. Keep `ENTITLEMENT_ENFORCEMENT_ENABLED` set to `false` until those tests pass. Client-side store status is suitable for testing but is not a substitute for server-side purchase-token verification if fraud-resistant production entitlement becomes a requirement.
+1. Install release 8 from the internal-testing opt-in link on a licensed tester's real Android device.
+2. Test localized product discovery, lifetime and monthly purchases, pending payment, acknowledgement, restore, subscription lapse, and offline refresh.
+3. Keep `ENTITLEMENT_ENFORCEMENT_ENABLED` set to `false` until the signed-store test matrix passes.
+4. Add server-side purchase-token validation only if fraud-resistant production entitlement becomes a requirement. Play Integrity is not a prerequisite for the current local-only phase.
 
 ---
 
@@ -569,31 +557,35 @@ Standard Play Console progression: **Internal testing → Closed testing → Ope
 
 ### Recommended path
 
-1. **Tonight: Internal testing.** This is the right track for the very first upload, for three reasons that all point the same direction: (a) IAP isn't wired in yet, so there's no working purchase flow to protect behind a paywall — internal testing lets real people run the app without needing that to be finished; (b) internal testing has the lightest review requirements and the fastest turnaround (often live within minutes to a couple of hours, with no full policy review), letting you validate the build actually installs and runs on a real device tonight; (c) it limits exposure to a list of testers you explicitly add by email, so an unfinished build showing the conservative Section 4 copy (or even placeholder copy) isn't visible to the public.
-   - Add yourself (and anyone else testing) as an internal tester by email in Play Console → Testing → Internal testing → Testers.
-   - Even for internal testing, Play Console requires you to fill in the Main Store Listing, Data Safety, Content Rating, and App Content sections (Sections 4, 6, 7, 8 above) before the release can be reviewed — these aren't skippable just because it's internal, though the *review* of them is lighter/faster than for production.
-2. **Closed testing**, once internal testing confirms the build installs and the core loop (add employer → plan a shift → complete a shift → see stats) works on a couple of real devices. Closed testing supports larger tester lists (via email list or a Google Group) and is the track Google increasingly expects apps to spend meaningful time in before production (as of recent Play policy, new developer accounts may be *required* to run a closed test with a minimum number of testers for a minimum period before Production is unlocked — check what your specific developer account's Play Console shows under Testing → Production eligibility, since this requirement has changed over time and may or may not apply to this account).
-3. **Production**, only once: the package name is final (Section 1.2 — this cannot change after this point), the privacy policy is live at a real URL (Section 8.1), Data Safety and Content Rating are complete and accurate for the exact build being released (Sections 6–7), and — if you intend to actually charge money at launch — the IAP products are live and tested (Section 9). If none of that is ready but you want *something* public sooner, consider Production with the app positioned as free/trial-only (no working paywall yet, per Section 9's blocker) rather than rushing IAP.
+1. **Internal testing — active.** Release 8 (`1.0.0`) is active. The `Android Testers` and `Maya` lists are assigned to the track and enabled under Licence testing. The first-time install still needs confirmation on a real device.
+   - Opt-in link: `https://play.google.com/apps/internaltest/4700551426889638180`
+   - The tester must use the exact invited Google account in both the browser and Play Store. Allow time for newly saved tester or release changes to propagate.
+2. **Closed testing**, after release 8 installs successfully and the core loop and billing matrix pass on real devices. Check Testing → Production eligibility for the exact tester-count and duration requirements shown for this developer account.
+3. **Production**, only after Data Safety, Content Rating, target-audience declarations, and every production eligibility item are confirmed for the release; real-device crash and billing tests pass; and the entitlement-enforcement decision is made.
 
 ---
 
-## 11. Morning checklist — the exact decisions only the owner can make
+## 11. Current owner/tester checklist
 
-Everything above can be prepared or drafted by Codex/Claude. These specific steps require the owner's own Google account, payment method, or judgment call, and cannot be done by an agent:
+Already completed:
 
-1. **Sign in** to Play Console at https://play.google.com/console with the account tied to developer ID `6320222294638558312`.
-2. **Check for and pay** the $25 USD registration fee if Play Console shows it as outstanding (Section 1.1).
-3. **Open the app list** and personally look at whether an old V3 app entry exists — decide whether to leave it alone, unpublish it, or otherwise deal with it (Section 1.1). This is a judgment call an agent should not make unilaterally since it may affect a listing that was previously public.
-4. **Confirm the final package name** (`com.defacto365.protip365` suggested, Section 1.2) — this is permanent, so it needs the owner's explicit sign-off before anyone builds against it.
-5. **Create the new app entry** in Play Console (app name, default language, free/paid — choose Free at the Play Console app-creation level even though there will be in-app purchases later, since "Free" vs "Paid" here refers to whether the app itself costs money to download, which it does not).
-6. **Generate the upload keystore** yourself, or personally supervise Codex/Claude generating it, and **personally store the passwords** in your own password manager (Section 2) — do not let an agent be the sole holder of these passwords.
-7. **Upload the `.aab`** to the Internal testing track once it's built (Section 3), and **paste the store listing copy** from Section 4 (or reviewed/localized replacements) into the Main Store Listing screen.
-8. **Publish the real privacy policy page** at a live URL, replacing the `href="#"` placeholders in the landing page (Section 8.1), and **paste that URL** into Play Console's App Content → Privacy Policy field. This requires deploying the website, which is outside this document's scope but is a hard blocker for even internal testing in most Play Console configurations.
-9. **Answer the App Content questionnaires** (Data Safety, Content Rating, target audience — Sections 6–8) inside Play Console's UI itself; the answers are drafted above, but only the owner (or someone the owner designates) can click through Google's actual multi-step forms, since they're interactive and not exposed via a document.
-10. **Add tester emails** to the Internal testing track and **share the opt-in link** with them, then personally verify the app installs and opens correctly on at least one real Android device before considering tonight's goal met.
+- [x] Final package and dedicated V4 app entry: `com.defacto365.protip365`.
+- [x] Signed release 8 active on Internal testing.
+- [x] Privacy and Terms pages live.
+- [x] `lifetime_unlock` and `monthly` products active with regional pricing.
+- [x] Internal tester lists assigned and enabled for licence testing.
 
-### Top 3 blockers that need the owner personally, right now
+Remaining:
 
-1. **The Android package name is a placeholder (`com.anonymous.protip365`) and must be decided and changed before any build is uploaded** — it's permanent once set, so this needs explicit owner sign-off, not just an agent's suggestion (Section 1.2).
-2. **No live privacy policy page exists** — `protip365.vercel.app`'s Privacy/Terms links are `href="#"` placeholders (confirmed in `Docs/design/explorations/landing-page/claude/index.html` lines 346–347), and Play Console will not let a release proceed past App Content without a real, published privacy policy URL. The draft in Section 8.1 needs the owner's review, the bracketed placeholders filled in, and the page actually deployed (Section 8.1).
-3. **Only the owner can sign into the existing Play Console account, confirm the registration-fee status, and decide what happens to the old V3 app entry** — these require the owner's own Google credentials and a judgment call about previously-public content that an agent should not make alone (Section 1.1).
+1. **Install release 8 on the tester's real Android device.** Open the opt-in link with the invited Google account, confirm the same account is active in Play Store, and retry after propagation/cache troubleshooting if Play shows “Item not found.”
+2. **Run the crash smoke test.** Tap a date to open the date picker, then complete a shift and confirm the app does not white-screen.
+3. **Run the signed-store billing matrix** in Section 9 on the licensed tester account.
+4. **Keep entitlement enforcement off** until the billing matrix passes.
+5. **Verify the Play Dashboard production gates:** App content, Data Safety, Content Rating, target audience, and Testing → Production eligibility.
+6. **Handle any old V3 listing separately.** Leaving, unpublishing, or replacing it is an owner decision and must not affect the V4 entry.
+
+### Current blockers to promotion
+
+1. Successful first-time installation on a real tester device is not yet confirmed.
+2. The signed-store purchase and entitlement test matrix has not yet passed.
+3. Production declarations and closed-test eligibility still need final verification in the live Console.
