@@ -223,11 +223,11 @@ export default function SettingsScreen() {
           void (async () => {
             try {
               await eraseAll();
+              await resetLock();
               await loadShifts();
               loadEmployers();
               loadTemplates();
               loadGoals();
-              resetLock();
               rehydrateEntitlement();
               setRateText('0');
             } catch {

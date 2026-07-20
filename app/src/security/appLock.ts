@@ -44,6 +44,18 @@ function resetLockout(): void {
   writeLockout({ attempts: 0, lockUntil: 0 });
 }
 
+async function deleteSecureStoreItemBestEffort(key: string): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch (error) {
+    try {
+      SecureStore.setItem(key, '');
+    } catch {
+      console.warn('SecureStore item cleanup failed.', key, error);
+    }
+  }
+}
+
 export interface LockConfig {
   enabled: boolean;
   biometricEnabled: boolean;
@@ -123,6 +135,6 @@ export async function setBiometricEnabled(enabled: boolean, promptMessage: strin
   return true;
 }
 
-export function clearAppLock(): void {
-  for (const key of Object.values(KEYS)) SecureStore.setItem(key, '');
+export async function clearAppLock(): Promise<void> {
+  await Promise.all(Object.values(KEYS).map((key) => deleteSecureStoreItemBestEffort(key)));
 }

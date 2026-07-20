@@ -10,26 +10,32 @@ jest.mock('expo-crypto', () => ({
 jest.mock('expo-secure-store', () => ({
   getItem: jest.fn(() => 'stored-database-key'),
   setItem: jest.fn(),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../../security/appLock', () => ({
+  clearAppLock: jest.fn(() => Promise.resolve()),
   getLockConfig: jest.fn(() => ({ enabled: false, biometricEnabled: false })),
 }));
 
 import * as SecureStore from 'expo-secure-store';
-import { openDatabaseSync } from 'expo-sqlite';
-import { getLockConfig } from '../../security/appLock';
+import { deleteDatabaseSync, openDatabaseSync } from 'expo-sqlite';
+import { clearAppLock, getLockConfig } from '../../security/appLock';
 import {
   closeDatabaseForLock,
+  eraseAllData,
   getDb,
 } from '../../data/db';
 import {
+  hasDatabaseUnlockCapability,
   issueDatabaseUnlockCapability,
   revokeDatabaseUnlockCapability,
 } from '../../security/databaseCapability';
 
 const openDatabase = openDatabaseSync as jest.MockedFunction<typeof openDatabaseSync>;
+const deleteDatabase = deleteDatabaseSync as jest.MockedFunction<typeof deleteDatabaseSync>;
 const lockConfig = getLockConfig as jest.MockedFunction<typeof getLockConfig>;
+const clearLock = clearAppLock as jest.MockedFunction<typeof clearAppLock>;
 const secureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 
 const database = {
@@ -45,7 +51,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   openDatabase.mockReturnValue(database as never);
   lockConfig.mockReturnValue({ enabled: false, biometricEnabled: false });
+  clearLock.mockResolvedValue();
   secureStore.getItem.mockReturnValue('stored-database-key');
+  secureStore.deleteItemAsync.mockResolvedValue();
 });
 
 describe('SQLCipher app-unlock capability gate', () => {
@@ -73,5 +81,28 @@ describe('SQLCipher app-unlock capability gate', () => {
   it('allows local database initialization without a capability when app lock is disabled', () => {
     expect(getDb()).toBe(database);
     expect(openDatabase).toHaveBeenCalledTimes(1);
+  });
+
+  it('erases the database before revoking the unlock capability', async () => {
+    lockConfig.mockReturnValue({ enabled: true, biometricEnabled: false });
+    issueDatabaseUnlockCapability();
+    expect(getDb()).toBe(database);
+
+    deleteDatabase.mockImplementation((name: string) => {
+      if (name === 'protip365.db') {
+        expect(hasDatabaseUnlockCapability()).toBe(true);
+      }
+    });
+
+    await eraseAllData();
+
+    expect(database.execSync).toHaveBeenCalledWith('PRAGMA wal_checkpoint(TRUNCATE);');
+    expect(database.closeSync).toHaveBeenCalled();
+    expect(deleteDatabase).toHaveBeenCalledWith('protip365.db');
+    expect(deleteDatabase).toHaveBeenCalledWith('protip365.db-wal');
+    expect(deleteDatabase).toHaveBeenCalledWith('protip365.db-shm');
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith('protip365.database-key.v1');
+    expect(clearLock).toHaveBeenCalled();
+    expect(hasDatabaseUnlockCapability()).toBe(false);
   });
 });

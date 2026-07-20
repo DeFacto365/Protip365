@@ -3,7 +3,7 @@
 import { deleteDatabaseSync, openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 import { getRandomBytes } from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import { getLockConfig } from '../security/appLock';
+import { clearAppLock, getLockConfig } from '../security/appLock';
 import {
   requireDatabaseUnlockCapability,
   revokeDatabaseUnlockCapability,
@@ -181,13 +181,55 @@ export function closeDatabaseForLock(): void {
   db = null;
 }
 
+function checkpointDatabaseForEraseBestEffort(): void {
+  try {
+    db?.execSync('PRAGMA wal_checkpoint(TRUNCATE);');
+  } catch (error) {
+    console.warn('Database WAL checkpoint failed during local data erase.', error);
+  }
+}
+
+function closeDatabaseForEraseBestEffort(): void {
+  try {
+    db?.closeSync();
+  } catch (error) {
+    console.warn('Database close failed during local data erase.', error);
+  } finally {
+    db = null;
+  }
+}
+
+function deleteDatabaseSidecarsBestEffort(): void {
+  for (const suffix of ['-wal', '-shm']) {
+    try {
+      deleteDatabaseSync(`${DB_NAME}${suffix}`);
+    } catch {
+      // Sidecars are expected to be absent after a clean checkpoint.
+    }
+  }
+}
+
+async function deleteDatabaseKeyBestEffort(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(DATABASE_KEY);
+  } catch (error) {
+    try {
+      SecureStore.setItem(DATABASE_KEY, '');
+    } catch {
+      console.warn('Database key cleanup failed during local data erase.', error);
+    }
+  }
+}
+
 /** Drops all app data (used by Settings → Erase local data). */
-export function eraseAllData(): void {
-  closeDatabaseForLock();
-  revokeDatabaseUnlockCapability();
+export async function eraseAllData(): Promise<void> {
+  checkpointDatabaseForEraseBestEffort();
+  closeDatabaseForEraseBestEffort();
   deleteDatabaseSync(DB_NAME);
-  // Synchronous overwrite avoids a race if the app immediately creates a new database.
-  SecureStore.setItem(DATABASE_KEY, '');
+  deleteDatabaseSidecarsBestEffort();
+  await deleteDatabaseKeyBestEffort();
+  await clearAppLock();
+  revokeDatabaseUnlockCapability();
 }
 
 export function nowIso(): string {

@@ -29,7 +29,7 @@ interface AppLockState {
   enable: (passcode: string) => Promise<string>;
   disable: (passcode: string) => Promise<boolean>;
   setBiometrics: (enabled: boolean, prompt: string) => Promise<boolean>;
-  reset: () => void;
+  reset: () => Promise<void>;
 }
 
 export const useAppLockStore = create<AppLockState>((set, get) => ({
@@ -93,7 +93,7 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
   disable: async (passcode) => {
     const result = await verifyPasscode(passcode);
     if (!result.ok) return false;
-    clearAppLock();
+    await clearAppLock();
     revokeDatabaseUnlockCapability();
     set({ enabled: false, biometricEnabled: false, locked: false });
     return true;
@@ -105,8 +105,8 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
     return ok;
   },
 
-  reset: () => {
-    clearAppLock();
+  reset: async () => {
+    await clearAppLock();
     revokeDatabaseUnlockCapability();
     closeDatabaseForLock();
     set({ hydrated: true, enabled: false, biometricEnabled: false, locked: false });

@@ -47,8 +47,8 @@ export function LockScreen() {
           void (async () => {
             try {
               cancelAllAppOwnedNotificationsBestEffort();
-              eraseAllData();
-              resetLock();
+              await eraseAllData();
+              await resetLock();
             } catch {
               setError(tr('security.resetFailed'));
             }

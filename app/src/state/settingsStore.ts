@@ -129,7 +129,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
   eraseAll: async () => {
     cancelAllAppOwnedNotificationsBestEffort();
-    eraseAllData();
+    await eraseAllData();
     set({
       language: 'en',
       currencyCode: DEFAULT_CURRENCY,
