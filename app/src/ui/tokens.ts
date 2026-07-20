@@ -1,86 +1,95 @@
 import { useColorScheme } from 'react-native';
 
 /**
- * Design tokens — owner-approved mockups rev 3
- * (Docs/design/explorations/app-mockups/claude/index.html).
+ * "Shift Receipt" tokens — owner-approved 2026-07-20.
+ * Source: Docs/design/explorations/home-redesign/claude/receipt-screens.html.
  */
-
 export interface Tokens {
   bg: string;
+  paper: string;
   surface: string;
   card: string;
-  line: string;
   ink: string;
+  dim: string;
   softText: string;
-  /** Primary action color (buttons). */
+  rule: string;
+  line: string;
+  red: string;
+  green: string;
+  pen: string;
+  /** Legacy aliases retained for existing screens. */
   cobalt: string;
-  /** Link/accent color (same as cobalt in light mode). */
   cobaltLink: string;
   cobaltSoft: string;
-  /** Confirmed money ONLY. */
-  green: string;
   greenSoft: string;
-  /** Pending amounts. */
   amber: string;
   amberSoft: string;
-  /** Destructive background/border; `danger` remains a text foreground. */
   dangerBg: string;
   danger: string;
   fabText: string;
 }
 
 export const light: Tokens = {
-  bg: '#FFFFFF',
-  surface: '#E8E7F7',
-  card: '#E8E7F7',
-  line: '#D9D8EC',
-  ink: '#23242E',
-  softText: '#63667A',
+  bg: '#E9E4D7',
+  paper: '#F6F2E9',
+  surface: '#F6F2E9',
+  card: '#F6F2E9',
+  ink: '#20211E',
+  dim: '#7C7A70',
+  softText: '#7C7A70',
+  rule: '#C9C3B2',
+  line: '#C9C3B2',
+  red: '#D8472B',
+  green: '#2E7D4F',
+  pen: '#2B4BD7',
   cobalt: '#2B4BD7',
   cobaltLink: '#2B4BD7',
-  cobaltSoft: '#D9E1FC',
-  green: '#1E7A5A',
-  greenSoft: '#DFF0E8',
-  amber: '#C97A10',
-  amberSoft: '#F7E8D2',
-  dangerBg: '#B3362B',
-  danger: '#B3362B',
-  fabText: '#FFFFFF',
+  cobaltSoft: '#F6F2E9',
+  greenSoft: '#F6F2E9',
+  amber: '#D8472B',
+  amberSoft: '#F6F2E9',
+  dangerBg: '#D8472B',
+  danger: '#D8472B',
+  fabText: '#F6F2E9',
 };
 
 export const dark: Tokens = {
-  bg: '#0E1118',
-  surface: '#161A26',
-  card: '#1D2231',
-  line: '#2B3144',
-  // Owner direction: ALL text white in dark mode.
-  ink: '#FFFFFF',
-  softText: '#FFFFFF',
-  cobalt: '#4C67E8', // buttons
-  cobaltLink: '#FFFFFF',
-  cobaltSoft: '#2B4BD7',
-  green: '#FFFFFF',
-  greenSoft: '#1E7A5A',
-  amber: '#FFFFFF',
-  amberSoft: '#875008',
-  dangerBg: '#B3362B',
-  danger: '#FFFFFF',
-  fabText: '#FFFFFF',
+  bg: '#12151C',
+  paper: '#1E222C',
+  surface: '#1E222C',
+  card: '#1E222C',
+  ink: '#F0EEE6',
+  dim: '#8B92A5',
+  softText: '#8B92A5',
+  rule: '#3A4152',
+  line: '#3A4152',
+  red: '#FF7A5C',
+  green: '#5CD69B',
+  pen: '#8FA8FF',
+  cobalt: '#8FA8FF',
+  cobaltLink: '#8FA8FF',
+  cobaltSoft: '#1E222C',
+  greenSoft: '#1E222C',
+  amber: '#FF7A5C',
+  amberSoft: '#1E222C',
+  dangerBg: '#FF7A5C',
+  danger: '#FF7A5C',
+  fabText: '#12151C',
 };
 
 /** Employer palette (assigned round-robin when employers are created). */
 export const EMPLOYER_PALETTE = [
-  '#E8A23D', // amber
-  '#D8697D', // rose
-  '#2E8B7C', // teal
-  '#2B4BD7', // cobalt
-  '#7A4E8C', // violet
+  '#E8A23D',
+  '#D8697D',
+  '#2E8B7C',
+  '#2B4BD7',
+  '#7A4E8C',
 ] as const;
 
 /** Minimum touch target (dp). */
 export const TOUCH_TARGET = 48;
 
-/** Owner directive 2026-07-18 (PRD §15 updated): no rounded corners anywhere. */
+/** Square geometry is part of the approved receipt direction. */
 export const radius = {
   card: 0,
   button: 0,

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +16,7 @@ import { DatePickerField, TimePickerField } from '../src/ui/DateTimeField';
 import { useTokens } from '../src/ui/tokens';
 import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
 import { centsToInput, parseMoneyToCents } from '../src/domain/money';
+import { Text } from '../src/ui/typography';
 
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 
@@ -336,7 +337,7 @@ export default function TemplatesScreen() {
         />
         <Field label={tr('templates.notes')} value={notes} onChangeText={setNotes} multiline />
         {formError ? (
-          <Text style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, marginBottom: 8 }}>
+          <Text style={{ color: t.paper, backgroundColor: t.red, padding: 6, marginBottom: 8 }}>
             {formError}
           </Text>
         ) : null}

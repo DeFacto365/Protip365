@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,7 @@ import {
   signedMoney,
 } from '../../src/ui/components';
 import { TimePickerField } from '../../src/ui/DateTimeField';
+import { Text } from '../../src/ui/typography';
 import {
   actualEarnings,
   derivePayoutStatus,
@@ -43,7 +44,7 @@ import {
 } from '../../src/domain/types';
 import { centsToInput, parseMoneyToCents } from '../../src/domain/money';
 
-const SCHEDULE_ROUTE = '/(tabs)' as const;
+const SCHEDULE_ROUTE = '/(tabs)/schedule' as const;
 
 /** DEF-05: breaks are fully editable at completion (start, duration, taken). */
 interface BreakDraft {
@@ -458,7 +459,7 @@ export default function CompleteShiftScreen() {
           />
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}
@@ -640,8 +641,8 @@ export default function CompleteShiftScreen() {
             </Text>
             <Text
               style={{
-                color: varianceValue == null ? t.softText : varianceValue >= 0 ? t.green : t.amber,
-                backgroundColor: varianceValue == null ? 'transparent' : varianceValue >= 0 ? t.greenSoft : t.amberSoft,
+                color: varianceValue == null ? t.softText : varianceValue >= 0 ? t.ink : t.red,
+                backgroundColor: 'transparent',
                 paddingHorizontal: varianceValue == null ? 0 : 6,
                 paddingVertical: varianceValue == null ? 0 : 3,
                 fontWeight: '600',
@@ -669,7 +670,7 @@ export default function CompleteShiftScreen() {
           </Card>
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}

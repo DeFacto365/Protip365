@@ -8,24 +8,26 @@
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Outfit',system-ui,sans-serif;background:#FBF6EF;color:#33241E;line-height:1.7;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:44rem;margin:0 auto;padding:48px 24px 80px}
-  a{color:#D64530}
-  .logo{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;font-weight:700;text-decoration:none;color:#33241E;display:inline-flex;align-items:center;gap:10px}
-  .logo em{font-style:normal;color:#D64530}
-  .logo img{width:30px;height:30px;border-radius:8px}
-  h1{font-family:'Fraunces',Georgia,serif;font-size:2rem;margin:34px 0 6px}
-  .updated{color:#6B5A52;font-size:.95rem;margin-bottom:30px}
-  h2{font-family:'Fraunces',Georgia,serif;font-size:1.25rem;margin:28px 0 8px}
+  body{font-family:'IBM Plex Mono',ui-monospace,Consolas,monospace;background:#E9E4D7;color:#20211E;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{width:min(46rem,calc(100% - 32px));margin:42px auto 80px;padding:42px 46px 64px;background:#F6F2E9;border:1.5px solid #20211E;box-shadow:6px 6px 0 #20211E}
+  a{color:#B63622;text-decoration-thickness:1.5px;text-underline-offset:3px}
+  a:focus-visible{outline:3px solid #2B4BD7;outline-offset:4px}
+  .logo{font-size:1.05rem;font-weight:700;letter-spacing:.03em;text-decoration:none;color:#20211E;display:inline-flex;align-items:center;gap:10px}
+  .logo em{font-style:normal;color:#B63622}
+  .logo img{width:30px;height:30px;border:1.5px solid #20211E;background:#FFFDF8}
+  h1{font-size:clamp(1.85rem,6vw,2.4rem);line-height:1.18;letter-spacing:-.035em;margin:8px 0 7px;padding-bottom:17px;border-bottom:1.5px dashed #C9C3B2}
+  .updated{color:#2B4BD7;font-family:'Caveat',cursive;font-size:1.18rem;line-height:1.2;margin:11px 0 31px;transform:rotate(-1deg);transform-origin:left}
+  h2{font-size:1.08rem;line-height:1.35;letter-spacing:.02em;margin:30px 0 8px}
   p{margin-bottom:12px}
-  footer{margin-top:48px;padding-top:20px;border-top:1px solid #E9DCCC;font-size:.85rem;color:#6B5A52}
-  .site{position:sticky;top:0;z-index:20;background:rgba(251,246,239,.88);backdrop-filter:blur(10px);border-bottom:1px solid #E9DCCC}
-  .hwrap{max-width:44rem;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
-  .cta{background:#33241E;color:#FBF6EF;padding:8px 16px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.9rem}
-  .cta:hover{background:#000}
+  footer{margin-top:48px;padding-top:20px;border-top:1.5px dashed #C9C3B2;font-size:.78rem;color:#626159}
+  .site{position:sticky;top:0;z-index:20;background:rgba(246,242,233,.96);border-bottom:1.5px dashed #20211E}
+  .hwrap{max-width:46rem;margin:0 auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+  .cta{background:#20211E;color:#F6F2E9;border:1.5px solid #20211E;padding:7px 14px;text-decoration:none;font-weight:700;font-size:.77rem;box-shadow:3px 3px 0 #D8472B}
+  .cta:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 #D8472B}
+  @media(max-width:560px){.wrap{width:calc(100% - 28px);margin-top:28px;padding:30px 21px 48px}.cta{font-size:.7rem;padding:7px 9px}}
 </style>
 </head>
 <body>

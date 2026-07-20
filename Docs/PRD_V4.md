@@ -707,20 +707,21 @@ It passed typecheck, 17 tests, and Expo export for Android, iOS, and web in an i
 
 ## 15. UX and visual direction
 
-Recommended direction: **Shift Ledger**.
+Recommended direction: **The Shift Receipt** (owner-approved 2026-07-20).
 
-- Calm, trustworthy, financial-record feel.
-- Light mode uses a pure white background with cool lavender `#E8E7F7` cards, soft card shadows, cool-neutral secondary text, and cobalt `#2B4BD7` as the main action color (owner direction, 2026-07-17; supersedes the earlier warm off-white direction).
-- Green is reserved for confirmed positive states, not general decoration.
-- Strong numeric typography and restrained charts.
-- No rounded corners: cards, buttons, chips, and inputs use square (0-radius) corners (owner direction, 2026-07-18).
-- Large touch targets and one clear primary action per screen.
-- Dark mode is important for after-shift use. Dark surfaces are deep cool charcoal (blue-black), never brown-on-black; primary text is white, and secondary text must keep WCAG AA contrast — no grey-on-brown combinations (owner direction, 2026-07-17).
+- Use IBM Plex Mono app-wide so schedules, forms, totals, and results read as one private shift ledger.
+- Light “paper receipt” palette: background `#E9E4D7`, paper `#F6F2E9`, ink `#20211E`, dim text `#7C7A70`, negative red `#D8472B`, confirmed-money green `#2E7D4F`, user-entry pen blue `#2B4BD7`, and rules `#C9C3B2`.
+- Dark “night ticket” palette: background `#12151C`, paper `#1E222C`, ink `#F0EEE6`, dim text `#8B92A5`, negative red `#FF7A5C`, confirmed-money green `#5CD69B`, user-entry pen blue `#8FA8FF`, and rules `#3A4152`.
+- Use receipt cards with dashed rules and hard-offset shadows, rotated bordered uppercase stamps, ink/pen hard-shadow buttons, bordered chips, and bordered segmented tabs.
+- Use pen blue for user-entered values and ink for computed values. Reserve green for confirmed money and red for negative amounts or close-out attention.
+- Keep cards, buttons, chips, fields, stamps, and tabs square with radius `0`.
+- Home is the first and initial tab. Its weekly tally uses existing model semantics for hours worked, wages, combined gross tips, tip-out paid, total earned, real hourly rate, and goal progress; it also links the next shift and overdue close-outs to the existing completion flow. It must not split tips into cash/card fields.
+- Large touch targets and one clear primary action per screen remain required.
 
 Android platform conventions (Material 3):
 
-- Use a Material 3 navigation bar with an active-indicator pill and always-visible labels.
-- Use an extended floating action button labeled `Add shift`, positioned bottom-right above the navigation bar; do not center-dock the FAB.
+- Use four always-visible navigation labels in this order: Home, Schedule, Stats, Settings; the active state uses the square ink-on-paper receipt treatment.
+- Use a square, ink hard-shadow floating action button labeled `Add shift`, positioned bottom-right above the navigation bar; do not center-dock the FAB.
 - Support system and predictive back everywhere; back or dismissal never discards an in-progress actual-entry draft.
 - Use Material segmented buttons or tabs for view switching, and Material date/time pickers and exposed dropdown menus for form fields.
 - Scale all text in sp and lay out edge-to-edge with correct status-bar and gesture insets (Android 15+).

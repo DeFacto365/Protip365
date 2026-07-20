@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -10,6 +10,7 @@ import { EMPLOYER_PALETTE, useTokens } from '../src/ui/tokens';
 import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
 import { centsToInput, parseMoneyToCents } from '../src/domain/money';
 import { validateDeductionBasisPoints, validateHourlyRateCents } from '../src/domain/validate';
+import { Text } from '../src/ui/typography';
 
 const COLOR_KEYS = ['amber', 'rose', 'teal', 'cobalt', 'violet'] as const;
 

@@ -2,6 +2,14 @@ import React, { useEffect } from 'react';
 import { AppState, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+  IBMPlexMono_600SemiBold,
+  IBMPlexMono_700Bold,
+  useFonts,
+} from '@expo-google-fonts/ibm-plex-mono';
 import { useTranslation } from 'react-i18next';
 
 import '../src/i18n';
@@ -15,12 +23,21 @@ import { useAppLockStore } from '../src/state/appLockStore';
 import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { IapBootstrap } from '../src/purchases/IapBootstrap';
+import { fonts } from '../src/ui/typography';
+
+void SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
+    IBMPlexMono_600SemiBold,
+    IBMPlexMono_700Bold,
+  });
   const { t, isDark } = useTokens();
   const { t: tr } = useTranslation();
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
@@ -40,6 +57,10 @@ export default function RootLayout() {
   const refreshEntitlement = useEntitlementStore((state) => state.refresh);
   const router = useRouter();
   const segments = useSegments();
+
+  useEffect(() => {
+    if (fontsLoaded) void SplashScreen.hideAsync();
+  }, [fontsLoaded]);
 
   useEffect(() => {
     hydrateLock();
@@ -68,6 +89,8 @@ export default function RootLayout() {
     if (segments[0] !== 'onboarding') router.replace('/onboarding');
   }, [employerCount, employersLoaded, router, segments, settingsHydrated]);
 
+  if (fontError) throw fontError;
+  if (!fontsLoaded) return null;
   if (!lockHydrated) return <View style={{ flex: 1, backgroundColor: t.bg }} />;
   if (locked) return <LockScreen />;
   if (!settingsHydrated || !employersLoaded) {
@@ -82,7 +105,7 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: t.bg },
           headerTintColor: t.ink,
-          headerTitleStyle: { color: t.ink },
+          headerTitleStyle: { color: t.ink, fontFamily: fonts.semiBold },
           contentStyle: { backgroundColor: t.bg },
         }}
       >

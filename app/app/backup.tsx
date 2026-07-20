@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import { useRouter } from 'expo-router';
@@ -20,6 +20,7 @@ import { useTemplatesStore } from '../src/state/templatesStore';
 import { Card, Field, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 import { cancelAllAppOwnedNotifications } from '../src/notifications/shiftReminders';
+import { Text } from '../src/ui/typography';
 
 function backupErrorKey(error: unknown): string {
   const message = error instanceof Error ? error.message : '';

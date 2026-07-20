@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
   type StyleProp,
@@ -15,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import i18n from '../i18n';
 import { getActiveCurrency } from '../domain/currency';
+import { fonts, Text } from './typography';
 
 const formatterCache = new Map<string, Intl.NumberFormat>();
 
@@ -31,7 +31,6 @@ function currencyFormatter(): Intl.NumberFormat {
         currencyDisplay: 'narrowSymbol',
       });
     } catch {
-      // Older Intl implementations may reject narrowSymbol.
       cached = new Intl.NumberFormat(locale, { style: 'currency', currency });
     }
     formatterCache.set(cacheKey, cached);
@@ -52,11 +51,9 @@ export function initials(name: string): string {
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
+    .map((word) => word[0]!.toUpperCase())
     .join('');
 }
-
-// ---------------------------------------------------------------------------
 
 export function Card({
   children,
@@ -69,11 +66,105 @@ export function Card({
   return (
     <View
       style={[
-        { backgroundColor: t.card, borderColor: t.line, borderWidth: 1, borderRadius: radius.card },
+        styles.card,
+        {
+          backgroundColor: t.card,
+          borderColor: t.ink,
+          shadowColor: t.ink,
+        },
         style,
       ]}
     >
       {children}
+    </View>
+  );
+}
+
+export function ReceiptCard({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { t } = useTokens();
+  return (
+    <View
+      style={[
+        styles.receipt,
+        {
+          backgroundColor: t.paper,
+          borderColor: t.rule,
+          shadowColor: t.ink,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+export function ReceiptRule() {
+  const { t } = useTokens();
+  return <View style={[styles.receiptRule, { borderColor: t.rule }]} />;
+}
+
+export function LineItem({
+  label,
+  value,
+  tone = 'computed',
+  strong,
+}: {
+  label: string;
+  value: string;
+  tone?: 'computed' | 'dim' | 'pen' | 'confirmed' | 'negative';
+  strong?: boolean;
+}) {
+  const { t } = useTokens();
+  const color =
+    tone === 'pen'
+      ? t.pen
+      : tone === 'confirmed'
+        ? t.green
+        : tone === 'negative'
+          ? t.red
+          : tone === 'dim'
+            ? t.dim
+            : t.ink;
+  return (
+    <View style={styles.lineItem}>
+      <Text style={[styles.lineLabel, { color: t.dim }, strong && styles.lineStrong]}>
+        {label}
+      </Text>
+      <Text style={[styles.lineValue, { color }, strong && styles.lineTotal]}>{value}</Text>
+    </View>
+  );
+}
+
+export function Stamp({
+  label,
+  tone = 'confirmed',
+  rotation = 7,
+  style,
+}: {
+  label: string;
+  tone?: 'confirmed' | 'negative' | 'pen' | 'ink';
+  rotation?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { t } = useTokens();
+  const color =
+    tone === 'negative' ? t.red : tone === 'pen' ? t.pen : tone === 'ink' ? t.ink : t.green;
+  return (
+    <View
+      style={[
+        styles.stamp,
+        { borderColor: color, transform: [{ rotate: `${rotation}deg` }] },
+        style,
+      ]}
+    >
+      <Text style={[styles.stampText, { color }]}>{label.toUpperCase()}</Text>
     </View>
   );
 }
@@ -83,15 +174,18 @@ export function PrimaryButton({
   onPress,
   disabled,
   danger,
+  tone = 'pen',
   style,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   danger?: boolean;
+  tone?: 'ink' | 'pen';
   style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTokens();
+  const backgroundColor = danger ? t.red : tone === 'ink' ? t.ink : t.pen;
   return (
     <Pressable
       accessibilityRole="button"
@@ -100,14 +194,18 @@ export function PrimaryButton({
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
+        styles.hardShadow,
         {
-          backgroundColor: danger ? t.dangerBg : t.cobalt,
-          opacity: disabled ? 0.45 : pressed ? 0.85 : 1,
+          backgroundColor,
+          shadowColor: backgroundColor,
+          opacity: disabled ? 0.45 : pressed ? 0.82 : 1,
         },
         style,
       ]}
     >
-      <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>{label}</Text>
+      <Text style={[styles.buttonText, { color: tone === 'pen' && !danger ? t.paper : t.bg }]}>
+        {label.toUpperCase()}
+      </Text>
     </Pressable>
   );
 }
@@ -123,9 +221,8 @@ export function GhostButton({
   danger?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { t, isDark } = useTokens();
-  const color = danger ? t.danger : t.cobaltLink;
-  const borderColor = danger ? t.dangerBg : isDark ? t.cobalt : t.cobaltLink;
+  const { t } = useTokens();
+  const color = danger ? t.red : t.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -133,11 +230,11 @@ export function GhostButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: 'transparent', borderWidth: 1.5, borderColor, opacity: pressed ? 0.7 : 1 },
+        { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: color, opacity: pressed ? 0.7 : 1 },
         style,
       ]}
     >
-      <Text style={[styles.buttonText, { color }]}>{label}</Text>
+      <Text style={[styles.buttonText, { color }]}>{label.toUpperCase()}</Text>
     </Pressable>
   );
 }
@@ -154,7 +251,7 @@ export function Chip({
   color?: string;
 }) {
   const { t } = useTokens();
-  const accent = color ?? t.cobalt;
+  const accent = color ?? t.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -164,14 +261,21 @@ export function Chip({
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? accent : t.card,
-          borderColor: selected ? accent : t.line,
+          backgroundColor: selected ? accent : t.paper,
+          borderColor: selected ? accent : t.ink,
           opacity: pressed ? 0.8 : 1,
         },
       ]}
     >
-      <Text style={{ color: selected ? '#FFFFFF' : t.ink, fontWeight: '600', fontSize: 13 }}>
-        {label}
+      <Text
+        style={{
+          color: selected ? t.paper : t.ink,
+          fontWeight: '700',
+          fontSize: 11,
+          letterSpacing: 0.7,
+        }}
+      >
+        {label.toUpperCase()}
       </Text>
     </Pressable>
   );
@@ -180,12 +284,12 @@ export function Chip({
 export function statusChipColors(status: ShiftStatus, t: Tokens): { bg: string; fg: string } {
   switch (status) {
     case 'worked':
-      return { bg: t.greenSoft, fg: t.green };
+      return { bg: t.ink, fg: t.paper };
     case 'planned':
-      return { bg: t.cobaltSoft, fg: t.cobaltLink };
+      return { bg: t.paper, fg: t.pen };
     case 'missed':
     case 'cancelled':
-      return { bg: t.amberSoft, fg: t.amber };
+      return { bg: t.paper, fg: t.red };
   }
 }
 
@@ -195,9 +299,12 @@ export function StatusChip({ status }: { status: ShiftStatus }) {
   const { bg, fg } = statusChipColors(status, t);
   const label = tr(`status.${status}`);
   return (
-    <View style={[styles.statusChip, { backgroundColor: bg }]} accessibilityLabel={label}>
+    <View
+      style={[styles.statusChip, { backgroundColor: bg, borderColor: fg }]}
+      accessibilityLabel={label}
+    >
       <Text style={{ color: fg, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
-        {status === 'worked' ? `✓ ${label}` : label}
+        {label}
       </Text>
     </View>
   );
@@ -212,27 +319,27 @@ export function Field({
   const { t } = useTokens();
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
-        {label}
+      <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
+        {label.toUpperCase()}
       </Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={t.softText}
+        placeholderTextColor={t.dim}
         {...inputProps}
         style={[
           styles.input,
           {
-            backgroundColor: t.bg,
-            borderColor: error ? t.dangerBg : t.line,
-            color: t.ink,
+            backgroundColor: 'transparent',
+            borderColor: error ? t.red : t.ink,
+            color: t.pen,
           },
         ]}
       />
       {hint && !error ? (
-        <Text style={{ color: t.softText, fontSize: 11, marginTop: 3 }}>{hint}</Text>
+        <Text style={{ color: t.dim, fontSize: 11, marginTop: 3 }}>{hint}</Text>
       ) : null}
       {error ? (
-        <Text style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 4, fontSize: 11, marginTop: 3 }}>
+        <Text style={{ color: t.paper, backgroundColor: t.red, padding: 4, fontSize: 11, marginTop: 3 }}>
           {error}
         </Text>
       ) : null}
@@ -241,17 +348,73 @@ export function Field({
 }
 
 export function Avatar({ name, color }: { name: string; color: string }) {
-  const { isDark } = useTokens();
+  const { t } = useTokens();
   return (
-    <View style={[styles.avatar, { backgroundColor: isDark ? color : `${color}33` }]}>
-      <Text style={{ color: isDark ? '#FFFFFF' : color, fontWeight: '700', fontSize: 12 }}>
-        {initials(name)}
-      </Text>
+    <View style={[styles.avatar, { backgroundColor: t.paper, borderColor: t.ink }]}>
+      <Text style={{ color, fontWeight: '700', fontSize: 12 }}>{initials(name)}</Text>
+    </View>
+  );
+}
+
+export function SegmentedTabs<T extends string>({
+  items,
+  selected,
+  onSelect,
+}: {
+  items: readonly { key: T; label: string }[];
+  selected: T;
+  onSelect: (value: T) => void;
+}) {
+  const { t } = useTokens();
+  return (
+    <View style={[styles.segmented, { borderColor: t.ink }]}>
+      {items.map((item, index) => {
+        const active = item.key === selected;
+        return (
+          <Pressable
+            key={item.key}
+            accessibilityRole="tab"
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: active }}
+            onPress={() => onSelect(item.key)}
+            style={({ pressed }) => [
+              styles.segment,
+              index > 0 && { borderLeftColor: t.ink, borderLeftWidth: 1.5 },
+              { backgroundColor: active ? t.ink : t.paper, opacity: pressed ? 0.78 : 1 },
+            ]}
+          >
+            <Text
+              style={{
+                color: active ? t.paper : t.dim,
+                fontSize: 10,
+                fontWeight: '700',
+                letterSpacing: 1,
+              }}
+            >
+              {item.label.toUpperCase()}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    borderWidth: 1.5,
+    borderRadius: radius.card,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  hardShadow: {
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.32,
+    shadowRadius: 0,
+    elevation: 3,
+  },
   button: {
     minHeight: TOUCH_TARGET,
     borderRadius: radius.button,
@@ -261,37 +424,104 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   buttonText: {
-    fontWeight: '600',
-    fontSize: 15,
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.8,
   },
   chip: {
-    // DEF-15: 48dp minimum Android touch target.
     minHeight: TOUCH_TARGET,
     borderRadius: radius.chip,
-    borderWidth: 1,
-    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusChip: {
     borderRadius: radius.chip,
+    borderWidth: 1.5,
     paddingHorizontal: 8,
     paddingVertical: 3,
     alignSelf: 'flex-start',
   },
   input: {
     minHeight: TOUCH_TARGET,
-    borderWidth: 1,
+    borderWidth: 0,
+    borderBottomWidth: 1.5,
     borderRadius: radius.field,
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
     fontSize: 15,
+    fontFamily: fonts.regular,
   },
   avatar: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: 0,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  receipt: {
+    borderTopWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderStyle: 'dashed',
+    padding: 16,
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  receiptRule: {
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
+    marginVertical: 10,
+  },
+  lineItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    gap: 12,
+    paddingVertical: 3,
+  },
+  lineLabel: {
+    flex: 1,
+    fontSize: 11,
+  },
+  lineValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  lineStrong: {
+    fontWeight: '700',
+    letterSpacing: 0.7,
+  },
+  lineTotal: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  stamp: {
+    alignSelf: 'flex-start',
+    borderWidth: 2.5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  stampText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+  },
+  segmented: {
+    flexDirection: 'row',
+    borderWidth: 1.5,
+  },
+  segment: {
+    flex: 1,
+    minHeight: TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
 });

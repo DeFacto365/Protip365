@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +7,7 @@ import { isValidPasscode } from '../src/domain/security';
 import { useAppLockStore } from '../src/state/appLockStore';
 import { Card, Chip, Field, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
+import { Text } from '../src/ui/typography';
 
 export default function SecurityScreen() {
   const { t } = useTokens();

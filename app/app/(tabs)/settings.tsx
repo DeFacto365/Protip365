@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,9 @@ import { useGoalsStore } from '../../src/state/goalsStore';
 import { useAppLockStore } from '../../src/state/appLockStore';
 import { useEntitlementStore } from '../../src/state/entitlementStore';
 import { useTokens } from '../../src/ui/tokens';
-import { Chip, Field, GhostButton, PrimaryButton } from '../../src/ui/components';
+import { Chip, Field, GhostButton, PrimaryButton, ReceiptCard } from '../../src/ui/components';
 import { CurrencyDropdown } from '../../src/ui/CurrencyDropdown';
+import { Text } from '../../src/ui/typography';
 import {
   actualEarnings,
   actualPaidMinutes,
@@ -245,57 +246,60 @@ export default function SettingsScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Language */}
-      <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>
-        {tr('settings.language')}
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-        {LANGUAGES.map((lang) => (
+      <ReceiptCard style={{ marginBottom: 18 }}>
+        <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 8 }}>
+          {tr('settings.language').toUpperCase()}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+          {LANGUAGES.map((lang) => (
+            <Chip
+              key={lang}
+              label={tr(`settings.languages.${lang}`)}
+              selected={language === lang}
+              onPress={() => setLanguage(lang)}
+            />
+          ))}
+        </View>
+
+        <CurrencyDropdown
+          label={tr('settings.currency')}
+          hint={tr('settings.currencyHint')}
+          value={currencyCode}
+          onChange={setCurrencyCode}
+        />
+
+        <Field
+          label={tr('settings.defaultDeductionRate')}
+          value={rateText}
+          onChangeText={onRateChange}
+          keyboardType="decimal-pad"
+          hint={tr('settings.deductionHint')}
+          error={rateError}
+        />
+      </ReceiptCard>
+
+      <ReceiptCard style={{ marginBottom: 18 }}>
+        <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 8 }}>
+          {tr('reminders.title').toUpperCase()}
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginBottom: 12 }}>
           <Chip
-            key={lang}
-            label={tr(`settings.languages.${lang}`)}
-            selected={language === lang}
-            onPress={() => setLanguage(lang)}
+            label={tr('reminders.enable')}
+            selected={reminderEnabled}
+            onPress={() => void toggleReminders()}
           />
-        ))}
-      </View>
+        </View>
+        <Field
+          label={tr('reminders.delayHours')}
+          value={reminderDelayText}
+          onChangeText={(text) => void onReminderDelayChange(text)}
+          keyboardType="decimal-pad"
+          hint={tr('reminders.privacyHint')}
+        />
+      </ReceiptCard>
 
-      <CurrencyDropdown
-        label={tr('settings.currency')}
-        hint={tr('settings.currencyHint')}
-        value={currencyCode}
-        onChange={setCurrencyCode}
-      />
-
-      {/* Default deduction rate */}
-      <Field
-        label={tr('settings.defaultDeductionRate')}
-        value={rateText}
-        onChangeText={onRateChange}
-        keyboardType="decimal-pad"
-        hint={tr('settings.deductionHint')}
-        error={rateError}
-      />
-
-      <View style={{ height: 12 }} />
-
-      <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>
-        {tr('reminders.title')}
-      </Text>
-      <Chip
-        label={tr('reminders.enable')}
-        selected={reminderEnabled}
-        onPress={() => void toggleReminders()}
-      />
-      <Field
-        label={tr('reminders.delayHours')}
-        value={reminderDelayText}
-        onChangeText={(text) => void onReminderDelayChange(text)}
-        keyboardType="decimal-pad"
-        hint={tr('reminders.privacyHint')}
-      />
-
-      <GhostButton
+      <ReceiptCard>
+        <GhostButton
         label={tr('settings.manageEmployers')}
         onPress={() => router.push('/employers')}
         style={{ marginBottom: 12 }}
@@ -322,6 +326,7 @@ export default function SettingsScreen() {
       />
       <PrimaryButton label={tr('settings.exportCsv')} onPress={() => void onExportCsv()} style={{ marginBottom: 12 }} />
       <GhostButton label={tr('settings.eraseData')} onPress={onErase} danger />
+      </ReceiptCard>
     </ScrollView>
   );
 }

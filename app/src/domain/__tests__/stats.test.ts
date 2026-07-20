@@ -34,6 +34,20 @@ const worked = (overrides: Partial<Shift> = {}): Shift => ({
 });
 
 describe('stats, goals, and trends', () => {
+  it('returns a safe zero-value ledger for an empty Home week', () => {
+    expect(aggregateStats([])).toMatchObject({
+      scheduledShiftCount: 0,
+      workedShiftCount: 0,
+      workedMinutes: 0,
+      actualBaseWages: 0,
+      grossTips: 0,
+      tipOutPaid: 0,
+      grossEarnings: 0,
+      effectiveHourly: null,
+      byEmployer: [],
+    });
+  });
+
   it('aggregates base wages, net tips, gross, net, hours, and effective hourly', () => {
     const totals = aggregateWorked([worked()]);
     expect(netTipIncome(worked())).toBe(10500);

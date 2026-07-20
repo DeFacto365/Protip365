@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +11,7 @@ import { useSettingsStore, type Language } from '../src/state/settingsStore';
 import { Card, Chip, Field, PrimaryButton } from '../src/ui/components';
 import { CurrencyDropdown } from '../src/ui/CurrencyDropdown';
 import { EMPLOYER_PALETTE, useTokens } from '../src/ui/tokens';
+import { Text } from '../src/ui/typography';
 
 const LANGUAGES: Language[] = ['en', 'fr-CA', 'es'];
 const WELCOME_VALUES = [

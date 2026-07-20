@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
-import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { useEntitlementStore } from '../state/entitlementStore';
 import { Card, PrimaryButton } from './components';
 import { useTokens } from './tokens';
+import { Text } from './typography';
 
 export function useWriteAccess() {
   const router = useRouter();

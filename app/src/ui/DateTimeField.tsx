@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -8,6 +8,7 @@ import { getCalendars } from 'expo-localization';
 import i18n from '../i18n';
 import { isValidIsoDate, toIso } from '../domain/dates';
 import { radius, TOUCH_TARGET, useTokens } from './tokens';
+import { Text } from './typography';
 
 interface PickerFieldProps {
   label: string;
@@ -48,8 +49,8 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
 
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
-        {label}
+      <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
+        {label.toUpperCase()}
       </Text>
       <Pressable
         accessibilityRole="button"
@@ -58,22 +59,23 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
         onPress={() => setShow(true)}
         style={({ pressed }) => ({
           minHeight: TOUCH_TARGET,
-          borderWidth: 1,
+          borderWidth: 0,
+          borderBottomWidth: 1.5,
           borderRadius: radius.field,
-          borderColor: error ? t.dangerBg : t.line,
-          backgroundColor: t.bg,
-          paddingHorizontal: 12,
+          borderColor: error ? t.red : t.ink,
+          backgroundColor: 'transparent',
+          paddingHorizontal: 0,
           justifyContent: 'center',
           opacity: pressed ? 0.75 : 1,
         })}
       >
-        <Text style={{ color: t.ink, fontSize: 15 }}>{displayValue}</Text>
+        <Text style={{ color: t.pen, fontSize: 15 }}>{displayValue}</Text>
       </Pressable>
       {hint && !error ? (
-        <Text style={{ color: t.softText, fontSize: 11, marginTop: 3 }}>{hint}</Text>
+        <Text style={{ color: t.dim, fontSize: 11, marginTop: 3 }}>{hint}</Text>
       ) : null}
       {error ? (
-        <Text style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 4, fontSize: 11, marginTop: 3 }}>
+        <Text style={{ color: t.paper, backgroundColor: t.red, padding: 4, fontSize: 11, marginTop: 3 }}>
           {error}
         </Text>
       ) : null}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -12,6 +12,7 @@ import { useEntitlementStore } from '../src/state/entitlementStore';
 import { usePurchaseStore } from '../src/state/purchaseStore';
 import { Card, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
+import { Text } from '../src/ui/typography';
 
 export default function PaywallScreen() {
   const { t } = useTokens();

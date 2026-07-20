@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -7,7 +7,17 @@ import { useEmployersStore } from '../src/state/employersStore';
 import { useShiftsStore } from '../src/state/shiftsStore';
 import { useSettingsStore } from '../src/state/settingsStore';
 import { EMPLOYER_PALETTE, useTokens } from '../src/ui/tokens';
-import { Card, Chip, Field, GhostButton, money, PrimaryButton } from '../src/ui/components';
+import {
+  Card,
+  Chip,
+  Field,
+  GhostButton,
+  LineItem,
+  money,
+  PrimaryButton,
+  ReceiptCard,
+  ReceiptRule,
+} from '../src/ui/components';
 import { DatePickerField, TimePickerField } from '../src/ui/DateTimeField';
 import { expectedEarnings } from '../src/domain/calc';
 import { selectableEmployers } from '../src/domain/employers';
@@ -21,8 +31,9 @@ import {
 import type { ShiftBreak } from '../src/domain/types';
 import { centsToInput, localizedMoneyPlaceholder, parseMoneyToCents } from '../src/domain/money';
 import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
+import { Text } from '../src/ui/typography';
 
-const SCHEDULE_ROUTE = '/(tabs)' as const;
+const SCHEDULE_ROUTE = '/(tabs)/schedule' as const;
 
 export default function ShiftFormScreen() {
   const router = useRouter();
@@ -340,6 +351,7 @@ export default function ShiftFormScreen() {
 
       <WriteAccessBanner />
 
+      <ReceiptCard style={{ marginBottom: 16 }}>
       {/* Employer */}
       <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>
         {tr('shiftForm.employer')}
@@ -536,15 +548,13 @@ export default function ShiftFormScreen() {
         </View>
       ) : null}
 
-      {/* Live expected preview */}
-      <Card style={{ padding: 14, marginBottom: 16, alignItems: 'center' }}>
-        <Text style={{ color: t.softText, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
-          {tr('shiftForm.expectedPreview').toUpperCase()}
-        </Text>
-        <Text style={{ color: t.ink, fontWeight: '700', fontSize: 24, marginTop: 4 }}>
-          {preview != null ? money(preview) : '—'}
-        </Text>
-      </Card>
+      <ReceiptRule />
+      <LineItem
+        label={tr('shiftForm.expectedPreview')}
+        value={preview != null ? money(preview) : '—'}
+        strong
+      />
+      </ReceiptCard>
 
       {/* DEF-01: non-blocking cross-employer overlap warning */}
       {overlapNames.length > 0 ? (
@@ -566,7 +576,7 @@ export default function ShiftFormScreen() {
       {errors.length > 0 ? (
         <View style={{ marginBottom: 12 }}>
           {errors.map((e) => (
-            <Text key={e} style={{ color: '#FFFFFF', backgroundColor: t.dangerBg, padding: 6, fontSize: 13, marginBottom: 2 }}>
+            <Text key={e} style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 2 }}>
               {e}
             </Text>
           ))}

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useShiftsStore } from '../../src/state/shiftsStore';
 import { useEmployersStore } from '../../src/state/employersStore';
 import { useTokens } from '../../src/ui/tokens';
 import { Avatar, Card, Chip, Field, money, PrimaryButton } from '../../src/ui/components';
+import { Text } from '../../src/ui/typography';
 import {
   addDaysIso,
   addMonthsIso,
@@ -166,7 +167,7 @@ export default function StatsScreen() {
         <LedgerRow
           label={tr('stats.hoursVariance')}
           value={`${stats.hoursVarianceMinutes > 0 ? '+' : ''}${(stats.hoursVarianceMinutes / 60).toFixed(1)} ${tr('common.hours')}`}
-          tone={stats.hoursVarianceMinutes >= 0 ? 'positive' : 'warning'}
+          tone={stats.hoursVarianceMinutes >= 0 ? 'default' : 'warning'}
         />
       </Card>
 
@@ -245,7 +246,7 @@ export default function StatsScreen() {
             <Text style={{ color: t.softText, fontSize: 12, marginTop: 5 }}>
               {tr('stats.expectedProgress')}: {progress.expected == null ? '—' : metricDisplay(goal.metric, progress.expected)}
             </Text>
-            <Text style={{ color: t.green, backgroundColor: t.greenSoft, padding: 4, fontSize: 12, marginTop: 3, fontWeight: '600' }}>
+            <Text style={{ color: goal.metric === 'worked_hours' ? t.ink : t.green, backgroundColor: t.paper, padding: 4, fontSize: 12, marginTop: 3, fontWeight: '600' }}>
               {tr('stats.actualProgress')}: {metricDisplay(goal.metric, progress.actual)}
             </Text>
           </Card>
@@ -444,14 +445,15 @@ function TrendRow({
 }) {
   const { t } = useTokens();
   const change = current == null || previous == null ? null : percentChange(current, previous);
+  const positiveColor = metric === 'hours' ? t.ink : t.green;
   return (
     <View>
       <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600' }}>{label}</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
         <Text style={{ color: t.ink, fontSize: 16, fontWeight: '700' }}>{format(metric, current)}</Text>
         <Text style={{
-          color: change == null ? t.softText : change >= 0 ? t.green : t.amber,
-          backgroundColor: change == null ? 'transparent' : change >= 0 ? t.greenSoft : t.amberSoft,
+          color: change == null ? t.softText : change >= 0 ? positiveColor : t.red,
+          backgroundColor: 'transparent',
           paddingHorizontal: change == null ? 0 : 4,
           fontWeight: '700',
         }}>

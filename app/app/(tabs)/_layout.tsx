@@ -1,23 +1,28 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Text, View, type ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
+
 import { useTokens } from '../../src/ui/tokens';
+import { fonts, Text } from '../../src/ui/typography';
+
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
 
 function TabIcon({ glyph, color, focused }: { glyph: string; color: ColorValue; focused: boolean }) {
   const { t } = useTokens();
   return (
     <View
       style={{
-        width: 64,
-        height: 32,
-        borderRadius: 16,
+        width: 54,
+        height: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: focused ? t.cobaltSoft : 'transparent',
+        backgroundColor: focused ? t.ink : 'transparent',
       }}
     >
-      <Text style={{ fontSize: 20, color }}>{glyph}</Text>
+      <Text style={{ fontSize: 17, color: focused ? t.paper : color }}>{glyph}</Text>
     </View>
   );
 }
@@ -32,21 +37,35 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: t.bg },
         headerTintColor: t.ink,
         headerShadowVisible: false,
+        headerTitleStyle: { fontFamily: fonts.semiBold, color: t.ink },
         tabBarStyle: {
-          backgroundColor: t.surface,
-          borderTopColor: t.line,
-          height: 64,
+          backgroundColor: t.paper,
+          borderTopColor: t.ink,
+          borderTopWidth: 1.5,
+          height: 66,
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: t.cobaltLink,
-        tabBarInactiveTintColor: t.softText,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarActiveTintColor: t.ink,
+        tabBarInactiveTintColor: t.dim,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: fonts.semiBold,
+          letterSpacing: 0.4,
+        },
         sceneStyle: { backgroundColor: t.bg },
       }}
     >
       <Tabs.Screen
         name="index"
+        options={{
+          title: tr('tabs.home'),
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => <TabIcon glyph="⌂" color={color} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
         options={{
           title: tr('tabs.schedule'),
           tabBarIcon: ({ color, focused }) => <TabIcon glyph="▦" color={color} focused={focused} />,
@@ -56,7 +75,7 @@ export default function TabsLayout() {
         name="stats"
         options={{
           title: tr('tabs.stats'),
-          tabBarIcon: ({ color, focused }) => <TabIcon glyph="◫" color={color} focused={focused} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon glyph="▥" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen

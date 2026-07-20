@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { eraseAllData } from '../data/db';
@@ -7,6 +7,7 @@ import { cancelAllAppOwnedNotificationsBestEffort } from '../notifications/shift
 import { useAppLockStore } from '../state/appLockStore';
 import { Card, Field, GhostButton, PrimaryButton } from './components';
 import { useTokens } from './tokens';
+import { Text } from './typography';
 
 export function LockScreen() {
   const { t } = useTokens();

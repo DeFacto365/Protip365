@@ -42,3 +42,7 @@ These are visual hierarchy explorations, not implementation specifications. Embe
 ## External-agent exploration
 
 - [`claude/index.html`](claude/index.html) — standalone Claude landing-page concept. It is unapproved, uses a placeholder Google Play link, and loads Google Fonts externally; keep it outside the production architecture unless explicitly selected and reviewed.
+
+## Shift Receipt restyle (2026-07-20)
+
+- [`claude/index.html`](claude/index.html) now applies the owner-approved “Shift Receipt” visual system from [`../home-redesign/claude/receipt-screens.html`](../home-redesign/claude/receipt-screens.html): warm receipt paper, IBM Plex Mono and Caveat, dashed rules, stamp accents, hard offset shadows, and the translated weekly-tally Home receipt as the dominant phone visual. The trilingual switcher, audited landing-page structure, pricing and privacy copy, placeholder Google Play link, and iOS coming-soon message are unchanged in purpose. The privacy and terms pages use the same lighter receipt treatment.
