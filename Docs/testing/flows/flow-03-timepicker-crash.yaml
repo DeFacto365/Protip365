@@ -12,9 +12,14 @@ name: 03 Time picker opens without crash (KNOWN CRASH ZONE)
 - tapOn: "5:00.*"
 # Give the crash dialog time to appear if the app is going to die
 - extendedWaitUntil:
-    notVisible: "Start"
-    timeout: 3000
-    optional: true
+    visible: "Select time"
+    timeout: 5000
 - assertNotVisible: ".*keeps stopping.*"
-- assertVisible: "Add shift"
+# Success = the MaterialTimePicker dialog opened (title is behind it, so assert the dialog)
+- assertVisible: "Select time"
 - takeScreenshot: timepicker-open
+# Dismiss the picker AND leave the Add-shift form, so the next flow resumes on
+# Schedule (launchApp resumes rather than restarts, so on-screen state carries over).
+- tapOn: "Cancel"
+- back
+- assertVisible: "Schedule"

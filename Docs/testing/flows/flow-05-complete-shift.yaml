@@ -16,6 +16,11 @@ name: 05 Complete the shift with tips 120.50 and tip-out 15
 - assertVisible: "Taken"
 - tapOn: "Next"
 - assertVisible: "Tips & payout"
+# Ensure a valid actual hourly rate (the app correctly rejects a zero/empty rate).
+- tapOn:
+    below: "Actual hourly rate"
+- eraseText
+- inputText: "15.50"
 - tapOn:
     below: "Direct tips"
 - inputText: "120.50"
