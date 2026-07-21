@@ -248,12 +248,19 @@ function ShiftReceiptDetails({
           <LineItem label={tr('schedule.expectedTotal')} value={money(expectedTotal)} strong />
 
           {actualsPending ? (
-            <PrimaryButton
-              label={tr('schedule.closeOut')}
-              danger
-              onPress={onLog}
-              style={styles.singleAction}
-            />
+            <View style={styles.actionRow}>
+              <GhostButton
+                label={tr('schedule.editShift')}
+                onPress={onEdit}
+                style={styles.action}
+              />
+              <PrimaryButton
+                label={tr('schedule.closeOut')}
+                danger
+                onPress={onLog}
+                style={styles.action}
+              />
+            </View>
           ) : shift.status === 'planned' ? (
             <View style={styles.actionRow}>
               <GhostButton
@@ -642,132 +649,146 @@ export default function ScheduleScreen() {
             const varianceValue = isWorked ? variance(item) : null;
             const actualsPending = isActualsPending(item, new Date(), reminderDelayMinutes);
             const expanded = expandedShiftId === item.id;
+            const onEdit = () =>
+              router.push({ pathname: '/shift-form', params: { id: item.id } });
+            const onLog = () =>
+              router.push({ pathname: '/complete/[id]', params: { id: item.id } });
             return (
               <View style={{ marginBottom: 8 }}>
                 <Card style={{ overflow: 'hidden' }}>
                   <View style={{ flexDirection: 'row' }}>
                     <View style={{ width: 4, backgroundColor: employer?.color ?? t.line }} />
                     <View style={{ flex: 1 }}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityState={{ expanded }}
-                        accessibilityHint={tr(
-                          expanded ? 'schedule.collapseShiftHint' : 'schedule.expandShiftHint'
-                        )}
-                        onPress={() => toggleShift(item.id)}
-                        style={({ pressed }) => [
-                          styles.shiftStub,
-                          { opacity: pressed ? 0.85 : 1 },
-                        ]}
-                      >
-                        <Avatar
-                          name={employer?.name ?? '?'}
-                          color={employer?.color ?? t.softText}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
-                            {employer?.name ?? '—'}
-                            {role ? ` · ${role.name}` : ''}
-                          </Text>
-                          <Text style={{ color: t.softText, fontSize: 12, marginTop: 2 }}>
-                            {minutesToHHMM(item.startMin)}–{minutesToHHMM(item.endMin)}
-                          </Text>
-                        </View>
-                        <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                          <View style={{ flexDirection: 'row', gap: 4 }}>
-                            {overlapIds.has(item.id) ? (
-                              <View
-                                accessibilityLabel={tr('schedule.overlap')}
-                                style={{
-                                  backgroundColor: t.amberSoft,
-                                  borderRadius: 0,
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 3,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    color: t.amber,
-                                    fontSize: 10,
-                                    fontWeight: '700',
-                                    letterSpacing: 0.6,
-                                  }}
-                                >
-                                  ⚠ {tr('schedule.overlap')}
-                                </Text>
-                              </View>
-                            ) : null}
-                            {actualsPending ? (
-                              <View
-                                style={{
-                                  backgroundColor: t.amberSoft,
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 3,
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    color: t.amber,
-                                    fontSize: 10,
-                                    fontWeight: '700',
-                                    letterSpacing: 0.6,
-                                  }}
-                                >
-                                  {tr('schedule.actualsPending')}
-                                </Text>
-                              </View>
-                            ) : (
-                              <StatusChip status={item.status} />
-                            )}
-                          </View>
-                          {isWorked ? (
-                            <>
-                              <Text style={{ color: t.green, fontWeight: '700', fontSize: 14 }}>
-                                {money(actualEarnings(item))}
-                              </Text>
-                              <Text
-                                fontRole="mono"
-                                style={{
-                                  color:
-                                    varianceValue == null
-                                      ? t.softText
-                                      : varianceValue >= 0
-                                        ? t.green
-                                        : t.amber,
-                                  backgroundColor:
-                                    varianceValue == null
-                                      ? 'transparent'
-                                      : varianceValue >= 0
-                                        ? t.greenSoft
-                                        : t.amberSoft,
-                                  paddingHorizontal: varianceValue == null ? 0 : 4,
-                                  fontSize: 11,
-                                  fontWeight: '600',
-                                }}
-                              >
-                                {tr('schedule.vsExpected', {
-                                  amount:
-                                    varianceValue == null ? '—' : signedMoney(varianceValue),
-                                })}
-                              </Text>
-                            </>
-                          ) : item.status === 'planned' ? (
-                            <Text style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
-                              {money(expected)}
+                      <View style={styles.shiftStub}>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={actualsPending || isWorked ? onLog : onEdit}
+                          style={({ pressed }) => [
+                            styles.shiftStubMain,
+                            { opacity: pressed ? 0.85 : 1 },
+                          ]}
+                        >
+                          <Avatar
+                            name={employer?.name ?? '?'}
+                            color={employer?.color ?? t.softText}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
+                              {employer?.name ?? '—'}
+                              {role ? ` · ${role.name}` : ''}
                             </Text>
-                          ) : null}
-                        </View>
-                      </Pressable>
+                            <Text style={{ color: t.softText, fontSize: 12, marginTop: 2 }}>
+                              {minutesToHHMM(item.startMin)}–{minutesToHHMM(item.endMin)}
+                            </Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                            <View style={{ flexDirection: 'row', gap: 4 }}>
+                              {overlapIds.has(item.id) ? (
+                                <View
+                                  accessibilityLabel={tr('schedule.overlap')}
+                                  style={{
+                                    backgroundColor: t.amberSoft,
+                                    borderRadius: 0,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color: t.amber,
+                                      fontSize: 10,
+                                      fontWeight: '700',
+                                      letterSpacing: 0.6,
+                                    }}
+                                  >
+                                    ⚠ {tr('schedule.overlap')}
+                                  </Text>
+                                </View>
+                              ) : null}
+                              {actualsPending ? (
+                                <View
+                                  style={{
+                                    backgroundColor: t.amberSoft,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color: t.amber,
+                                      fontSize: 10,
+                                      fontWeight: '700',
+                                      letterSpacing: 0.6,
+                                    }}
+                                  >
+                                    {tr('schedule.actualsPending')}
+                                  </Text>
+                                </View>
+                              ) : (
+                                <StatusChip status={item.status} />
+                              )}
+                            </View>
+                            {isWorked ? (
+                              <>
+                                <Text style={{ color: t.green, fontWeight: '700', fontSize: 14 }}>
+                                  {money(actualEarnings(item))}
+                                </Text>
+                                <Text
+                                  fontRole="mono"
+                                  style={{
+                                    color:
+                                      varianceValue == null
+                                        ? t.softText
+                                        : varianceValue >= 0
+                                          ? t.green
+                                          : t.amber,
+                                    backgroundColor:
+                                      varianceValue == null
+                                        ? 'transparent'
+                                        : varianceValue >= 0
+                                          ? t.greenSoft
+                                          : t.amberSoft,
+                                    paddingHorizontal: varianceValue == null ? 0 : 4,
+                                    fontSize: 11,
+                                    fontWeight: '600',
+                                  }}
+                                >
+                                  {tr('schedule.vsExpected', {
+                                    amount:
+                                      varianceValue == null ? '—' : signedMoney(varianceValue),
+                                  })}
+                                </Text>
+                              </>
+                            ) : item.status === 'planned' ? (
+                              <Text style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
+                                {money(expected)}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={tr(
+                            expanded ? 'schedule.collapseShiftHint' : 'schedule.expandShiftHint'
+                          )}
+                          accessibilityState={{ expanded }}
+                          onPress={() => toggleShift(item.id)}
+                          style={({ pressed }) => [
+                            styles.detailsToggle,
+                            { opacity: pressed ? 0.6 : 1 },
+                          ]}
+                        >
+                          <Text fontRole="ui" style={{ color: t.cobaltLink, fontSize: 18 }}>
+                            {expanded ? '▴' : '▾'}
+                          </Text>
+                        </Pressable>
+                      </View>
                       {expanded ? (
                         <ShiftReceiptDetails
                           shift={item}
                           actualsPending={actualsPending}
-                          onEdit={() =>
-                            router.push({ pathname: '/shift-form', params: { id: item.id } })
-                          }
-                          onLog={() =>
-                            router.push({ pathname: '/complete/[id]', params: { id: item.id } })
-                          }
+                          onEdit={onEdit}
+                          onLog={onLog}
                         />
                       ) : null}
                     </View>
@@ -858,8 +879,21 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_TARGET,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+  },
+  shiftStubMain: {
+    flex: 1,
+    minHeight: TOUCH_TARGET,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingLeft: 12,
     gap: 10,
+  },
+  detailsToggle: {
+    width: TOUCH_TARGET,
+    minHeight: TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shiftReceipt: {
     marginHorizontal: 12,

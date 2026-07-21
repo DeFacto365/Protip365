@@ -10,9 +10,24 @@ import {
 describe('currency selection', () => {
   afterEach(() => setActiveCurrency(DEFAULT_CURRENCY));
 
-  it('uses the first valid device-locale ISO currency and otherwise defaults to CAD', () => {
-    expect(currencyForLocales([{ currencyCode: null }, { currencyCode: 'usd' }])).toBe('USD');
-    expect(currencyForLocales([{ currencyCode: 'GBP' }])).toBe('CAD');
+  it('uses the device region instead of locale currency metadata', () => {
+    const canadianRegionWithUsdLocale = [{ regionCode: 'ca', currencyCode: 'USD' }];
+    const usRegionWithCanadianLocale = [{ regionCode: 'US', currencyCode: 'CAD' }];
+
+    expect(currencyForLocales(canadianRegionWithUsdLocale)).toBe('CAD');
+    expect(currencyForLocales(usRegionWithCanadianLocale)).toBe('USD');
+  });
+
+  it('maps supported regions deterministically and otherwise defaults to CAD', () => {
+    const mexicanRegion = [{ regionCode: 'MX', currencyCode: null }];
+    const euroRegion = [{ regionCode: 'FR', currencyCode: null }];
+    const unknownRegionWithSupportedLocaleCurrency = [
+      { regionCode: 'GB', currencyCode: 'USD' },
+    ];
+
+    expect(currencyForLocales(mexicanRegion)).toBe('MXN');
+    expect(currencyForLocales(euroRegion)).toBe('EUR');
+    expect(currencyForLocales(unknownRegionWithSupportedLocaleCurrency)).toBe('CAD');
     expect(currencyForLocales([])).toBe('CAD');
   });
 

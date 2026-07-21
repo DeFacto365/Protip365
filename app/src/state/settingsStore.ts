@@ -78,6 +78,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         ? storedLang
         : detectDeviceLanguage();
     const currencyCode = storedCurrency ?? detectDeviceCurrency();
+    if (!storedCurrency) settingsRepo.set(CURRENCY_KEY, currencyCode);
     setActiveCurrency(currencyCode);
     // DEF-14: persisted and exposed as integer basis points (0–10000).
     const bp = storedBp != null ? Number(storedBp) : 0;
@@ -130,14 +131,16 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   eraseAll: async () => {
     cancelAllAppOwnedNotificationsBestEffort();
     await eraseAllData();
+    const currencyCode = detectDeviceCurrency();
+    settingsRepo.set(CURRENCY_KEY, currencyCode);
     set({
       language: 'en',
-      currencyCode: DEFAULT_CURRENCY,
+      currencyCode,
       defaultDeductionRateBp: 0,
       postShiftReminderEnabled: false,
       postShiftReminderDelayMinutes: 120,
     });
-    setActiveCurrency(DEFAULT_CURRENCY);
+    setActiveCurrency(currencyCode);
     void i18n.changeLanguage('en');
   },
 }));
