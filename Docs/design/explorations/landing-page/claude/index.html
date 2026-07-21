@@ -10,12 +10,12 @@
   - Google Play URL is not verified; each CTA remains a placeholder (#).
   - iOS must remain "Coming soon" until an App Store release exists.
   - Privacy wording is unchanged and assumes encrypted local storage passes release tests.
-  - Employer names and calculations in the phone mock are fictional.
+  - Product screens are real Android emulator captures using disposable test data.
   - Fonts load from Google Fonts; self-host before production.
 -->
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" type="image/png" href="/logo.png">
-<link rel="apple-touch-icon" href="/logo.png">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
     --red:#D8472B;
     --red-aa:#B63622;
     --green:#2E7D4F;
-    --pen:#2B4BD7;
+    --pen:#20211E;
     --rule:#C9C3B2;
     --white:#FFFDF8;
     --hard-shadow:4px 4px 0 var(--ink);
@@ -161,7 +161,7 @@
     overflow:hidden;
     display:block;
     width:100%;
-    aspect-ratio:360/768;
+    aspect-ratio:1080/2424;
     border-radius:44px;
     background:#05060A;
     box-shadow:15px 18px 0 rgba(32,33,30,.22);
@@ -172,7 +172,7 @@
     display:block;
     width:100%;
     height:100%;
-    object-fit:cover;
+    object-fit:contain;
     opacity:0;
     visibility:hidden;
   }
@@ -199,7 +199,6 @@
   .hero-slider-status{min-width:0;text-align:center;font-size:.72rem;line-height:1.35}
   .hero-slider-status strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .hero-slider-count{display:block;color:var(--red-aa);font-size:.62rem;font-weight:700;letter-spacing:.1em;margin-bottom:2px}
-  }
 
   /* Outcomes */
   .benefits{padding:82px 0 72px}
@@ -344,7 +343,7 @@
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="#"><img src="/logo.png" alt="" width="34" height="34"><span>Pro<em>Tip</em>365</span></a>
+    <a class="logo" href="#"><img src="logo.png" alt="" width="34" height="34"><span>Pro<em>Tip</em>365</span></a>
     <nav class="nav-right" aria-label="Site">
       <div class="lang" role="group" aria-label="Language">
         <button type="button" data-lang="en" class="on">EN</button>
@@ -375,7 +374,7 @@
             <svg width="26" height="28" viewBox="0 0 24 26" fill="none" aria-hidden="true">
               <path d="M2 1.5v23l12-11.5L2 1.5z" fill="#F6F2E9"/>
               <path d="M2 1.5l16 8.5-4 3L2 1.5z" fill="#2E7D4F"/>
-              <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#2B4BD7"/>
+              <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#20211E"/>
               <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D8472B"/>
             </svg>
             <span><small data-i18n="play_small">GET IT ON</small><span class="big">Google Play</span></span>
@@ -387,18 +386,18 @@
       <div class="phone-zone">
         <figure class="hero-slider" data-hero-slider role="region" aria-label="ProTip365 app screens" data-i18n-aria="screens_aria">
           <div class="hero-slider-frame">
-            <img class="hero-slide is-active" data-source-index="0" src="screens/screen-01-first-run.png" alt="" width="360" height="768" fetchpriority="high" decoding="async">
-            <img class="hero-slide" data-source-index="1" src="screens/screen-02-home.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="2" src="screens/screen-03-schedule-agenda.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="3" src="screens/screen-04-schedule-week.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="4" src="screens/screen-05-add-shift.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="5" src="screens/screen-06-closeout-times.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="6" src="screens/screen-07-closeout-tips.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="7" src="screens/screen-08-shift-result.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="8" src="screens/screen-09-stats.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="9" src="screens/screen-10-employers.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="10" src="screens/screen-11-settings.png" alt="" width="360" height="768" loading="lazy" decoding="async">
-            <img class="hero-slide" data-source-index="11" src="screens/screen-12-dark-mode.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide is-active" data-source-index="0" src="screens/screen-01-first-run.png" alt="" width="1080" height="2424" fetchpriority="high" decoding="async">
+            <img class="hero-slide" data-source-index="1" src="screens/screen-02-home.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="2" src="screens/screen-03-schedule-agenda.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="3" src="screens/screen-04-schedule-week.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="4" src="screens/screen-05-add-shift.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="5" src="screens/screen-06-closeout-times.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="6" src="screens/screen-07-closeout-tips.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="7" src="screens/screen-08-shift-result.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="8" src="screens/screen-09-stats.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="9" src="screens/screen-10-employers.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="10" src="screens/screen-11-settings.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="11" src="screens/screen-12-dark-mode.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
           </div>
           <figcaption class="hero-slider-meta">
             <button type="button" data-hero-prev aria-label="Previous screens" data-i18n-aria="screens_prev">←</button>
@@ -452,51 +451,51 @@
       </div>
       <div class="screen-strip" data-gallery role="list" aria-label="ProTip365 app screens" data-i18n-aria="screens_aria" tabindex="0">
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-01-first-run.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-01-first-run.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>01 · <i data-i18n="s1_t">First run</i></span><strong data-i18n="s1_d">Private from day one</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-02-home.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-02-home.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>02 · <i data-i18n="s2_t">Home</i></span><strong data-i18n="s2_d">Your week tally</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-03-schedule-agenda.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
-          <figcaption><span>03 · <i data-i18n="s3_t">Schedule</i></span><strong data-i18n="s3_d">Agenda at a glance</strong></figcaption>
+          <img src="screens/screen-03-schedule-agenda.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>03 · <i data-i18n="s3_t">Day</i></span><strong data-i18n="s3_d">One day at a glance</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-04-schedule-week.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-04-schedule-week.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>04 · <i data-i18n="s4_t">Week</i></span><strong data-i18n="s4_d">Every shift, one total</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-05-add-shift.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-05-add-shift.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>05 · <i data-i18n="s5_t">Add shift</i></span><strong data-i18n="s5_d">Plan the ticket</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-06-closeout-times.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-06-closeout-times.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>06 · <i data-i18n="s6_t">Close out</i></span><strong data-i18n="s6_d">Planned versus actual</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-07-closeout-tips.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-07-closeout-tips.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>07 · <i data-i18n="s7_t">Tips</i></span><strong data-i18n="s7_d">Cash, card, and tip-out</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-08-shift-result.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
-          <figcaption><span>08 · <i data-i18n="s8_t">Result</i></span><strong data-i18n="s8_d">The shift payoff</strong></figcaption>
+          <img src="screens/screen-08-shift-result.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>08 · <i data-i18n="s8_t">Payout preview</i></span><strong data-i18n="s8_d">See the total before saving</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-09-stats.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
-          <figcaption><span>09 · <i data-i18n="s9_t">Stats</i></span><strong data-i18n="s9_d">What earns the most</strong></figcaption>
+          <img src="screens/screen-09-stats.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>09 · <i data-i18n="s9_t">Stats</i></span><strong data-i18n="s9_d">Your weekly breakdown</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-10-employers.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
-          <figcaption><span>10 · <i data-i18n="s10_t">Employers</i></span><strong data-i18n="s10_d">Compare every job</strong></figcaption>
+          <img src="screens/screen-10-employers.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>10 · <i data-i18n="s10_t">Employers</i></span><strong data-i18n="s10_d">Set each job's defaults</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-11-settings.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-11-settings.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>11 · <i data-i18n="s11_t">Settings</i></span><strong data-i18n="s11_d">Your privacy and plan</strong></figcaption>
         </figure>
         <figure class="screen-card" role="listitem">
-          <img src="screens/screen-12-dark-mode.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="360" height="768">
+          <img src="screens/screen-12-dark-mode.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
           <figcaption><span>12 · <i data-i18n="s12_t">Dark mode</i></span><strong data-i18n="s12_d">The night ticket</strong></figcaption>
         </figure>
       </div>
@@ -528,7 +527,7 @@
           <svg width="26" height="28" viewBox="0 0 24 26" fill="none" aria-hidden="true">
             <path d="M2 1.5v23l12-11.5L2 1.5z" fill="#F6F2E9"/>
             <path d="M2 1.5l16 8.5-4 3L2 1.5z" fill="#2E7D4F"/>
-            <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#2B4BD7"/>
+            <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#20211E"/>
             <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D8472B"/>
           </svg>
           <span><small data-i18n="play_small2">GET IT ON</small><span class="big">Google Play</span></span>
@@ -572,14 +571,14 @@
       screens_prev:"Previous screens", screens_next:"Next screens", screens_aria:"ProTip365 app screens",
       s1_t:"First run", s1_d:"Private from day one",
       s2_t:"Home", s2_d:"Your week tally",
-      s3_t:"Schedule", s3_d:"Agenda at a glance",
+      s3_t:"Day", s3_d:"One day at a glance",
       s4_t:"Week", s4_d:"Every shift, one total",
       s5_t:"Add shift", s5_d:"Plan the ticket",
       s6_t:"Close out", s6_d:"Planned versus actual",
       s7_t:"Tips", s7_d:"Cash, card, and tip-out",
-      s8_t:"Result", s8_d:"The shift payoff",
-      s9_t:"Stats", s9_d:"What earns the most",
-      s10_t:"Employers", s10_d:"Compare every job",
+      s8_t:"Payout preview", s8_d:"See the total before saving",
+      s9_t:"Stats", s9_d:"Your weekly breakdown",
+      s10_t:"Employers", s10_d:"Set each job's defaults",
       s11_t:"Settings", s11_d:"Your privacy and plan",
       s12_t:"Dark mode", s12_d:"The night ticket",
       ben_h2:"Made for the way tipped work actually works",
@@ -618,14 +617,14 @@
       screens_prev:"Écrans précédents", screens_next:"Écrans suivants", screens_aria:"Écrans de l’application ProTip365",
       s1_t:"Première ouverture", s1_d:"Privé dès le premier jour",
       s2_t:"Accueil", s2_d:"Le bilan de votre semaine",
-      s3_t:"Horaire", s3_d:"L’agenda en un coup d’œil",
+      s3_t:"Jour", s3_d:"Un jour en un coup d’œil",
       s4_t:"Semaine", s4_d:"Tous les quarts, un seul total",
       s5_t:"Ajouter un quart", s5_d:"Remplissez le billet",
       s6_t:"Fermer le quart", s6_d:"Prévu contre réel",
       s7_t:"Pourboires", s7_d:"Comptant, carte et tip-out",
-      s8_t:"Résultat", s8_d:"Le vrai bilan du quart",
-      s9_t:"Statistiques", s9_d:"Ce qui rapporte le plus",
-      s10_t:"Employeurs", s10_d:"Comparez chaque emploi",
+      s8_t:"Aperçu du paiement", s8_d:"Voyez le total avant d’enregistrer",
+      s9_t:"Statistiques", s9_d:"Le bilan de votre semaine",
+      s10_t:"Employeurs", s10_d:"Réglez les valeurs par défaut de chaque emploi",
       s11_t:"Réglages", s11_d:"Votre vie privée et votre forfait",
       s12_t:"Mode sombre", s12_d:"Le billet de nuit",
       ben_h2:"Pensée pour la vraie réalité du travail au pourboire",
@@ -664,14 +663,14 @@
       screens_prev:"Pantallas anteriores", screens_next:"Pantallas siguientes", screens_aria:"Pantallas de la aplicación ProTip365",
       s1_t:"Primer inicio", s1_d:"Privado desde el primer día",
       s2_t:"Inicio", s2_d:"El total de tu semana",
-      s3_t:"Horario", s3_d:"La agenda de un vistazo",
+      s3_t:"Día", s3_d:"Un día de un vistazo",
       s4_t:"Semana", s4_d:"Todos los turnos, un total",
       s5_t:"Añadir turno", s5_d:"Completa el recibo",
       s6_t:"Cerrar turno", s6_d:"Planeado frente a real",
       s7_t:"Propinas", s7_d:"Efectivo, tarjeta y tip-out",
-      s8_t:"Resultado", s8_d:"El resultado del turno",
-      s9_t:"Estadísticas", s9_d:"Lo que más te deja",
-      s10_t:"Empleadores", s10_d:"Compara cada trabajo",
+      s8_t:"Vista previa del pago", s8_d:"Mira el total antes de guardar",
+      s9_t:"Estadísticas", s9_d:"El desglose de tu semana",
+      s10_t:"Empleadores", s10_d:"Configura los valores de cada trabajo",
       s11_t:"Ajustes", s11_d:"Tu privacidad y tu plan",
       s12_t:"Modo oscuro", s12_d:"El recibo nocturno",
       ben_h2:"Hecha para cómo funciona de verdad el trabajo con propinas",

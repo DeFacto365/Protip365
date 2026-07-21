@@ -16,3 +16,9 @@ export const WEEKLY_GOALS_IDENTITY_MIGRATION = `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_goals_identity
     ON weekly_goals(week_start, metric, COALESCE(employer_id, ''));
 `;
+
+export const NO_BLUE_EMPLOYER_COLOR_MIGRATION = `
+  UPDATE employers
+  SET color = '#996044'
+  WHERE UPPER(color) = '#2B4BD7';
+`;

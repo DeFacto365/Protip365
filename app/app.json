@@ -4,6 +4,7 @@
     "slug": "protip365",
     "scheme": "protip365",
     "version": "1.0.0",
+    "primaryColor": "#20211E",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -12,9 +13,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#F6F2E9",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -124,10 +124,10 @@
           "image": "./assets/splash-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#F6F2E9",
           "dark": {
             "image": "./assets/splash-logo.png",
-            "backgroundColor": "#0E1118"
+            "backgroundColor": "#171714"
           }
         }
       ],

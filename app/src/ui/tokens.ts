@@ -1,5 +1,7 @@
 import { useColorScheme } from 'react-native';
 
+export { EMPLOYER_PALETTE } from '../domain/employerColors';
+
 /**
  * "Shift Receipt" tokens — owner-approved 2026-07-20.
  * Source: Docs/design/explorations/home-redesign/claude/receipt-screens.html.
@@ -41,9 +43,9 @@ export const light: Tokens = {
   line: '#C9C3B2',
   red: '#D8472B',
   green: '#2E7D4F',
-  pen: '#2B4BD7',
-  cobalt: '#2B4BD7',
-  cobaltLink: '#2B4BD7',
+  pen: '#20211E',
+  cobalt: '#20211E',
+  cobaltLink: '#20211E',
   cobaltSoft: '#F6F2E9',
   greenSoft: '#F6F2E9',
   amber: '#D8472B',
@@ -54,37 +56,28 @@ export const light: Tokens = {
 };
 
 export const dark: Tokens = {
-  bg: '#12151C',
-  paper: '#1E222C',
-  surface: '#1E222C',
-  card: '#1E222C',
+  bg: '#171714',
+  paper: '#24231F',
+  surface: '#24231F',
+  card: '#24231F',
   ink: '#F0EEE6',
-  dim: '#8B92A5',
-  softText: '#8B92A5',
-  rule: '#3A4152',
-  line: '#3A4152',
+  dim: '#AAA59A',
+  softText: '#AAA59A',
+  rule: '#716C61',
+  line: '#716C61',
   red: '#FF7A5C',
   green: '#5CD69B',
-  pen: '#8FA8FF',
-  cobalt: '#8FA8FF',
-  cobaltLink: '#8FA8FF',
-  cobaltSoft: '#1E222C',
-  greenSoft: '#1E222C',
+  pen: '#F0EEE6',
+  cobalt: '#F0EEE6',
+  cobaltLink: '#F0EEE6',
+  cobaltSoft: '#24231F',
+  greenSoft: '#24231F',
   amber: '#FF7A5C',
-  amberSoft: '#1E222C',
+  amberSoft: '#24231F',
   dangerBg: '#FF7A5C',
   danger: '#FF7A5C',
-  fabText: '#12151C',
+  fabText: '#171714',
 };
-
-/** Employer palette (assigned round-robin when employers are created). */
-export const EMPLOYER_PALETTE = [
-  '#E8A23D',
-  '#D8697D',
-  '#2E8B7C',
-  '#2B4BD7',
-  '#7A4E8C',
-] as const;
 
 /** Minimum touch target (dp). */
 export const TOUCH_TARGET = 48;

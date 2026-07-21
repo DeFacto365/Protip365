@@ -1,4 +1,5 @@
 import { decryptBackupPayload, encryptBackupPayload } from '../domain/backup';
+import { normalizeEmployerColor } from '../domain/employerColors';
 import { getDb } from './db';
 
 type BackupValue = string | number | null;
@@ -231,7 +232,11 @@ export function restoreEncryptedFullBackup(text: string, password: string): void
         }
         database.runSync(
           `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')});`,
-          columns.map((column) => row[column] ?? null)
+          columns.map((column) =>
+            table === 'employers' && column === 'color'
+              ? normalizeEmployerColor(String(row[column]))
+              : row[column] ?? null
+          )
         );
       }
     }

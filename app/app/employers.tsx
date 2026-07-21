@@ -12,7 +12,7 @@ import { centsToInput, parseMoneyToCents } from '../src/domain/money';
 import { validateDeductionBasisPoints, validateHourlyRateCents } from '../src/domain/validate';
 import { Text } from '../src/ui/typography';
 
-const COLOR_KEYS = ['amber', 'rose', 'teal', 'cobalt', 'violet'] as const;
+const COLOR_KEYS = ['amber', 'rose', 'teal', 'rust', 'violet'] as const;
 
 function parseDecimal(text: string): number | null {
   const value = Number(text.replace(',', '.'));

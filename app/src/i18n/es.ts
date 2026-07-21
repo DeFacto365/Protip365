@@ -466,7 +466,7 @@ export default {
         amber: 'Ámbar',
         rose: 'Rosa',
         teal: 'Verde azulado',
-        cobalt: 'Cobalto',
+        rust: 'Óxido',
         violet: 'Violeta',
       },
     },

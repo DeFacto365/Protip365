@@ -13,6 +13,7 @@ import {
   MAX_BACKUP_FILE_BYTES,
   restoreEncryptedFullBackup,
 } from '../../data/backup';
+import { RUST_EMPLOYER_COLOR } from '../employerColors';
 
 const decryptMock = decryptBackupPayload as jest.MockedFunction<typeof decryptBackupPayload>;
 const getDbMock = getDb as jest.MockedFunction<typeof getDb>;
@@ -66,7 +67,7 @@ describe('restore validation before destructive work', () => {
     expect(withTransactionSync).toHaveBeenCalledTimes(1);
     expect(runSync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO employers'),
-      expect.arrayContaining(['employer-1', 2000])
+      expect.arrayContaining(['employer-1', RUST_EMPLOYER_COLOR, 2000])
     );
   });
 

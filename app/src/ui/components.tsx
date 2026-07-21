@@ -174,7 +174,7 @@ export function PrimaryButton({
   onPress,
   disabled,
   danger,
-  tone = 'pen',
+  tone = 'ink',
   style,
 }: {
   label: string;
@@ -203,7 +203,7 @@ export function PrimaryButton({
         style,
       ]}
     >
-      <Text fontRole="ui" style={[styles.buttonText, { color: tone === 'pen' && !danger ? t.paper : t.bg }]}>
+      <Text fontRole="ui" style={[styles.buttonText, { color: danger ? t.paper : t.bg }]}>
         {label.toUpperCase()}
       </Text>
     </Pressable>
