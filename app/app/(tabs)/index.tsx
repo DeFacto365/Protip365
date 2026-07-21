@@ -110,10 +110,10 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 36 }}
       >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <Text style={{ color: t.ink, fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>
+        <Text fontRole="display" style={{ color: t.ink, fontSize: 18, fontWeight: '700', letterSpacing: 0.4 }}>
           {tr('home.brand').toUpperCase()}
         </Text>
-        <Text style={{ color: t.dim, fontSize: 10 }}>
+        <Text fontRole="ui" style={{ color: t.dim, fontSize: 10 }}>
           {formatDate(today, i18n.language).toUpperCase()}
         </Text>
       </View>
@@ -122,7 +122,7 @@ export default function HomeScreen() {
         <Text style={{ color: t.dim, textAlign: 'center', fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
           {tr('home.weekOf', { range: formatWeekRange(weekDates, i18n.language) }).toUpperCase()}
         </Text>
-        <Text style={{ color: t.ink, textAlign: 'center', fontSize: 14, fontWeight: '700', letterSpacing: 1, marginTop: 4 }}>
+        <Text fontRole="display" style={{ color: t.ink, textAlign: 'center', fontSize: 17, fontWeight: '700', letterSpacing: 0.4, marginTop: 4 }}>
           {tr('home.title').toUpperCase()}
         </Text>
         {goal && progress ? (
@@ -143,7 +143,7 @@ export default function HomeScreen() {
         />
         <ReceiptRule />
         <LineItem label={tr('home.totalEarned')} value={money(tally.grossEarnings)} strong />
-        <Text style={{ color: tally.workedShiftCount > 0 ? t.green : t.dim, textAlign: 'center', fontSize: 11, fontWeight: '600', marginTop: 4 }}>
+        <Text fontRole="mono" style={{ color: tally.workedShiftCount > 0 ? t.green : t.dim, textAlign: 'center', fontSize: 11, fontWeight: '600', marginTop: 4 }}>
           {tr('home.realHourly', {
             rate: tally.effectiveHourly == null ? tr('home.notAvailable') : money(tally.effectiveHourly),
           }).toUpperCase()}
@@ -166,10 +166,10 @@ export default function HomeScreen() {
 
       {weekShifts.length === 0 && !nextShift ? (
         <Card style={{ padding: 14, marginTop: 16 }}>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 13 }}>
+          <Text fontRole="display" style={{ color: t.ink, fontWeight: '700', fontSize: 15 }}>
             {tr('home.emptyTitle').toUpperCase()}
           </Text>
-          <Text style={{ color: t.dim, fontSize: 12, marginTop: 5, marginBottom: 12 }}>
+          <Text fontRole="ui" style={{ color: t.dim, fontSize: 12, marginTop: 5, marginBottom: 12 }}>
             {tr('home.emptyHint')}
           </Text>
           <PrimaryButton
@@ -182,13 +182,13 @@ export default function HomeScreen() {
 
       {nextShift ? (
         <Card style={{ padding: 14, marginTop: 16 }}>
-          <Text style={{ color: t.dim, fontWeight: '700', fontSize: 10, letterSpacing: 1 }}>
+          <Text fontRole="ui" style={{ color: t.dim, fontWeight: '700', fontSize: 10, letterSpacing: 1 }}>
             {tr('home.nextShift').toUpperCase()}
           </Text>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4 }}>
+          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4 }}>
             {shiftSummary(nextShift)}
           </Text>
-          <Text style={{ color: t.ink, fontSize: 11, marginTop: 3, marginBottom: 12 }}>
+          <Text fontRole="ui" style={{ color: t.ink, fontSize: 11, marginTop: 3, marginBottom: 12 }}>
             {tr('home.expected', { amount: money(expectedEarnings(nextShift)) })}
           </Text>
           <PrimaryButton
@@ -201,10 +201,10 @@ export default function HomeScreen() {
 
       {closeOuts.length > 0 ? (
         <Card style={{ padding: 14, marginTop: 14, borderColor: t.red, shadowColor: t.red }}>
-          <Text style={{ color: t.red, fontWeight: '700', fontSize: 10, letterSpacing: 1 }}>
+          <Text fontRole="penNote" style={{ color: t.red, fontWeight: '600', fontSize: 17, transform: [{ rotate: '-1deg' }] }}>
             {tr('home.closeOutCount', { count: closeOuts.length }).toUpperCase()}
           </Text>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4, marginBottom: 12 }}>
+          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4, marginBottom: 12 }}>
             {shiftSummary(closeOuts[0]!)}
           </Text>
           <PrimaryButton

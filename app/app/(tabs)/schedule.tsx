@@ -112,7 +112,7 @@ function ShiftReceiptDetails({
 
   return (
     <ReceiptCard style={styles.shiftReceipt}>
-      <Text style={[styles.receiptTitle, { color: actualsPending ? t.red : t.ink }]}>
+      <Text fontRole="display" style={[styles.receiptTitle, { color: actualsPending ? t.red : t.ink }]}>
         {tr(
           isWorked
             ? 'schedule.actualReceiptTitle'
@@ -182,7 +182,7 @@ function ShiftReceiptDetails({
             tone="confirmed"
             strong
           />
-          <Text style={[styles.realHourly, { color: realHourly == null ? t.dim : t.green }]}>
+          <Text fontRole="mono" style={[styles.realHourly, { color: realHourly == null ? t.dim : t.green }]}>
             {tr('schedule.realHourly', {
               rate: realHourly == null ? tr('home.notAvailable') : money(realHourly),
             }).toUpperCase()}
@@ -202,7 +202,7 @@ function ShiftReceiptDetails({
               <Text style={[styles.noteLabel, { color: t.dim }]}>
                 {tr('schedule.note').toUpperCase()}
               </Text>
-              <Text style={{ color: t.pen, fontSize: 12 }}>{shift.notes.trim()}</Text>
+              <Text fontRole="penNote" style={{ color: t.pen, fontSize: 18, transform: [{ rotate: '-1deg' }] }}>{shift.notes.trim()}</Text>
             </View>
           ) : null}
           <GhostButton
@@ -452,13 +452,13 @@ export default function ScheduleScreen() {
           onPress={() => navigatePeriod(-1)}
           style={[styles.navBtn, { backgroundColor: t.card, borderColor: t.line }]}
         >
-          <Text style={{ color: t.ink, fontSize: 16 }}>‹</Text>
+          <Text fontRole="ui" style={{ color: t.ink, fontSize: 16 }}>‹</Text>
         </Pressable>
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 16 }}>
+          <Text fontRole="total" style={{ color: t.ink, fontWeight: '700', fontSize: 18 }}>
             {scheduledHours.toFixed(1)} {tr('common.hours')}
           </Text>
-          <Text style={{ color: t.softText, fontSize: 10, letterSpacing: 1, fontWeight: '600' }}>
+          <Text fontRole="ui" style={{ color: t.softText, fontSize: 10, letterSpacing: 1, fontWeight: '600' }}>
             {tr('schedule.scheduledHours')}
           </Text>
         </View>
@@ -468,7 +468,7 @@ export default function ScheduleScreen() {
           onPress={() => navigatePeriod(1)}
           style={[styles.navBtn, { backgroundColor: t.card, borderColor: t.line }]}
         >
-          <Text style={{ color: t.ink, fontSize: 16 }}>›</Text>
+          <Text fontRole="ui" style={{ color: t.ink, fontSize: 16 }}>›</Text>
         </Pressable>
       </View>
 
@@ -505,10 +505,10 @@ export default function ScheduleScreen() {
                   },
                 ]}
               >
-                <Text style={{ color: selected ? t.paper : t.softText, fontSize: 10, fontWeight: '600' }}>
+                <Text fontRole="ui" style={{ color: selected ? t.paper : t.softText, fontSize: 10, fontWeight: '600' }}>
                   {shortDay(date)}
                 </Text>
-                <Text style={{ color: selected ? t.paper : t.ink, fontWeight: '700', fontSize: 13 }}>
+                <Text fontRole="ui" style={{ color: selected ? t.paper : t.ink, fontWeight: '700', fontSize: 13 }}>
                   {Number(date.slice(8))}
                 </Text>
                 <View
@@ -525,7 +525,7 @@ export default function ScheduleScreen() {
       ) : (
         <View style={styles.monthGrid}>
           {weekDatesIso('2026-07-13').map((date) => (
-            <Text key={date} style={[styles.monthWeekday, { color: t.softText }]}>
+            <Text fontRole="ui" key={date} style={[styles.monthWeekday, { color: t.softText }]}>
               {shortDay(date)}
             </Text>
           ))}
@@ -548,7 +548,7 @@ export default function ScheduleScreen() {
                   },
                 ]}
               >
-                <Text style={{ color: selected ? t.paper : t.ink, fontWeight: '700' }}>
+                <Text fontRole="ui" style={{ color: selected ? t.paper : t.ink, fontWeight: '700' }}>
                   {Number(date.slice(8))}
                 </Text>
                 <View
@@ -581,7 +581,7 @@ export default function ScheduleScreen() {
             borderBottomColor: t.cobalt,
           })}
         >
-          <Text style={{ color: t.cobaltLink, fontWeight: '600', fontSize: 13 }}>
+          <Text fontRole="ui" style={{ color: t.cobaltLink, fontWeight: '600', fontSize: 13 }}>
             {tr('schedule.unplannedShift')}
           </Text>
         </Pressable> : null}
@@ -597,7 +597,7 @@ export default function ScheduleScreen() {
             borderBottomColor: t.cobalt,
           })}
         >
-          <Text style={{ color: t.cobaltLink, fontWeight: '600', fontSize: 13 }}>
+          <Text fontRole="ui" style={{ color: t.cobaltLink, fontWeight: '600', fontSize: 13 }}>
             ⧉ {tr('schedule.copyWeek')}
           </Text>
         </Pressable>
@@ -606,10 +606,10 @@ export default function ScheduleScreen() {
       {/* Agenda */}
       {sections.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Text style={{ color: t.ink, fontWeight: '600', fontSize: 15, marginBottom: 6 }}>
+          <Text fontRole="display" style={{ color: t.ink, fontWeight: '600', fontSize: 17, marginBottom: 6 }}>
             {tr('schedule.emptyWeek')}
           </Text>
-          <Text style={{ color: t.softText, fontSize: 13, textAlign: 'center' }}>
+          <Text fontRole="ui" style={{ color: t.softText, fontSize: 13, textAlign: 'center' }}>
             {tr('schedule.emptyHint')}
           </Text>
         </View>
@@ -621,6 +621,7 @@ export default function ScheduleScreen() {
           contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
           renderSectionHeader={({ section }) => (
             <Text
+              fontRole="display"
               style={{
                 color: t.softText,
                 fontWeight: '700',
@@ -664,7 +665,7 @@ export default function ScheduleScreen() {
                           color={employer?.color ?? t.softText}
                         />
                         <View style={{ flex: 1 }}>
-                          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
+                          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 14 }}>
                             {employer?.name ?? '—'}
                             {role ? ` · ${role.name}` : ''}
                           </Text>
@@ -725,6 +726,7 @@ export default function ScheduleScreen() {
                                 {money(actualEarnings(item))}
                               </Text>
                               <Text
+                                fontRole="mono"
                                 style={{
                                   color:
                                     varianceValue == null
@@ -789,7 +791,7 @@ export default function ScheduleScreen() {
           { backgroundColor: t.ink, shadowColor: t.ink, opacity: pressed ? 0.9 : 1 },
         ]}
       >
-        <Text style={{ color: t.fabText, fontWeight: '700', fontSize: 14 }}>
+        <Text fontRole="ui" style={{ color: t.fabText, fontWeight: '700', fontSize: 14 }}>
           ＋ {tr('schedule.addShift')}
         </Text>
       </Pressable>

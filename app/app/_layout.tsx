@@ -2,14 +2,19 @@ import React, { useEffect } from 'react';
 import { AppState, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import {
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
-  IBMPlexMono_600SemiBold,
-  IBMPlexMono_700Bold,
-  useFonts,
-} from '@expo-google-fonts/ibm-plex-mono';
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular';
+import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium';
+import { IBMPlexMono_600SemiBold } from '@expo-google-fonts/ibm-plex-mono/600SemiBold';
+import { IBMPlexMono_700Bold } from '@expo-google-fonts/ibm-plex-mono/700Bold';
+import { Fraunces_600SemiBold } from '@expo-google-fonts/fraunces/600SemiBold';
+import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
+import { Caveat_600SemiBold } from '@expo-google-fonts/caveat/600SemiBold';
+import { Outfit_400Regular } from '@expo-google-fonts/outfit/400Regular';
+import { Outfit_500Medium } from '@expo-google-fonts/outfit/500Medium';
+import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold';
+import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold';
 import { useTranslation } from 'react-i18next';
 
 import '../src/i18n';
@@ -23,9 +28,9 @@ import { useAppLockStore } from '../src/state/appLockStore';
 import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { IapBootstrap } from '../src/purchases/IapBootstrap';
-import { fonts } from '../src/ui/typography';
+import { fonts, TypographyProvider } from '../src/ui/typography';
 
-void SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -37,6 +42,13 @@ export default function RootLayout() {
     IBMPlexMono_500Medium,
     IBMPlexMono_600SemiBold,
     IBMPlexMono_700Bold,
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+    Caveat_600SemiBold,
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
   });
   const { t, isDark } = useTokens();
   const { t: tr } = useTranslation();
@@ -59,8 +71,8 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
-    if (fontsLoaded) void SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (fontsLoaded || fontError) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [fontError, fontsLoaded]);
 
   useEffect(() => {
     hydrateLock();
@@ -89,42 +101,51 @@ export default function RootLayout() {
     if (segments[0] !== 'onboarding') router.replace('/onboarding');
   }, [employerCount, employersLoaded, router, segments, settingsHydrated]);
 
-  if (fontError) throw fontError;
-  if (!fontsLoaded) return null;
-  if (!lockHydrated) return <View style={{ flex: 1, backgroundColor: t.bg }} />;
-  if (locked) return <LockScreen />;
-  if (!settingsHydrated || !employersLoaded) {
-    return <View style={{ flex: 1, backgroundColor: t.bg }} />;
+  if (!fontsLoaded && !fontError) return null;
+
+  let content: React.ReactNode;
+  if (!lockHydrated) {
+    content = <View style={{ flex: 1, backgroundColor: t.bg }} />;
+  } else if (locked) {
+    content = <LockScreen />;
+  } else if (!settingsHydrated || !employersLoaded) {
+    content = <View style={{ flex: 1, backgroundColor: t.bg }} />;
+  } else {
+    content = (
+      <>
+        <IapBootstrap />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: t.bg },
+            headerTintColor: t.ink,
+            headerTitleStyle: { color: t.ink, fontFamily: fontsLoaded ? fonts.uiSemiBold : undefined },
+            contentStyle: { backgroundColor: t.bg },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen
+            name="shift-form"
+            options={{ presentation: 'modal', title: tr('shiftForm.addTitle') }}
+          />
+          <Stack.Screen
+            name="complete/[id]"
+            options={{ presentation: 'modal', title: tr('complete.title') }}
+          />
+          <Stack.Screen name="employers" options={{ title: tr('employers.title') }} />
+          <Stack.Screen name="templates" options={{ title: tr('templates.title') }} />
+          <Stack.Screen name="security" options={{ title: tr('security.title') }} />
+          <Stack.Screen name="backup" options={{ title: tr('backup.title') }} />
+          <Stack.Screen name="paywall" options={{ title: tr('paywall.title') }} />
+        </Stack>
+      </>
+    );
   }
 
   return (
-    <>
-      <IapBootstrap />
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: t.bg },
-          headerTintColor: t.ink,
-          headerTitleStyle: { color: t.ink, fontFamily: fonts.semiBold },
-          contentStyle: { backgroundColor: t.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen
-          name="shift-form"
-          options={{ presentation: 'modal', title: tr('shiftForm.addTitle') }}
-        />
-        <Stack.Screen
-          name="complete/[id]"
-          options={{ presentation: 'modal', title: tr('complete.title') }}
-        />
-        <Stack.Screen name="employers" options={{ title: tr('employers.title') }} />
-        <Stack.Screen name="templates" options={{ title: tr('templates.title') }} />
-        <Stack.Screen name="security" options={{ title: tr('security.title') }} />
-        <Stack.Screen name="backup" options={{ title: tr('backup.title') }} />
-        <Stack.Screen name="paywall" options={{ title: tr('paywall.title') }} />
-      </Stack>
-    </>
+    <TypographyProvider available={fontsLoaded}>
+      {content}
+    </TypographyProvider>
   );
 }

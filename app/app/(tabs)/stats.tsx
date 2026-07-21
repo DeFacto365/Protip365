@@ -132,29 +132,29 @@ export default function StatsScreen() {
       style={{ flex: 1, backgroundColor: t.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
     >
-      <Text style={{ color: t.ink, fontWeight: '700', fontSize: 20, marginBottom: 14 }}>
+      <Text fontRole="display" style={{ color: t.ink, fontWeight: '700', fontSize: 24, marginBottom: 14 }}>
         {tr('stats.title')}
       </Text>
 
       <WriteAccessBanner />
 
-      <Text style={{ color: t.softText, fontWeight: '700', fontSize: 12, marginBottom: 8 }}>
+      <Text fontRole="display" style={{ color: t.softText, fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
         {tr('stats.overview').toUpperCase()}
       </Text>
       <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
         <Card style={{ flex: 1, padding: 14, alignItems: 'center' }}>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 20 }}>
+          <Text fontRole="total" style={{ color: t.ink, fontWeight: '700', fontSize: 22 }}>
             {stats.effectiveHourly == null ? '\u2014' : `${money(stats.effectiveHourly)}/h`}
           </Text>
-          <Text style={{ color: t.softText, fontSize: 10, fontWeight: '600', marginTop: 3 }}>
+          <Text fontRole="mono" style={{ color: t.softText, fontSize: 10, fontWeight: '600', marginTop: 3 }}>
             {tr('stats.effectiveHourly').toUpperCase()}
           </Text>
         </Card>
         <Card style={{ flex: 1, padding: 14, alignItems: 'center' }}>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 20 }}>
+          <Text fontRole="total" style={{ color: t.ink, fontWeight: '700', fontSize: 22 }}>
             {(stats.workedMinutes / 60).toFixed(1)} {tr('common.hours')}
           </Text>
-          <Text style={{ color: t.softText, fontSize: 10, fontWeight: '600', marginTop: 3 }}>
+          <Text fontRole="mono" style={{ color: t.softText, fontSize: 10, fontWeight: '600', marginTop: 3 }}>
             {tr('stats.worked')}
           </Text>
         </Card>
@@ -185,7 +185,7 @@ export default function StatsScreen() {
           value={signedMoneyOrDash(stats.earningsVariance)}
           tone={stats.earningsVariance == null ? 'muted' : stats.earningsVariance >= 0 ? 'positive' : 'warning'}
         />
-        <Text style={{ color: t.softText, fontSize: 11, marginTop: 6 }}>
+        <Text fontRole="ui" style={{ color: t.softText, fontSize: 11, marginTop: 6 }}>
           {tr('stats.comparableHint', { count: stats.comparableShiftCount })}
         </Text>
       </Card>
@@ -232,7 +232,7 @@ export default function StatsScreen() {
       </Card>
 
       {/* Weekly goals: expected and actual progress are intentionally separate. */}
-      <Text style={{ color: t.softText, fontWeight: '700', fontSize: 12, marginBottom: 8 }}>
+      <Text fontRole="display" style={{ color: t.softText, fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
         {tr('stats.goals').toUpperCase()}
       </Text>
       {currentGoals.map((goal) => {
@@ -246,7 +246,7 @@ export default function StatsScreen() {
             <Text style={{ color: t.softText, fontSize: 12, marginTop: 5 }}>
               {tr('stats.expectedProgress')}: {progress.expected == null ? '—' : metricDisplay(goal.metric, progress.expected)}
             </Text>
-            <Text style={{ color: goal.metric === 'worked_hours' ? t.ink : t.green, backgroundColor: t.paper, padding: 4, fontSize: 12, marginTop: 3, fontWeight: '600' }}>
+            <Text fontRole="penNote" style={{ color: goal.metric === 'worked_hours' ? t.ink : t.green, backgroundColor: t.paper, padding: 4, fontSize: 17, marginTop: 3, fontWeight: '600', transform: [{ rotate: '-1deg' }] }}>
               {tr('stats.actualProgress')}: {metricDisplay(goal.metric, progress.actual)}
             </Text>
           </Card>
@@ -290,7 +290,7 @@ export default function StatsScreen() {
       </Card>
 
       {/* Basic trends and reliable best-day/employer comparisons. */}
-      <Text style={{ color: t.softText, fontWeight: '700', fontSize: 12, marginBottom: 8 }}>
+      <Text fontRole="display" style={{ color: t.softText, fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
         {tr('stats.trends').toUpperCase()}
       </Text>
       <Card style={{ padding: 14, marginBottom: 14 }}>
@@ -337,17 +337,17 @@ export default function StatsScreen() {
               <Text style={{ color: t.softText, fontSize: 11, marginTop: 8 }}>{tr('stats.last90Days')}</Text>
             </>
           ) : (
-            <Text style={{ color: t.softText }}>{tr('stats.insufficientData')}</Text>
+            <Text fontRole="ui" style={{ color: t.softText }}>{tr('stats.insufficientData')}</Text>
           )}
         </View>
       </Card>
 
       {/* Per-employer */}
-      <Text style={{ color: t.softText, fontWeight: '700', fontSize: 12, marginBottom: 8 }}>
+      <Text fontRole="display" style={{ color: t.softText, fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
         {tr('stats.byEmployer').toUpperCase()}
       </Text>
       {stats.byEmployer.length === 0 ? (
-        <Text style={{ color: t.softText, fontSize: 13 }}>{tr('stats.noData')}</Text>
+        <Text fontRole="ui" style={{ color: t.softText, fontSize: 13 }}>{tr('stats.noData')}</Text>
       ) : (
         stats.byEmployer.map((row) => (
           <Card
@@ -366,7 +366,7 @@ export default function StatsScreen() {
                     <Text style={{ flex: 1, color: t.ink, fontWeight: '700', fontSize: 14 }}>
                       {employer?.name ?? '\u2014'}
                     </Text>
-                    <Text style={{ color: t.green, backgroundColor: t.greenSoft, padding: 4, fontWeight: '700', fontSize: 15 }}>
+                    <Text fontRole="total" style={{ color: t.green, backgroundColor: t.greenSoft, padding: 4, fontWeight: '700', fontSize: 17 }}>
                       {money(row.totals.grossEarnings)}
                     </Text>
                   </View>
@@ -396,7 +396,7 @@ export default function StatsScreen() {
 function SectionTitle({ label }: { label: string }) {
   const { t } = useTokens();
   return (
-    <Text style={{ color: t.ink, fontSize: 13, fontWeight: '700', marginBottom: 7 }}>
+    <Text fontRole="display" style={{ color: t.ink, fontSize: 15, fontWeight: '700', marginBottom: 7 }}>
       {label}
     </Text>
   );
@@ -450,7 +450,7 @@ function TrendRow({
     <View>
       <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600' }}>{label}</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-        <Text style={{ color: t.ink, fontSize: 16, fontWeight: '700' }}>{format(metric, current)}</Text>
+        <Text fontRole="mono" style={{ color: t.ink, fontSize: 16, fontWeight: '700' }}>{format(metric, current)}</Text>
         <Text style={{
           color: change == null ? t.softText : change >= 0 ? positiveColor : t.red,
           backgroundColor: 'transparent',

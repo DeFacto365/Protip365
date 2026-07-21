@@ -134,10 +134,10 @@ export function LineItem({
             : t.ink;
   return (
     <View style={styles.lineItem}>
-      <Text style={[styles.lineLabel, { color: t.dim }, strong && styles.lineStrong]}>
+      <Text fontRole="mono" style={[styles.lineLabel, { color: t.dim }, strong && styles.lineStrong]}>
         {label}
       </Text>
-      <Text style={[styles.lineValue, { color }, strong && styles.lineTotal]}>{value}</Text>
+      <Text fontRole={strong ? 'total' : 'mono'} style={[styles.lineValue, { color }, strong && styles.lineTotal]}>{value}</Text>
     </View>
   );
 }
@@ -203,7 +203,7 @@ export function PrimaryButton({
         style,
       ]}
     >
-      <Text style={[styles.buttonText, { color: tone === 'pen' && !danger ? t.paper : t.bg }]}>
+      <Text fontRole="ui" style={[styles.buttonText, { color: tone === 'pen' && !danger ? t.paper : t.bg }]}>
         {label.toUpperCase()}
       </Text>
     </Pressable>
@@ -234,7 +234,7 @@ export function GhostButton({
         style,
       ]}
     >
-      <Text style={[styles.buttonText, { color }]}>{label.toUpperCase()}</Text>
+      <Text fontRole="ui" style={[styles.buttonText, { color }]}>{label.toUpperCase()}</Text>
     </Pressable>
   );
 }
@@ -268,6 +268,7 @@ export function Chip({
       ]}
     >
       <Text
+        fontRole="ui"
         style={{
           color: selected ? t.paper : t.ink,
           fontWeight: '700',
@@ -303,7 +304,7 @@ export function StatusChip({ status }: { status: ShiftStatus }) {
       style={[styles.statusChip, { backgroundColor: bg, borderColor: fg }]}
       accessibilityLabel={label}
     >
-      <Text style={{ color: fg, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
+      <Text fontRole="ui" style={{ color: fg, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
         {label}
       </Text>
     </View>
@@ -319,7 +320,7 @@ export function Field({
   const { t } = useTokens();
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
+      <Text fontRole="ui" style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
         {label.toUpperCase()}
       </Text>
       <TextInput
@@ -336,10 +337,10 @@ export function Field({
         ]}
       />
       {hint && !error ? (
-        <Text style={{ color: t.dim, fontSize: 11, marginTop: 3 }}>{hint}</Text>
+        <Text fontRole="ui" style={{ color: t.dim, fontSize: 11, marginTop: 3 }}>{hint}</Text>
       ) : null}
       {error ? (
-        <Text style={{ color: t.paper, backgroundColor: t.red, padding: 4, fontSize: 11, marginTop: 3 }}>
+        <Text fontRole="ui" style={{ color: t.paper, backgroundColor: t.red, padding: 4, fontSize: 11, marginTop: 3 }}>
           {error}
         </Text>
       ) : null}
@@ -384,6 +385,7 @@ export function SegmentedTabs<T extends string>({
             ]}
           >
             <Text
+              fontRole="ui"
               style={{
                 color: active ? t.paper : t.dim,
                 fontSize: 10,

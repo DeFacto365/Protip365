@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/caveat": "^0.4.2",
+    "@expo-google-fonts/fraunces": "^0.4.1",
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
+    "@expo-google-fonts/outfit": "^0.4.3",
     "@react-native-community/datetimepicker": "9.1.0",
     "@types/crypto-js": "^4.2.2",
     "crypto-js": "^4.2.0",

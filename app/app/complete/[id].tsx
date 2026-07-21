@@ -358,7 +358,7 @@ export default function CompleteShiftScreen() {
 
       {step === 1 ? (
         <>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 17, marginBottom: 12 }}>
+          <Text fontRole="display" style={{ color: t.ink, fontWeight: '700', fontSize: 20, marginBottom: 12 }}>
             {tr('complete.step1Title')}
           </Text>
           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -379,14 +379,16 @@ export default function CompleteShiftScreen() {
               {/* DEF-06: explicit overnight cue */}
               {isOvernight ? (
                 <Text
+                  fontRole="penNote"
                   style={{
-                    color: t.cobaltLink,
+                    color: t.pen,
                     backgroundColor: t.cobaltSoft,
                     paddingHorizontal: 4,
-                    fontSize: 12,
+                    fontSize: 17,
                     fontWeight: '700',
                     marginTop: -8,
                     marginBottom: 8,
+                    transform: [{ rotate: '-1deg' }],
                   }}
                 >
                   {tr('shiftForm.overnight')}
@@ -516,7 +518,7 @@ export default function CompleteShiftScreen() {
         </>
       ) : (
         <>
-          <Text style={{ color: t.ink, fontWeight: '700', fontSize: 17, marginBottom: 12 }}>
+          <Text fontRole="display" style={{ color: t.ink, fontWeight: '700', fontSize: 20, marginBottom: 12 }}>
             {tr('complete.step2Title')}
           </Text>
 
@@ -619,7 +621,7 @@ export default function CompleteShiftScreen() {
                 paddingVertical: 5,
               }}
             >
-              <Text style={{ color: payoutChipColor.fg, fontWeight: '700', fontSize: 12 }}>
+              <Text fontRole="ui" style={{ color: payoutChipColor.fg, fontWeight: '700', fontSize: 12 }}>
                 {tr(`payout.${payoutStatus}`)}
               </Text>
             </View>
@@ -636,17 +638,19 @@ export default function CompleteShiftScreen() {
             <Text style={{ color: t.softText, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
               {tr('complete.total').toUpperCase()}
             </Text>
-            <Text style={{ color: t.ink, fontWeight: '700', fontSize: 32, marginVertical: 4 }}>
+            <Text fontRole="total" style={{ color: t.ink, fontWeight: '700', fontSize: 34, marginVertical: 4 }}>
               {money(actual)}
             </Text>
             <Text
+              fontRole="penNote"
               style={{
                 color: varianceValue == null ? t.softText : varianceValue >= 0 ? t.ink : t.red,
                 backgroundColor: 'transparent',
                 paddingHorizontal: varianceValue == null ? 0 : 6,
                 paddingVertical: varianceValue == null ? 0 : 3,
                 fontWeight: '600',
-                fontSize: 13,
+                fontSize: 17,
+                transform: [{ rotate: '-1deg' }],
               }}
             >
               {varianceValue == null ? '—' : signedMoney(varianceValue)} {tr('complete.variance')} ({money(expected)})

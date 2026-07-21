@@ -4,7 +4,7 @@ import { View, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useTokens } from '../../src/ui/tokens';
-import { fonts, Text } from '../../src/ui/typography';
+import { fonts, Text, useFontAvailability } from '../../src/ui/typography';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -30,6 +30,7 @@ function TabIcon({ glyph, color, focused }: { glyph: string; color: ColorValue; 
 export default function TabsLayout() {
   const { t } = useTokens();
   const { t: tr } = useTranslation();
+  const fontsAvailable = useFontAvailability();
 
   return (
     <Tabs
@@ -37,7 +38,10 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: t.bg },
         headerTintColor: t.ink,
         headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: fonts.semiBold, color: t.ink },
+        headerTitleStyle: {
+          fontFamily: fontsAvailable ? fonts.uiSemiBold : undefined,
+          color: t.ink,
+        },
         tabBarStyle: {
           backgroundColor: t.paper,
           borderTopColor: t.ink,
@@ -50,7 +54,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: t.dim,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontFamily: fonts.semiBold,
+          fontFamily: fontsAvailable ? fonts.uiSemiBold : undefined,
           letterSpacing: 0.4,
         },
         sceneStyle: { backgroundColor: t.bg },

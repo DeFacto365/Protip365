@@ -33,6 +33,24 @@
     "plugins": [
       "expo-router",
       [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/ibm-plex-mono/700Bold/IBMPlexMono_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/fraunces/600SemiBold/Fraunces_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/fraunces/700Bold/Fraunces_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/caveat/600SemiBold/Caveat_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/outfit/400Regular/Outfit_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/outfit/600SemiBold/Outfit_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf"
+          ]
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-logo.png",
