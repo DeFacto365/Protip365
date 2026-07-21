@@ -149,18 +149,56 @@
   }
   .ios-note strong{font-weight:600}
 
-  /* Captured product screen */
-  .phone-zone{display:flex;justify-content:center;min-width:0}
-  .hero-screen{
-    display:block;
+  /* Captured product screens */
+  .phone-zone{display:flex;justify-content:center;align-items:flex-start;min-width:0}
+  .hero-slider{
     width:min(360px,100%);
-    height:auto;
-    aspect-ratio:720/1616;
-    object-fit:cover;
+    min-width:0;
+    transform:rotate(1.2deg);
+  }
+  .hero-slider-frame{
+    position:relative;
+    overflow:hidden;
+    display:block;
+    width:100%;
+    aspect-ratio:360/768;
     border-radius:44px;
     background:#05060A;
     box-shadow:15px 18px 0 rgba(32,33,30,.22);
-    transform:rotate(1.2deg);
+  }
+  .hero-slide{
+    position:absolute;
+    inset:0;
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:0;
+    visibility:hidden;
+  }
+  .hero-slide.is-active{opacity:1;visibility:visible}
+  .hero-slider-meta{
+    display:grid;
+    grid-template-columns:44px minmax(0,1fr) 44px;
+    gap:10px;
+    align-items:center;
+    margin:18px 4px 0;
+  }
+  .hero-slider-meta button{
+    width:44px;
+    height:44px;
+    border:1.5px solid var(--ink);
+    background:var(--paper);
+    color:var(--ink);
+    font:700 1rem/1 'IBM Plex Mono',monospace;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .hero-slider-meta button:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .hero-slider-meta button:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
+  .hero-slider-status{min-width:0;text-align:center;font-size:.72rem;line-height:1.35}
+  .hero-slider-status strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hero-slider-count{display:block;color:var(--red-aa);font-size:.62rem;font-weight:700;letter-spacing:.1em;margin-bottom:2px}
   }
 
   /* Outcomes */
@@ -267,7 +305,7 @@
     .hero-copy{text-align:center}
     .lead{margin-left:auto;margin-right:auto}
     .hero-copy .cta-row{justify-content:center}
-    .hero-screen{transform:none}
+    .hero-slider{transform:none}
     .b-grid{grid-template-columns:1fr;max-width:34rem;margin:0 auto}
     .screens-head{align-items:center}
     .assure-box{grid-template-columns:1fr;padding:34px 30px}
@@ -282,7 +320,7 @@
     .hero-grid{padding:44px 0 66px}
     h1{font-size:clamp(2.15rem,12vw,3.05rem)}
     .lead{font-size:.96rem}
-    .hero-screen{max-width:340px}
+    .hero-slider{max-width:340px}
     .benefits{padding:66px 0 58px}
     .screens{padding-bottom:68px}
     .screens-head{align-items:flex-start;margin-bottom:26px}
@@ -346,11 +384,31 @@
         </div>
       </div>
 
-      <div class="phone-zone" role="img" aria-label="ProTip365 demo showing weekly earnings, the shift schedule, and performance statistics" data-i18n-aria="m_phone_aria">
-        <video class="hero-screen" autoplay muted loop playsinline preload="metadata" poster="media/protip365-demo-poster.png" width="720" height="1616" aria-hidden="true">
-          <source src="media/protip365-demo.mp4" type="video/mp4">
-          <img src="media/protip365-demo-poster.png" alt="" width="720" height="1616">
-        </video>
+      <div class="phone-zone">
+        <figure class="hero-slider" data-hero-slider role="region" aria-label="ProTip365 app screens" data-i18n-aria="screens_aria">
+          <div class="hero-slider-frame">
+            <img class="hero-slide is-active" data-source-index="0" src="screens/screen-01-first-run.png" alt="" width="360" height="768" fetchpriority="high" decoding="async">
+            <img class="hero-slide" data-source-index="1" src="screens/screen-02-home.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="2" src="screens/screen-03-schedule-agenda.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="3" src="screens/screen-04-schedule-week.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="4" src="screens/screen-05-add-shift.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="5" src="screens/screen-06-closeout-times.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="6" src="screens/screen-07-closeout-tips.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="7" src="screens/screen-08-shift-result.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="8" src="screens/screen-09-stats.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="9" src="screens/screen-10-employers.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="10" src="screens/screen-11-settings.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="11" src="screens/screen-12-dark-mode.png" alt="" width="360" height="768" loading="lazy" decoding="async">
+          </div>
+          <figcaption class="hero-slider-meta">
+            <button type="button" data-hero-prev aria-label="Previous screens" data-i18n-aria="screens_prev">←</button>
+            <span class="hero-slider-status" data-hero-status aria-live="polite">
+              <span class="hero-slider-count" data-hero-count>01 / 12</span>
+              <strong data-hero-caption>First run — Private from day one</strong>
+            </span>
+            <button type="button" data-hero-next aria-label="Next screens" data-i18n-aria="screens_next">→</button>
+          </figcaption>
+        </figure>
       </div>
     </div>
   </section>
@@ -651,12 +709,52 @@
     document.querySelectorAll('.lang button').forEach(function(b){
       b.classList.toggle('on',b.getAttribute('data-lang') === lang);
     });
+    refreshHeroSliderText();
     try{localStorage.setItem('pt365-lang',lang);}catch(e){}
   }
   document.querySelectorAll('.lang button').forEach(function(b){
     b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
   });
   var gallery = document.querySelector('[data-gallery]');
+  var heroSlider = document.querySelector('[data-hero-slider]');
+  var heroSlides = heroSlider ? Array.from(heroSlider.querySelectorAll('.hero-slide')) : [];
+  var heroCurrent = 0;
+  var heroCount = heroSlider ? heroSlider.querySelector('[data-hero-count]') : null;
+  var heroCaption = heroSlider ? heroSlider.querySelector('[data-hero-caption]') : null;
+  function heroSlideCopy(slide){
+    if (!gallery || !slide) return '';
+    var sourceIndex = parseInt(slide.getAttribute('data-source-index'),10);
+    var source = gallery.querySelectorAll('.screen-card')[sourceIndex];
+    if (!source) return '';
+    var title = source.querySelector('i');
+    var description = source.querySelector('strong');
+    return [title && title.textContent,description && description.textContent].filter(Boolean).join(' — ');
+  }
+  function refreshHeroSliderText(){
+    if (!heroSlides.length) return;
+    heroSlides.forEach(function(slide,index){
+      var active = index === heroCurrent;
+      var copy = heroSlideCopy(slide);
+      slide.classList.toggle('is-active',active);
+      slide.setAttribute('aria-hidden',active ? 'false' : 'true');
+      slide.alt = active ? copy : '';
+    });
+    if (heroCount) heroCount.textContent = String(heroCurrent + 1).padStart(2,'0') + ' / ' + String(heroSlides.length).padStart(2,'0');
+    if (heroCaption) heroCaption.textContent = heroSlideCopy(heroSlides[heroCurrent]);
+  }
+  function moveHeroSlider(direction){
+    if (!heroSlides.length) return;
+    heroCurrent = (heroCurrent + direction + heroSlides.length) % heroSlides.length;
+    refreshHeroSliderText();
+  }
+  var heroPrevious = document.querySelector('[data-hero-prev]');
+  var heroNext = document.querySelector('[data-hero-next]');
+  if (heroPrevious) heroPrevious.addEventListener('click',function(){moveHeroSlider(-1);});
+  if (heroNext) heroNext.addEventListener('click',function(){moveHeroSlider(1);});
+  if (heroSlider) heroSlider.addEventListener('keydown',function(event){
+    if (event.key === 'ArrowLeft') { event.preventDefault(); moveHeroSlider(-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); moveHeroSlider(1); }
+  });
   function moveGallery(direction){
     if (!gallery) return;
     var card = gallery.querySelector('.screen-card');
