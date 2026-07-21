@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { AppState, View } from 'react-native';
+import { AppState, Platform, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
+import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono/400Regular';
 import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono/500Medium';
@@ -28,7 +28,7 @@ import { useAppLockStore } from '../src/state/appLockStore';
 import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { IapBootstrap } from '../src/purchases/IapBootstrap';
-import { fonts, TypographyProvider } from '../src/ui/typography';
+import { fonts, requiredNativeFontFamilies, TypographyProvider } from '../src/ui/typography';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -37,19 +37,38 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    IBMPlexMono_400Regular,
-    IBMPlexMono_500Medium,
-    IBMPlexMono_600SemiBold,
-    IBMPlexMono_700Bold,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
-    Caveat_600SemiBold,
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-  });
+  const [webFontsLoaded, webFontError] = Font.useFonts(
+    Platform.OS === 'web'
+      ? {
+          IBMPlexMono_400Regular,
+          IBMPlexMono_500Medium,
+          IBMPlexMono_600SemiBold,
+          IBMPlexMono_700Bold,
+          Fraunces_600SemiBold,
+          Fraunces_700Bold,
+          Caveat_600SemiBold,
+          Outfit_400Regular,
+          Outfit_500Medium,
+          Outfit_600SemiBold,
+          Outfit_700Bold,
+        }
+      : {},
+  );
+  const [nativeFontsLoaded, nativeFontError] = React.useMemo<[boolean, Error | null]>(() => {
+    if (Platform.OS === 'web') return [true, null];
+
+    try {
+      const loadedFonts = new Set(Font.getLoadedFonts());
+      const missingFonts = requiredNativeFontFamilies.filter((family) => !loadedFonts.has(family));
+      return missingFonts.length === 0
+        ? [true, null]
+        : [false, new Error(`Missing embedded fonts: ${missingFonts.join(', ')}`)];
+    } catch (error) {
+      return [false, error instanceof Error ? error : new Error('Unable to read embedded fonts')];
+    }
+  }, []);
+  const fontsLoaded = Platform.OS === 'web' ? webFontsLoaded : nativeFontsLoaded;
+  const fontError = Platform.OS === 'web' ? webFontError : nativeFontError;
   const { t, isDark } = useTokens();
   const { t: tr } = useTranslation();
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
@@ -119,7 +138,11 @@ export default function RootLayout() {
           screenOptions={{
             headerStyle: { backgroundColor: t.bg },
             headerTintColor: t.ink,
-            headerTitleStyle: { color: t.ink, fontFamily: fontsLoaded ? fonts.uiSemiBold : undefined },
+            headerTitleStyle: {
+              color: t.ink,
+              fontFamily: fontsLoaded ? fonts.uiSemiBold : undefined,
+              fontWeight: fontsLoaded && Platform.OS === 'android' ? '600' : undefined,
+            },
             contentStyle: { backgroundColor: t.bg },
           }}
         >

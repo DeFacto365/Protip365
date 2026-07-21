@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, type ColorValue } from 'react-native';
+import { Platform, View, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useTokens } from '../../src/ui/tokens';
@@ -40,6 +40,7 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         headerTitleStyle: {
           fontFamily: fontsAvailable ? fonts.uiSemiBold : undefined,
+          fontWeight: fontsAvailable && Platform.OS === 'android' ? '600' : undefined,
           color: t.ink,
         },
         tabBarStyle: {
@@ -55,6 +56,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: fontsAvailable ? fonts.uiSemiBold : undefined,
+          fontWeight: fontsAvailable && Platform.OS === 'android' ? '600' : undefined,
           letterSpacing: 0.4,
         },
         sceneStyle: { backgroundColor: t.bg },
