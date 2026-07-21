@@ -4,6 +4,8 @@ Status: active submission playbook, updated from the live Google Play Console st
 Date: 2026-07-20
 Scope: Android only. This guide does not cover the Apple App Store.
 
+Current Data Safety answers and privacy-policy publication copy are maintained in `Docs/PLAY_DATA_SAFETY.md` and `Docs/PRIVACY_POLICY_UPDATE.md`.
+
 Read this top to bottom once before changing Play Console. Section 11 is the current owner/tester checklist.
 
 ---
@@ -389,15 +391,15 @@ Use a real (but fake/demo) employer name and a few realistic sample shifts befor
 Google Play's Data Safety section asks what data your app collects and shares. Answer based on the actual current build (Section 0.2), not the PRD's future plans.
 
 **Does your app collect or share any of the required user data types?**
-→ **No.** As of this build, nothing leaves the device. There is no analytics SDK, no crash-reporting SDK, no network call, and no backend in `app/package.json` or anywhere in `app/`. All data (employers, shifts, tips, notes) is stored only in the local SQLite database via `expo-sqlite`.
+→ **Yes — only limited EAS Update technical data, not user-entered work or financial records.** EAS Update sends the device operating system and a randomized installation token to Expo over HTTPS. User-entered records (shifts, employers, tips, wages, notes, and settings) have no network/API dependency and are never sent to Defacto365. The app is not fully network-free: EAS Update and Google Play Billing use the network.
 
-**Data types to declare:** none. Do not declare "Financial info," "App activity," or any other category as collected, since nothing is transmitted off-device.
+**Data types to declare:** **App activity → App interactions; App info and performance → Crash logs and Diagnostics; Device or other IDs.** Select no others. These declarations cover EAS Update technical data, not user-entered work or financial records.
 
 **Is data encrypted in transit?**
-→ **Not applicable / no data is transmitted.** There is no network transmission for this app to encrypt in the first place — Play's form typically lets you state this once you've declared no data collection.
+→ **Yes.** EAS Update requests use HTTPS, so the limited technical data is encrypted in transit.
 
 **Data deletion**
-→ Users can request that their data be deleted: **Yes, in-app deletion is available.** The path is Settings → Erase All Local Data (implemented, `app/(tabs)/settings.tsx`, function `eraseAllData()` in `src/data/db.ts`), which removes the local database contents with a confirmation dialog. There is no server-side account or data to separately delete, since none exists.
+→ **No, based on currently verified behavior.** Settings → Erase All Local Data removes user-entered local records and app-lock data, but no end-user deletion path for Expo's EAS Update installation token or metrics has been verified.
 
 **CSV export — be precise about this one**
 CSV export (Settings → Export CSV, implemented and working) is **user-initiated data sharing that the user controls, not automatic data collection by the app**. When a user taps Export CSV, the app writes a file locally and hands it to the OS share sheet (`expo-sharing`) — the user then chooses where it goes (email, Drive, Files, etc.), if anywhere. This is not "sharing data with third parties" in Play's Data Safety sense (that phrase means the developer/app itself sends data somewhere), so do not declare it as data sharing. If asked in the form whether the app allows users to request data export, answer **yes**, and describe it as user-initiated local export, not automatic sharing.
@@ -405,7 +407,7 @@ CSV export (Settings → Export CSV, implemented and working) is **user-initiate
 **Security practices section**
 Play's form separately asks about security practices like "Data is encrypted in transit" and "You can request that data be deleted" as badges. Do not check "Data is encrypted at rest" or similar, since the local SQLite database is not currently encrypted (Section 0.2). Checking that box when it isn't true is a policy violation if Google audits it, not just an inaccuracy.
 
-**Important: this answer set is only valid for this build.** The PRD's planned analytics event list (PRD §16, e.g. `employer_created`, `shift_completion_completed`, etc.) is not implemented yet — no analytics library exists in the app. **The day analytics ships, this entire Data Safety form must be redone** before that build goes to any public track, since "no data collected" would become false. Add a release-checklist item for that day now (see Section 11's follow-up note).
+**Important: this answer set is only valid for this build.** The PRD's planned analytics event list (PRD §16, e.g. `employer_created`, `shift_completion_completed`, etc.) is not implemented yet — no analytics library exists in the app. **The day analytics ships, this entire Data Safety form must be redone** before that build goes to any public track, because the declared data types and purposes may change. Add a release-checklist item for that day now (see Section 11's follow-up note).
 
 ---
 
@@ -458,21 +460,23 @@ ProTip365 does not require you to create an account, sign in, or provide an
 email address, password, or any other identifying credential to use the app.
 
 2. Where your data lives
-All information you enter into ProTip365 — including employer names, shift
-schedules, hours worked, tips, tip-outs, sales figures, payout details, and
-any notes — is stored only in a local database on your device. This
-information is never transmitted to Defacto365, to any server we operate, or
-to any third party, as part of normal use of the app.
+User-entered records — including employer names, shifts, schedules, hours,
+wages, tips, sales, payouts, notes, and settings — are stored in the on-device
+database. These records have no network/API dependency and are never sent to
+Defacto365. EAS Update technical data and Google Play Billing traffic do not
+include these records.
 
 3. What we collect
-As of this version of the app, ProTip365 does not use any analytics,
-advertising, or crash-reporting service, and does not send any data over the
-network. We do not know what you enter into the app, how you use it, or
-anything else about your activity, because nothing is sent to us. If a future
-version of the app adds optional, privacy-conscious product analytics, this
-policy will be updated first, the new version will describe exactly what is
-collected, and any personal or financial data (tip amounts, employer names,
-notes, schedules) will continue to be excluded from analytics.
+As of this version, ProTip365 does not use an advertising SDK or a
+general-purpose analytics or crash-reporting SDK. The app is not fully
+network-free: EAS Update sends the device operating system and a randomized
+installation token to Expo over HTTPS, and Google Play Billing uses the
+network. User-entered records are not included in those connections and are
+never sent to Defacto365. If a future version of the app adds optional,
+privacy-conscious product analytics, this policy will be updated first, the
+new version will describe exactly what is collected, and any personal or
+financial data (tip amounts, employer names, notes, schedules) will continue
+to be excluded from analytics.
 
 4. Exporting your data
 You may export your shift history to a CSV file at any time from within the
@@ -547,7 +551,7 @@ Remaining release gates:
 1. Install release 8 from the internal-testing opt-in link on a licensed tester's real Android device.
 2. Test localized product discovery, lifetime and monthly purchases, pending payment, acknowledgement, restore, subscription lapse, and offline refresh.
 3. Keep `ENTITLEMENT_ENFORCEMENT_ENABLED` set to `false` until the signed-store test matrix passes.
-4. Add server-side purchase-token validation only if fraud-resistant production entitlement becomes a requirement. Play Integrity is not a prerequisite for the current local-only phase.
+4. Add server-side purchase-token validation only if fraud-resistant production entitlement becomes a requirement. Play Integrity is not a prerequisite for the current phase without a developer-operated purchase-validation backend.
 
 ---
 
