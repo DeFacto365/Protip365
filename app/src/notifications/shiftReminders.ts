@@ -45,6 +45,7 @@ export async function requestReminderPermission(): Promise<boolean> {
   if (!notificationsSupported()) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
+  await ensureChannel();
   const requested = await Notifications.requestPermissionsAsync();
   return requested.granted;
 }

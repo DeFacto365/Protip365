@@ -1,4 +1,9 @@
-import { isActualsPending, reminderDate, scheduledEndDate } from '../reminders';
+import {
+  isActualsPending,
+  parseReminderDelayHours,
+  reminderDate,
+  scheduledEndDate,
+} from '../reminders';
 import type { Shift } from '../types';
 
 const shift = (overrides: Partial<Shift> = {}): Shift => ({
@@ -17,6 +22,18 @@ describe('post-shift reminders', () => {
   it('defaults to two hours after the scheduled end', () => {
     const end = scheduledEndDate(shift());
     expect(reminderDate(shift()).getTime() - end.getTime()).toBe(120 * 60_000);
+  });
+
+  it('parses localized delays between zero and 24 hours', () => {
+    expect(parseReminderDelayHours('2.5')).toBe(150);
+    expect(parseReminderDelayHours('1,5')).toBe(90);
+  });
+
+  it('rejects empty, non-numeric, and out-of-range delays', () => {
+    expect(parseReminderDelayHours('')).toBeNull();
+    expect(parseReminderDelayHours('abc')).toBeNull();
+    expect(parseReminderDelayHours('-1')).toBeNull();
+    expect(parseReminderDelayHours('25')).toBeNull();
   });
 
   it('resolves an overnight end on the following local date', () => {

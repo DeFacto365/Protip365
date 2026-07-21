@@ -29,7 +29,7 @@ const emptyPayload = () => ({
     roles: [],
     schedule_templates: [],
     recurrence_rules: [],
-    weekly_goals: [],
+    weekly_goals: [] as Array<Record<string, unknown>>,
     shifts: [],
     settings: [],
   },
@@ -102,5 +102,42 @@ describe('restore validation before destructive work', () => {
     ).toThrow('backup_file_too_large');
     expect(decryptMock).not.toHaveBeenCalled();
     expect(withTransactionSync).not.toHaveBeenCalled();
+  });
+
+  it('coalesces duplicate legacy weekly goals during restore', () => {
+    const payload = emptyPayload();
+    payload.tables.weekly_goals.push(
+      {
+        id: 'goal-old',
+        week_start: '2026-07-20',
+        metric: 'actual_gross',
+        target: 50000,
+        employer_id: null,
+        repeat: 0,
+        created_at: '2026-07-20T12:00:00.000Z',
+        updated_at: '2026-07-20T12:00:00.000Z',
+      },
+      {
+        id: 'goal-new',
+        week_start: '2026-07-20',
+        metric: 'actual_gross',
+        target: 60000,
+        employer_id: null,
+        repeat: 1,
+        created_at: '2026-07-21T12:00:00.000Z',
+        updated_at: '2026-07-21T12:00:00.000Z',
+      }
+    );
+    decryptMock.mockReturnValue(payload);
+
+    restoreEncryptedFullBackup('encrypted', 'password');
+
+    expect(
+      runSync.mock.calls.filter(([sql]) => String(sql).includes('weekly_goals'))
+    ).toHaveLength(1);
+    expect(runSync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO weekly_goals'),
+      expect.arrayContaining(['goal-new', 60000])
+    );
   });
 });

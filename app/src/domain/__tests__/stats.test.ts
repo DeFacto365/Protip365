@@ -5,6 +5,8 @@ import {
   goalProgress,
   netTipIncome,
   percentChange,
+  isValidWeeklyGoalHoursInput,
+  isValidWeeklyGoalTarget,
 } from '../stats';
 import type { Shift, WeeklyGoal } from '../types';
 
@@ -155,6 +157,21 @@ describe('stats, goals, and trends', () => {
 
     const tipsGoal = { ...hoursGoal, metric: 'net_tips' as const, target: 20000 };
     expect(goalProgress(tipsGoal, [worked(), scheduled])).toEqual({ expected: null, actual: 10500 });
+  });
+
+  it('rejects unsafe or impossible weekly goal targets', () => {
+    expect(isValidWeeklyGoalTarget('worked_hours', 7 * 24 * 60)).toBe(true);
+    expect(isValidWeeklyGoalTarget('worked_hours', 7 * 24 * 60 + 1)).toBe(false);
+    expect(isValidWeeklyGoalTarget('actual_gross', Number.POSITIVE_INFINITY)).toBe(false);
+    expect(isValidWeeklyGoalTarget('actual_gross', Number.MAX_SAFE_INTEGER + 1)).toBe(false);
+    expect(isValidWeeklyGoalTarget('actual_gross', 1)).toBe(true);
+  });
+
+  it('accepts only worked-hour inputs that match one-decimal display precision', () => {
+    expect(isValidWeeklyGoalHoursInput(0.09)).toBe(false);
+    expect(isValidWeeklyGoalHoursInput(0.1)).toBe(true);
+    expect(isValidWeeklyGoalHoursInput(168)).toBe(true);
+    expect(isValidWeeklyGoalHoursInput(168.01)).toBe(false);
   });
 
   it('returns no effective hourly value when worked shifts have no paid time', () => {

@@ -241,6 +241,15 @@ export function percentChange(current: number, previous: number): number | null 
   return Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10;
 }
 
+export function isValidWeeklyGoalTarget(metric: GoalMetric, target: number): boolean {
+  if (!Number.isSafeInteger(target) || target <= 0) return false;
+  return metric !== 'worked_hours' || target <= 7 * 24 * 60;
+}
+
+export function isValidWeeklyGoalHoursInput(hours: number): boolean {
+  return Number.isFinite(hours) && hours >= 0.1 && hours <= 7 * 24;
+}
+
 export function goalProgress(
   goal: WeeklyGoal,
   shifts: readonly Shift[]

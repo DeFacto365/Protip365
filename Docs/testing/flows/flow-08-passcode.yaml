@@ -8,13 +8,11 @@ name: 08 Enable passcode 123456, relaunch, unlock
       text: "Passcode & biometrics"
 - tapOn: "Passcode & biometrics"
 - assertVisible: "New 6-digit passcode"
-- tapOn:
-    below: "New 6-digit passcode"
+- tapOn: "New 6-digit passcode"
+- eraseText
 - inputText: "123456"
-- tapOn:
-    below: "Confirm passcode"
-- tapOn:
-    point: "50%,41%"
+- tapOn: "Confirm passcode"
+- eraseText
 - inputText: "123456"
 - tapOn: "I understand the reset warning"
 - tapOn: "Enable passcode"

@@ -2,13 +2,16 @@ appId: com.defacto365.protip365
 name: 05 Complete the shift with tips 120.50 and tip-out 15
 ---
 - launchApp
-- assertVisible: "Schedule"
-# Open today's shift (created in flow 04)
-- tapOn: ".*Test Bar.*"
+- tapOn: "Schedule"
+# Expand today's shift (created in flow 04) and open its completion flow.
+- runFlow:
+    when:
+      visible: "Show shift details"
+    commands:
+      - tapOn: "Show shift details"
+- tapOn: "Log it"
 - assertVisible: "Confirm your hours"
 - takeScreenshot: shift-detail
-# NOTE: adjusting actual end time is blocked — the time fields launch the
-# crashing MaterialTimePicker (see flow-03). Keeping default confirmed hours.
 # Toggle the break off and back on to exercise the control.
 - tapOn: "Taken"
 - assertVisible: "Skipped"
@@ -17,24 +20,35 @@ name: 05 Complete the shift with tips 120.50 and tip-out 15
 - tapOn: "Next"
 - assertVisible: "Tips & payout"
 # Ensure a valid actual hourly rate (the app correctly rejects a zero/empty rate).
-- tapOn:
-    below: "Actual hourly rate"
+- tapOn: "Actual hourly rate"
 - eraseText
 - inputText: "15.50"
-- tapOn:
-    below: "Direct tips"
-- inputText: "120.50"
-- tapOn:
-    below: "Tip-out paid"
-- inputText: "15"
-- takeScreenshot: complete-form
 - scrollUntilVisible:
     element:
-      text: "Save.*worked"
+      text: "DIRECT TIPS"
+    visibilityPercentage: 20
+    centerElement: true
+- tapOn: "Direct tips"
+- eraseText
+- inputText: "120.50"
+- scrollUntilVisible:
+    element:
+      text: "TIP-OUT PAID"
+    visibilityPercentage: 20
+    centerElement: true
+- tapOn: "Tip-out paid"
+- eraseText
+- inputText: "15"
+- takeScreenshot: complete-form
+- swipe:
+    start: "50%,80%"
+    end: "50%,20%"
+    duration: 800
+- assertVisible: "Save.*worked"
 - tapOn: "Save.*worked"
 # Generous wait: post-save the app has shown a stuck white screen (bug)
 - extendedWaitUntil:
     visible: "Schedule"
     timeout: 20000
-- assertVisible: ".*Test Bar.*"
+- assertVisible: ".*Regression Bistro.*"
 - takeScreenshot: shift-completed

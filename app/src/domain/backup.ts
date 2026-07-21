@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js';
+import { getRandomBytes } from 'expo-crypto';
 
 const FORMAT = 'protip365-encrypted-backup';
 const VERSION = 1;
@@ -53,10 +54,19 @@ function constantTimeEqual(left: string, right: string): boolean {
   return difference === 0;
 }
 
+function secureRandomWordArray(byteCount: number): CryptoJS.lib.WordArray {
+  const bytes = getRandomBytes(byteCount);
+  const words: number[] = [];
+  for (let index = 0; index < bytes.length; index += 1) {
+    words[index >>> 2] = (words[index >>> 2] ?? 0) | (bytes[index] << (24 - (index % 4) * 8));
+  }
+  return CryptoJS.lib.WordArray.create(words, bytes.length);
+}
+
 export function encryptBackupPayload(payload: unknown, password: string): string {
   if (password.length < 8) throw new Error('backup_password_too_short');
-  const salt = CryptoJS.lib.WordArray.random(16);
-  const iv = CryptoJS.lib.WordArray.random(16);
+  const salt = secureRandomWordArray(16);
+  const iv = secureRandomWordArray(16);
   const { encryptionKey, macKey } = deriveKeys(password, salt, ITERATIONS);
   const encrypted = CryptoJS.AES.encrypt(JSON.stringify(payload), encryptionKey, {
     iv,

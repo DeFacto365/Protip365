@@ -10,6 +10,7 @@ import {
 import { PurchaseFlowError } from '../src/purchases/iap';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { usePurchaseStore } from '../src/state/purchaseStore';
+import { withAppLockSystemPrompt } from '../src/state/appLockStore';
 import { Card, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 import { Text } from '../src/ui/typography';
@@ -28,7 +29,7 @@ export default function PaywallScreen() {
   const runPurchase = async (productId: typeof LIFETIME_PRODUCT_ID | typeof MONTHLY_PRODUCT_ID) => {
     setBusy(true);
     try {
-      await purchase(productId);
+      await withAppLockSystemPrompt(() => purchase(productId));
       Alert.alert(tr('paywall.purchaseComplete'));
     } catch (error) {
       if (error instanceof PurchaseFlowError && error.code === 'iap_cancelled') return;
@@ -45,7 +46,7 @@ export default function PaywallScreen() {
   const restore = async () => {
     setBusy(true);
     try {
-      await restorePurchases();
+      await withAppLockSystemPrompt(restorePurchases);
       Alert.alert(tr('paywall.restoreComplete'));
     } catch {
       Alert.alert(tr('paywall.storeUnavailable'));

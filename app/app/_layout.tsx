@@ -29,6 +29,7 @@ import { LockScreen } from '../src/ui/LockScreen';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { IapBootstrap } from '../src/purchases/IapBootstrap';
 import { fonts, requiredNativeFontFamilies, TypographyProvider } from '../src/ui/typography';
+import { appLockActionForState } from '../src/security/appLifecycle';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -80,10 +81,8 @@ export default function RootLayout() {
   const loadTemplates = useTemplatesStore((s) => s.load);
   const loadGoals = useGoalsStore((s) => s.load);
   const lockHydrated = useAppLockStore((state) => state.hydrated);
-  const lockEnabled = useAppLockStore((state) => state.enabled);
   const locked = useAppLockStore((state) => state.locked);
   const hydrateLock = useAppLockStore((state) => state.hydrate);
-  const lock = useAppLockStore((state) => state.lock);
   const hydrateEntitlement = useEntitlementStore((state) => state.hydrate);
   const refreshEntitlement = useEntitlementStore((state) => state.refresh);
   const router = useRouter();
@@ -99,11 +98,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (lockEnabled && state !== 'active') lock();
+      const lockState = useAppLockStore.getState();
+      if (lockState.systemPromptOpen && lockState.systemPromptDepth === 0) {
+        lockState.resolveFinishedSystemPrompt(state);
+      } else {
+        const action = appLockActionForState(state, lockState.enabled, lockState.systemPromptOpen);
+        if (action === 'lock') lockState.lock();
+      }
       if (state === 'active') refreshEntitlement();
     });
     return () => subscription.remove();
-  }, [lock, lockEnabled, refreshEntitlement]);
+  }, [refreshEntitlement]);
 
   useEffect(() => {
     if (!lockHydrated || locked) return;

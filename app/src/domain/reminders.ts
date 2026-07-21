@@ -1,6 +1,13 @@
 import { normalizeEnd } from './calc';
 import type { Shift } from './types';
 
+export function parseReminderDelayHours(text: string): number | null {
+  if (text.trim() === '') return null;
+  const hours = Number(text.replace(',', '.'));
+  if (!Number.isFinite(hours) || hours < 0 || hours > 24) return null;
+  return Math.round(hours * 60);
+}
+
 /** Resolve a scheduled local work date + overnight-aware end time to a Date. */
 export function scheduledEndDate(
   shift: Pick<Shift, 'date' | 'startMin' | 'endMin'>

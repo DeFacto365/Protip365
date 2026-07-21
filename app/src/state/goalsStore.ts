@@ -10,6 +10,7 @@ interface GoalsState {
   loaded: boolean;
   load: () => void;
   addGoal: (input: Omit<WeeklyGoal, 'id'>) => WeeklyGoal;
+  removeGoal: (id: string) => void;
   ensureRepeatedForWeek: (weekStart: string) => void;
 }
 
@@ -21,9 +22,15 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
 
   addGoal: (input) => {
     assertWriteAccess();
-    const goal = weeklyGoalsRepo.create(input);
-    set((state) => ({ goals: [...state.goals, goal] }));
+    const goal = weeklyGoalsRepo.upsert(input);
+    set((state) => ({ goals: [...state.goals.filter((item) => item.id !== goal.id), goal] }));
     return goal;
+  },
+
+  removeGoal: (id) => {
+    assertWriteAccess();
+    weeklyGoalsRepo.remove(id);
+    set((state) => ({ goals: state.goals.filter((goal) => goal.id !== id) }));
   },
 
   ensureRepeatedForWeek: (weekStart) => {

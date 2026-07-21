@@ -71,9 +71,9 @@ export default function ShiftFormScreen() {
     () => selectableEmployers(allEmployers, editing?.employerId),
     [allEmployers, editing?.employerId]
   );
-  const [employerId, setEmployerId] = useState<string | null>(
-    editing?.employerId ?? employers[0]?.id ?? null
-  );
+  const initialEmployerId = editing?.employerId ?? employers[0]?.id ?? null;
+  const initialEmployer = employers.find((employer) => employer.id === initialEmployerId);
+  const [employerId, setEmployerId] = useState<string | null>(initialEmployerId);
   const [roleId, setRoleId] = useState<string | null>(editing?.roleId ?? null);
   const [date, setDate] = useState(editing?.date ?? params.date ?? todayIso());
   const [startText, setStartText] = useState(editing ? minutesToHHMM(editing.startMin) : '17:00');
@@ -85,7 +85,9 @@ export default function ShiftFormScreen() {
   );
   const [breakDurText, setBreakDurText] = useState(firstBreak ? String(firstBreak.durationMin) : '30');
   const [rateText, setRateText] = useState(
-    editing ? centsToInput(editing.hourlyRateSnapshot) : ''
+    editing
+      ? centsToInput(editing.hourlyRateSnapshot)
+      : centsToInput(initialEmployer?.defaultHourlyRate)
   );
   const [plannedExpectedTipsText, setPlannedExpectedTipsText] = useState(
     centsToInput(editing?.plannedExpectedTips)
@@ -389,6 +391,7 @@ export default function ShiftFormScreen() {
           />
           <Field
             label={tr('shiftForm.hourlyRate')}
+            accessibilityLabel={`${tr('shiftForm.addEmployer')} ${tr('shiftForm.hourlyRate')}`}
             value={newEmployerRate}
             onChangeText={(text) => {
               setNewEmployerRate(text);
@@ -442,6 +445,7 @@ export default function ShiftFormScreen() {
               />
               <Field
                 label={tr('shiftForm.hourlyRate')}
+                accessibilityLabel={`${tr('shiftForm.addRole')} ${tr('shiftForm.hourlyRate')}`}
                 value={newRoleRate}
                 onChangeText={(text) => {
                   setNewRoleRate(text);

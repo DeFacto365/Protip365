@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { isValidPasscode } from '../src/domain/security';
-import { useAppLockStore } from '../src/state/appLockStore';
+import { useAppLockStore, withAppLockSystemPrompt } from '../src/state/appLockStore';
 import { Card, Chip, Field, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 import { Text } from '../src/ui/typography';
@@ -47,7 +47,9 @@ export default function SecurityScreen() {
   };
 
   const toggleBiometrics = async () => {
-    const ok = await setBiometrics(!biometricEnabled, tr('security.biometricPrompt'));
+    const ok = await withAppLockSystemPrompt(() =>
+      setBiometrics(!biometricEnabled, tr('security.biometricPrompt'))
+    );
     if (!ok) Alert.alert(tr('security.biometricUnavailable'));
   };
 

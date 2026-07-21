@@ -2,11 +2,8 @@ appId: com.defacto365.protip365
 name: 02 Date picker opens without crash (KNOWN CRASH ZONE)
 ---
 - launchApp
-- runFlow:
-    when:
-      visible: "Schedule"
-    commands:
-      - tapOn: "Add shift"
+- tapOn: "Schedule"
+- tapOn: "Add shift"
 - assertVisible: "Date"
 # Tap the date value field (e.g. "Jul 19, 2026") — this launches MaterialDatePicker
 - tapOn: ".*, 20\\d\\d"
@@ -18,3 +15,6 @@ name: 02 Date picker opens without crash (KNOWN CRASH ZONE)
 - assertNotVisible: ".*keeps stopping.*"
 - assertVisible: ".*20\\d\\d.*"
 - takeScreenshot: datepicker-open
+- tapOn: "Cancel"
+- back
+- assertVisible: "Schedule"

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import {
   authenticateBiometric,
@@ -15,12 +16,28 @@ import {
   revokeDatabaseUnlockCapability,
 } from '../security/databaseCapability';
 import { closeDatabaseForLock } from '../data/db';
+import {
+  nextSystemPromptDepth,
+  shouldLockAfterSystemPrompt,
+  systemPromptFinishAction,
+} from '../security/appLifecycle';
+
+const SYSTEM_PROMPT_RETURN_GRACE_MS = 750;
+let systemPromptReturnTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearSystemPromptReturnTimer() {
+  if (systemPromptReturnTimer == null) return;
+  clearTimeout(systemPromptReturnTimer);
+  systemPromptReturnTimer = null;
+}
 
 interface AppLockState {
   hydrated: boolean;
   enabled: boolean;
   biometricEnabled: boolean;
   locked: boolean;
+  systemPromptOpen: boolean;
+  systemPromptDepth: number;
   hydrate: () => void;
   lock: () => void;
   unlockWithPasscode: (passcode: string) => Promise<UnlockResult>;
@@ -30,6 +47,9 @@ interface AppLockState {
   disable: (passcode: string) => Promise<boolean>;
   setBiometrics: (enabled: boolean, prompt: string) => Promise<boolean>;
   reset: () => Promise<void>;
+  beginSystemPrompt: () => void;
+  finishSystemPrompt: () => void;
+  resolveFinishedSystemPrompt: (currentState: AppStateStatus) => void;
 }
 
 export const useAppLockStore = create<AppLockState>((set, get) => ({
@@ -37,6 +57,8 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
   enabled: false,
   biometricEnabled: false,
   locked: true,
+  systemPromptOpen: false,
+  systemPromptDepth: 0,
 
   hydrate: () => {
     const config = getLockConfig();
@@ -94,6 +116,7 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
     const result = await verifyPasscode(passcode);
     if (!result.ok) return false;
     await clearAppLock();
+    clearSystemPromptReturnTimer();
     revokeDatabaseUnlockCapability();
     set({ enabled: false, biometricEnabled: false, locked: false });
     return true;
@@ -107,8 +130,55 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
 
   reset: async () => {
     await clearAppLock();
+    clearSystemPromptReturnTimer();
     revokeDatabaseUnlockCapability();
     closeDatabaseForLock();
-    set({ hydrated: true, enabled: false, biometricEnabled: false, locked: false });
+    set({ hydrated: true, enabled: false, biometricEnabled: false, locked: false, systemPromptOpen: false, systemPromptDepth: 0 });
+  },
+
+  beginSystemPrompt: () => {
+    clearSystemPromptReturnTimer();
+    const systemPromptDepth = nextSystemPromptDepth(get().systemPromptDepth, true);
+    set({ systemPromptDepth, systemPromptOpen: true });
+  },
+  finishSystemPrompt: () => {
+    const state = get();
+    if (state.systemPromptDepth === 0) return;
+    const systemPromptDepth = nextSystemPromptDepth(state.systemPromptDepth, false);
+    if (systemPromptDepth > 0) {
+      set({ systemPromptDepth });
+      return;
+    }
+    set({ systemPromptDepth: 0 });
+    get().resolveFinishedSystemPrompt(AppState.currentState);
+    const resolvedState = get();
+    if (!resolvedState.systemPromptOpen || resolvedState.systemPromptDepth > 0) return;
+    systemPromptReturnTimer = setTimeout(() => {
+      systemPromptReturnTimer = null;
+      const promptState = get();
+      if (!promptState.systemPromptOpen || promptState.systemPromptDepth > 0) return;
+      set({ systemPromptOpen: false });
+      if (shouldLockAfterSystemPrompt(AppState.currentState, promptState.enabled)) {
+        promptState.lock();
+      }
+    }, SYSTEM_PROMPT_RETURN_GRACE_MS);
+  },
+  resolveFinishedSystemPrompt: (currentState) => {
+    const state = get();
+    if (state.systemPromptDepth > 0) return;
+    const action = systemPromptFinishAction(currentState, state.enabled);
+    if (action === 'wait') return;
+    clearSystemPromptReturnTimer();
+    set({ systemPromptOpen: false });
+    if (action === 'lock') get().lock();
   },
 }));
+
+export async function withAppLockSystemPrompt<T>(operation: () => Promise<T>): Promise<T> {
+  useAppLockStore.getState().beginSystemPrompt();
+  try {
+    return await operation();
+  } finally {
+    useAppLockStore.getState().finishSystemPrompt();
+  }
+}

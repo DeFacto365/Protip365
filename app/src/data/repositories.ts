@@ -16,6 +16,7 @@ import type {
 import { previewRecurrence, type RecurringShiftPlan } from '../domain/copyWeek';
 import { assertShiftTransition } from '../domain/shiftState';
 import { validateDeductionBasisPoints, validateHourlyRateCents } from '../domain/validate';
+import { isValidWeeklyGoalTarget } from '../domain/stats';
 import { getDb, nowIso } from './db';
 import { uuid } from './ids';
 
@@ -799,6 +800,7 @@ export const weeklyGoalsRepo = {
   },
 
   create(input: Omit<WeeklyGoal, 'id'>): WeeklyGoal {
+    if (!isValidWeeklyGoalTarget(input.metric, input.target)) throw new Error('goal_target_invalid');
     const id = uuid();
     const timestamp = nowIso();
     getDb().runSync(
@@ -817,6 +819,28 @@ export const weeklyGoalsRepo = {
       ]
     );
     return { id, ...input };
+  },
+
+  upsert(input: Omit<WeeklyGoal, 'id'>): WeeklyGoal {
+    if (!isValidWeeklyGoalTarget(input.metric, input.target)) throw new Error('goal_target_invalid');
+    const existing = getDb().getFirstSync<{ id: string }>(
+      `SELECT id FROM weekly_goals
+       WHERE week_start = ? AND metric = ? AND employer_id IS ?
+       LIMIT 1;`,
+      [input.weekStart, input.metric, input.employerId ?? null]
+    );
+    if (!existing) return this.create(input);
+    getDb().runSync(
+      `UPDATE weekly_goals
+       SET target = ?, repeat = ?, updated_at = ?
+       WHERE id = ?;`,
+      [input.target, input.repeat ? 1 : 0, nowIso(), existing.id]
+    );
+    return { id: existing.id, ...input };
+  },
+
+  remove(id: string): void {
+    getDb().runSync('DELETE FROM weekly_goals WHERE id = ?;', [id]);
   },
 };
 

@@ -1,3 +1,11 @@
+jest.mock('expo-crypto', () => ({
+  getRandomBytes: jest.fn((byteCount: number) =>
+    Uint8Array.from({ length: byteCount }, (_value, index) => (index * 17 + 11) % 256)
+  ),
+}));
+
+import CryptoJS from 'crypto-js';
+
 import { decryptBackupPayload, encryptBackupPayload } from '../backup';
 
 describe('encrypted backup envelope', () => {
@@ -9,6 +17,20 @@ describe('encrypted backup envelope', () => {
 
     expect(encrypted).not.toContain('Cafe');
     expect(decryptBackupPayload(encrypted, password)).toEqual(payload);
+  });
+
+  it('does not depend on CryptoJS native randomness in Hermes', () => {
+    const randomSpy = jest
+      .spyOn(CryptoJS.lib.WordArray, 'random')
+      .mockImplementation(() => {
+        throw new Error('Native crypto module could not be used to get secure random number.');
+      });
+
+    try {
+      expect(() => encryptBackupPayload({ portable: true }, password)).not.toThrow();
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('rejects a wrong password', () => {

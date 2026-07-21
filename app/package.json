@@ -1,6 +1,9 @@
 {
   "name": "app",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/caveat": "^0.4.2",

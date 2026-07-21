@@ -1,0 +1,40 @@
+appId: com.defacto365.protip365
+name: 13 Preview a recurring schedule rule
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: "Schedule templates"
+- tapOn: "Schedule templates"
+- scrollUntilVisible:
+    element:
+      text: "Dinner Server"
+- tapOn: "Make recurring"
+- scrollUntilVisible:
+    element:
+      text: "Every 2 weeks"
+- tapOn: "Every 2 weeks"
+- tapOn: "Weekly"
+- scrollUntilVisible:
+    element:
+      text: "Number of shifts"
+- tapOn: "Number of shifts"
+- eraseText
+- inputText: "2"
+- scrollUntilVisible:
+    element:
+      text: "Preview shifts"
+- tapOn: "Preview shifts"
+- scrollUntilVisible:
+    element:
+      text: "Save recurring shifts"
+- assertVisible: "SAVE RECURRING SHIFTS"
+- takeScreenshot: recurring-preview

@@ -9,6 +9,7 @@ import {
   revokeDatabaseUnlockCapability,
   type DatabaseUnlockCapability,
 } from '../security/databaseCapability';
+import { WEEKLY_GOALS_IDENTITY_MIGRATION } from './migrations';
 
 export const DB_NAME = 'protip365.db';
 
@@ -146,6 +147,8 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX IF NOT EXISTS idx_goals_week ON weekly_goals(week_start);
   `,
+  // v2 — one goal per week/metric/employer; retain the most recently updated duplicate.
+  WEEKLY_GOALS_IDENTITY_MIGRATION,
 ];
 
 export function migrate(database: SQLiteDatabase): void {

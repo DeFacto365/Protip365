@@ -195,6 +195,23 @@ export function validatePayload(value: unknown): asserts value is BackupData {
   }
 }
 
+function rowsForRestore(table: TableName, rows: BackupRow[]): BackupRow[] {
+  if (table !== 'weekly_goals') return rows;
+  const latestByIdentity = new Map<string, BackupRow>();
+  for (const row of rows) {
+    const identity = JSON.stringify([row.week_start, row.metric, row.employer_id]);
+    const current = latestByIdentity.get(identity);
+    if (
+      !current ||
+      String(row.updated_at).localeCompare(String(current.updated_at)) > 0 ||
+      (row.updated_at === current.updated_at && String(row.id) > String(current.id))
+    ) {
+      latestByIdentity.set(identity, row);
+    }
+  }
+  return [...latestByIdentity.values()];
+}
+
 export function restoreEncryptedFullBackup(text: string, password: string): void {
   assertBackupFileSize(backupTextByteLength(text));
   const payload = decryptBackupPayload<unknown>(text, password);
@@ -204,7 +221,7 @@ export function restoreEncryptedFullBackup(text: string, password: string): void
     for (const table of DELETE_ORDER) database.execSync(`DELETE FROM ${table};`);
     for (const table of INSERT_ORDER) {
       const columns = TABLE_COLUMNS[table];
-      for (const row of payload.tables[table]) {
+      for (const row of rowsForRestore(table, payload.tables[table])) {
         if (
           table === 'settings' &&
           (String(row.key).startsWith('shiftReminder:') ||

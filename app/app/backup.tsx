@@ -17,6 +17,7 @@ import { useSettingsStore } from '../src/state/settingsStore';
 import { useEntitlementStore } from '../src/state/entitlementStore';
 import { useShiftsStore } from '../src/state/shiftsStore';
 import { useTemplatesStore } from '../src/state/templatesStore';
+import { withAppLockSystemPrompt } from '../src/state/appLockStore';
 import { Card, Field, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 import { cancelAllAppOwnedNotifications } from '../src/notifications/shiftReminders';
@@ -65,7 +66,9 @@ export default function BackupScreen() {
       const file = new File(Paths.cache, `protip365-backup-${date}.pt365`);
       if (file.exists) file.delete();
       file.write(encrypted);
-      await Sharing.shareAsync(file.uri, { mimeType: 'application/json' });
+      await withAppLockSystemPrompt(() =>
+        Sharing.shareAsync(file.uri, { mimeType: 'application/json' })
+      );
       setExportPassword('');
       setConfirmPassword('');
     } catch (error) {
@@ -80,10 +83,12 @@ export default function BackupScreen() {
       Alert.alert(tr('backup.errors.passwordTooShort'));
       return;
     }
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['application/json', 'application/octet-stream', 'text/plain'],
-      copyToCacheDirectory: true,
-    });
+    const result = await withAppLockSystemPrompt(() =>
+      DocumentPicker.getDocumentAsync({
+        type: ['application/json', 'application/octet-stream', 'text/plain'],
+        copyToCacheDirectory: true,
+      })
+    );
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
     const restoreFile = new File(asset.uri);

@@ -10,7 +10,7 @@ import { useShiftsStore } from '../../src/state/shiftsStore';
 import { useEmployersStore } from '../../src/state/employersStore';
 import { useTemplatesStore } from '../../src/state/templatesStore';
 import { useGoalsStore } from '../../src/state/goalsStore';
-import { useAppLockStore } from '../../src/state/appLockStore';
+import { useAppLockStore, withAppLockSystemPrompt } from '../../src/state/appLockStore';
 import { useEntitlementStore } from '../../src/state/entitlementStore';
 import { useTokens } from '../../src/ui/tokens';
 import { Chip, Field, GhostButton, PrimaryButton, ReceiptCard } from '../../src/ui/components';
@@ -29,6 +29,7 @@ import { minutesToHHMM } from '../../src/domain/dates';
 import type { ShiftBreak } from '../../src/domain/types';
 import { centsToFixed } from '../../src/domain/money';
 import { validateDeductionBasisPoints } from '../../src/domain/validate';
+import { parseReminderDelayHours } from '../../src/domain/reminders';
 import {
   notificationsSupported,
   requestReminderPermission,
@@ -82,6 +83,7 @@ export default function SettingsScreen() {
   const [rateText, setRateText] = useState(String(defaultDeductionRateBp / 100));
   const [rateError, setRateError] = useState<string | null>(null);
   const [reminderDelayText, setReminderDelayText] = useState(String(reminderDelayMinutes / 60));
+  const [reminderDelayError, setReminderDelayError] = useState<string | null>(null);
 
   const onRateChange = (text: string) => {
     setRateText(text);
@@ -188,7 +190,9 @@ export default function SettingsScreen() {
       const file = new File(Paths.cache, 'protip365-shifts.csv');
       if (file.exists) file.delete();
       file.write(csv);
-      await Sharing.shareAsync(file.uri, { mimeType: 'text/csv' });
+      await withAppLockSystemPrompt(() =>
+        Sharing.shareAsync(file.uri, { mimeType: 'text/csv' })
+      );
     } catch {
       Alert.alert(tr('settings.exportError'));
     }
@@ -196,9 +200,11 @@ export default function SettingsScreen() {
 
   const toggleReminders = async () => {
     const next = !reminderEnabled;
-    if (next && notificationsSupported() && !(await requestReminderPermission())) {
-      Alert.alert(tr('reminders.permissionDenied'));
-      return;
+    if (next && notificationsSupported()) {
+      if (!(await withAppLockSystemPrompt(requestReminderPermission))) {
+        Alert.alert(tr('reminders.permissionDenied'));
+        return;
+      }
     }
     setReminderEnabled(next);
     await syncAllShiftReminders(shifts, next, reminderDelayMinutes);
@@ -207,9 +213,12 @@ export default function SettingsScreen() {
 
   const onReminderDelayChange = async (text: string) => {
     setReminderDelayText(text);
-    const hours = Number(text.replace(',', '.'));
-    if (!Number.isFinite(hours) || hours < 0 || hours > 24) return;
-    const minutes = Math.round(hours * 60);
+    const minutes = parseReminderDelayHours(text);
+    if (minutes == null) {
+      setReminderDelayError(tr('reminders.delayInvalid'));
+      return;
+    }
+    setReminderDelayError(null);
     setReminderDelay(minutes);
     await syncAllShiftReminders(shifts, reminderEnabled, minutes);
   };
@@ -295,6 +304,7 @@ export default function SettingsScreen() {
           onChangeText={(text) => void onReminderDelayChange(text)}
           keyboardType="decimal-pad"
           hint={tr('reminders.privacyHint')}
+          error={reminderDelayError}
         />
       </ReceiptCard>
 

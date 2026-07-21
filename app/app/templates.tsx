@@ -488,7 +488,19 @@ export default function TemplatesScreen() {
                       <GhostButton
                         label={tr('templates.endRule')}
                         onPress={() => {
-                          if (requireWrite()) endRule(rule.id);
+                          if (!requireWrite()) return;
+                          Alert.alert(
+                            tr('templates.endRuleConfirmTitle'),
+                            tr('templates.endRuleConfirmMessage'),
+                            [
+                              { text: tr('common.cancel'), style: 'cancel' },
+                              {
+                                text: tr('templates.endRule'),
+                                style: 'destructive',
+                                onPress: () => endRule(rule.id),
+                              },
+                            ]
+                          );
                         }}
                         danger
                       />

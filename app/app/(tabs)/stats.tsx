@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useShiftsStore } from '../../src/state/shiftsStore';
 import { useEmployersStore } from '../../src/state/employersStore';
 import { useTokens } from '../../src/ui/tokens';
-import { Avatar, Card, Chip, Field, money, PrimaryButton } from '../../src/ui/components';
+import { Avatar, Card, Chip, Field, GhostButton, money, PrimaryButton } from '../../src/ui/components';
 import { Text } from '../../src/ui/typography';
 import {
   addDaysIso,
@@ -21,11 +21,13 @@ import {
   aggregateWorked,
   bestGroup,
   goalProgress,
+  isValidWeeklyGoalHoursInput,
+  isValidWeeklyGoalTarget,
   percentChange,
   trendValue,
   type TrendMetric,
 } from '../../src/domain/stats';
-import type { GoalMetric } from '../../src/domain/types';
+import type { GoalMetric, WeeklyGoal } from '../../src/domain/types';
 import { parseMoneyToCents } from '../../src/domain/money';
 import { useWriteAccess, WriteAccessBanner } from '../../src/ui/WriteAccess';
 
@@ -52,12 +54,14 @@ export default function StatsScreen() {
   const employers = useEmployersStore((s) => s.employers);
   const goals = useGoalsStore((state) => state.goals);
   const addGoal = useGoalsStore((state) => state.addGoal);
+  const removeGoal = useGoalsStore((state) => state.removeGoal);
   const ensureRepeatedForWeek = useGoalsStore((state) => state.ensureRepeatedForWeek);
   const weekStart = startOfWeekIso(todayIso());
   const [goalMetric, setGoalMetric] = useState<GoalMetric>('actual_gross');
   const [goalTarget, setGoalTarget] = useState('500');
   const [goalEmployerId, setGoalEmployerId] = useState<string | null>(null);
   const [repeatGoal, setRepeatGoal] = useState(false);
+  const [goalTargetError, setGoalTargetError] = useState<string | null>(null);
   const [trendMetric, setTrendMetric] = useState<TrendMetric>('actual_gross');
   const { canWrite, requireWrite } = useWriteAccess();
 
@@ -110,9 +114,17 @@ export default function StatsScreen() {
     if (!requireWrite()) return;
     const hours = Number(goalTarget.replace(',', '.'));
     const target = goalMetric === 'worked_hours'
-      ? Number.isFinite(hours) ? Math.round(hours * 60) : null
+      ? isValidWeeklyGoalHoursInput(hours) ? Math.round(hours * 60) : null
       : parseMoneyToCents(goalTarget);
-    if (target == null || target <= 0) return;
+    if (target == null || !isValidWeeklyGoalTarget(goalMetric, target)) {
+      setGoalTargetError(tr(
+        goalMetric === 'worked_hours'
+          ? 'stats.goalHoursTargetInvalid'
+          : 'stats.goalMoneyTargetInvalid'
+      ));
+      return;
+    }
+    setGoalTargetError(null);
     addGoal({
       weekStart,
       metric: goalMetric,
@@ -120,6 +132,28 @@ export default function StatsScreen() {
       employerId: goalEmployerId,
       repeat: repeatGoal,
     });
+  };
+
+  const goalEmployerName = (employerId: string | null | undefined): string =>
+    employerId
+      ? employers.find((employer) => employer.id === employerId)?.name ?? tr('stats.unknownEmployer')
+      : tr('stats.allEmployers');
+
+  const confirmRemoveGoal = (goal: WeeklyGoal) => {
+    Alert.alert(
+      tr('stats.deleteGoalTitle'),
+      tr('stats.deleteGoalMessage', { employer: goalEmployerName(goal.employerId) }),
+      [
+      { text: tr('common.cancel'), style: 'cancel' },
+      {
+        text: tr('stats.deleteGoal'),
+        style: 'destructive',
+        onPress: () => {
+          if (requireWrite()) removeGoal(goal.id);
+        },
+      },
+      ]
+    );
   };
 
   const weekdayName = (key: string): string => {
@@ -218,7 +252,7 @@ export default function StatsScreen() {
             <Text style={{ color: t.ink, fontWeight: '600', fontSize: 12 }}>
               {row.reason === 'unknown'
                 ? tr('stats.unknownReason')
-                : tr(`shiftForm.notWorkedReasons.${row.reason}`)}
+                : tr(`complete.reasons.${row.reason}`)}
             </Text>
             <Text style={{ color: t.softText, fontSize: 11, marginTop: 3 }}>
               {tr('stats.reasonImpact', {
@@ -243,12 +277,21 @@ export default function StatsScreen() {
             <Text style={{ color: t.ink, fontWeight: '700' }}>
               {tr(`stats.goalMetrics.${goal.metric}`)} · {metricDisplay(goal.metric, goal.target)}
             </Text>
+            <Text style={{ color: t.softText, fontSize: 12, marginTop: 3 }}>
+              {goalEmployerName(goal.employerId)}
+            </Text>
             <Text style={{ color: t.softText, fontSize: 12, marginTop: 5 }}>
               {tr('stats.expectedProgress')}: {progress.expected == null ? '—' : metricDisplay(goal.metric, progress.expected)}
             </Text>
             <Text fontRole="penNote" style={{ color: goal.metric === 'worked_hours' ? t.ink : t.green, backgroundColor: t.paper, padding: 4, fontSize: 17, marginTop: 3, fontWeight: '600', transform: [{ rotate: '-1deg' }] }}>
               {tr('stats.actualProgress')}: {metricDisplay(goal.metric, progress.actual)}
             </Text>
+            <GhostButton
+              label={tr('stats.deleteGoal')}
+              danger
+              onPress={() => confirmRemoveGoal(goal)}
+              style={{ marginTop: 10 }}
+            />
           </Card>
         );
       })}
@@ -278,15 +321,19 @@ export default function StatsScreen() {
         <Field
           label={tr('stats.goalTarget')}
           value={goalTarget}
-          onChangeText={setGoalTarget}
           keyboardType="decimal-pad"
+          error={goalTargetError}
+          onChangeText={(text) => {
+            setGoalTarget(text);
+            if (goalTargetError) setGoalTargetError(null);
+          }}
         />
         <Chip
           label={tr('stats.repeatGoal')}
           selected={repeatGoal}
           onPress={() => setRepeatGoal((value) => !value)}
         />
-        <PrimaryButton label={tr('stats.addGoal')} onPress={saveGoal} style={{ marginTop: 10 }} />
+        <PrimaryButton label={tr('stats.saveGoal')} onPress={saveGoal} style={{ marginTop: 10 }} />
       </Card>
 
       {/* Basic trends and reliable best-day/employer comparisons. */}
