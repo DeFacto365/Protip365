@@ -155,7 +155,10 @@
     display:block;
     width:min(360px,100%);
     height:auto;
+    aspect-ratio:4/5;
+    object-fit:cover;
     border-radius:44px;
+    background:#05060A;
     box-shadow:15px 18px 0 rgba(32,33,30,.22);
     transform:rotate(1.2deg);
   }
@@ -343,8 +346,11 @@
         </div>
       </div>
 
-      <div class="phone-zone" role="img" aria-label="ProTip365 Home screen showing a weekly earnings receipt, an On Track stamp, and the next shift" data-i18n-aria="m_phone_aria">
-        <img class="hero-screen" src="screens/screen-02-home.png" alt="" width="360" height="768" fetchpriority="high" decoding="async">
+      <div class="phone-zone" role="img" aria-label="ProTip365 demo showing weekly earnings, the shift schedule, and performance statistics" data-i18n-aria="m_phone_aria">
+        <video class="hero-screen" autoplay muted loop playsinline preload="metadata" poster="media/protip365-demo-poster.png" width="720" height="900" aria-hidden="true">
+          <source src="media/protip365-demo.mp4" type="video/mp4">
+          <img src="media/protip365-demo-poster.png" alt="" width="720" height="900">
+        </video>
       </div>
     </div>
   </section>
@@ -495,7 +501,7 @@
       lead:"One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.",
       play_small:"GET IT ON", play_small2:"GET IT ON", play_aria:"Get ProTip365 on Google Play",
       ios_note:"<strong>Coming soon for iOS.</strong><br>Same app, same records.",
-      m_phone_aria:"ProTip365 Home screen showing a weekly earnings receipt, an On Track stamp, and the next shift",
+      m_phone_aria:"ProTip365 demo showing weekly earnings, the shift schedule, and performance statistics",
       m_date:"SUN JUL 26 · 9:42 PM",
       m_week:"* * * WEEK OF JUL 20–26 * * *", m_so_far:"YOUR WEEK SO FAR", m_on_track:"ON TRACK",
       m_hours:"HOURS WORKED", m_wages:"WAGES", m_tips_cash:"TIPS — CASH", m_tips_card:"TIPS — CARD", m_tipout:"TIP-OUT PAID",
@@ -541,7 +547,7 @@
       lead:"Un seul horaire privé pour tous vos emplois. Entrez vos pourboires après la fermeture — comptant, carte et tip-out — et voyez ce que chaque quart a vraiment rapporté.",
       play_small:"DISPONIBLE SUR", play_small2:"DISPONIBLE SUR", play_aria:"Télécharger ProTip365 sur Google Play",
       ios_note:"<strong>Bientôt offert sur iOS.</strong><br>Même app, mêmes données.",
-      m_phone_aria:"Écran d’accueil ProTip365 montrant le reçu de la semaine, le tampon Bon rythme et le prochain quart",
+      m_phone_aria:"Démo ProTip365 montrant les gains de la semaine, l’horaire des quarts et les statistiques de performance",
       m_date:"DIM. 26 JUILL. · 21 H 42",
       m_week:"* * * SEMAINE DU 20 AU 26 JUILL. * * *", m_so_far:"VOTRE SEMAINE À CE JOUR", m_on_track:"BON RYTHME",
       m_hours:"HEURES TRAVAILLÉES", m_wages:"SALAIRE", m_tips_cash:"POURBOIRES — COMPTANT", m_tips_card:"POURBOIRES — CARTE", m_tipout:"TIP-OUT PAYÉ",
@@ -587,7 +593,7 @@
       lead:"Un solo horario privado para todos tus trabajos. Registra tus propinas al cerrar — efectivo, tarjeta y tip-outs — y descubre cuánto valió realmente cada turno.",
       play_small:"DISPONIBLE EN", play_small2:"DISPONIBLE EN", play_aria:"Descargar ProTip365 en Google Play",
       ios_note:"<strong>Muy pronto en iOS.</strong><br>La misma app, los mismos registros.",
-      m_phone_aria:"Pantalla de inicio de ProTip365 con el recibo semanal, el sello Al día y el próximo turno",
+      m_phone_aria:"Demostración de ProTip365 con ganancias semanales, horario de turnos y estadísticas de rendimiento",
       m_date:"DOM 26 JUL · 9:42 P. M.",
       m_week:"* * * SEMANA DEL 20 AL 26 JUL * * *", m_so_far:"TU SEMANA HASTA AHORA", m_on_track:"AL DÍA",
       m_hours:"HORAS TRABAJADAS", m_wages:"SALARIO", m_tips_cash:"PROPINAS — EFECTIVO", m_tips_card:"PROPINAS — TARJETA", m_tipout:"TIP-OUT PAGADO",
