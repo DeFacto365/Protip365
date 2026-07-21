@@ -25,6 +25,7 @@ import {
   resetInAppPurchaseClient,
   setInAppPurchaseClient,
 } from './iap';
+import { SerialTaskQueue } from './serialTaskQueue';
 
 const PURCHASE_TIMEOUT_MS = 2 * 60 * 1000;
 
@@ -67,9 +68,13 @@ export function IapBootstrap() {
 
 function NativeIapBootstrap() {
   const pendingRef = useRef<PendingPurchase | null>(null);
+  const billingQueueRef = useRef<SerialTaskQueue | null>(null);
   const purchaseSuccessRef = useRef<(purchase: Purchase) => void>(() => undefined);
   const purchaseErrorRef = useRef<(error: ExpoPurchaseError) => void>(() => undefined);
   const subscriptionRef = useRef<ProductSubscription | undefined>(undefined);
+
+  if (!billingQueueRef.current) billingQueueRef.current = new SerialTaskQueue();
+  const billingQueue = billingQueueRef.current;
 
   const {
     connected,
@@ -105,8 +110,10 @@ function NativeIapBootstrap() {
 
   const readStoreEntitlement = useCallback(async (): Promise<PurchaseEntitlement> => {
     const [availablePurchases, activeSubscriptions] = await Promise.all([
-      getAvailablePurchases({ includeSuspendedAndroid: false }),
-      getActiveSubscriptions([MONTHLY_PRODUCT_ID]),
+      billingQueue.run(() =>
+        getAvailablePurchases({ includeSuspendedAndroid: false })
+      ),
+      billingQueue.run(() => getActiveSubscriptions([MONTHLY_PRODUCT_ID])),
     ]);
     const activeSubscription = activeSubscriptions.find(
       (subscription) =>
@@ -122,7 +129,7 @@ function NativeIapBootstrap() {
       hasActiveSubscription: Boolean(activeSubscription),
       subscriptionExpirationDateMs: activeSubscription?.expirationDateIOS,
     });
-  }, []);
+  }, [billingQueue]);
 
   const client = useMemo<InAppPurchaseClient>(
     () => ({
@@ -147,13 +154,15 @@ function NativeIapBootstrap() {
           const launchPurchase = async () => {
             try {
               if (productId === LIFETIME_PRODUCT_ID) {
-                await requestPurchase({
-                  request: {
-                    apple: { sku: productId },
-                    google: { skus: [productId] },
-                  },
-                  type: 'in-app',
-                });
+                await billingQueue.run(() =>
+                  requestPurchase({
+                    request: {
+                      apple: { sku: productId },
+                      google: { skus: [productId] },
+                    },
+                    type: 'in-app',
+                  })
+                );
                 return;
               }
 
@@ -161,18 +170,20 @@ function NativeIapBootstrap() {
               if (Platform.OS === 'android' && !offerToken) {
                 throw new PurchaseFlowError('iap_product_unavailable');
               }
-              await requestPurchase({
-                request: {
-                  apple: { sku: productId },
-                  google: {
-                    skus: [productId],
-                    subscriptionOffers: offerToken
-                      ? [{ sku: productId, offerToken }]
-                      : [],
+              await billingQueue.run(() =>
+                requestPurchase({
+                  request: {
+                    apple: { sku: productId },
+                    google: {
+                      skus: [productId],
+                      subscriptionOffers: offerToken
+                        ? [{ sku: productId, offerToken }]
+                        : [],
+                    },
                   },
-                },
-                type: 'subs',
-              });
+                  type: 'subs',
+                })
+              );
             } catch (error) {
               settlePending(productId, {
                 error:
@@ -187,7 +198,7 @@ function NativeIapBootstrap() {
         }),
       restore: readStoreEntitlement,
     }),
-    [connected, readStoreEntitlement, requestPurchase, settlePending]
+    [billingQueue, connected, readStoreEntitlement, requestPurchase, settlePending]
   );
 
   purchaseSuccessRef.current = (purchase) => {
@@ -221,7 +232,9 @@ function NativeIapBootstrap() {
 
       useEntitlementStore.getState().applyStoreEntitlement(entitlement);
       try {
-        await finishTransaction({ purchase, isConsumable: false });
+        await billingQueue.run(() =>
+          finishTransaction({ purchase, isConsumable: false })
+        );
         settlePending(knownProductId, { entitlement });
       } catch {
         settlePending(knownProductId, {
@@ -244,10 +257,14 @@ function NativeIapBootstrap() {
   useEffect(() => {
     if (!connected) return;
     void Promise.allSettled([
-      fetchProducts({ skus: [LIFETIME_PRODUCT_ID], type: 'in-app' }),
-      fetchProducts({ skus: [MONTHLY_PRODUCT_ID], type: 'subs' }),
+      billingQueue.run(() =>
+        fetchProducts({ skus: [LIFETIME_PRODUCT_ID], type: 'in-app' })
+      ),
+      billingQueue.run(() =>
+        fetchProducts({ skus: [MONTHLY_PRODUCT_ID], type: 'subs' })
+      ),
     ]);
-  }, [connected, fetchProducts]);
+  }, [billingQueue, connected, fetchProducts]);
 
   useEffect(() => {
     const lifetimeProduct = products.find(
