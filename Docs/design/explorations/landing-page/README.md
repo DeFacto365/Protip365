@@ -31,12 +31,12 @@ These are visual hierarchy explorations, not implementation specifications. Embe
 
 ## Deployment
 
-- `claude/index.html` is deployed to Vercel (owner-created project `florabump/protip365`): **https://protip365.vercel.app** (production, 2026-07-18). Redeploy after edits; the Google Play CTA is still a placeholder link.
+- `claude/index.html` is deployed to Vercel (owner-created project `florabump/protip365`): **https://protip365.vercel.app** (production, 2026-07-18). The Google Play CTAs link to the production listing for `com.defacto365.protip365`; redeploy after edits.
 
 ## Claude draft (2026-07-17)
 
 - [`claude/index.html`](claude/index.html) — a working HTML exploration applying the UX-audit structure (one promise, one dominant screenshot, three outcomes, compact reassurance, single Google Play action with `Coming soon for iOS`) in a warm editorial style aimed at the 20–35 audience: cream/dusk palette, coral accent, Fraunces/Outfit type, fictional color-coded employers.
-- Draft limitations: the Google Play link is a placeholder pending a verified store URL, fonts load from Google Fonts and must be self-hosted for production, and privacy copy assumes encrypted local storage passes release tests. Not approved until the owner selects it.
+- Draft limitations: fonts load from Google Fonts and must be self-hosted for production, and privacy copy assumes encrypted local storage passes release tests. Not approved until the owner selects it.
 - Rev 2 (2026-07-17, owner-directed): trilingual EN / FR-CA / ES via an in-page language switcher (auto-detects browser language, translates the phone mock including Québec 24-hour times), and local pricing shown as `$19.99 once — or $2.99/month`. The former pricing conflict is resolved: the PRD, one-pager, product-marketing context, and Linear backlog were updated on 2026-07-17 to the same two local pricing options. Open question for the owner: future Cloud Sync is still planned at $2.99/month, the same price as the local monthly plan — decide whether local monthly subscribers will get Cloud Sync included or whether the Cloud price changes.
 
 ## External-agent exploration
@@ -45,4 +45,4 @@ These are visual hierarchy explorations, not implementation specifications. Embe
 
 ## Shift Receipt restyle (2026-07-20)
 
-- [`claude/index.html`](claude/index.html) now applies the owner-approved “Shift Receipt” visual system from [`../home-redesign/claude/receipt-screens.html`](../home-redesign/claude/receipt-screens.html): warm receipt paper, IBM Plex Mono and Caveat, dashed rules, stamp accents, hard offset shadows, and the translated weekly-tally Home receipt as the dominant phone visual. The trilingual switcher, audited landing-page structure, pricing and privacy copy, placeholder Google Play link, and iOS coming-soon message are unchanged in purpose. The privacy and terms pages use the same lighter receipt treatment.
+- [`claude/index.html`](claude/index.html) now applies the owner-approved “Shift Receipt” visual system from [`../home-redesign/claude/receipt-screens.html`](../home-redesign/claude/receipt-screens.html): warm receipt paper, IBM Plex Mono and Caveat, dashed rules, stamp accents, hard offset shadows, and the translated weekly-tally Home receipt as the dominant phone visual. The trilingual switcher, audited landing-page structure, pricing and privacy copy, production Google Play link, and iOS coming-soon message are unchanged in purpose. The privacy and terms pages use the same lighter receipt treatment.
