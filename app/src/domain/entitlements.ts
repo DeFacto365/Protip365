@@ -1,6 +1,10 @@
 export const TRIAL_DAYS = 30;
-/** Keep disabled until a production billing adapter is implemented and verified. */
-export const ENTITLEMENT_ENFORCEMENT_ENABLED = false;
+/**
+ * Paid access is enforced in production. The purchase UI additionally requires
+ * a connected native store adapter and a complete product catalog before it can
+ * start a transaction.
+ */
+export const ENTITLEMENT_ENFORCEMENT_ENABLED = true;
 export const LIFETIME_PRODUCT_ID = 'lifetime_unlock';
 export const MONTHLY_PRODUCT_ID = 'monthly';
 

@@ -1,7 +1,7 @@
 # ProTip365 V4 — Google Play App Content answer sheet
 
-**Status:** Draft for owner review  
-**Verified against:** Android source at commit `f9ddb6a1f7daf498bb34f0f07c2d20fffdb4f7a5` on 2026-07-20  
+**Status:** Version 2.0.0 release-candidate review
+**Verified against:** Shared Android/iOS `2.0.0` working tree on 2026-08-03
 **Scope:** The current V4 build in `app/`. Recheck every answer if the build, SDKs, active Play artifacts, or privacy policy changes.
 
 This is a copy-ready answer sheet for **Google Play Console → Policy and programs → App content**. It is not legal advice. The owner remains responsible for the final declarations.
@@ -13,7 +13,7 @@ This is a copy-ready answer sheet for **Google Play Console → Policy and progr
 - The optional local app lock uses a salted passcode hash in `expo-secure-store`. `expo-local-authentication` returns only the device authentication result; the app does not receive or store fingerprint/face templates.
 - `expo-notifications` schedules post-shift reminders locally. The English lock-screen text is **“Shift follow-up”** and **“A scheduled shift may still need your update.”** It contains no employer, wage, tip, or earnings value. The Android channel uses `PRIVATE` lock-screen visibility.
 - CSV export is started only when the user taps **Export CSV**. The app creates a plaintext CSV in its cache and opens the OS share sheet with `expo-sharing`; it does not select or contact a recipient. The app also offers a user-initiated, password-encrypted full backup through the same share sheet.
-- `expo-iap` talks to Google Play Billing for `lifetime_unlock` and `monthly`. Google handles payment details directly; ProTip365 has no payment backend and does not send shift or earnings records to Google. Entitlement enforcement is currently disabled with `ENTITLEMENT_ENFORCEMENT_ENABLED = false`.
+- `expo-iap` talks to Google Play Billing for `lifetime_unlock` and `monthly`. Google handles payment details directly; ProTip365 has no payment backend and does not send shift or earnings records to Google. Version `2.0.0` enforces the local 30-day trial and paid write access.
 - EAS Update is enabled and checks `https://u.expo.dev/...` on app launch. Expo says this service collects the device operating system and a randomized installation token, and its dashboard reports update adoption and failed installs. Google treats SDK/service-provider transmission as collection even when the publisher does not receive raw data.
 - The app is not completely network-free: Google Play Billing and EAS Update use the network, and the user can open external privacy/terms/support links. The verified claim is narrower: **user-entered records have no network/API dependency and are not sent to Defacto365, Expo, or Google.**
 
@@ -91,7 +91,7 @@ Use the questionnaire for **All Other App Types** and select the closest store c
 | User-to-user communication or public user-generated content | **No** — private notes and records are not published or exchanged inside the app. |
 | Location sharing | **No** |
 | Sharing personal information with other users | **No** |
-| Digital purchases / in-app purchases | **Yes** — `lifetime_unlock` and the auto-renewing `monthly` subscription are integrated through Google Play Billing, even though entitlement enforcement is disabled. |
+| Digital purchases / in-app purchases | **Yes** — `lifetime_unlock` and the auto-renewing `monthly` subscription unlock write access through Google Play Billing. |
 | Ads | **No** |
 
 **Likely result:** **Everyone / PEGI 3 or regional equivalent.** The rating is assigned by IARC from the live questionnaire, so verify the generated certificate before publishing. A content rating suitable for everyone does not mean the app is directed at children.
@@ -126,9 +126,9 @@ Use the questionnaire for **All Other App Types** and select the closest store c
 - [ ] Confirm user-entered shift, employer, wage, tip, note, CSV, and backup data is never uploaded to Defacto365 or another developer-controlled service.
 - [ ] Confirm the release still uses the generic reminder text and does not place employer names, tips, wages, or earnings on the lock screen.
 - [ ] Confirm **Settings → Erase All Local Data** removes user-entered work and financial records on the submitted build. Do not claim it erases Expo metrics, Google purchase records, the entitlement/trial record, an existing cached CSV, or externally saved/shared exports.
-- [ ] **Before any non-internal release, update the live privacy policy.** It must distinguish local user records from the limited EAS Update technical data sent to Expo; the current blanket “nothing is sent” wording is inconsistent with the enabled SDK.
+- [x] Live privacy policy distinguishes local user records from billing and EAS Update technical traffic (published 2026-08-03).
 - [ ] Confirm the privacy policy also covers: no account; SQLCipher local storage; user-initiated CSV/encrypted-backup sharing; local record deletion limits; and Google Play handling of purchases.
-- [ ] Confirm `lifetime_unlock` and `monthly` are the products in the submitted build, and that entitlement enforcement is still disabled if the signed billing test gate has not passed.
+- [ ] Confirm `lifetime_unlock` and `monthly` are the products in the submitted build and complete the signed billing matrix before promoting enforced version `2.0.0` beyond testing.
 - [ ] Owner decision: approve **18 and over** as the target audience and decide whether under-18 users are merely outside the target audience or must be technically blocked.
 - [ ] Save the forms as drafts, review Google's generated Data Safety preview and IARC certificate, then submit only if they match this sheet.
 

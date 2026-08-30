@@ -11,6 +11,7 @@ import {
 } from 'expo-iap';
 
 import {
+  ENTITLEMENT_ENFORCEMENT_ENABLED,
   LIFETIME_PRODUCT_ID,
   MONTHLY_PRODUCT_ID,
 } from '../domain/entitlements';
@@ -275,6 +276,7 @@ function NativeIapBootstrap() {
     );
     const offerToken = basePlanOfferToken(monthlyProduct);
     const ready =
+      ENTITLEMENT_ENFORCEMENT_ENABLED &&
       connected &&
       Boolean(lifetimeProduct) &&
       Boolean(monthlyProduct) &&
@@ -291,7 +293,7 @@ function NativeIapBootstrap() {
   }, [connected, products, subscriptions]);
 
   useEffect(() => {
-    if (!connected) {
+    if (!connected || !ENTITLEMENT_ENFORCEMENT_ENABLED) {
       resetInAppPurchaseClient();
       return;
     }

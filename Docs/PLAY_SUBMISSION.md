@@ -1,7 +1,7 @@
 # ProTip365 V4 — Google Play Submission Guide
 
 Status: active submission playbook, updated from the live Google Play Console state.
-Date: 2026-07-20
+Date: 2026-08-03
 Scope: Android only. This guide does not cover the Apple App Store.
 
 Current Data Safety answers and privacy-policy publication copy are maintained in `Docs/PLAY_DATA_SAFETY.md` and `Docs/PRIVACY_POLICY_UPDATE.md`.
@@ -16,9 +16,9 @@ This guide is based on `.agents/product-marketing.md`, the active V4 product and
 
 1. **Package and app entry are final.** The V4 package is `com.defacto365.protip365`, and the dedicated V4 Play Console app entry has accepted signed releases.
 2. **Phase I implementation is present.** The owner-authorized full Phase I scope in `Docs/ADR-001-v4-architecture.md` is implemented in `app/`. Public claims still depend on signed-build testing; do not claim a workflow is proven until its release test passes.
-3. **Billing is integrated and configured.** `expo-iap` provides the store adapter. Google Play products `lifetime_unlock` and `monthly` are active. Entitlement enforcement remains disabled until the signed-store purchase test matrix passes.
-4. **Internal testing is active.** Release 8 (`1.0.0`) is active on the internal track. Tester lists are assigned, and the same lists are enabled for licence testing.
-5. **Privacy and terms are live.** `https://protip365.vercel.app/privacy` and `https://protip365.vercel.app/terms` both returned HTTP 200 on 2026-07-20.
+3. **Billing is integrated and enforced in the `2.0.0` candidate.** `expo-iap` provides the shared Play Billing/StoreKit adapter. Google Play products `lifetime_unlock` and `monthly` are active. Signed-store testing remains a promotion gate.
+4. **Production is active.** Google Play build 11 (`1.0.0`) is the functional baseline. Version `2.0.0` is the shared Android/iOS paid-access correction candidate.
+5. **Privacy, terms, and support are live.** `https://protip365.vercel.app/privacy`, `/terms`, and `/support` returned HTTP 200 on 2026-08-03.
 
 ---
 
@@ -545,12 +545,12 @@ The app download remains **Free**. The live Play Console products match PRD §18
 
 No Play Billing free-trial or introductory offer is configured. This is intentional: the app supplies its own 30-day trial and should not create a second, overlapping store trial.
 
-**Implementation status (2026-07-20):** `expo-iap` adds the Billing permission and connects the entitlement seam to Google Play. Internal release 8 contains the billing adapter, localized product lookup, pending-purchase handling, acknowledgement, restore, and foreground subscription refresh.
+**Implementation status (2026-08-03):** `expo-iap` adds the Billing permission and connects the entitlement seam to Google Play and StoreKit. Version `2.0.0` contains localized product lookup, pending-purchase handling, acknowledgement, restore, foreground subscription refresh, a one-time fresh trial for version-1 installs, and enforced read-only expiry.
 
 Remaining release gates:
-1. Install release 8 from the internal-testing opt-in link on a licensed tester's real Android device.
+1. Install version `2.0.0` from the internal-testing opt-in link on a licensed tester's real Android device.
 2. Test localized product discovery, lifetime and monthly purchases, pending payment, acknowledgement, restore, subscription lapse, and offline refresh.
-3. Keep `ENTITLEMENT_ENFORCEMENT_ENABLED` set to `false` until the signed-store test matrix passes.
+3. Keep version `2.0.0` on testing tracks until its enforced signed-store matrix passes.
 4. Add server-side purchase-token validation only if fraud-resistant production entitlement becomes a requirement. Play Integrity is not a prerequisite for the current phase without a developer-operated purchase-validation backend.
 
 ---
@@ -561,7 +561,7 @@ Standard Play Console progression: **Internal testing → Closed testing → Ope
 
 ### Recommended path
 
-1. **Internal testing — active.** Release 8 (`1.0.0`) is active. The `Android Testers` and `Maya` lists are assigned to the track and enabled under Licence testing. The first-time install still needs confirmation on a real device.
+1. **Production baseline — active.** Build 11 (`1.0.0`) is live. Upload version `2.0.0` to Internal testing first; the `Android Testers` and `Maya` lists remain the licensed billing testers.
    - Opt-in link: `https://play.google.com/apps/internaltest/4700551426889638180`
    - The tester must use the exact invited Google account in both the browser and Play Store. Allow time for newly saved tester or release changes to propagate.
 2. **Closed testing**, after release 8 installs successfully and the core loop and billing matrix pass on real devices. Check Testing → Production eligibility for the exact tester-count and duration requirements shown for this developer account.
@@ -574,17 +574,17 @@ Standard Play Console progression: **Internal testing → Closed testing → Ope
 Already completed:
 
 - [x] Final package and dedicated V4 app entry: `com.defacto365.protip365`.
-- [x] Signed release 8 active on Internal testing.
-- [x] Privacy and Terms pages live.
+- [x] Production build 11 (`1.0.0`) established as the baseline.
+- [x] Privacy, Terms, and Support pages live.
 - [x] `lifetime_unlock` and `monthly` products active with regional pricing.
 - [x] Internal tester lists assigned and enabled for licence testing.
 
 Remaining:
 
-1. **Install release 8 on the tester's real Android device.** Open the opt-in link with the invited Google account, confirm the same account is active in Play Store, and retry after propagation/cache troubleshooting if Play shows “Item not found.”
+1. **Install version `2.0.0` on the tester's real Android device.** Open the opt-in link with the invited Google account and confirm the same account is active in Play Store.
 2. **Run the crash smoke test.** Tap a date to open the date picker, then complete a shift and confirm the app does not white-screen.
 3. **Run the signed-store billing matrix** in Section 9 on the licensed tester account.
-4. **Keep entitlement enforcement off** until the billing matrix passes.
+4. **Keep enforced version `2.0.0` off production** until the billing matrix passes.
 5. **Verify the Play Dashboard production gates:** App content, Data Safety, Content Rating, target audience, and Testing → Production eligibility.
 6. **Handle any old V3 listing separately.** Leaving, unpublishing, or replacing it is an owner decision and must not affect the V4 entry.
 

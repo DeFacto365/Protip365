@@ -4,6 +4,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { getCalendars } from 'expo-localization';
+import { useTranslation } from 'react-i18next';
 
 import i18n from '../i18n';
 import { isValidIsoDate, toIso } from '../domain/dates';
@@ -21,7 +22,9 @@ interface PickerFieldProps {
 
 function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldProps) {
   const { t, isDark } = useTokens();
+  const { t: translate } = useTranslation();
   const [show, setShow] = useState(false);
+  const [draftValue, setDraftValue] = useState(value);
   const locale = i18n.resolvedLanguage || i18n.language || 'en';
   const uses24HourClock = useMemo(() => {
     try {
@@ -42,8 +45,22 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
     }
   }, [locale, mode, value]);
 
-  const onPickerChange = (event: DateTimePickerEvent, selected?: Date) => {
+  const openPicker = () => {
+    setDraftValue(value);
+    setShow(true);
+  };
+
+  const onAndroidPickerChange = (event: DateTimePickerEvent, selected?: Date) => {
     if (event.type === 'set' && selected) onChange(selected);
+    setShow(false);
+  };
+
+  const onIosPickerChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (selected) setDraftValue(selected);
+  };
+
+  const confirmIosValue = () => {
+    onChange(draftValue);
     setShow(false);
   };
 
@@ -56,7 +73,7 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityValue={{ text: displayValue }}
-        onPress={() => setShow(true)}
+        onPress={openPicker}
         style={({ pressed }) => ({
           minHeight: TOUCH_TARGET,
           borderWidth: 0,
@@ -87,18 +104,57 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
           display="default"
           design="material"
           is24Hour={mode === 'time' ? uses24HourClock : undefined}
-          onChange={onPickerChange}
+          onChange={onAndroidPickerChange}
         />
       ) : null}
       {show && Platform.OS === 'ios' ? (
-        <DateTimePicker
-          value={value}
-          mode={mode}
-          display="spinner"
-          themeVariant={isDark ? 'dark' : 'light'}
-          is24Hour={mode === 'time' ? uses24HourClock : undefined}
-          onChange={onPickerChange}
-        />
+        <View>
+          <DateTimePicker
+            value={draftValue}
+            mode={mode}
+            display="spinner"
+            themeVariant={isDark ? 'dark' : 'light'}
+            is24Hour={mode === 'time' ? uses24HourClock : undefined}
+            onChange={onIosPickerChange}
+          />
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={translate('common.cancel')}
+              onPress={() => setShow(false)}
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: TOUCH_TARGET,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: t.ink,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: t.pen, fontWeight: '700' }}>
+                {translate('common.cancel')}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={translate('common.confirm')}
+              onPress={confirmIosValue}
+              style={({ pressed }) => ({
+                flex: 1,
+                minHeight: TOUCH_TARGET,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: t.ink,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: t.paper, fontWeight: '700' }}>
+                {translate('common.confirm')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       ) : null}
     </View>
   );

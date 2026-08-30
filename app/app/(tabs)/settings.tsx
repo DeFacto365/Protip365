@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, Linking, ScrollView, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
@@ -335,6 +335,21 @@ export default function SettingsScreen() {
         style={{ marginBottom: 12 }}
       />
       <PrimaryButton label={tr('settings.exportCsv')} onPress={() => void onExportCsv()} style={{ marginBottom: 12 }} />
+      <GhostButton
+        label={tr('settings.privacyPolicy')}
+        onPress={() => void Linking.openURL('https://protip365.vercel.app/privacy')}
+        style={{ marginBottom: 12 }}
+      />
+      <GhostButton
+        label={tr('settings.termsOfService')}
+        onPress={() => void Linking.openURL('https://protip365.vercel.app/terms')}
+        style={{ marginBottom: 12 }}
+      />
+      <GhostButton
+        label={tr('settings.support')}
+        onPress={() => void Linking.openURL('https://protip365.vercel.app/support')}
+        style={{ marginBottom: 12 }}
+      />
       <GhostButton label={tr('settings.eraseData')} onPress={onErase} danger />
       </ReceiptCard>
     </ScrollView>

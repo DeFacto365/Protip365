@@ -116,7 +116,7 @@ export function LockScreen() {
         {[
           [tr('security.privacyLink'), 'https://protip365.vercel.app/privacy'],
           [tr('security.termsLink'), 'https://protip365.vercel.app/terms'],
-          [tr('security.supportLink'), 'mailto:info@defacto365.com'],
+          [tr('security.supportLink'), 'https://protip365.vercel.app/support'],
         ].map(([label, url]) => (
           <Pressable
             key={url}

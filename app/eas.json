@@ -20,6 +20,17 @@
       },
       "channel": "preview"
     },
+    "ios-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "production"
+    },
     "production": {
       "autoIncrement": true,
       "android": {
@@ -30,6 +41,14 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "C:\\Users\\jack_\\protip365-keys\\play-service-account.json",
+        "track": "internal"
+      },
+      "ios": {
+        "ascAppId": "6751759695"
+      }
+    }
   }
 }

@@ -9,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 import {
   assertBackupFileSize,
   createEncryptedFullBackup,
-  restoreEncryptedFullBackup,
 } from '../src/data/backup';
+import { restoreEncryptedBackupWithWriteAccess } from '../src/state/backupRestoreStore';
 import { useEmployersStore } from '../src/state/employersStore';
 import { useGoalsStore } from '../src/state/goalsStore';
 import { useSettingsStore } from '../src/state/settingsStore';
@@ -22,6 +22,7 @@ import { Card, Field, GhostButton, PrimaryButton } from '../src/ui/components';
 import { useTokens } from '../src/ui/tokens';
 import { cancelAllAppOwnedNotifications } from '../src/notifications/shiftReminders';
 import { Text } from '../src/ui/typography';
+import { useWriteAccess, WriteAccessBanner } from '../src/ui/WriteAccess';
 
 function backupErrorKey(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
@@ -49,6 +50,7 @@ export default function BackupScreen() {
   const loadTemplates = useTemplatesStore((state) => state.load);
   const loadGoals = useGoalsStore((state) => state.load);
   const rehydrateEntitlement = useEntitlementStore((state) => state.rehydrateAfterDataChange);
+  const { requireWrite } = useWriteAccess();
 
   const exportBackup = async () => {
     if (exportPassword.length < 8) {
@@ -79,6 +81,7 @@ export default function BackupScreen() {
   };
 
   const chooseRestore = async () => {
+    if (!requireWrite()) return;
     if (restorePassword.length < 8) {
       Alert.alert(tr('backup.errors.passwordTooShort'));
       return;
@@ -109,7 +112,7 @@ export default function BackupScreen() {
             try {
               const encrypted = await restoreFile.text();
               await cancelAllAppOwnedNotifications(false);
-              restoreEncryptedFullBackup(encrypted, restorePassword);
+              restoreEncryptedBackupWithWriteAccess(encrypted, restorePassword);
               hydrateSettings();
               rehydrateEntitlement();
               loadEmployers();
@@ -140,6 +143,7 @@ export default function BackupScreen() {
       <Text style={{ color: t.ink, fontSize: 15, lineHeight: 22, marginBottom: 16 }}>
         {tr('backup.explanation')}
       </Text>
+      <WriteAccessBanner />
       <Card style={{ padding: 16, marginBottom: 16 }}>
         <Text style={{ color: t.ink, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
           {tr('backup.exportTitle')}

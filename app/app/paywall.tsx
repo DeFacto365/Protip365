@@ -3,7 +3,6 @@ import { Alert, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
-  ENTITLEMENT_ENFORCEMENT_ENABLED,
   LIFETIME_PRODUCT_ID,
   MONTHLY_PRODUCT_ID,
 } from '../src/domain/entitlements';
@@ -65,11 +64,7 @@ export default function PaywallScreen() {
       </Text>
       <Text style={{ color: t.softText, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 }}>
         {status === 'expired'
-          ? tr(
-              ENTITLEMENT_ENFORCEMENT_ENABLED
-                ? 'paywall.expiredExplanation'
-                : 'paywall.expiredDisplayOnlyExplanation'
-            )
+          ? tr('paywall.expiredExplanation')
           : status === 'trial'
             ? tr('paywall.trialRemaining', { count: days })
             : tr(`paywall.status.${status}`)}

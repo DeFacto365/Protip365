@@ -45,14 +45,13 @@ function removeLegacySettings(): void {
 }
 
 function createRecordFromLegacy(now: Date): StoredEntitlementRecord {
-  const legacyStart = settingsRepo.get(TRIAL_STARTED_KEY);
-  const parsedLegacyStart = legacyStart ? Date.parse(legacyStart) : Number.NaN;
-  const trialStartedAt = Number.isFinite(parsedLegacyStart) ? legacyStart! : now.toISOString();
   const legacySubscription = settingsRepo.get(SUBSCRIPTION_EXPIRES_KEY);
   return {
-    version: 1,
-    trialStartedAt,
-    lastSeenAt: new Date(Math.max(Date.parse(trialStartedAt), now.getTime())).toISOString(),
+    version: 2,
+    // Legacy settings predate enforced billing. Give the same fair transition
+    // trial as a version-1 SecureStore record while retaining purchases.
+    trialStartedAt: now.toISOString(),
+    lastSeenAt: now.toISOString(),
     lifetimeUnlocked: settingsRepo.get(LIFETIME_KEY) === '1',
     subscriptionExpiresAt:
       legacySubscription && Number.isFinite(Date.parse(legacySubscription))

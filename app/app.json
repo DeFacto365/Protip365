@@ -3,13 +3,24 @@
     "name": "ProTip365",
     "slug": "protip365",
     "scheme": "protip365",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "primaryColor": "#20211E",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.protip365.monthly",
+      "appleTeamId": "2VNLA63QB4",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "ITSAppUsesNonExemptEncryption": true
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": []
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -140,13 +151,37 @@
       "expo-status-bar",
       "expo-notifications",
       "expo-sharing",
-      "expo-localization",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": [
+              "en",
+              "fr-CA",
+              "es"
+            ],
+            "android": [
+              "en",
+              "fr-CA",
+              "es"
+            ]
+          }
+        }
+      ],
       "@react-native-community/datetimepicker",
       "expo-secure-store",
       [
         "expo-local-authentication",
         {
           "faceIDPermission": "Allow ProTip365 to unlock your private shift and earnings records."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
         }
       ],
       "./plugins/withMaterial3AndroidTheme",

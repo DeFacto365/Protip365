@@ -20,24 +20,24 @@ describe('local entitlement evaluation', () => {
     expect(result).toMatchObject({ status: 'trial', canWrite: true, trialDaysRemaining: 30 });
   });
 
-  it('displays expiry but remains writable while enforcement is disabled', () => {
+  it('enforces read-only access at the exact trial boundary', () => {
     const result = evaluateEntitlement(
       { trialStartedAt: startedAt, lifetimeUnlocked: false, subscriptionExpiresAt: null },
       new Date('2026-07-31T00:00:00.000Z')
     );
 
-    expect(ENTITLEMENT_ENFORCEMENT_ENABLED).toBe(false);
-    expect(result).toMatchObject({ status: 'expired', canWrite: true, trialDaysRemaining: 0 });
+    expect(ENTITLEMENT_ENFORCEMENT_ENABLED).toBe(true);
+    expect(result).toMatchObject({ status: 'expired', canWrite: false, trialDaysRemaining: 0 });
   });
 
-  it('becomes read-only at the exact trial boundary when enforcement is enabled', () => {
+  it('can evaluate a disabled-enforcement fixture without changing production policy', () => {
     const result = evaluateEntitlement(
       { trialStartedAt: startedAt, lifetimeUnlocked: false, subscriptionExpiresAt: null },
       new Date('2026-07-31T00:00:00.000Z'),
-      true
+      false
     );
 
-    expect(result).toMatchObject({ status: 'expired', canWrite: false, trialDaysRemaining: 0 });
+    expect(result).toMatchObject({ status: 'expired', canWrite: true, trialDaysRemaining: 0 });
   });
 
   it('keeps lifetime purchases writable after trial expiry', () => {
@@ -91,7 +91,8 @@ describe('local entitlement evaluation', () => {
     expect(result).toMatchObject({ status: 'trial', trialDaysRemaining: 10 });
   });
 
-  it('fails closed before hydration only when enforcement is enabled', () => {
+  it('fails closed before hydration in production', () => {
+    expect(canWriteBeforeEntitlementHydration()).toBe(false);
     expect(canWriteBeforeEntitlementHydration(false)).toBe(true);
     expect(canWriteBeforeEntitlementHydration(true)).toBe(false);
   });
