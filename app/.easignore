@@ -1,0 +1,25 @@
+# Dependencies and generated output are recreated by EAS.
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+android/
+ios/
+.expo-plan-ios-export/
+*.tsbuildinfo
+*.log
+
+# Local-only tooling and credentials are never part of the build archive.
+.claude/
+.env*
+credentials.json
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Test-only files are not needed in signed store artifacts.
+src/domain/__tests__/
+jest.config.js

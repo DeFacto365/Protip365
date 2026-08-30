@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProTip365 — Dashboard concept</title>
+<!-- DRAFT dashboard/opening-screen exploration (Claude, 2026-07-19). Not approved.
+     Adapts a hero summary card + timeline spine + action states to the tip domain,
+     in the app's own tokens (white bg, #E8E7F7 cards, cobalt #2B4BD7, square corners,
+     Fraunces numerals). Fictional data. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --card:#E8E7F7; --line:#D9D8EC; --ink:#23242E; --soft:#63667A;
+    --cobalt:#2B4BD7; --cobalt-soft:#DCE2FC; --green:#1E7A5A; --green-soft:#DDF0E7;
+    --amber:#C97A10; --amber-soft:#F7E9D0; --rose:#C2536A; --teal:#2E8B7C; --violet:#7A4E8C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',system-ui,sans-serif;background:#0C0F16;color:#ECEFF7;-webkit-font-smoothing:antialiased;padding:40px 0 70px}
+  .num{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+  .intro{max-width:900px;margin:0 auto 30px;padding:0 24px;text-align:center}
+  .intro .k{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#E3A876;font-weight:600}
+  .intro h1{font-family:'Fraunces',Georgia,serif;font-size:2rem;color:#fff;margin:10px 0 8px}
+  .intro p{color:#C9D0E0;max-width:38rem;margin:0 auto;font-size:.98rem}
+  .stage{display:flex;gap:48px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:0 24px}
+  figure{margin:0}
+  figcaption{max-width:340px;margin-top:16px;color:#C9D0E0;font-size:.9rem}
+  figcaption b{color:#fff;display:block;margin-bottom:4px;font-size:1rem}
+
+  /* phone */
+  .phone{width:360px;background:var(--bg);color:var(--ink);border:10px solid #05060a;border-radius:42px;overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.7);display:flex;flex-direction:column;height:760px}
+  .sb{display:flex;justify-content:space-between;padding:12px 22px 2px;font-size:11px;font-weight:600;color:var(--soft)}
+  .scr{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:6px 18px 10px}
+  .top .hi{font-size:12px;color:var(--soft)}
+  .top .hi b{display:block;font-family:'Fraunces',Georgia,serif;font-size:19px;color:var(--ink);font-weight:600}
+  .logo{width:38px;height:38px;border-radius:11px;background:#1e9fff;display:flex;align-items:center;justify-content:center}
+  .logo svg{width:24px;height:24px}
+
+  /* HERO card */
+  .hero{margin:2px 16px 6px;background:var(--cobalt);color:#fff;padding:16px 18px 14px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%)}
+  .hero .lab{font-size:10.5px;letter-spacing:.08em;font-weight:600;opacity:.85;text-transform:uppercase}
+  .hero .big{display:flex;align-items:baseline;gap:8px;margin-top:2px}
+  .hero .big .n{font-family:'Fraunces',Georgia,serif;font-size:38px;font-weight:600;line-height:1}
+  .hero .big .vs{font-size:12px;opacity:.85}
+  .hero .pos{color:#8CF0C4;font-weight:600}
+  .hero .bar{height:6px;background:rgba(255,255,255,.25);margin-top:12px;position:relative}
+  .hero .bar i{position:absolute;left:0;top:0;bottom:0;background:#8CF0C4;width:76%}
+  .hero .row{display:flex;justify-content:space-between;margin-top:12px;border-top:1px solid rgba(255,255,255,.18);padding-top:10px}
+  .hero .row div{text-align:center;flex:1}
+  .hero .row .n{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600}
+  .hero .row small{display:block;font-size:8.5px;letter-spacing:.05em;opacity:.8;margin-top:1px}
+
+  /* attention strip */
+  .attn{margin:8px 16px;background:var(--amber-soft);border-left:4px solid var(--amber);padding:9px 12px;display:flex;justify-content:space-between;align-items:center}
+  .attn span{font-size:11.5px;color:#7a4a08;font-weight:500}
+  .attn b{color:var(--amber);font-size:11.5px}
+
+  /* timeline */
+  .tl{flex:1;overflow:hidden;padding:4px 16px 0;position:relative}
+  .tl-scroll{position:relative;padding-left:18px}
+  .tl-scroll::before{content:"";position:absolute;left:5px;top:14px;bottom:10px;width:2px;background:var(--line)}
+  .day{position:relative;margin-bottom:12px}
+  .node{position:absolute;left:-18px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--line)}
+  .node.today{background:var(--cobalt);border-color:var(--cobalt);box-shadow:0 0 0 3px var(--cobalt-soft)}
+  .node.done{background:var(--green);border-color:var(--green)}
+  .dhead{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--soft);margin-bottom:5px}
+  .dhead .today{color:var(--cobalt)}
+  .shift{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);padding:9px 11px;display:flex;gap:9px;align-items:center;margin-bottom:5px}
+  .shift.rose{border-left-color:var(--rose)} .shift.teal{border-left-color:var(--teal)}
+  .init{width:30px;height:30px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+  .shift .who{flex:1;min-width:0}
+  .shift .who b{font-size:12.5px;display:block}
+  .shift .who span{font-size:10px;color:var(--soft)}
+  .shift .amt{text-align:right;flex-shrink:0}
+  .shift .amt .m{font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:600}
+  .shift .amt small{font-size:8.5px;color:var(--soft);display:block}
+  .chip{font-size:8px;font-weight:700;letter-spacing:.05em;padding:2px 6px;display:inline-block}
+  .chip.done{background:var(--green-soft);color:var(--green)} .chip.plan{background:var(--cobalt-soft);color:var(--cobalt)}
+  .pos{color:var(--green);font-weight:600;font-size:9px}
+  /* action-state shift (needs completion) */
+  .shift.action{background:#fff;border:1.5px solid var(--cobalt);border-left:4px solid var(--cobalt);cursor:pointer}
+  .shift.action .cta{color:var(--cobalt);font-weight:700;font-size:11.5px;display:flex;align-items:center;gap:4px}
+  .shift.action .sub{font-size:10px;color:var(--soft)}
+
+  .nav{display:flex;justify-content:space-around;align-items:flex-end;padding:8px 6px 14px;border-top:1px solid var(--line);background:#fff;position:relative}
+  .nav div{font-size:9px;font-weight:600;color:var(--soft);text-align:center;width:60px}
+  .nav .on{color:var(--cobalt)} .nav .on svg{background:var(--cobalt-soft);border-radius:999px;padding:3px 13px;box-sizing:content-box}
+  .nav svg{display:block;margin:0 auto 3px}
+  .fab{position:absolute;right:14px;top:-52px;height:42px;display:inline-flex;align-items:center;gap:6px;padding:0 15px;background:var(--cobalt);color:#fff;font-size:12px;font-weight:700;box-shadow:0 8px 18px -6px rgba(43,75,215,.55)}
+</style>
+</head>
+<body>
+<div class="intro">
+  <p class="k">ProTip365 · opening-dashboard concept · unapproved</p>
+  <h1>Open the app to a payoff, not a list.</h1>
+  <p>A hero card answers "how's my week going?" the instant you open it, a timeline spine ties the week together, and shifts that need attention become the obvious next tap — all in the app's own square-cornered, cobalt language, led by expected-vs-actual (the number a clock-in app can't show).</p>
+</div>
+
+<div class="stage">
+  <figure>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="top">
+          <div class="hi">Good evening<b>This week</b></div>
+          <div class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M14 17h20l-8 9v9m-4 0h8m-4-18a4 4 0 100-8 4 4 0 000 8z" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        </div>
+
+        <!-- HERO -->
+        <div class="hero">
+          <div class="lab">Earned so far · Jul 20–26</div>
+          <div class="big"><span class="n">$412</span><span class="vs">of $500 goal · <span class="pos">+$23 vs expected</span></span></div>
+          <div class="bar"><i></i></div>
+          <div class="row">
+            <div><div class="n">$30.10</div><small>EFFECTIVE /H</small></div>
+            <div><div class="n">13.7 h</div><small>WORKED</small></div>
+            <div><div class="n">2 / 5</div><small>SHIFTS DONE</small></div>
+          </div>
+        </div>
+
+        <!-- attention -->
+        <div class="attn"><span>1 shift finished — add what you actually made</span><b>Review →</b></div>
+
+        <!-- TIMELINE -->
+        <div class="tl"><div class="tl-scroll">
+          <div class="day">
+            <div class="node today"></div>
+            <div class="dhead"><span class="today">Today · Fri Jul 24</span><span>$172 expected</span></div>
+            <div class="shift action">
+              <span class="init" style="background:#F7E9D0;color:#C97A10;border-color:#F7E9D0">MR</span>
+              <div class="who"><b>Maple Room · Server</b><span class="sub">Finished 11:00 PM · 6 h</span></div>
+              <div class="cta">Complete ›</div>
+            </div>
+          </div>
+          <div class="day">
+            <div class="node"></div>
+            <div class="dhead"><span>Sat Jul 25</span><span>$210 expected</span></div>
+            <div class="shift rose">
+              <span class="init" style="background:#F6DEE3;color:#C2536A;border-color:#F6DEE3">BC</span>
+              <div class="who"><b>Bar Céleste · Bartender</b><span>8 PM – 2 AM</span></div>
+              <div class="amt"><span class="chip plan">PLANNED</span><div class="m">$210</div></div>
+            </div>
+          </div>
+          <div class="day">
+            <div class="node done"></div>
+            <div class="dhead"><span>Thu Jul 23 · worked</span></div>
+            <div class="shift teal">
+              <span class="init" style="background:#DCEEE8;color:#2E8B7C;border-color:#DCEEE8">JP</span>
+              <div class="who"><b>Juniper's · Server</b><span>6 PM – 12 AM · $148 tips</span></div>
+              <div class="amt"><span class="chip done">✓ WORKED</span><div class="m">$181</div><span class="pos">+$23</span></div>
+            </div>
+          </div>
+          <div class="day">
+            <div class="node done"></div>
+            <div class="dhead"><span>Mon Jul 20 · worked</span></div>
+            <div class="shift">
+              <span class="init" style="background:#F7E9D0;color:#C97A10;border-color:#F7E9D0">MR</span>
+              <div class="who"><b>Maple Room · Server</b><span>10 AM – 2 PM</span></div>
+              <div class="amt"><span class="chip done">✓ WORKED</span><div class="m">$88</div></div>
+            </div>
+          </div>
+        </div></div>
+
+        <div class="nav">
+          <div class="on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="0"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</div>
+          <span class="fab">＋ Add shift</span>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V11M10 19V5M16 19v-6M21 19H3"/></svg>Stats</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7 7 0 01-2 1.2L14 21h-4l-.5-2.6a7 7 0 01-2-1.2l-2.4 1-2-3.4 2-1.6A7 7 0 015 12"/></svg>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Opening screen — "This week"</b>The cobalt hero card is the payoff moment (earned so far, goal progress, effective hourly, shifts done). A gentle amber strip surfaces the one shift needing actuals. The timeline spine turns the week into one story; the finished-but-unlogged shift becomes a bordered "Complete ›" tap — your version of their "Select Reason".</figcaption>
+  </figure>
+</div>
+</body>
+</html>

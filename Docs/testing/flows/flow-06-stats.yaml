@@ -1,0 +1,8 @@
+appId: com.defacto365.protip365
+name: 06 Stats shows values
+---
+- launchApp
+- tapOn: "Stats"
+# Tips from flow-05 must be reflected
+- assertVisible: ".*120\\.50.*"
+- takeScreenshot: stats-values

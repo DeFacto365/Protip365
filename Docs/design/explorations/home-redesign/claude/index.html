@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProTip365 — Home screen concepts</title>
+<!-- DRAFT home-screen exploration (Claude, 2026-07-20). Not approved.
+     Four aesthetic directions for the opening screen, responding to the owner's
+     "lacks life / welcome / payoff" feedback on the current Schedule-first home.
+     Trend inputs: dark-first premium money UIs, bento grids, glassmorphism revival,
+     raw ledger/monospace aesthetics, hero-payoff-first home screens.
+     All data fictional; calculations unvalidated; copy must follow PRD_V4. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',system-ui,sans-serif;background:#07080D;color:#E9ECF5;-webkit-font-smoothing:antialiased;padding:48px 0 80px}
+  .intro{max-width:980px;margin:0 auto 14px;padding:0 24px;text-align:center}
+  .intro .k{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:#E3A876;font-weight:600}
+  .intro h1{font-family:'Fraunces',Georgia,serif;font-size:2.3rem;color:#fff;margin:12px 0 10px}
+  .intro p{color:#B9C1D4;max-width:46rem;margin:0 auto;font-size:1rem;line-height:1.55}
+  .legend{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px auto 40px;max-width:900px;padding:0 24px}
+  .legend span{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:#98A2B8;border:1px solid #232838;padding:6px 12px;border-radius:999px}
+  .stage{display:flex;gap:56px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:0 24px}
+  figure{margin:0 0 30px}
+  figcaption{max-width:352px;margin-top:18px;color:#B9C1D4;font-size:.9rem;line-height:1.5}
+  figcaption b{color:#fff;display:block;margin-bottom:4px;font-size:1.05rem;font-family:'Fraunces',Georgia,serif}
+  figcaption .tag{display:inline-block;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#E3A876;margin-bottom:8px}
+
+  .phone{width:360px;border:10px solid #05060a;border-radius:44px;overflow:hidden;box-shadow:0 44px 90px -34px rgba(0,0,0,.8);display:flex;flex-direction:column;height:768px;position:relative}
+  .sb{display:flex;justify-content:space-between;padding:13px 24px 4px;font-size:11px;font-weight:600;position:relative;z-index:5}
+  .scr{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:2}
+
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes fill{from{width:0}}
+  @keyframes ring{to{stroke-dashoffset:var(--off)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes glowpulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,158,.35)}50%{box-shadow:0 0 0 9px rgba(74,222,158,0)}}
+  @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-30px,20px) scale(1.15)}100%{transform:translate(0,0) scale(1)}}
+  .r1{animation:rise .6s .05s cubic-bezier(.2,.7,.2,1) both}
+  .r2{animation:rise .6s .15s cubic-bezier(.2,.7,.2,1) both}
+  .r3{animation:rise .6s .25s cubic-bezier(.2,.7,.2,1) both}
+  .r4{animation:rise .6s .35s cubic-bezier(.2,.7,.2,1) both}
+  .r5{animation:rise .6s .45s cubic-bezier(.2,.7,.2,1) both}
+
+  /* ============================================================
+     A · SUNRISE BENTO — on-brand light, approved palette
+     ============================================================ */
+  .pa{--bg:#FFFFFF;--card:#E8E7F7;--line:#D9D8EC;--ink:#23242E;--soft:#63667A;--cobalt:#2B4BD7;--cobalt-soft:#DCE2FC;--green:#1E7A5A;--green-soft:#DDF0E7;--amber:#C97A10;background:var(--bg);color:var(--ink)}
+  .pa .sb{color:var(--soft)}
+  .pa .head{padding:8px 20px 12px;display:flex;justify-content:space-between;align-items:center}
+  .pa .head .hi{font-size:12.5px;color:var(--soft)}
+  .pa .head .hi b{display:block;font-family:'Fraunces',Georgia,serif;font-size:21px;color:var(--ink);font-weight:600;letter-spacing:-.01em}
+  .pa .ava{width:38px;height:38px;border-radius:12px;background:var(--cobalt);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+  .pa .bento{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+  .pa .tile{background:var(--card);border-radius:20px;padding:14px 15px;position:relative;overflow:hidden}
+  .pa .tile.hero{grid-column:1/-1;background:var(--cobalt);color:#fff;padding:18px;border-radius:24px}
+  .pa .tile.hero .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.8}
+  .pa .hero-row{display:flex;align-items:center;gap:16px;margin-top:6px}
+  .pa .ringwrap{position:relative;width:92px;height:92px;flex-shrink:0}
+  .pa .ringwrap svg{transform:rotate(-90deg)}
+  .pa .ringwrap circle{fill:none;stroke-width:8}
+  .pa .ringwrap .trk{stroke:rgba(255,255,255,.22)}
+  .pa .ringwrap .val{stroke:#8CF0C4;stroke-linecap:round;stroke-dasharray:264;stroke-dashoffset:264;--off:63;animation:ring 1.4s .5s cubic-bezier(.3,.8,.3,1) forwards}
+  .pa .ringwrap .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:19px}
+  .pa .ringwrap .pct small{font-size:8.5px;font-family:'Outfit';letter-spacing:.08em;opacity:.8;font-weight:600}
+  .pa .hero-nums .big{font-family:'Fraunces',Georgia,serif;font-size:34px;font-weight:600;line-height:1.05}
+  .pa .hero-nums .sub{font-size:12px;opacity:.9;margin-top:3px}
+  .pa .hero-nums .pos{color:#8CF0C4;font-weight:600}
+  .pa .tile .t-lab{font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--soft)}
+  .pa .tile .t-num{font-family:'Fraunces',Georgia,serif;font-size:23px;font-weight:600;margin-top:4px}
+  .pa .tile .t-sub{font-size:10.5px;color:var(--soft);margin-top:2px}
+  .pa .spark{display:flex;align-items:flex-end;gap:4px;height:30px;margin-top:8px}
+  .pa .spark i{flex:1;background:var(--cobalt-soft);border-radius:3px}
+  .pa .spark i.on{background:var(--cobalt)}
+  .pa .next{grid-column:1/-1;background:#fff;border:1.6px solid var(--cobalt);border-radius:20px;padding:13px 15px;display:flex;align-items:center;gap:12px}
+  .pa .next .init{width:40px;height:40px;border-radius:13px;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--cobalt)}
+  .pa .next .who{flex:1}
+  .pa .next .who b{font-size:14px;display:block}
+  .pa .next .who span{font-size:11px;color:var(--soft)}
+  .pa .next .cta{background:var(--cobalt);color:#fff;font-size:11.5px;font-weight:700;padding:9px 14px;border-radius:12px;white-space:nowrap}
+  .pa .strip{display:flex;justify-content:space-between;padding:14px 22px 4px}
+  .pa .strip .d{text-align:center;font-size:10px;font-weight:600;color:var(--soft)}
+  .pa .strip .d b{display:block;font-size:13px;color:var(--ink);margin-top:2px}
+  .pa .strip .d i{display:block;width:5px;height:5px;border-radius:99px;background:var(--cobalt);margin:4px auto 0;opacity:0}
+  .pa .strip .d.has i{opacity:1}
+  .pa .strip .d.today{color:var(--cobalt)}
+  .pa .strip .d.today b{color:var(--cobalt)}
+  .pa .nav{margin-top:auto;display:flex;justify-content:space-around;align-items:center;padding:10px 8px 16px;border-top:1px solid var(--line);background:#fff}
+  .pa .nav div{font-size:9.5px;font-weight:600;color:var(--soft);text-align:center;width:64px}
+  .pa .nav .on{color:var(--cobalt)}
+  .pa .nav .pill{display:block;margin:0 auto 4px;width:44px;height:24px;border-radius:99px;background:var(--cobalt-soft);line-height:24px;font-size:12px}
+  .pa .nav .ico{display:block;margin:0 auto 4px;width:44px;height:24px;line-height:24px;font-size:12px}
+
+  /* ============================================================
+     B · NIGHT SHIFT — dark-first premium, mint money accent
+     ============================================================ */
+  .pb{--bg:#0B0E14;--card:#141926;--line:#222A3D;--ink:#F2F5FB;--soft:#8B94AC;--mint:#4ADE9E;--mint-dim:rgba(74,222,158,.12)}
+  .pb{background:radial-gradient(120% 60% at 50% -8%,#18203A 0%,var(--bg) 55%);color:var(--ink);font-family:'Archivo',system-ui,sans-serif}
+  .pb .sb{color:var(--soft)}
+  .pb .head{padding:10px 20px 4px}
+  .pb .head .hi{font-size:12.5px;color:var(--soft)}
+  .pb .hero{padding:10px 20px 6px;text-align:center}
+  .pb .hero .lab{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);font-weight:700}
+  .pb .hero .big{font-family:'Bricolage Grotesque',sans-serif;font-size:58px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:8px;background:linear-gradient(180deg,#fff 30%,#9BE8C6);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .pb .hero .sub{font-size:12px;color:var(--soft);margin-top:7px}
+  .pb .hero .sub b{color:var(--mint);font-weight:600}
+  .pb .meter{margin:14px 20px 0;height:8px;border-radius:99px;background:var(--card);overflow:hidden}
+  .pb .meter i{display:block;height:100%;width:76%;border-radius:99px;background:linear-gradient(90deg,#2AA875,var(--mint));animation:fill 1.3s .4s cubic-bezier(.3,.8,.3,1) both}
+  .pb .meter-lab{display:flex;justify-content:space-between;margin:6px 22px 0;font-size:10px;color:var(--soft);font-weight:500}
+  .pb .cards{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:14px 16px 0}
+  .pb .c{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 13px}
+  .pb .c .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .pb .c .n{font-family:'Bricolage Grotesque',sans-serif;font-size:21px;font-weight:700;margin-top:4px;letter-spacing:-.01em}
+  .pb .c .s{font-size:10px;color:var(--soft);margin-top:2px}
+  .pb .c .n .up{color:var(--mint);font-size:12px;vertical-align:middle}
+  .pb .tonight{margin:12px 16px 0;background:linear-gradient(135deg,#17203A,#131A2C);border:1px solid #2B3854;border-radius:20px;padding:14px 15px}
+  .pb .tonight .top{display:flex;justify-content:space-between;align-items:center}
+  .pb .tonight .top .l{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#9FB0D8;font-weight:700}
+  .pb .live{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:var(--mint)}
+  .pb .live::before{content:"";width:6px;height:6px;border-radius:99px;background:var(--mint);animation:glowpulse 1.8s infinite}
+  .pb .tonight .row{display:flex;align-items:center;gap:11px;margin-top:10px}
+  .pb .tonight .init{width:38px;height:38px;border-radius:12px;background:var(--mint-dim);color:var(--mint);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+  .pb .tonight .who{flex:1}
+  .pb .tonight .who b{font-size:13.5px;display:block}
+  .pb .tonight .who span{font-size:10.5px;color:var(--soft)}
+  .pb .tonight .amt{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:17px;color:var(--mint)}
+  .pb .logbtn{margin:12px 16px 0;background:var(--mint);color:#06281A;text-align:center;font-weight:700;font-size:13.5px;padding:13px;border-radius:16px;letter-spacing:.01em;box-shadow:0 10px 30px -8px rgba(74,222,158,.45)}
+  .pb .nav{margin-top:auto;display:flex;justify-content:space-around;padding:11px 8px 16px;border-top:1px solid var(--line);background:rgba(11,14,20,.9)}
+  .pb .nav div{font-size:9.5px;font-weight:600;color:var(--soft);width:64px;text-align:center}
+  .pb .nav .on{color:var(--mint)}
+  .pb .nav .ico{display:block;margin:0 auto 4px;font-size:12px}
+
+  /* ============================================================
+     C · AFTER HOURS GLASS — dusk gradient + frosted cards
+     ============================================================ */
+  .pc{color:#fff;background:linear-gradient(168deg,#2B4BD7 0%,#5B3DBE 34%,#8A3D9E 58%,#C25D77 82%,#E08A5C 100%);position:relative}
+  .pc::before,.pc::after{content:"";position:absolute;border-radius:50%;filter:blur(46px);opacity:.5;z-index:1}
+  .pc::before{width:230px;height:230px;background:#7FB3FF;top:-60px;left:-70px;animation:drift 11s ease-in-out infinite}
+  .pc::after{width:200px;height:200px;background:#FFC28A;bottom:60px;right:-70px;animation:drift 13s ease-in-out infinite reverse}
+  .pc .sb{color:rgba(255,255,255,.85)}
+  .pc .head{padding:10px 22px 6px;position:relative}
+  .pc .head .hi{font-size:13px;opacity:.85}
+  .pc .head .hi b{display:block;font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:27px;letter-spacing:.005em;margin-top:2px}
+  .pc .glass{margin:10px 16px 0;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:24px;padding:16px 18px;box-shadow:0 18px 44px -18px rgba(20,10,60,.5)}
+  .pc .glass .lab{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;opacity:.85}
+  .pc .glass .big{font-family:'Instrument Serif',Georgia,serif;font-size:52px;line-height:1.02;margin-top:4px}
+  .pc .glass .big i{font-style:italic}
+  .pc .glass .sub{font-size:12px;opacity:.9;margin-top:5px}
+  .pc .glass .sub b{color:#B4FFD9;font-weight:600}
+  .pc .glass .bar{margin-top:13px;height:7px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+  .pc .glass .bar i{display:block;height:100%;width:82%;background:#B4FFD9;border-radius:99px;animation:fill 1.4s .5s cubic-bezier(.3,.8,.3,1) both}
+  .pc .grow{display:flex;gap:9px;margin:10px 16px 0}
+  .pc .g2{flex:1;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:19px;padding:12px 13px}
+  .pc .g2 .l{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.8}
+  .pc .g2 .n{font-family:'Instrument Serif',Georgia,serif;font-size:23px;margin-top:3px}
+  .pc .g2 .s{font-size:10px;opacity:.85;margin-top:1px}
+  .pc .shifts{margin:12px 16px 0}
+  .pc .shifts .t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;opacity:.85;margin-bottom:8px}
+  .pc .sh{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:17px;padding:11px 13px;margin-bottom:8px}
+  .pc .sh .init{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11.5px}
+  .pc .sh .who{flex:1}
+  .pc .sh .who b{font-size:13px;display:block}
+  .pc .sh .who span{font-size:10.5px;opacity:.8}
+  .pc .sh .amt{font-family:'Instrument Serif',Georgia,serif;font-size:17px}
+  .pc .fab{position:absolute;right:18px;bottom:86px;z-index:6;background:#fff;color:#5B3DBE;font-weight:700;font-size:12.5px;padding:13px 18px;border-radius:99px;box-shadow:0 14px 34px -10px rgba(0,0,0,.45);animation:floaty 4s ease-in-out infinite}
+  .pc .nav{margin-top:auto;position:relative;z-index:5;display:flex;justify-content:space-around;padding:11px 8px 16px;background:rgba(20,12,50,.35);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid rgba(255,255,255,.16)}
+  .pc .nav div{font-size:9.5px;font-weight:600;color:rgba(255,255,255,.65);width:64px;text-align:center}
+  .pc .nav .on{color:#fff}
+  .pc .nav .ico{display:block;margin:0 auto 4px;font-size:12px}
+
+  /* ============================================================
+     D · THE SHIFT RECEIPT — raw monospace ledger
+     ============================================================ */
+  .pd{--paper:#F6F2E9;--ink:#20211E;--dim:#7C7A70;--red:#D8472B;--grn:#2E7D4F;background:#E9E4D7;color:var(--ink);font-family:'IBM Plex Mono',monospace}
+  .pd .sb{color:var(--dim)}
+  .pd .head{padding:8px 20px 4px;display:flex;justify-content:space-between;align-items:baseline}
+  .pd .head .brand{font-weight:700;font-size:13px;letter-spacing:.06em}
+  .pd .head .date{font-size:10px;color:var(--dim)}
+  .pd .receipt{margin:8px 18px 0;background:var(--paper);box-shadow:0 12px 30px -14px rgba(60,50,20,.4);padding:16px 16px 12px;position:relative}
+  .pd .receipt::before,.pd .receipt::after{content:"";position:absolute;left:0;right:0;height:8px;background:radial-gradient(circle at 6px -2px,transparent 6px,var(--paper) 6.5px);background-size:14px 8px}
+  .pd .receipt::before{top:-7px;transform:rotate(180deg)}
+  .pd .receipt::after{bottom:-7px}
+  .pd .rc-h{text-align:center;font-size:10px;letter-spacing:.2em;color:var(--dim);font-weight:600}
+  .pd .rc-t{text-align:center;font-weight:700;font-size:13px;letter-spacing:.1em;margin-top:3px}
+  .pd .rule{border-top:1.5px dashed #C9C3B2;margin:10px 0}
+  .pd .ln{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0}
+  .pd .ln .k{color:var(--dim)}
+  .pd .ln .v{font-weight:600}
+  .pd .ln .v.neg{color:var(--red)}
+  .pd .total{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 2px}
+  .pd .total .k{font-weight:700;font-size:12px;letter-spacing:.08em}
+  .pd .total .v{font-weight:700;font-size:26px;letter-spacing:-.01em}
+  .pd .rate{text-align:center;font-size:11px;color:var(--grn);font-weight:600;margin-top:2px}
+  .pd .stamp{position:absolute;right:14px;top:52px;border:2.5px solid var(--grn);color:var(--grn);font-weight:700;font-size:11px;letter-spacing:.14em;padding:4px 9px;transform:rotate(8deg);opacity:.85;border-radius:4px}
+  .pd .barcode{margin:8px auto 0;height:26px;width:78%;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 9px,var(--ink) 9px 12px,transparent 12px 14px)}
+  .pd .next{margin:12px 18px 0;background:#fff;border:1.5px solid var(--ink);padding:11px 13px;display:flex;justify-content:space-between;align-items:center;box-shadow:3px 3px 0 var(--ink)}
+  .pd .next .l{font-size:9.5px;letter-spacing:.14em;color:var(--dim);font-weight:600}
+  .pd .next b{display:block;font-size:12.5px;margin-top:2px}
+  .pd .next .go{background:var(--ink);color:var(--paper);font-size:10.5px;font-weight:700;padding:9px 12px;letter-spacing:.06em}
+  .pd .week{display:flex;justify-content:space-between;margin:12px 20px 0;font-size:9.5px;color:var(--dim)}
+  .pd .week .d{text-align:center}
+  .pd .week .d b{display:block;font-size:11.5px;color:var(--ink);margin-top:2px}
+  .pd .week .d.x b{color:var(--red)}
+  .pd .week .d u{display:block;text-decoration:none;margin-top:2px;font-size:8.5px}
+  .pd .nav{margin-top:auto;display:flex;justify-content:space-around;padding:11px 8px 15px;border-top:1.5px solid var(--ink);background:var(--paper)}
+  .pd .nav div{font-size:9.5px;font-weight:600;color:var(--dim);width:64px;text-align:center;letter-spacing:.04em}
+  .pd .nav .on{color:var(--ink);font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <p class="k">ProTip365 · home-screen concepts · unapproved draft</p>
+  <h1>Open to a payoff, not a to-do list.</h1>
+  <p>The current home is a schedule grid — it asks for work before it gives anything back. Every direction below opens on the one number a tipped worker cares about ("what am I actually making?"), adds a warm greeting, and turns tonight's shift into the obvious next tap. Four aesthetics, one product truth.</p>
+</div>
+<div class="legend">
+  <span>Trend: hero-payoff first</span><span>Trend: bento grids</span><span>Trend: dark-first money apps</span><span>Trend: glassmorphism revival</span><span>Trend: raw ledger / monospace</span>
+</div>
+
+<div class="stage">
+
+  <!-- ======================= A · SUNRISE BENTO ======================= -->
+  <figure>
+    <div class="phone pa">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="head r1">
+          <div class="hi">Good evening, Alex<b>Your week is looking good</b></div>
+          <div class="ava">A</div>
+        </div>
+        <div class="bento">
+          <div class="tile hero r2">
+            <div class="lab">Earned this week · Jul 20–26</div>
+            <div class="hero-row">
+              <div class="ringwrap">
+                <svg width="92" height="92" viewBox="0 0 92 92"><circle class="trk" cx="46" cy="46" r="42"/><circle class="val" cx="46" cy="46" r="42"/></svg>
+                <div class="pct">76%<small>OF GOAL</small></div>
+              </div>
+              <div class="hero-nums">
+                <div class="big">$412</div>
+                <div class="sub">of $540 goal<br><span class="pos">+$23 vs expected</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="tile r3">
+            <div class="t-lab">Real hourly</div>
+            <div class="t-num">$30.10</div>
+            <div class="t-sub">13.7 h worked</div>
+          </div>
+          <div class="tile r3">
+            <div class="t-lab">Tips vs wages</div>
+            <div class="spark"><i style="height:40%"></i><i class="on" style="height:90%"></i><i style="height:55%"></i><i class="on" style="height:75%"></i><i style="height:35%"></i><i class="on" style="height:100%"></i><i style="height:50%"></i></div>
+            <div class="t-sub">$298 tips · $114 wages</div>
+          </div>
+          <div class="next r4">
+            <div class="init">BT</div>
+            <div class="who"><b>Tonight · Bar Toro</b><span>17:00–23:00 · expected $205</span></div>
+            <div class="cta">Log shift</div>
+          </div>
+        </div>
+        <div class="strip r5">
+          <div class="d has">M<b>20</b><i></i></div>
+          <div class="d">T<b>21</b><i></i></div>
+          <div class="d has">W<b>22</b><i></i></div>
+          <div class="d">T<b>23</b><i></i></div>
+          <div class="d has">F<b>24</b><i></i></div>
+          <div class="d">S<b>25</b><i></i></div>
+          <div class="d today has">S<b>26</b><i></i></div>
+        </div>
+        <div class="nav">
+          <div class="on"><span class="pill">⌂</span>Home</div>
+          <div><span class="ico">▦</span>Schedule</div>
+          <div><span class="ico">◔</span>Stats</div>
+          <div><span class="ico">⚙</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">Concept A · closest to current brand</span><b>Sunrise Bento</b>
+      The approved white + lavender + cobalt palette, rearranged as a warm bento home. A goal ring gives the instant payoff, tiles answer "real hourly?" and "tips vs wages?", and tonight's shift is a single obvious tap. Lowest-risk evolution: same tokens, new life.</figcaption>
+  </figure>
+
+  <!-- ======================= B · NIGHT SHIFT ======================= -->
+  <figure>
+    <div class="phone pb">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="head r1"><div class="hi">Good evening, Alex — shift starts in 2 h</div></div>
+        <div class="hero r2">
+          <div class="lab">This week you've made</div>
+          <div class="big">$412</div>
+          <div class="sub">of $540 goal · <b>+$23 vs expected</b></div>
+        </div>
+        <div class="meter r3"><i></i></div>
+        <div class="meter-lab r3"><span>76% of goal</span><span>3 shifts left</span></div>
+        <div class="cards r4">
+          <div class="c"><div class="l">Real hourly</div><div class="n">$30.10 <span class="up">▲</span></div><div class="s">best week this month</div></div>
+          <div class="c"><div class="l">Cash vs card</div><div class="n">38 / 62</div><div class="s">$298 in tips</div></div>
+        </div>
+        <div class="tonight r5">
+          <div class="top"><span class="l">Tonight</span><span class="live">Starts 17:00</span></div>
+          <div class="row">
+            <div class="init">BT</div>
+            <div class="who"><b>Bar Toro · closing</b><span>17:00–23:00 · Fri avg here: $228</span></div>
+            <div class="amt">~$205</div>
+          </div>
+        </div>
+        <div class="logbtn r5">Log tonight's shift</div>
+        <div class="nav">
+          <div class="on"><span class="ico">⌂</span>Home</div>
+          <div><span class="ico">▦</span>Schedule</div>
+          <div><span class="ico">◔</span>Stats</div>
+          <div><span class="ico">⚙</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">Concept B · dark-first premium</span><b>Night Shift</b>
+      Servers open this app at 11 pm in a dark bar. Dark-mode-first with one mint money accent, a big gradient headline number, and context that flatters the worker ("best week this month", "Fri avg here"). This is the direction most 2026 money apps are converging on.</figcaption>
+  </figure>
+
+  <!-- ======================= C · AFTER HOURS GLASS ======================= -->
+  <figure>
+    <div class="phone pc">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="head r1">
+          <div class="hi">Sunday, July 26<b>Nice week, Alex.</b></div>
+        </div>
+        <div class="glass r2">
+          <div class="lab">Earned this week</div>
+          <div class="big">$412<i>.50</i></div>
+          <div class="sub">82% of your goal · <b>+$23 over plan</b></div>
+          <div class="bar"><i></i></div>
+        </div>
+        <div class="grow r3">
+          <div class="g2"><div class="l">Real hourly</div><div class="n">$30.10</div><div class="s">13.7 h worked</div></div>
+          <div class="g2"><div class="l">Tips kept</div><div class="n">$250</div><div class="s">after $48 tip-out</div></div>
+        </div>
+        <div class="shifts r4">
+          <div class="t">Coming up</div>
+          <div class="sh"><div class="init">BT</div><div class="who"><b>Bar Toro</b><span>Tonight · 17:00–23:00</span></div><div class="amt">~$205</div></div>
+          <div class="sh"><div class="init">LM</div><div class="who"><b>La Maison</b><span>Wed · 11:00–15:00</span></div><div class="amt">~$120</div></div>
+        </div>
+        <div class="fab">+ Add shift</div>
+        <div class="nav">
+          <div class="on"><span class="ico">⌂</span>Home</div>
+          <div><span class="ico">▦</span>Schedule</div>
+          <div><span class="ico">◔</span>Stats</div>
+          <div><span class="ico">⚙</span>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">Concept C · glassmorphism revival</span><b>After Hours</b>
+      A dusk gradient — cobalt fading to late-sunset amber, the hours a service shift actually spans — with frosted-glass cards floating above it. Serif numerals make the money feel like a reward, not accounting. The most emotional, "sexy" direction of the four.</figcaption>
+  </figure>
+
+  <!-- ======================= D · THE SHIFT RECEIPT ======================= -->
+  <figure>
+    <div class="phone pd">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="head r1"><span class="brand">PROTIP365</span><span class="date">SUN JUL 26 · 21:42</span></div>
+        <div class="receipt r2">
+          <div class="rc-h">* * * WEEK OF JUL 20–26 * * *</div>
+          <div class="rc-t">YOUR WEEK SO FAR</div>
+          <div class="stamp">ON TRACK</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">HOURS WORKED</span><span class="v">13.7</span></div>
+          <div class="ln"><span class="k">WAGES</span><span class="v">$114.00</span></div>
+          <div class="ln"><span class="k">TIPS — CASH</span><span class="v">$113.00</span></div>
+          <div class="ln"><span class="k">TIPS — CARD</span><span class="v">$185.50</span></div>
+          <div class="ln"><span class="k">TIP-OUT PAID</span><span class="v neg">−$48.00</span></div>
+          <div class="rule"></div>
+          <div class="total"><span class="k">TOTAL EARNED</span><span class="v">$412.50</span></div>
+          <div class="rate">= $30.10 / HOUR REAL RATE</div>
+          <div class="barcode"></div>
+        </div>
+        <div class="next r3">
+          <div><span class="l">NEXT SHIFT — TONIGHT 17:00</span><b>BAR TORO · EXPECTED $205</b></div>
+          <div class="go">LOG&nbsp;IT</div>
+        </div>
+        <div class="week r4">
+          <div class="d">MON<b>✓</b><u>$188</u></div>
+          <div class="d">TUE<b>—</b><u>off</u></div>
+          <div class="d">WED<b>✓</b><u>$224</u></div>
+          <div class="d">THU<b>—</b><u>off</u></div>
+          <div class="d x">FRI<b>!</b><u>to log</u></div>
+          <div class="d">SAT<b>—</b><u>off</u></div>
+          <div class="d">SUN<b>●</b><u>17:00</u></div>
+        </div>
+        <div class="nav">
+          <div class="on">HOME</div>
+          <div>SCHED</div>
+          <div>STATS</div>
+          <div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">Concept D · raw ledger aesthetic</span><b>The Shift Receipt</b>
+      The week rendered as the object every server handles a hundred times a night: a printed receipt. Monospace type, dashed rules, an "ON TRACK" stamp, a tally that ends in the real hourly rate. Unmistakably ours — no competitor looks like this — and it embodies the brand promise of "clean records".</figcaption>
+  </figure>
+
+</div>
+</body>
+</html>

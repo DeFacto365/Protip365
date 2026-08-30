@@ -1,49 +1,55 @@
-# Xcode
+# OS and editors
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
 *.swp
-*.lock
-*.tmp
-*.log
 
-# Build artifacts
-build/
-*.xcscmblueprint
-
-# Note: Configuration is now handled through Info.plist and build settings
-# No .env files are used in this iOS project
+# Secrets and local configuration
 .env
 .env.*
 !.env.example
-!ProTip365Shared/.env.example
-
-# IDE files
-.vscode/
-.idea/
-
-# OS generated files
-Thumbs.db
-.DS_Store
-
-# Swift Package Manager
-Packages/
-Package.pins
-Package.resolved
-
-# CocoaPods
-Pods/
-
-# Carthage
-Carthage/
-
-# SwiftLint
-.swiftlint.yml
-
-# Firebase
+*.pem
+*.p8
+*.p12
+*.key
+*.jks
+*.mobileprovision
 GoogleService-Info.plist
 
-# Supabase
+# Node, Expo, and tests
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+expo-env.d.ts
+*.tsbuildinfo
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Generated native and build output
+ios/
+android/
+build/
+Pods/
+.kotlin/
 .supabase/
 
 # Temporary files
+*.lock
 *.tmp
 *.bak
+*.log
+*.orig.*
+# Local release artifacts
+/artifacts/*.aab
+
+# excluded before laptop reset 2026-08-29
+application-*.apk
+app/.expo-export-android-final/
+app/.expo-export-ios-final/
+iOS app/
+.claude/

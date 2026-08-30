@@ -4,6 +4,7 @@ This folder keeps inactive project material out of the active workspace while pr
 
 ## Contents
 
+- `v3-legacy-2026-07-17/` - the Supabase-auth Expo shell, Supabase scripts, static website, store copy, validation material, and old config that were superseded by the V4 local-first reset.
 - `legacy-native/ProTip365Android/` - legacy native Android reference app and related Android documentation.
 - `legacy-native/ProTip365-iOS-Swift/` - legacy native Swift iOS app kept for reference only.
 - `legacy-native/ProTip365-iOS-Swift.xcodeproj/` - archived Xcode project for the legacy native Swift app.
@@ -14,14 +15,9 @@ This folder keeps inactive project material out of the active workspace while pr
 - `previous-archives/_Backups/` - older root backup snapshots.
 - `previous-archives/archive/` - prior lowercase `archive` contents, including old iOS exports and backups.
 - `legacy-scripts/` - older root-level StoreKit, submission, and automation scripts.
-- `generated/build/` - generated Xcode build output moved out of the repo root.
 
-Active app folders left in place:
+## Active source of truth
 
-- `ProTip365Shared/`
-- `Docs/website/`
-- `Docs/APP_STORE_DESCRIPTION.md`
-- `Docs/release-validation-2026-06-06.md`
-- `supabase/`
+The repository root intentionally contains no active application or backend until the V4 implementation is scaffolded. Current requirements live in `Docs/PRD_V4.md`, `Docs/PRODUCT_ONE_PAGER_V4.md`, and `Docs/LINEAR_BACKLOG_V4.md`.
 
-`ProTip365Shared/` is the shared Expo/React Native app source of truth going forward.
+Everything under `Archive/` is reference-only and excluded from normal build, test, deployment, and product claims.
