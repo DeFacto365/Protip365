@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -21,13 +21,12 @@ import { TimePickerField } from '../../src/ui/DateTimeField';
 import { Text } from '../../src/ui/typography';
 import {
   actualEarnings,
-  derivePayoutStatus,
   effectiveHourly,
   estimatedNet,
   expectedEarnings,
   variance as calcVariance,
 } from '../../src/domain/calc';
-import { minutesToHHMM, parseHHMM } from '../../src/domain/dates';
+import { todayIso, minutesToHHMM, parseHHMM } from '../../src/domain/dates';
 import {
   validateDeductionBasisPoints,
   validateHourlyRateCents,
@@ -43,6 +42,11 @@ import {
   type TipMethod,
 } from '../../src/domain/types';
 import { centsToInput, parseMoneyToCents } from '../../src/domain/money';
+
+import { readCompletionDraft, saveCompletionDraft } from '../../src/data/completionDrafts';
+import { settingsRepo } from '../../src/data/repositories';
+import { paymentsRepo } from '../../src/data/paymentsRepo';
+import { FormScreen } from '../../src/ui/FormScreen';
 
 const SCHEDULE_ROUTE = '/(tabs)/schedule' as const;
 
@@ -68,23 +72,31 @@ export default function CompleteShiftScreen() {
   const markNotWorked = useShiftsStore((s) => s.markNotWorked);
   const employers = useEmployersStore((s) => s.employers);
   const roles = useEmployersStore((s) => s.roles);
+  const currencyCode = useSettingsStore(s=>s.currencyCode);
   const defaultDeductionRateBp = useSettingsStore((s) => s.defaultDeductionRateBp);
 
   const shift = getById(id);
+  const [hasPaymentHistory] = useState(()=>paymentsRepo.list().expected.some(item=>item.shiftId===id));
+  const [restored] = useState(() => readCompletionDraft<Record<string, any>>(id, shift?.updatedAt));
+  const [receivedNow,setReceivedNow] = useState<string>(restored?.receivedNow ?? '');
+  const [expectedLater,setExpectedLater] = useState<string>(restored?.expectedLater ?? '');
+  const [draftError, setDraftError] = useState(false);
+  const [details, setDetails] = useState(false);
   const isEditingActuals = shift?.status === 'worked';
   const [initialIsEditingActuals] = useState(() => shift?.status === 'worked');
   const [screenTitle] = useState(() =>
     tr(initialIsEditingActuals ? 'complete.editTitle' : 'complete.title')
   );
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(restored?.step ?? 1);
   const [startText, setStartText] = useState(() =>
-    shift ? minutesToHHMM(shift.actualStartMin ?? shift.startMin) : ''
+    restored?.startText ?? (shift ? minutesToHHMM(shift.actualStartMin ?? shift.startMin) : '')
   );
   const [endText, setEndText] = useState(() =>
-    shift ? minutesToHHMM(shift.actualEndMin ?? shift.endMin) : ''
+    restored?.endText ?? (shift ? minutesToHHMM(shift.actualEndMin ?? shift.endMin) : '')
   );
   const [breakDrafts, setBreakDrafts] = useState<BreakDraft[]>(() => {
+    if (restored?.breakDrafts) return restored.breakDrafts;
     if (!shift) return [];
     const source = shift.actualBreaks ?? shift.breaks;
     return source.map((b) => ({
@@ -95,24 +107,23 @@ export default function CompleteShiftScreen() {
       taken: true,
     }));
   });
-  const [tipMethod, setTipMethod] = useState<TipMethod>(shift?.tipMethod ?? 'direct');
-  const [directTipsText, setDirectTipsText] = useState(centsToInput(shift?.directTips));
-  const [tipOutText, setTipOutText] = useState(centsToInput(shift?.tipOutPaid));
-  const [tipShareText, setTipShareText] = useState(centsToInput(shift?.tipShareReceived));
-  const [poolText, setPoolText] = useState(centsToInput(shift?.poolContribution));
-  const [salesText, setSalesText] = useState(centsToInput(shift?.sales));
-  const [otherIncomeText, setOtherIncomeText] = useState(centsToInput(shift?.otherIncome));
+  const [tipMethod, setTipMethod] = useState<TipMethod>(restored?.tipMethod ?? shift?.tipMethod ?? (settingsRepo.get(`tipDefault:${shift?.employerId}`) as TipMethod | null) ?? 'direct');
+  const [directTipsText, setDirectTipsText] = useState(restored?.directTipsText ?? centsToInput(shift?.directTips));
+  const [tipOutText, setTipOutText] = useState(restored?.tipOutText ?? centsToInput(shift?.tipOutPaid));
+  const [tipShareText, setTipShareText] = useState(restored?.tipShareText ?? centsToInput(shift?.tipShareReceived));
+  const [poolText, setPoolText] = useState(restored?.poolText ?? centsToInput(shift?.poolContribution));
+  const [salesText, setSalesText] = useState(restored?.salesText ?? centsToInput(shift?.sales));
+  const [otherIncomeText, setOtherIncomeText] = useState(restored?.otherIncomeText ?? centsToInput(shift?.otherIncome));
   const [actualRateText, setActualRateText] = useState(() => {
+    if (restored?.actualRateText) return restored.actualRateText;
     if (!shift) return '';
-    const roleRate = shift.roleId ? roles.find((role) => role.id === shift.roleId)?.hourlyRate : null;
     return centsToInput(
-      shift.actualHourlyRateSnapshot ?? roleRate ?? shift.hourlyRateSnapshot
+      shift.actualHourlyRateSnapshot ?? shift.hourlyRateSnapshot
     );
   });
-  const [expectedPayoutText, setExpectedPayoutText] = useState(centsToInput(shift?.expectedPayout));
-  const [receivedText, setReceivedText] = useState(centsToInput(shift?.actualReceived));
   // DEF-07: deduction rate editable per shift, prefilled from snapshot → employer → global.
   const [dedRateText, setDedRateText] = useState(() => {
+    if (restored?.dedRateText) return restored.dedRateText;
     if (!shift) return '0';
     const basisPoints =
       shift.deductionRateSnapshotBp ??
@@ -121,7 +132,6 @@ export default function CompleteShiftScreen() {
     return String(basisPoints / 100);
   });
   // DEF-12: manual disputed flag (never derived).
-  const [disputed, setDisputed] = useState(shift?.payoutStatus === 'disputed');
   const [showNotWorked, setShowNotWorked] = useState(false);
   const [reasonCode, setReasonCode] = useState<NotWorkedReason | null>(
     shift?.notWorkedReason ?? null
@@ -168,6 +178,14 @@ export default function CompleteShiftScreen() {
     return { breaks, invalid };
   }, [breakDrafts, parsedTimes]);
 
+  useEffect(() => {
+    if (!shift || savingRef.current) return;
+    try {
+      saveCompletionDraft(id, shift.updatedAt, {step,startText,endText,breakDrafts,tipMethod,directTipsText,tipOutText,tipShareText,poolText,salesText,otherIncomeText,actualRateText,dedRateText,receivedNow,expectedLater});
+      setDraftError(false);
+    } catch { setDraftError(true); }
+  }, [id,step,startText,endText,breakDrafts,tipMethod,directTipsText,tipOutText,tipShareText,poolText,salesText,otherIncomeText,actualRateText,dedRateText,receivedNow,expectedLater]);
+
   if (!shift) {
     return (
       <View style={{ flex: 1, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -193,14 +211,12 @@ export default function CompleteShiftScreen() {
     directTips: num(directTipsText),
     tipOutPaid: num(tipOutText),
     tipShareReceived: num(tipShareText),
-    poolContribution: tipMethod === 'direct' ? 0 : num(poolText),
+    poolContribution: num(poolText),
     sales: salesText.trim() === '' ? null : num(salesText),
     otherIncome: num(otherIncomeText),
     deductionRateSnapshotBp: validateDeductionBasisPoints(deductionRateBp).valid
       ? deductionRateBp
       : 0,
-    expectedPayout: num(expectedPayoutText),
-    actualReceived: num(receivedText),
   };
 
   const expected = expectedEarnings(shift);
@@ -208,10 +224,6 @@ export default function CompleteShiftScreen() {
   const varianceValue = calcVariance(draftShift);
   const hourly = effectiveHourly(draftShift);
   const net = estimatedNet(draftShift);
-  const payoutStatus = disputed
-    ? ('disputed' as const)
-    : derivePayoutStatus(draftShift.expectedPayout ?? 0, draftShift.actualReceived ?? 0);
-
   const goToStep2 = () => {
     const errs: string[] = [];
     if (!parsedTimes || parsedBreaks.invalid) {
@@ -251,6 +263,7 @@ export default function CompleteShiftScreen() {
     savingRef.current = true;
     setSaving(true);
     const errs: string[] = [];
+    if ([directTipsText,tipOutText,tipShareText,poolText,salesText,otherIncomeText].some(value => value.trim() && parseMoneyToCents(value) === null)) errs.push(tr('redesign.saveError'));
     const moneyCheck = validateMoney({
       directTips: num(directTipsText),
       tipOutPaid: num(tipOutText),
@@ -258,8 +271,6 @@ export default function CompleteShiftScreen() {
       poolContribution: num(poolText),
       sales: salesText.trim() === '' ? null : num(salesText),
       otherIncome: num(otherIncomeText),
-      expectedPayout: num(expectedPayoutText),
-      actualReceived: num(receivedText),
     });
     if (!validateHourlyRateCents(parseMoneyToCents(actualRateText)).valid) {
       errs.push(tr('shiftForm.errors.rate_not_positive'));
@@ -280,24 +291,27 @@ export default function CompleteShiftScreen() {
       return;
     }
 
+    try {
+    const received = receivedNow.trim() ? parseMoneyToCents(receivedNow) : null;
+    const later = expectedLater.trim() ? parseMoneyToCents(expectedLater) : null;
+    if ((receivedNow.trim() && received === null) || (expectedLater.trim() && later === null)) throw new Error('payment_amount');
     await completeShift(shift.id, {
+      settlement: initialIsEditingActuals || hasPaymentHistory ? undefined : { received, later, currency: currencyCode, date: todayIso() },
       actualStartMin: parsedTimes.startMin,
       actualEndMin: parsedTimes.endMin,
       actualBreaks: parsedBreaks.breaks,
       actualHourlyRateSnapshot,
       tipMethod,
       directTips: num(directTipsText),
-      poolContribution: tipMethod === 'direct' ? 0 : num(poolText),
+      poolContribution: num(poolText),
       tipShareReceived: num(tipShareText),
       tipOutPaid: num(tipOutText),
       sales: salesText.trim() === '' ? null : num(salesText),
       otherIncome: num(otherIncomeText),
       deductionRateSnapshotBp: deductionRateBp,
-      expectedPayout: num(expectedPayoutText),
-      actualReceived: num(receivedText),
-      payoutStatus,
     });
-    router.dismissTo(SCHEDULE_ROUTE);
+    router.replace({ pathname: '/shift-result/[id]', params: { id: shift.id } });
+    } catch { setErrors([tr('redesign.saveError')]); savingRef.current = false; setSaving(false); }
   };
 
   // DEF-02: canonical reason codes; employer_cancelled → 'cancelled', else 'missed'.
@@ -332,24 +346,13 @@ export default function CompleteShiftScreen() {
     );
   };
 
-  const payoutChipColor =
-    payoutStatus === 'received'
-      ? { bg: t.greenSoft, fg: t.green }
-      : payoutStatus === 'disputed'
-        ? { bg: t.amberSoft, fg: t.danger }
-        : payoutStatus === 'not_expected'
-          ? { bg: t.card, fg: t.softText }
-          : { bg: t.amberSoft, fg: t.amber };
-
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-      keyboardShouldPersistTaps="handled"
-    >
+    <FormScreen>
       <Stack.Screen options={{ title: screenTitle }} />
 
       <WriteAccessBanner />
+      {restored ? <Text style={{color:t.dim,marginBottom:8}}>{tr('redesign.draftRestored')}</Text> : null}
+      {draftError ? <Text accessibilityRole="alert" style={{color:t.red}}>{tr('redesign.draftError')}</Text> : null}
 
       <Text style={{ color: t.softText, fontSize: 13, marginBottom: 12 }}>
         {employer?.name ?? ''} · {shift.date} · {minutesToHHMM(shift.startMin)}–
@@ -461,7 +464,7 @@ export default function CompleteShiftScreen() {
           />
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} accessibilityRole="alert" style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}
@@ -522,13 +525,7 @@ export default function CompleteShiftScreen() {
             {tr('complete.step2Title')}
           </Text>
 
-          <Field
-            label={tr('complete.actualHourlyRate')}
-            value={actualRateText}
-            onChangeText={setActualRateText}
-            keyboardType="decimal-pad"
-          />
-
+          <Text style={{color:t.dim,marginBottom:12}}>{tr('redesign.tipExplanation')}</Text>
           {/* Tip method segmented control */}
           <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>
             {tr('complete.tipMethod')}
@@ -545,24 +542,25 @@ export default function CompleteShiftScreen() {
           </View>
 
           <Field
-            label={tr('complete.directTips')}
+            label={tr('redesign.directTips')}
             value={directTipsText}
             onChangeText={setDirectTipsText}
             keyboardType="decimal-pad"
           />
           <Field
-            label={tr('complete.tipOutPaid')}
+            label={tr('redesign.tipOut')}
             value={tipOutText}
             onChangeText={setTipOutText}
             keyboardType="decimal-pad"
           />
-          <Field
-            label={tr('complete.tipShareReceived')}
+          {tipMethod !== 'direct' || num(tipShareText) > 0 ? <>          <Field
+            label={tr('redesign.poolShare')}
             value={tipShareText}
             onChangeText={setTipShareText}
             keyboardType="decimal-pad"
           />
-          {tipMethod !== 'direct' ? (
+</> : null}
+          {tipMethod !== 'direct' || num(poolText) > 0 ? (
             <Field
               label={tr('complete.poolContribution')}
               value={poolText}
@@ -570,6 +568,15 @@ export default function CompleteShiftScreen() {
               keyboardType="decimal-pad"
             />
           ) : null}
+          <GhostButton label={tr('redesign.optionalDetails')} onPress={()=>setDetails(!details)} />
+          {details ? <>
+          <Field
+            label={tr('complete.actualHourlyRate')}
+            value={actualRateText}
+            onChangeText={setActualRateText}
+            keyboardType="decimal-pad"
+          />
+
           <Field
             label={`${tr('complete.sales')} (${tr('common.optional')})`}
             value={salesText}
@@ -590,49 +597,11 @@ export default function CompleteShiftScreen() {
             keyboardType="decimal-pad"
             hint={tr('settings.deductionHint')}
           />
-          <Field
-            label={tr('complete.expectedPayout')}
-            value={expectedPayoutText}
-            onChangeText={setExpectedPayoutText}
-            keyboardType="decimal-pad"
-          />
-          <Field
-            label={tr('complete.receivedSoFar')}
-            value={receivedText}
-            onChangeText={setReceivedText}
-            keyboardType="decimal-pad"
-          />
-
-          {/* Derived payout status + DEF-12 manual dispute toggle */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 14,
-              flexWrap: 'wrap',
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: payoutChipColor.bg,
-                borderRadius: 0,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-              }}
-            >
-              <Text fontRole="ui" style={{ color: payoutChipColor.fg, fontWeight: '700', fontSize: 12 }}>
-                {tr(`payout.${payoutStatus}`)}
-              </Text>
-            </View>
-            <Chip
-              label={tr('complete.markDisputed')}
-              selected={disputed}
-              color={t.dangerBg}
-              onPress={() => setDisputed((v) => !v)}
-            />
-          </View>
-
+          </> : null}
+          {!initialIsEditingActuals && !hasPaymentHistory ? <>
+            <Field label={tr('redesign.received')} hint={tr('redesign.blankUnknown')} value={receivedNow} onChangeText={setReceivedNow} keyboardType="decimal-pad" />
+            <Field label={tr('redesign.awaiting')} hint={tr('redesign.blankUnknown')} value={expectedLater} onChangeText={setExpectedLater} keyboardType="decimal-pad" />
+          </> : <Text style={{color:t.dim,marginBottom:16}}>{tr('redesign.paymentTiming')}</Text>}
           {/* Big total */}
           <Card style={{ padding: 16, alignItems: 'center', marginBottom: 14 }}>
             <Text style={{ color: t.softText, fontSize: 11, fontWeight: '600', letterSpacing: 0.8 }}>
@@ -674,7 +643,7 @@ export default function CompleteShiftScreen() {
           </Card>
 
           {errors.map((e) => (
-            <Text key={e} style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
+            <Text key={e} accessibilityRole="alert" style={{ color: t.paper, backgroundColor: t.red, padding: 6, fontSize: 13, marginBottom: 4 }}>
               {e}
             </Text>
           ))}
@@ -688,6 +657,6 @@ export default function CompleteShiftScreen() {
           <GhostButton label={tr('common.back')} onPress={() => setStep(1)} />
         </>
       )}
-    </ScrollView>
+    </FormScreen>
   );
 }

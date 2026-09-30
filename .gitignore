@@ -46,6 +46,7 @@ Pods/
 *.orig.*
 # Local release artifacts
 /artifacts/*.aab
+/artifacts/*.apk
 
 # excluded before laptop reset 2026-08-29
 application-*.apk
@@ -53,3 +54,6 @@ app/.expo-export-android-final/
 app/.expo-export-ios-final/
 iOS app/
 .claude/
+
+# Local redesign verification bundles
+app/dist-redesign/

@@ -18,3 +18,7 @@ The approved Schedule navigation is `Agenda`, `Week`, and `Day`, with Month avai
 - [`explorations/home-redesign/claude/receipt-screens.html`](explorations/home-redesign/claude/receipt-screens.html) — Claude's twelve-screen source exploration for the owner-approved 2026-07-20 "Shift Receipt" direction: first run, home, Agenda/Week schedule, add shift, two-step close-out, shift result, stats, employers, settings, and a dark-mode "night ticket" home. Its data remains fictional and calculations unvalidated; implemented copy and calculations follow `PRD_V4.md`.
 
 Exploration images are not implementation specifications. Product text and calculations must follow `Docs/PRD_V4.md`.
+
+## September 14 pre-launch redesign
+
+The owner-authorized [ADR-002](../ADR-002-prelaunch-redesign.md) is the current design direction. Review the [clickable flow prototype](redesign/prototype.html). It supports compact, dark and large-text states; it is not native-device evidence. See the [verification record](../REDESIGN_VERIFICATION_2026-09-14.md) for remaining gates.

@@ -66,8 +66,8 @@ function PickerField({ label, value, mode, onChange, hint, error }: PickerFieldP
 
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
-        {label.toUpperCase()}
+      <Text style={{ color: t.dim, fontSize: 14, fontWeight: '600', letterSpacing: 0, marginBottom: 6 }}>
+        {label}
       </Text>
       <Pressable
         accessibilityRole="button"

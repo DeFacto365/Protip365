@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs } from 'expo-router';
 import { Platform, View, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,7 @@ export default function TabsLayout() {
   const { t } = useTokens();
   const { t: tr } = useTranslation();
   const fontsAvailable = useFontAvailability();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -47,8 +49,8 @@ export default function TabsLayout() {
           backgroundColor: t.paper,
           borderTopColor: t.ink,
           borderTopWidth: 1.5,
-          height: 66,
-          paddingBottom: 8,
+          height: 62 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
           paddingTop: 6,
         },
         tabBarActiveTintColor: t.ink,
@@ -78,9 +80,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="stats"
+        name="money"
         options={{
-          title: tr('tabs.stats'),
+          title: tr('redesign.money'),
           tabBarIcon: ({ color, focused }) => <TabIcon glyph="▥" color={color} focused={focused} />,
         }}
       />

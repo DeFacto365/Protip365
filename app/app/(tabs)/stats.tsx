@@ -236,14 +236,7 @@ export default function StatsScreen() {
         <LedgerRow label={tr('stats.estimatedNet')} value={money(stats.estimatedNet)} tone="positive" />
       </Card>
 
-      <Card style={{ padding: 14, marginBottom: 14 }}>
-        <SectionTitle label={tr('stats.payouts')} />
-        <LedgerRow label={tr('stats.expectedPayout')} value={money(stats.expectedPayout)} />
-        <LedgerRow label={tr('stats.payoutsReceived')} value={money(stats.payoutsReceived)} tone="positive" />
-        <LedgerRow label={tr('stats.payoutsPending')} value={money(stats.payoutsPending)} />
-      </Card>
-
-      <Card style={{ padding: 14, marginBottom: 14 }}>
+  <Card style={{ padding: 14, marginBottom: 14 }}>
         <SectionTitle label={tr('stats.attendance')} />
         <LedgerRow label={tr('stats.missedShifts')} value={String(stats.missedCount)} />
         <LedgerRow label={tr('stats.cancelledShifts')} value={String(stats.cancelledCount)} />

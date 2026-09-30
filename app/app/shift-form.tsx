@@ -18,6 +18,7 @@ import {
   ReceiptCard,
   ReceiptRule,
 } from '../src/ui/components';
+import { FormScreen } from '../src/ui/FormScreen';
 import { DatePickerField, TimePickerField } from '../src/ui/DateTimeField';
 import { expectedEarnings } from '../src/domain/calc';
 import { selectableEmployers } from '../src/domain/employers';
@@ -95,6 +96,7 @@ export default function ShiftFormScreen() {
   const [plannedOtherIncomeText, setPlannedOtherIncomeText] = useState(
     centsToInput(editing?.plannedOtherIncome)
   );
+  const [showOptional, setShowOptional] = useState(false);
   const [notes, setNotes] = useState(editing?.notes ?? '');
   const [errors, setErrors] = useState<string[]>([]);
   // DEF-13: re-entrancy guard against double-tap duplicate saves.
@@ -340,11 +342,7 @@ export default function ShiftFormScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: t.bg }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-      keyboardShouldPersistTaps="handled"
-    >
+    <FormScreen>
       <Stack.Screen
         options={{
           title: screenTitle,
@@ -353,7 +351,7 @@ export default function ShiftFormScreen() {
 
       <WriteAccessBanner />
 
-      <ReceiptCard style={{ marginBottom: 16 }}>
+      <Card style={{ padding: 16, marginBottom: 16 }}>
       {/* Employer */}
       <Text style={{ color: t.softText, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>
         {tr('shiftForm.employer')}
@@ -467,6 +465,8 @@ export default function ShiftFormScreen() {
         keyboardType="decimal-pad"
         placeholder={localizedMoneyPlaceholder(i18n.language)}
       />
+      <GhostButton label={tr('redesign.optionalDetails')} onPress={()=>setShowOptional(!showOptional)} />
+      {showOptional ? <>
       <Field
         label={`${tr('shiftForm.plannedExpectedTips')} (${tr('common.optional')})`}
         value={plannedExpectedTipsText}
@@ -485,6 +485,7 @@ export default function ShiftFormScreen() {
         onChangeText={setNotes}
         multiline
       />
+      </> : null}
       <DatePickerField
         label={tr('shiftForm.date')}
         value={date}
@@ -558,7 +559,7 @@ export default function ShiftFormScreen() {
         value={preview != null ? money(preview) : '—'}
         strong
       />
-      </ReceiptCard>
+      </Card>
 
       {/* DEF-01: non-blocking cross-employer overlap warning */}
       {overlapNames.length > 0 ? (
@@ -602,6 +603,6 @@ export default function ShiftFormScreen() {
       ) : (
         <GhostButton label={tr('shiftForm.deleteShift')} onPress={onDelete} danger style={{ marginBottom: 8 }} />
       )}
-    </ScrollView>
+    </FormScreen>
   );
 }

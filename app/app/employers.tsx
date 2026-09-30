@@ -14,6 +14,8 @@ import { Text } from '../src/ui/typography';
 
 const COLOR_KEYS = ['amber', 'rose', 'teal', 'rust', 'violet'] as const;
 
+import { EmployerTipDefaults } from '../src/ui/EmployerTipDefaults';
+
 function parseDecimal(text: string): number | null {
   const value = Number(text.replace(',', '.'));
   return text.trim() !== '' && Number.isFinite(value) ? value : null;
@@ -263,6 +265,7 @@ function EmployerEditor({ employer, roles }: { employer: Employer; roles: Role[]
       ) : (
         roles.map((role) => <RoleEditor key={role.id} role={role} />)
       )}
+      <EmployerTipDefaults employerId={employer.id} />
       <AddRoleForm employerId={employer.id} />
 
       <Text style={{ color: t.softText, fontSize: 12, marginTop: 16 }}>

@@ -54,6 +54,8 @@ import { useSettingsStore } from '../../src/state/settingsStore';
 import { useWriteAccess } from '../../src/ui/WriteAccess';
 import { Text } from '../../src/ui/typography';
 
+import { settingsRepo } from '../../src/data/repositories';
+
 type ScheduleView = 'day' | 'week' | 'month';
 
 function formatHours(minutes: number, locale: string): string {
@@ -300,7 +302,7 @@ export default function ScheduleScreen() {
   const { requireWrite } = useWriteAccess();
 
   const today = todayIso();
-  const [view, setView] = useState<ScheduleView>('week');
+  const [view, setView] = useState<ScheduleView>(() => { const saved = settingsRepo.get('scheduleView'); return saved === 'day' || saved === 'month' ? saved : 'week'; });
   const [selectedDate, setSelectedDate] = useState(today);
   const [weekStart, setWeekStart] = useState(() => startOfWeekIso(today));
   const [expandedShiftId, setExpandedShiftId] = useState<string | null>(null);
@@ -488,6 +490,7 @@ export default function ScheduleScreen() {
           selected={view}
           onSelect={(item) => {
             setView(item);
+            settingsRepo.set('scheduleView', item);
             setWeekStart(startOfWeekIso(selectedDate));
           }}
         />

@@ -9,16 +9,16 @@ import {
 import { dark, light } from '../../ui/tokens';
 
 describe('no-blue app palette', () => {
-  it('uses receipt ink for every legacy blue interaction token', () => {
+  it('uses one teal action accent per theme', () => {
     expect([light.pen, light.cobalt, light.cobaltLink]).toEqual([
-      light.ink,
-      light.ink,
-      light.ink,
+      light.pen,
+      light.pen,
+      light.pen,
     ]);
     expect([dark.pen, dark.cobalt, dark.cobaltLink]).toEqual([
-      dark.ink,
-      dark.ink,
-      dark.ink,
+      dark.pen,
+      dark.pen,
+      dark.pen,
     ]);
   });
 

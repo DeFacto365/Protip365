@@ -259,7 +259,7 @@ describe('recurrence series transaction integrity', () => {
 describe('shift repository compare-and-set transitions', () => {
   it('completes planned shifts and edits worked actuals using the expected status', () => {
     shiftsRepo.completeShift('shift-1', actuals, 'planned');
-    expect(runSync).toHaveBeenLastCalledWith(
+    expect(runSync).toHaveBeenCalledWith(
       expect.stringContaining('WHERE id = ? AND status = ?'),
       expect.arrayContaining(['planned'])
     );

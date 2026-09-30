@@ -1,3 +1,4 @@
+import { writeCloseoutSettlement } from './closeoutSettlement';
 /**
  * SQLite repositories. The UI never touches SQL directly — screens go through
  * zustand stores, which call these functions.
@@ -52,9 +53,6 @@ interface ShiftRow {
   other_income: number | null;
   /** Basis points 0–10000 (DEF-14). */
   deduction_rate_snapshot_bp: number | null;
-  expected_payout: number | null;
-  actual_received: number | null;
-  payout_status: Shift['payoutStatus'] | null;
   notes: string | null;
   source_template_id: string | null;
   source_recurrence_rule_id: string | null;
@@ -139,9 +137,6 @@ function rowToShift(r: ShiftRow): Shift {
     sales: r.sales,
     otherIncome: r.other_income ?? undefined,
     deductionRateSnapshotBp: r.deduction_rate_snapshot_bp ?? undefined,
-    expectedPayout: r.expected_payout ?? undefined,
-    actualReceived: r.actual_received ?? undefined,
-    payoutStatus: r.payout_status ?? undefined,
     notes: r.notes,
     sourceTemplateId: r.source_template_id,
     sourceRecurrenceRuleId: r.source_recurrence_rule_id,
@@ -383,7 +378,7 @@ export const shiftsRepo = {
       `UPDATE shifts SET employer_id = ?, role_id = ?, date = ?, start_min = ?, end_min = ?,
         breaks_json = ?, hourly_rate_snapshot = ?, planned_expected_tips = ?,
         planned_other_income = ?, notes = CASE WHEN ? = 1 THEN ? ELSE notes END, updated_at = ?
-       WHERE id = ? AND status = ?;`,
+       WHERE id = ? AND status = ? AND NOT EXISTS (SELECT 1 FROM expected_items WHERE shift_id = shifts.id AND employer_id != ?);`,
       [
         input.employerId,
         input.roleId ?? null,
@@ -399,6 +394,7 @@ export const shiftsRepo = {
         nowIso(),
         id,
         expectedStatus,
+        input.employerId,
       ]
     );
     assertSingleRowChanged(result);
@@ -425,8 +421,7 @@ export const shiftsRepo = {
           actual_hourly_rate_snapshot = ?,
           tip_method = ?, direct_tips = ?, pool_contribution = ?,
           tip_share_received = ?, tip_out_paid = ?, sales = ?, other_income = ?,
-          deduction_rate_snapshot_bp = ?, expected_payout = ?, actual_received = ?,
-          payout_status = ?, notes = COALESCE(?, notes),
+          deduction_rate_snapshot_bp = ?, notes = COALESCE(?, notes),
           status = 'worked',
           transition_at = CASE WHEN ? = 'planned' THEN ? ELSE transition_at END,
           not_worked_reason = NULL, not_worked_note = NULL, updated_at = ?
@@ -444,9 +439,6 @@ export const shiftsRepo = {
           actuals.sales ?? null,
           actuals.otherIncome ?? null,
           actuals.deductionRateSnapshotBp,
-          actuals.expectedPayout,
-          actuals.actualReceived,
-          actuals.payoutStatus,
           actuals.notes ?? null,
           expectedStatus,
           transitionedAt,
@@ -456,6 +448,12 @@ export const shiftsRepo = {
         ]
       );
       assertSingleRowChanged(result);
+      if (expectedStatus === 'planned' && actuals.settlement) {
+        const owner = d.getFirstSync<{employer_id:string}>('SELECT employer_id FROM shifts WHERE id = ?;', [id]);
+        if (!owner) throw new Error('shift_not_found');
+        writeCloseoutSettlement(d,id,owner.employer_id,actuals.settlement);
+      }
+      d.runSync('DELETE FROM settings WHERE key = ?;', [`completionDraft:${id}`]);
     });
     const updated = this.getById(id);
     if (!updated) throw new Error('Shift not found after completion');
@@ -481,18 +479,21 @@ export const shiftsRepo = {
   correctWorkedToPlanned(id: string, confirmedCorrection: boolean): void {
     assertShiftTransition('worked', 'planned', { confirmedCorrection });
     const timestamp = nowIso();
-    const result = getDb().runSync(
+    const database = getDb();
+    database.withTransactionSync(() => {
+    const result = database.runSync(
       `UPDATE shifts SET status = 'planned', transition_at = ?,
        actual_start_min = NULL, actual_end_min = NULL, actual_breaks_json = NULL,
        actual_hourly_rate_snapshot = NULL, tip_method = NULL, direct_tips = NULL,
        pool_contribution = NULL, tip_share_received = NULL, tip_out_paid = NULL,
        sales = NULL, other_income = NULL, deduction_rate_snapshot_bp = NULL,
-       expected_payout = NULL, actual_received = NULL, payout_status = NULL,
        not_worked_reason = NULL, not_worked_note = NULL, updated_at = ?
        WHERE id = ? AND status = 'worked';`,
       [timestamp, timestamp, id]
     );
     assertSingleRowChanged(result);
+    database.runSync('UPDATE expected_items SET disputed = 1 WHERE shift_id = ?;', [id]);
+    });
   },
 
   remove(id: string, expectedStatus: Shift['status']): void {

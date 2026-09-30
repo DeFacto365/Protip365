@@ -165,6 +165,7 @@ export interface Shift {
 
 /** Fields written by the one-transaction completion operation. */
 export interface ShiftActualsInput {
+  settlement?: { received: number | null; later: number | null; currency: string; date: string };
   actualStartMin: number;
   actualEndMin: number;
   actualBreaks: ShiftBreak[];
@@ -177,8 +178,9 @@ export interface ShiftActualsInput {
   sales?: number | null;
   otherIncome?: number;
   deductionRateSnapshotBp: number;
-  expectedPayout: number;
-  actualReceived: number;
-  payoutStatus: PayoutStatus;
+  /** Retired cumulative fields; ignored by persistence. */
+  expectedPayout?: number;
+  actualReceived?: number;
+  payoutStatus?: PayoutStatus;
   notes?: string | null;
 }

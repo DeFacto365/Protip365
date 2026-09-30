@@ -1,5 +1,7 @@
 # ProTip365 V4 — Linear-ready backlog
 
+> September 14, 2026: the owner authorized the complete pre-launch redesign. [ADR-002](ADR-002-prelaunch-redesign.md) supersedes earlier navigation, visual styling, cumulative payment and draft-deferral decisions. [Implementation and verification](REDESIGN_VERIFICATION_2026-09-14.md) records delivered behaviour and open native release gates. Pricing and store publishing remain unchanged.
+
 Date: 2026-07-17
 Target project: [ProTip365](https://linear.app/defacto365/project/protip365-e3ed5a412e11/overview)
 

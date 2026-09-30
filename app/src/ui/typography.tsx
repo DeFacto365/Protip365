@@ -106,10 +106,10 @@ function defaultWeightFor(role: FontRole): TextStyle['fontWeight'] {
 export function familyFor(role: FontRole, style: TextProps['style']): string {
   const weight = weightFor(style);
 
-  if (role === 'display') return isBold(weight) ? fonts.displayBold : fonts.display;
-  if (role === 'total') return fonts.total;
-  if (role === 'penNote') return fonts.penNote;
-  if (role === 'ui') {
+  if (role === 'display') return fonts.uiSemiBold;
+  if (role === 'total') return fonts.uiBold;
+  if (role === 'penNote') return fonts.uiMedium;
+  if (role === 'ui' || role === 'body') {
     if (isBold(weight)) return fonts.uiBold;
     if (weight === '600') return fonts.uiSemiBold;
     if (weight === '500') return fonts.uiMedium;

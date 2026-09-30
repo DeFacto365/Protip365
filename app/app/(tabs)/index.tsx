@@ -25,6 +25,8 @@ import {
 import { Text } from '../../src/ui/typography';
 import { useTokens } from '../../src/ui/tokens';
 
+import { PendingPayments } from '../../src/ui/PendingPayments';
+
 function shiftSort(a: Shift, b: Shift): number {
   return a.date.localeCompare(b.date) || a.startMin - b.startMin;
 }
@@ -118,51 +120,29 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <ReceiptCard style={{ marginTop: 18 }}>
-        <Text style={{ color: t.dim, textAlign: 'center', fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
-          {tr('home.weekOf', { range: formatWeekRange(weekDates, i18n.language) }).toUpperCase()}
-        </Text>
-        <Text fontRole="display" style={{ color: t.ink, textAlign: 'center', fontSize: 17, fontWeight: '700', letterSpacing: 0.4, marginTop: 4 }}>
-          {tr('home.title').toUpperCase()}
-        </Text>
-        {goal && progress ? (
-          <Stamp
-            label={tr(progressPercent >= 100 ? 'home.goalMet' : 'home.onTrack')}
-            tone={goal.metric === 'worked_hours' ? 'ink' : 'confirmed'}
-            style={{ position: 'absolute', right: 10, top: 36 }}
+      {closeOuts.length > 0 ? (
+        <Card style={{ padding: 14, marginTop: 14, borderColor: t.amber }}>
+          <Text fontRole="penNote" style={{ color: t.ink, fontWeight: '600', fontSize: 20 }}>
+            {tr('home.closeOutCount', { count: closeOuts.length }).toUpperCase()}
+          </Text>
+          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4, marginBottom: 12 }}>
+            {shiftSummary(closeOuts[0]!)}
+          </Text>
+          <PrimaryButton
+            label={tr('home.closeOutAction')}
+            onPress={() => router.push({ pathname: '/complete/[id]', params: { id: closeOuts[0]!.id } })}
           />
-        ) : null}
-        <ReceiptRule />
-        <LineItem label={tr('home.hoursWorked')} value={(tally.workedMinutes / 60).toFixed(1)} />
-        <LineItem label={tr('home.wages')} value={money(tally.actualBaseWages)} />
-        <LineItem label={tr('home.grossTips')} value={money(tally.grossTips)} />
-        <LineItem
-          label={tr('home.tipOutPaid')}
-          value={tally.tipOutPaid > 0 ? money(-tally.tipOutPaid) : money(0)}
-          tone={tally.tipOutPaid > 0 ? 'negative' : 'computed'}
-        />
-        <ReceiptRule />
-        <LineItem label={tr('home.totalEarned')} value={money(tally.grossEarnings)} strong />
-        <Text fontRole="mono" style={{ color: tally.workedShiftCount > 0 ? t.green : t.dim, textAlign: 'center', fontSize: 11, fontWeight: '600', marginTop: 4 }}>
-          {tr('home.realHourly', {
-            rate: tally.effectiveHourly == null ? tr('home.notAvailable') : money(tally.effectiveHourly),
-          }).toUpperCase()}
-        </Text>
-        <ReceiptRule />
-        {goal && progress ? (
-          <>
-            <LineItem
-              label={`${tr('home.goal')} · ${tr(`stats.goalMetrics.${goal.metric}`)}`}
-              value={`${goalAmount(goal.metric, progress.actual, tr('common.hours'))} / ${goalAmount(goal.metric, goal.target, tr('common.hours'))}`}
-            />
-            <Text style={{ color: goal.metric === 'worked_hours' ? t.ink : t.green, fontSize: 12, fontWeight: '700', letterSpacing: 0.7, marginTop: 5 }}>
-              {`${'■'.repeat(meterFilled)}${'□'.repeat(10 - meterFilled)} ${progressPercent}%`}
-            </Text>
-          </>
-        ) : (
-          <LineItem label={tr('home.goal')} value={tr('home.noGoal')} tone="dim" />
-        )}
-      </ReceiptCard>
+          {closeOuts.slice(1).map(item => <PrimaryButton key={item.id} label={shiftSummary(item)} onPress={() => router.push({ pathname: '/complete/[id]', params: { id: item.id } })} style={{ marginTop: 8 }} />)}
+        </Card>
+      ) : null}
+      {shifts.length > 0 ? <Card style={{ padding: 20, marginTop: 18 }}>
+        <Text style={{ color: t.dim, fontSize: 15 }}>{tr('home.weekOf', { range: formatWeekRange(weekDates, i18n.language) })}</Text>
+        <Text style={{ color: t.ink, fontSize: 16, marginTop: 12 }}>{tr('home.totalEarned')}</Text>
+        <Text fontRole="total" style={{ color: t.ink, fontSize: 36 }}>{money(tally.grossEarnings)}</Text>
+        <Text style={{ color: t.dim, marginTop: 8 }}>{tr('home.realHourly', { rate: tally.effectiveHourly == null ? tr('home.notAvailable') : money(tally.effectiveHourly) })}</Text>
+        <PendingPayments />
+        <PrimaryButton label={tr('redesign.money')} onPress={() => router.push('/(tabs)/money')} style={{ marginTop: 16 }} />
+      </Card> : null}
 
       {weekShifts.length === 0 && !nextShift ? (
         <Card style={{ padding: 14, marginTop: 16 }}>
@@ -192,28 +172,13 @@ export default function HomeScreen() {
             {tr('home.expected', { amount: money(expectedEarnings(nextShift)) })}
           </Text>
           <PrimaryButton
-            label={tr('home.logShift')}
+            label={tr('redesign.shiftDetails')}
             tone="ink"
-            onPress={() => router.push({ pathname: '/complete/[id]', params: { id: nextShift.id } })}
+            onPress={() => router.push({ pathname: '/shift-form', params: { id: nextShift.id } })}
           />
         </Card>
       ) : null}
 
-      {closeOuts.length > 0 ? (
-        <Card style={{ padding: 14, marginTop: 14, borderColor: t.red, shadowColor: t.red }}>
-          <Text fontRole="penNote" style={{ color: t.red, fontWeight: '600', fontSize: 17, transform: [{ rotate: '-1deg' }] }}>
-            {tr('home.closeOutCount', { count: closeOuts.length }).toUpperCase()}
-          </Text>
-          <Text fontRole="ui" style={{ color: t.ink, fontWeight: '700', fontSize: 13, marginTop: 4, marginBottom: 12 }}>
-            {shiftSummary(closeOuts[0]!)}
-          </Text>
-          <PrimaryButton
-            label={tr('home.closeOutAction')}
-            danger
-            onPress={() => router.push({ pathname: '/complete/[id]', params: { id: closeOuts[0]!.id } })}
-          />
-        </Card>
-      ) : null}
       </ScrollView>
     </SafeAreaView>
   );

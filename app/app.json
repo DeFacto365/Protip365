@@ -28,7 +28,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
+      "predictiveBackGestureEnabled": true,
       "package": "com.defacto365.protip365",
       "permissions": [
         "android.permission.USE_BIOMETRIC",

@@ -1,6 +1,7 @@
 import { decryptBackupPayload, encryptBackupPayload } from '../domain/backup';
 import { normalizeEmployerColor } from '../domain/employerColors';
 import { getDb } from './db';
+import { validateLedger } from '../domain/payments';
 
 type BackupValue = string | number | null;
 type BackupRow = Record<string, BackupValue>;
@@ -30,9 +31,12 @@ const TABLE_COLUMNS = {
     'not_worked_reason', 'not_worked_note', 'actual_start_min', 'actual_end_min',
     'actual_breaks_json', 'actual_hourly_rate_snapshot', 'tip_method', 'direct_tips',
     'pool_contribution', 'tip_share_received', 'tip_out_paid', 'sales', 'other_income',
-    'deduction_rate_snapshot_bp', 'expected_payout', 'actual_received', 'payout_status', 'notes',
+    'deduction_rate_snapshot_bp', 'notes',
     'source_template_id', 'source_recurrence_rule_id', 'recurrence_key', 'created_at', 'updated_at',
   ],
+  expected_items: ['id','employer_id','shift_id','kind','amount','currency','due_date','disputed'],
+  receipts: ['id','employer_id','amount','currency','received_date','reference','reversed_at'],
+  allocations: ['id','receipt_id','expected_id','amount'],
   settings: ['key', 'value'],
 } as const;
 
@@ -44,6 +48,7 @@ const INSERT_ORDER: TableName[] = [
   'recurrence_rules',
   'weekly_goals',
   'shifts',
+  'expected_items', 'receipts', 'allocations',
   'settings',
 ];
 const DELETE_ORDER = [...INSERT_ORDER].reverse();
@@ -61,8 +66,11 @@ const INTEGER_COLUMNS: Record<TableName, ReadonlySet<string>> = {
     'planned_other_income', 'actual_start_min', 'actual_end_min',
     'actual_hourly_rate_snapshot', 'direct_tips', 'pool_contribution',
     'tip_share_received', 'tip_out_paid', 'sales', 'other_income',
-    'deduction_rate_snapshot_bp', 'expected_payout', 'actual_received',
+    'deduction_rate_snapshot_bp',
   ]),
+  expected_items: new Set(['amount','disputed']),
+  receipts: new Set(['amount']),
+  allocations: new Set(['amount']),
   settings: new Set(),
 };
 
@@ -79,9 +87,12 @@ const NULLABLE_COLUMNS: Record<TableName, ReadonlySet<string>> = {
     'not_worked_note', 'actual_start_min', 'actual_end_min', 'actual_breaks_json',
     'actual_hourly_rate_snapshot', 'tip_method', 'direct_tips', 'pool_contribution',
     'tip_share_received', 'tip_out_paid', 'sales', 'other_income',
-    'deduction_rate_snapshot_bp', 'expected_payout', 'actual_received', 'payout_status',
+    'deduction_rate_snapshot_bp',
     'notes', 'source_template_id', 'source_recurrence_rule_id', 'recurrence_key',
   ]),
+  expected_items: new Set(['shift_id','amount','due_date']),
+  receipts: new Set(['reversed_at']),
+  allocations: new Set(),
   settings: new Set(),
 };
 
@@ -89,7 +100,7 @@ const JSON_ARRAY_COLUMNS = new Set(['breaks_json', 'actual_breaks_json', 'weekda
 
 interface BackupData {
   format: 'protip365-data';
-  schemaVersion: 3;
+  schemaVersion: 4;
   createdAt: string;
   tables: Record<TableName, BackupRow[]>;
 }
@@ -113,7 +124,7 @@ export function createEncryptedFullBackup(password: string): string {
   }
   const payload: BackupData = {
     format: 'protip365-data',
-    schemaVersion: 3,
+    schemaVersion: 4,
     createdAt: new Date().toISOString(),
     tables,
   };
@@ -148,7 +159,7 @@ export function validatePayload(value: unknown): asserts value is BackupData {
   const payload = value as Partial<BackupData>;
   if (
     payload.format !== 'protip365-data' ||
-    payload.schemaVersion !== 3 ||
+    payload.schemaVersion !== 4 ||
     typeof payload.createdAt !== 'string' ||
     !payload.tables ||
     typeof payload.tables !== 'object' ||
@@ -194,6 +205,14 @@ export function validatePayload(value: unknown): asserts value is BackupData {
       }
     }
   }
+  const tables = payload.tables;
+  if(tables.expected_items.some(r=>r.disputed!==0 && r.disputed!==1)) throw new Error('backup_invalid_payload');
+  validateLedger({
+    expected: tables.expected_items.map(r=>({id:String(r.id),employerId:String(r.employer_id),shiftId:r.shift_id as string|null,kind:r.kind as 'tips'|'wages'|'other',amount:r.amount as number|null,currency:String(r.currency),dueDate:r.due_date as string|null,disputed:r.disputed===1})),
+    receipts: tables.receipts.map(r=>({id:String(r.id),employerId:String(r.employer_id),amount:r.amount as number,currency:String(r.currency),receivedDate:String(r.received_date),reference:String(r.reference),reversedAt:r.reversed_at as string|null})),
+    allocations: tables.allocations.map(r=>({id:String(r.id),receiptId:String(r.receipt_id),expectedId:String(r.expected_id),amount:r.amount as number})),
+  });
+
 }
 
 function rowsForRestore(table: TableName, rows: BackupRow[]): BackupRow[] {

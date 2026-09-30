@@ -134,10 +134,10 @@ export function LineItem({
             : t.ink;
   return (
     <View style={styles.lineItem}>
-      <Text fontRole="mono" style={[styles.lineLabel, { color: t.dim }, strong && styles.lineStrong]}>
+      <Text fontRole="body" style={[styles.lineLabel, { color: t.dim }, strong && styles.lineStrong]}>
         {label}
       </Text>
-      <Text fontRole={strong ? 'total' : 'mono'} style={[styles.lineValue, { color }, strong && styles.lineTotal]}>{value}</Text>
+      <Text fontRole={strong ? 'total' : 'body'} style={[styles.lineValue, { color }, strong && styles.lineTotal]}>{value}</Text>
     </View>
   );
 }
@@ -164,7 +164,7 @@ export function Stamp({
         style,
       ]}
     >
-      <Text style={[styles.stampText, { color }]}>{label.toUpperCase()}</Text>
+      <Text style={[styles.stampText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -174,7 +174,7 @@ export function PrimaryButton({
   onPress,
   disabled,
   danger,
-  tone = 'ink',
+  tone = 'pen',
   style,
 }: {
   label: string;
@@ -192,6 +192,7 @@ export function PrimaryButton({
       accessibilityLabel={label}
       onPress={onPress}
       disabled={disabled}
+      accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.button,
         styles.hardShadow,
@@ -204,7 +205,7 @@ export function PrimaryButton({
       ]}
     >
       <Text fontRole="ui" style={[styles.buttonText, { color: danger ? t.paper : t.bg }]}>
-        {label.toUpperCase()}
+        {label}
       </Text>
     </Pressable>
   );
@@ -272,8 +273,8 @@ export function Chip({
         style={{
           color: selected ? t.paper : t.ink,
           fontWeight: '700',
-          fontSize: 11,
-          letterSpacing: 0.7,
+          fontSize: 14,
+          letterSpacing: 0,
         }}
       >
         {label.toUpperCase()}
@@ -320,7 +321,7 @@ export function Field({
   const { t } = useTokens();
   return (
     <View style={{ marginBottom: 12 }}>
-      <Text fontRole="ui" style={{ color: t.dim, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
+      <Text fontRole="ui" style={{ color: t.dim, fontSize: 14, fontWeight: '600', letterSpacing: 0, marginBottom: 6 }}>
         {label.toUpperCase()}
       </Text>
       <TextInput
@@ -337,7 +338,7 @@ export function Field({
         ]}
       />
       {hint && !error ? (
-        <Text fontRole="ui" style={{ color: t.dim, fontSize: 11, marginTop: 3 }}>{hint}</Text>
+        <Text fontRole="ui" style={{ color: t.dim, fontSize: 14, marginTop: 4 }}>{hint}</Text>
       ) : null}
       {error ? (
         <Text fontRole="ui" style={{ color: t.paper, backgroundColor: t.red, padding: 4, fontSize: 11, marginTop: 3 }}>
@@ -407,15 +408,15 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: radius.card,
     shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0,
     shadowRadius: 0,
-    elevation: 2,
+    elevation: 0,
   },
   hardShadow: {
     shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.32,
+    shadowOpacity: 0,
     shadowRadius: 0,
-    elevation: 3,
+    elevation: 0,
   },
   button: {
     minHeight: TOUCH_TARGET,
@@ -448,12 +449,12 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: TOUCH_TARGET,
-    borderWidth: 0,
-    borderBottomWidth: 1.5,
+    borderWidth: 1,
+    borderBottomWidth: 1,
     borderRadius: radius.field,
-    paddingHorizontal: 0,
-    fontSize: 15,
-    fontFamily: fonts.regular,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    fontFamily: fonts.ui,
   },
   avatar: {
     width: 34,
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 0,
-    elevation: 3,
+    elevation: 0,
   },
   receiptRule: {
     borderTopWidth: 1.5,
