@@ -570,3 +570,199 @@ function buildShowcase() {
 if (document.body.dataset.mode === 'showcase') buildShowcase();
 else { buildFlowNav(); render(); }
 })();
+
+window.LAND = {
+  en: {
+    title: "Tip Tracker & Shift Planner for Servers | ProTip365",
+    desc: "Log your shifts and tips for every job in seconds. See what you really make this week, this month and this year. ProTip365 is a private tip tracker for servers and bartenders.",
+    s: {
+      navFlow: "The flow", navScreens: "Screens", navDemo: "Demo", navCta: "Get it on Google Play",
+      heroEyebrow: "Tip & shift tracker · Québec",
+      heroH1: "Your shifts.<br>Your tips.",
+      heroLede: "Log a shift in ten seconds. See what you really make this week, this month and this year, across every job you work.",
+      ctaPlay: "Get it on Google Play", ctaDemo: "Try the demo",
+      iosNote: "<strong>Coming soon for iOS.</strong> Same app, same records.",
+      k1Label: "Screens", k1Note: "one simple flow",
+      k2Label: "To log a shift", k2Note: "pre-filled from your schedule",
+      k3Label: "Jobs", k3Value: "All of them", k3Note: "every employer, one app",
+      flowEyebrow: "The user flow", flowH2: "Four moments. That's the whole app.",
+      flowSub: "Set it up once, log every shift, check your money, and handle the paperwork. Tap a screen to jump to it.",
+      scrEyebrow: "Screen by screen", scrH2: "Every screen, and why it's built that way.", scrSub: "Screens shown with sample data.",
+      closeEyebrow: "Get started", closeH2: "Log a shift. Watch your week add up.",
+      closeSub: "Download ProTip365 on Android, or try the interactive demo right here in your browser. It runs on sample data and every number updates as you go.",
+      footTag: "Built for servers, bartenders and bussers",
+      footPrivacy: "Privacy", footTerms: "Terms", footSupport: "Support",
+      nextPrefix: "Next → "
+    },
+    groups: ["First launch", "Every shift", "Check my money", "Paperwork"],
+    phone: { eyebrow: "Your tips this week", kept: "tips you kept", logged: "shifts logged", btn: "Add my tips", goal: "{p}% of your ${v} goal", m1e: "This month", m1k: "tips you kept", m2e: "Tips / hour", m2k: "wage + tips", recent: "Recent shifts" }
+  },
+  fr: {
+    title: "Tes quarts. Tes pourboires. | ProTip365",
+    desc: "Ajoute tes quarts et tes pourboires pour tous tes emplois en quelques secondes. Vois ce que tu gagnes vraiment — cette semaine, ce mois, cette année. ProTip365 est un suivi de pourboires privé pour serveuses, serveurs et personnel de bar.",
+    s: {
+      navFlow: "Le parcours", navScreens: "Écrans", navDemo: "Démo", navCta: "Disponible sur Google Play",
+      heroEyebrow: "Suivi de quarts et de pourboires · Québec",
+      heroH1: "Tes quarts.<br>Tes pourboires.",
+      heroLede: "Ajoute un quart en dix secondes. Vois ce que tu gagnes vraiment — cette semaine, ce mois, cette année — peu importe le nombre d'emplois.",
+      ctaPlay: "Disponible sur Google Play", ctaDemo: "Essayer la démo",
+      iosNote: "<strong>Bientôt sur iOS.</strong> La même appli, les mêmes données.",
+      k1Label: "Écrans", k1Note: "un parcours tout simple",
+      k2Label: "Pour ajouter un quart", k2Note: "prérempli à partir de ton horaire",
+      k3Label: "Emplois", k3Value: "Illimités", k3Note: "tous tes employeurs, une seule appli",
+      flowEyebrow: "Le parcours utilisateur", flowH2: "Quatre moments. C'est toute l'appli.",
+      flowSub: "On configure une fois, on ajoute chaque quart, on vérifie son argent et on s'occupe du papier. Touche un écran pour y sauter.",
+      scrEyebrow: "Écran par écran", scrH2: "Chaque écran, et pourquoi il est conçu ainsi.", scrSub: "Écrans affichés avec des données de démonstration.",
+      closeEyebrow: "Pour commencer", closeH2: "Ajoute un quart. Regarde ta semaine s'additionner.",
+      closeSub: "Télécharge ProTip365 sur Android, ou essaie la démo interactive ici même dans ton navigateur. Elle tourne sur des données d'exemple et chaque nombre se met à jour.",
+      footTag: "Pensé pour le personnel de salle et de bar",
+      footPrivacy: "Confidentialité", footTerms: "Conditions", footSupport: "Support",
+      nextPrefix: "Ensuite → "
+    },
+    groups: ["Premier lancement", "Chaque quart", "Voir mon argent", "Papier"],
+    phone: { eyebrow: "Tes pourboires cette semaine", kept: "pourboires gardés", logged: "quarts enregistrés", btn: "Ajouter mes pourboires", goal: "{p} % de ton objectif de {v} $", m1e: "Ce mois-ci", m1k: "pourboires gardés", m2e: "Pourboires / heure", m2k: "salaire + pourboires", recent: "Quarts récents" },
+    items: { welcome: "Bienvenue", onbJob: "Ajouter un premier emploi", onbWeek: "Semaine et rappel", reminder: "Rappel de fin de quart", log1: "Ajouter un quart · emploi et heures", log2: "Ajouter un quart · pourboires", saved: "Quart enregistré", home: "Accueil · cette semaine", calendar: "Calendrier", stats: "Statistiques · semaine/mois/année", jobs: "Moi · emplois et exports", statement: "Relevé de pourboires (Québec)" },
+    notes: {
+      welcome: { t: "On commence en un geste, sans compte", n: ["Choisis ta langue au départ. Tout le reste peut attendre.", "Aucun mur de connexion. Les données restent sur le téléphone jusqu'à ce que tu choisisses de les sauvegarder — les concurrents se font critiquer pour ça.", "L'importateur aide les gens qui arrivent de ServerLife, TipKeepr ou d'un tableur."], next: "Ajouter un premier emploi" },
+      onbJob: { t: "Un emploi, trois champs", n: ["Seul le nom de l'employeur est obligatoire. Le poste et le taux sont déjà remplis.", "Le taux par défaut est le salaire minimum au pourboire du Québec (13,30 $/h depuis le 1er mai 2026), modifiable en tout temps.", "Chaque emploi reçoit une couleur qui le suit partout : calendrier, listes et graphiques."], next: "Semaine et rappel" },
+      onbWeek: { t: "Une semaine alignée sur la paie", n: ["La personne choisit le premier jour de sa semaine, pour que les totaux suivent sa vraie période de paie. C'est la correction la plus demandée dans les avis des concurrents.", "Le rappel de fin de quart est activé par défaut : c'est lui qui garde les données complètes.", "C'est le dernier écran de configuration. Quelqu'un de nouveau arrive à l'accueil en environ 30 secondes."], next: "Accueil" },
+      reminder: { t: "La relance qui ouvre l'étape 1", n: ["Le rappel part 15 minutes après l'heure habituelle de fin.", "Un appui ouvre l'ajout de quart avec l'emploi, la date et les heures déjà remplis. La plupart du temps, il ne reste qu'à taper les pourboires.", "Si on le glisse de côté, il revient le lendemain matin. Le ton ne harcèle jamais."], next: "Ajouter un quart · emploi et heures" },
+      log1: { t: "Quel emploi, quand, combien d'heures", n: ["Emploi, date et heures sont préremplis à partir du rappel ou du dernier quart. Souvent, rien à changer.", "On saisit l'heure de début et de fin, pas des « heures travaillées ». L'appli calcule tout, y compris les quarts de nuit et les pauses.", "Plusieurs quarts le même jour sont permis : un lunch au Chez Lou, une soirée au Zinc."], next: "Pourboires" },
+      log2: { t: "Des pourboires en mots simples", n: ["Quatre montants : comptant, carte, reçus du partage et donnés aux autres. Chaque champ est optionnel.", "Le total que tu gardes se met à jour en direct en bas : aucun calcul à faire.", "Les ventes et la note sont repliées sous « Plus ». Elles ne servent qu'au vérificateur du 8 % et au relevé."], next: "Quart enregistré" },
+      saved: { t: "La récompense, tout de suite", n: ["Une confirmation claire avec les deux chiffres qui comptent : les pourboires et le vrai taux horaire.", "La comparaison avec la moyenne de ce jour de semaine donne une raison de revenir.", "Annuler et Modifier sont là, à portée de main : ça installe la confiance."], next: "Accueil" },
+      calendar: { t: "Le mois d'un coup d'œil", n: ["Chaque jour affiche les pourboires nets et des pastilles de couleur par emploi.", "Un appui sur un jour liste ses quarts en dessous; un appui sur un quart le modifie.", "Les quarts planifiés pourraient s'afficher en contour plus tard (V2 : import d'horaire)."], next: "Statistiques" },
+      stats: { t: "Semaine · Mois · Année, en un geste", n: ["Trois plages fixes, sans sélecteur de dates. Une plage personnalisée arrive en V2.", "La répartition par employeur et le meilleur jour de la semaine : les chiffres que le personnel demande le plus.", "Le vérificateur du 8 % du Québec s'affiche quand les ventes ont été saisies."], next: "Moi" },
+      jobs: { t: "Emplois, exports, sauvegarde", n: ["Un nombre illimité d'emplois, gratuitement. Les concurrents facturent environ 6 $ par emploi additionnel.", "Les exports sont gratuits : relevé par période de paie, sommaire annuel pour la ligne 10400, CSV.", "La sauvegarde est optionnelle, expliquée en une phrase. Proposée, jamais imposée."], next: "Relevé de pourboires" },
+      statement: { t: "Le relevé de pourboires du Québec, généré", n: ["La même structure que le formulaire TP-1019.4-V de Revenu Québec : B pourboires reçus, D pourboires du partage, E pourboires donnés. Net = B + C + D − E.", "Un geste partage le PDF au gestionnaire à chaque période de paie — une obligation légale dans les restaurants et les bars.", "Cette fonction n'existe dans aucune appli américaine : c'est une raison forte de choisir ProTip365 au Québec."], next: "Retour à l'accueil" }
+    }
+  },
+  es: {
+    title: "Tus turnos. Tus propinas. | ProTip365",
+    desc: "Registra tus turnos y propinas de todos tus trabajos en segundos. Mira lo que de verdad ganas esta semana, este mes y este año. ProTip365 es un rastreador privado de propinas para meseros y bartenders.",
+    s: {
+      navFlow: "El recorrido", navScreens: "Pantallas", navDemo: "Demo", navCta: "Disponible en Google Play",
+      heroEyebrow: "Control de turnos y propinas · Quebec",
+      heroH1: "Tus turnos.<br>Tus propinas.",
+      heroLede: "Registra un turno en diez segundos. Mira lo que de verdad ganas esta semana, este mes y este año, con todos tus trabajos.",
+      ctaPlay: "Disponible en Google Play", ctaDemo: "Probar la demo",
+      iosNote: "<strong>Muy pronto en iOS.</strong> La misma app, los mismos datos.",
+      k1Label: "Pantallas", k1Note: "un recorrido sencillo",
+      k2Label: "Para registrar un turno", k2Note: "precargado desde tu horario",
+      k3Label: "Trabajos", k3Value: "Todos", k3Note: "todos tus empleos, una sola app",
+      flowEyebrow: "El recorrido", flowH2: "Cuatro momentos. Eso es toda la app.",
+      flowSub: "Configura una vez, registra cada turno, consulta tu dinero y resuelve los trámites. Toca una pantalla para saltar a ella.",
+      scrEyebrow: "Pantalla por pantalla", scrH2: "Cada pantalla, y por qué está así diseñada.", scrSub: "Pantallas con datos de ejemplo.",
+      closeEyebrow: "Para empezar", closeH2: "Registra un turno. Mira cómo suma tu semana.",
+      closeSub: "Descarga ProTip365 en Android, o prueba la demo interactiva aquí en tu navegador. Usa datos de ejemplo y cada cifra se actualiza.",
+      footTag: "Hecho para meseros, bartenders y asistentes",
+      footPrivacy: "Privacidad", footTerms: "Términos", footSupport: "Soporte",
+      nextPrefix: "Después → "
+    },
+    groups: ["Primer inicio", "Cada turno", "Consultar mi dinero", "Trámites"],
+    phone: { eyebrow: "Tus propinas esta semana", kept: "propinas netas", logged: "turnos registrados", btn: "Añadir mis propinas", goal: "{p} % de tu meta de {v} $", m1e: "Este mes", m1k: "propinas netas", m2e: "Propinas / hora", m2k: "salario + propinas", recent: "Turnos recientes" },
+    items: { welcome: "Bienvenida", onbJob: "Añadir el primer trabajo", onbWeek: "Semana y recordatorio", reminder: "Recordatorio de fin de turno", log1: "Registrar turno · trabajo y horas", log2: "Registrar turno · propinas", saved: "Turno guardado", home: "Inicio · esta semana", calendar: "Calendario", stats: "Estadísticas · semana/mes/año", jobs: "Yo · trabajos y exportaciones", statement: "Estado de propinas (Quebec)" },
+    notes: {
+      welcome: { t: "Empieza en un toque, sin cuenta", n: ["Elige tu idioma al empezar. Todo lo demás puede esperar.", "Sin muro de registro. Los datos quedan en el teléfono hasta que decidas respaldarlos; a las apps rivales las critican por exigir cuenta primero.", "El importador ayuda a quien llega de ServerLife, TipKeepr o una hoja de cálculo."], next: "Añadir el primer trabajo" },
+      onbJob: { t: "Un trabajo, tres campos", n: ["Solo el nombre del empleador es obligatorio. El puesto y la tarifa ya vienen listos.", "La tarifa por omisión es el salario mínimo con propinas de Quebec (13,30 $/h desde el 1 de mayo de 2026); se puede cambiar.", "Cada trabajo recibe un color que lo sigue a todas partes: calendario, listas y gráficos."], next: "Semana y recordatorio" },
+      onbWeek: { t: "Una semana que sigue tu paga", n: ["La persona elige el día en que empieza su semana, para que los totales cuadren con su período real de pago. Es lo más pedido en las reseñas de las apps rivales.", "El recordatorio de fin de turno viene activado: es el hábito que mantiene los datos completos.", "Es la última pantalla de configuración. Alguien nuevo llega al inicio en unos 30 segundos."], next: "Inicio" },
+      reminder: { t: "El aviso que abre el paso 1", n: ["El recordatorio llega 15 minutos después de la hora habitual de salida.", "Al tocarlo se abre el registro del turno con el trabajo, la fecha y las horas ya listos: casi siempre solo falta escribir las propinas.", "Si se desliza, se pospone a la mañana siguiente. Nunca insiste más de la cuenta."], next: "Registrar turno · trabajo y horas" },
+      log1: { t: "Qué trabajo, cuándo, cuántas horas", n: ["Trabajo, fecha y horas vienen precargados desde el recordatorio o del último turno. Normalmente no hay que cambiar nada.", "Se captura hora de entrada y de salida, no «horas trabajadas». La app calcula todo: turnos nocturnos y pausas incluidos.", "Se permiten varios turnos el mismo día: un almuerzo en un lugar y una cena en otro."], next: "Propinas" },
+      log2: { t: "Propinas en palabras simples", n: ["Cuatro montos: efectivo, tarjeta, recibidos del fondo y entregados a otros. Todos opcionales.", "El total que te llevas se actualiza al instante abajo: cero cálculos mentales.", "Ventas y nota van plegados en «Más». Solo sirven para la verificación del 8 % y el estado de cuenta."], next: "Turno guardado" },
+      saved: { t: "La recompensa inmediata", n: ["Confirmación clara con los dos números que importan: propinas ganadas y tarifa horaria real.", "La comparación con tu promedio de ese día de semana da una razón para volver.", "Deshacer y Editar están ahí mismo: eso genera confianza."], next: "Inicio" },
+      calendar: { t: "El mes de un vistazo", n: ["Cada día muestra las propinas netas y puntos de color por trabajo.", "Tocar un día lista sus turnos; tocar un turno lo edita.", "Los turnos planeados podrían mostrarse en contorno más adelante (V2: importar horario)."], next: "Estadísticas" },
+      stats: { t: "Semana · Mes · Año, en un toque", n: ["Tres rangos fijos, sin selectores de fecha. Un rango personalizado llega en V2.", "Reparto por empleador y mejor día de la semana: los datos que el personal de sala más pide.", "Aviso del 8 % de Quebec cuando se capturaron las ventas."], next: "Yo" },
+      jobs: { t: "Trabajos, exportaciones, respaldo", n: ["Trabajos ilimitados y gratis. Las apps rivales cobran unos 6 $ por trabajo extra.", "Las exportaciones son gratuitas: estado por período de pago, resumen anual para la línea 10400, CSV.", "El respaldo es opcional y se explica en una línea. Se ofrece, nunca se impone."], next: "Estado de propinas" },
+      statement: { t: "Estado de propinas de Quebec, generado", n: ["La misma estructura del formulario TP-1019.4-V de Revenu Québec: B propinas recibidas, D del reparto, E entregadas. Neto = B + C + D − E.", "Un toque comparte el PDF con el gerente cada período de pago: obligación legal en restaurantes y bares.", "Ninguna app estadounidense ofrece esto: una razón fuerte para elegir ProTip365 en Quebec."], next: "Volver al inicio" }
+    }
+  }
+};
+
+window.initI18n = function () {
+  if (document.body.dataset.mode !== 'showcase') return;
+  var q = new URLSearchParams(location.search).get('lang');
+  var lang = q || localStorage.getItem('pt365lang');
+  if (['fr', 'en', 'es'].indexOf(lang) < 0) {
+    var nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    lang = ['fr', 'en', 'es'].indexOf(nav) >= 0 ? nav : 'en';
+  }
+  var ORDER = ['welcome', 'onbJob', 'onbWeek', 'reminder', 'log1', 'log2', 'saved', 'home', 'calendar', 'stats', 'jobs', 'statement'];
+
+  function apply(lang) {
+    var L = window.LAND[lang]; if (!L) return;
+    localStorage.setItem('pt365lang', lang);
+    document.documentElement.lang = lang;
+    document.title = L.title;
+    var md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', L.desc);
+    document.querySelectorAll('[data-i18n]').forEach(function (el) { var k = el.getAttribute('data-i18n'); if (L.s[k] != null) el.textContent = L.s[k]; });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) { var k = el.getAttribute('data-i18n-html'); if (L.s[k] != null) el.innerHTML = L.s[k]; });
+
+    document.querySelectorAll('.stage-head .eyebrow').forEach(function (el, i) { if (L.groups[i]) el.textContent = L.groups[i]; });
+    document.querySelectorAll('.ov-card').forEach(function (card, gi) {
+      var eb = card.querySelector('.eyebrow'); if (eb && L.groups[gi]) eb.textContent = String(gi + 1).padStart(2, '0') + ' · ' + L.groups[gi];
+      card.querySelectorAll('ol a').forEach(function (a, ii) {
+        var span = a.querySelector('span'), lbl = ORDER[gi * 3 + ii] ? (L.items[ORDER[gi * 3 + ii]] || a.lastChild.nodeValue) : null;
+        if (span && lbl != null) { a.lastChild.nodeValue = lbl; }
+      });
+    });
+
+    document.querySelectorAll('article.shot').forEach(function (art) {
+      var id = art.id.replace('screen-', ''), tr = L.notes && L.notes[id]; if (!tr) return;
+      var num = art.querySelector('.shot-num'); if (num && num.lastChild) num.lastChild.nodeValue = ' ' + (L.items[id] || '');
+      var h3 = art.querySelector('h3'); if (h3) h3.textContent = tr.t;
+      var lis = art.querySelectorAll('ul li');
+      tr.n.forEach(function (txt, i) { if (lis[i]) lis[i].textContent = txt; });
+      var nx = art.querySelector('.shot-next');
+      if (nx) { nx.firstChild.nodeValue = L.s.nextPrefix; nx.querySelector('b').textContent = tr.next; }
+    });
+
+    // hero phone (Home mockup) key strings
+    var ph = L.phone || window.LAND.en.phone;
+    document.querySelectorAll('.hero-card').forEach(function (hc) {
+      var eb = hc.querySelector('.eyebrow'); if (eb) eb.textContent = ph.eyebrow;
+      var sk = hc.querySelector('.sub-ink');
+      if (sk) { var m = sk.textContent.match(/(\d+)/); sk.textContent = ph.kept + ' · ' + (m ? m[1] : '3') + ' ' + ph.logged; }
+      var btn = hc.querySelector('.btn'); if (btn && btn.lastChild) btn.lastChild.nodeValue = ' ' + ph.btn;
+      var sm = hc.querySelector('.sub-sm');
+      if (sm) {
+        var g = sm.textContent.match(/(\d+)%\s+of your \$([\d,]+) goal/);
+        if (g) sm.textContent = ph.goal.replace('{p}', g[1]).replace('{v}', g[2]);
+      }
+    });
+    document.querySelectorAll('#heroPhone .kpi').forEach(function (k, i) {
+      var eb = k.querySelector('.eyebrow'), kk = k.querySelector('.k');
+      if (i === 0) { if (eb) eb.textContent = ph.m1e; if (kk) kk.textContent = ph.m1k; }
+      if (i === 1) { if (eb) eb.textContent = ph.m2e; if (kk) kk.textContent = ph.m2k; }
+    });
+    var h2s = document.querySelectorAll('#heroPhone .h2'); if (h2s[0]) h2s[0].textContent = ph.recent;
+
+    // phone mockup polish: tab labels, greeting, weekday/month abbreviations
+    var TABS = { fr: ['Accueil', 'Calendrier', 'Statistiques', 'Moi'], es: ['Inicio', 'Calendario', 'Estadísticas', 'Yo'], en: ['Home', 'Calendar', 'Stats', 'Me'] };
+    var HI = { fr: 'Salut Maya', es: 'Hola Maya', en: 'Hi Maya' };
+    var DOWM = {
+      fr: { Sun: 'dim.', Mon: 'lun.', Tue: 'mar.', Wed: 'mer.', Thu: 'jeu.', Fri: 'ven.', Sat: 'sam.', Jan: 'janv.', Feb: 'févr.', Mar: 'mars', Apr: 'avr.', May: 'mai', Jun: 'juin', Jul: 'juil.', Aug: 'août', Sep: 'sept.', Oct: 'oct.', Nov: 'nov.', Dec: 'déc.' },
+      es: { Sun: 'dom.', Mon: 'lun.', Tue: 'mar.', Wed: 'mié.', Thu: 'jue.', Fri: 'vie.', Sat: 'sáb.', Jan: 'ene.', Feb: 'feb.', Mar: 'mar.', Apr: 'abr.', May: 'may', Jun: 'jun.', Jul: 'jul.', Aug: 'ago.', Sep: 'sep.', Oct: 'oct.', Nov: 'nov.', Dec: 'dic.' }
+    };
+    document.querySelectorAll('.tabbar button').forEach(function (b) {
+      var t = (b.textContent || '').trim(); var i = ['Home', 'Calendar', 'Stats', 'Me'].indexOf(t);
+      if (i >= 0 && b.lastChild) b.lastChild.nodeValue = ' ' + TABS[lang][i];
+    });
+    document.querySelectorAll('.sub-sm').forEach(function (el) { if (el.textContent.trim() === 'Hi Maya') el.textContent = HI[lang]; });
+    if (DOWM[lang]) {
+      document.querySelectorAll('.shift-row .sub-sm, .sub-sm').forEach(function (el) {
+        if (/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2}/.test(el.textContent)) {
+          el.textContent = el.textContent.replace(/\b([A-Z][a-z]{2})\b/g, function (w) { return DOWM[lang][w] || w; });
+        }
+      });
+    }
+
+    document.querySelectorAll('.lp-lang button').forEach(function (b) { b.classList.toggle('on', b.dataset.lang === lang); });
+  }
+
+  document.querySelectorAll('.lp-lang button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var l = b.dataset.lang; apply(l);
+      try { history.replaceState(null, '', '?lang=' + l); } catch (e) {}
+    });
+  });
+  apply(lang);
+};

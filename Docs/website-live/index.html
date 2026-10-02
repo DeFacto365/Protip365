@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tip Tracker &amp; Shift Planner for Servers | ProTip365</title>
+<title>Tip Tracker & Shift Planner for Servers | ProTip365</title>
 <meta name="description" content="Log your shifts and tips for every job in seconds. See what you really make this week, this month and this year. ProTip365 is a private tip tracker for servers and bartenders.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <meta name="theme-color" content="#FAF8F3">
 <link rel="canonical" href="https://www.protip365.com/">
+<link rel="alternate" hreflang="fr" href="https://www.protip365.com/?lang=fr">
+<link rel="alternate" hreflang="en" href="https://www.protip365.com/?lang=en">
+<link rel="alternate" hreflang="es" href="https://www.protip365.com/?lang=es">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ProTip365">
 <meta property="og:title" content="Tes quarts. Tes pourboires. | ProTip365">
@@ -21,8 +24,9 @@
 <link rel="icon" href="favicon.ico" sizes="32x32">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="landing.css">
 </head>
@@ -33,28 +37,33 @@
     <span>protip<em>365</em></span>
   </a>
   <nav class="lp-nav">
-    <a href="#flow">The flow</a>
-    <a href="#screens-start">Screens</a>
-    <a href="prototype.html">Demo</a>
-    <a class="lp-cta-sm" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener">Get it on Google Play</a>
+    <a href="#flow" data-i18n="navFlow">The flow</a>
+    <a href="#screens-start" data-i18n="navScreens">Screens</a>
+    <a href="prototype.html" data-i18n="navDemo">Demo</a>
+    <div class="lp-lang" role="group" aria-label="Language">
+      <button data-lang="fr" type="button">FR</button>
+      <button data-lang="en" type="button" class="on">EN</button>
+      <button data-lang="es" type="button">ES</button>
+    </div>
+    <a class="lp-cta-sm" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener" data-i18n="navCta">Get it on Google Play</a>
   </nav>
 </header>
 
 <main id="top">
   <section class="lp-hero">
     <div class="lp-hero-copy">
-      <div class="eyebrow">Tip &amp; shift tracker · Québec</div>
-      <h1>Tes quarts.<br>Tes pourboires.</h1>
-      <p class="lp-lede">Log a shift in ten seconds. See what you really make this week, this month and this year, across every job you work.</p>
+      <div class="eyebrow" data-i18n="heroEyebrow">Tip & shift tracker · Québec</div>
+      <h1 data-i18n-html="heroH1">Your shifts.<br>Your tips.</h1>
+      <p class="lp-lede" data-i18n="heroLede">Log a shift in ten seconds. See what you really make this week, this month and this year, across every job you work.</p>
       <div class="lp-actions">
-        <a class="btn lp-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener">Get it on Google Play</a>
-        <a class="btn ghost lp-btn" href="prototype.html">Try the demo</a>
+        <a class="btn lp-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener" data-i18n="ctaPlay">Get it on Google Play</a>
+        <a class="btn ghost lp-btn" href="prototype.html" data-i18n="ctaDemo">Try the demo</a>
       </div>
-      <p class="lp-ios"><strong>Coming soon for iOS.</strong> Same app, same records.</p>
+      <p class="lp-ios" data-i18n-html="iosNote"><strong>Coming soon for iOS.</strong> Same app, same records.</p>
       <div class="lp-kpis">
-        <div class="lp-kpi"><div class="eyebrow">Screens</div><div class="v">12</div><div class="k">one simple flow</div></div>
-        <div class="lp-kpi tint-blush"><div class="eyebrow">To log a shift</div><div class="v">~10 s</div><div class="k">pre-filled from your schedule</div></div>
-        <div class="lp-kpi tint-sage"><div class="eyebrow">Jobs</div><div class="v">All of them</div><div class="k">every employer, one app</div></div>
+        <div class="lp-kpi"><div class="eyebrow" data-i18n="k1Label">Screens</div><div class="v">12</div><div class="k" data-i18n="k1Note">one simple flow</div></div>
+        <div class="lp-kpi tint-blush"><div class="eyebrow" data-i18n="k2Label">To log a shift</div><div class="v">~10 s</div><div class="k" data-i18n="k2Note">pre-filled from your schedule</div></div>
+        <div class="lp-kpi tint-sage"><div class="eyebrow" data-i18n="k3Label">Jobs</div><div class="v" data-i18n="k3Value">All of them</div><div class="k" data-i18n="k3Note">every employer, one app</div></div>
       </div>
     </div>
     <div class="lp-hero-phone">
@@ -64,34 +73,38 @@
   </section>
 
   <section class="lp-section" id="flow">
-    <div class="eyebrow">The user flow</div>
-    <h2>Four moments. That's the whole app.</h2>
-    <p class="lp-sub">Set it up once, log every shift, check your money, and handle the paperwork. Tap a screen to jump to it.</p>
+    <div class="eyebrow" data-i18n="flowEyebrow">The user flow</div>
+    <h2 data-i18n="flowH2">Four moments. That's the whole app.</h2>
+    <p class="lp-sub" data-i18n="flowSub">Set it up once, log every shift, check your money, and handle the paperwork. Tap a screen to jump to it.</p>
     <div class="lp-overview" id="flowOverview"></div>
   </section>
 
   <section class="lp-screens" id="screens-start">
-    <div class="eyebrow">Screen by screen</div>
-    <h2>Every screen, and why it's built that way.</h2>
-    <p class="lp-sub">Screens shown with sample data.</p>
+    <div class="eyebrow" data-i18n="scrEyebrow">Screen by screen</div>
+    <h2 data-i18n="scrH2">Every screen, and why it's built that way.</h2>
+    <p class="lp-sub" data-i18n="scrSub">Screens shown with sample data.</p>
     <div id="screens"></div>
   </section>
 
   <section class="lp-close">
     <div class="lp-close-card">
       <svg class="lp-leaf" viewBox="0 0 120 200" aria-hidden="true"><path d="M70 6 C78 60 76 120 52 196" stroke="#C3CDB9" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M72 58 C40 30 6 34 4 44 C20 62 52 66 72 58Z" fill="#C3CDB9"/><path d="M76 74 C78 46 100 30 118 30 C116 56 100 70 76 74Z" fill="#C3CDB9"/><path d="M66 120 C36 98 4 104 0 112 C18 130 48 132 66 120Z" fill="#C3CDB9"/><path d="M60 158 C66 128 94 114 116 116 C110 144 88 156 60 158Z" fill="#C3CDB9"/></svg>
-      <div class="eyebrow">Get started</div>
-      <h2>Log a shift. Watch your week add up.</h2>
-      <p class="lp-sub">Download ProTip365 on Android, or try the interactive demo right here in your browser. It runs on sample data and every number updates as you go.</p>
-      <div class="lp-actions" style="margin-bottom:0"><a class="btn lp-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener">Get it on Google Play</a><a class="btn ghost lp-btn" href="prototype.html">Try the demo</a></div>
+      <div class="eyebrow" data-i18n="closeEyebrow">Get started</div>
+      <h2 data-i18n="closeH2">Log a shift. Watch your week add up.</h2>
+      <p class="lp-sub" data-i18n="closeSub">Download ProTip365 on Android, or try the interactive demo right here in your browser. It runs on sample data and every number updates as you go.</p>
+      <div class="lp-actions" style="margin-bottom:0">
+        <a class="btn lp-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" target="_blank" rel="noopener" data-i18n="ctaPlay">Get it on Google Play</a>
+        <a class="btn ghost lp-btn" href="prototype.html" data-i18n="ctaDemo">Try the demo</a>
+      </div>
     </div>
   </section>
 </main>
 
 <footer class="lp-footer">
-  <span>© 2026 protip<em>365</em> · Defacto365 · Built for servers, bartenders and bussers</span>
-  <nav class="lp-foot-nav"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a></nav>
+  <span>© 2026 protip<em>365</em> · Defacto365 · <span data-i18n="footTag">Built for servers, bartenders and bussers</span></span>
+  <nav class="lp-foot-nav"><a href="/privacy" data-i18n="footPrivacy">Privacy</a><a href="/terms" data-i18n="footTerms">Terms</a><a href="/support" data-i18n="footSupport">Support</a></nav>
 </footer>
 <script src="app.js"></script>
+<script>initI18n();</script>
 </body>
 </html>

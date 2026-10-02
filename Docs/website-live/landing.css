@@ -91,3 +91,7 @@ body.landing{background:var(--bg)}
 .lp-foot-nav{display:flex;gap:20px}
 .lp-foot-nav a{text-decoration:none;color:var(--ink2)}
 .lp-foot-nav a:hover{color:var(--ink);text-decoration:underline}
+.lp-lang{display:flex;background:var(--paper);border-radius:999px;padding:3px}
+.lp-lang button{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink2)}
+.lp-lang button.on{background:var(--ink);color:#FBFAF6}
+@media (max-width:1000px){.lp-nav a:not(.lp-cta-sm){display:none}.lp-lang{order:-1}}
