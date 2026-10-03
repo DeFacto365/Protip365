@@ -52,3 +52,5 @@ artifacts/
 *.apk
 *.aab
 app/dist-web/
+Docs/google-play/preview/
+Docs/google-play/fonts/

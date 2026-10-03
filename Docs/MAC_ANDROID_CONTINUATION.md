@@ -21,3 +21,5 @@ Build/install the current native app locally, then verify:
 Search for the original upload keystore on the Mac by filename only, then compare its public certificate with the upload SHA-256 in `ANDROID_RELEASE_STATUS.md`. Do not print passwords or key contents, generate a replacement key or reset Play signing without resolving the credential requirement. The old production version code is 11.
 
 Do not claim billing, upgrade migration or publication is complete from a successful compilation. Save exact test evidence and outstanding blockers back to the repository.
+
+Google Play listing update: `Docs/google-play/` contains the landing-page logo, six French/English feature screenshots, feature graphics, descriptions and `release-notes.txt` with seven locale tags. Listing changes are saved as drafts in the existing production app. Compare the web-derived screenshots with the final native build and submit the listing with the redesigned Android release. Paste the prepared notes into the new release; do not attach them to production build 11.
