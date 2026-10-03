@@ -1,6 +1,6 @@
 {
   "terms": {
-    "intro": "These terms govern your use of the ProTip365 mobile application (\"the app\"), published by Defacto365. By installing or using the app, you agree to these terms.",
+    "intro": "These terms govern your use of the ProTip365 mobile application (\"the app\"). By installing or using the app, you agree to these terms.",
     "sections": [
       [
         "What ProTip365 is",
@@ -32,7 +32,7 @@
       ],
       [
         "Limitation of liability",
-        "To the maximum extent permitted by law, Defacto365 will not be liable for indirect, incidental, special, or consequential damages, or for loss of data or profits, arising from your use of the app. Where liability cannot be excluded, it is limited to the amount you paid for the app in the twelve months before the claim. Nothing in these terms excludes liability that cannot be excluded under applicable consumer-protection law, including the laws of Québec."
+        "To the maximum extent permitted by law, ProTip365 will not be liable for indirect, incidental, special, or consequential damages, or for loss of data or profits, arising from your use of the app. Where liability cannot be excluded, it is limited to the amount you paid for the app in the twelve months before the claim. Nothing in these terms excludes liability that cannot be excluded under applicable consumer-protection law, including the laws of Québec."
       ],
       [
         "Changes",
@@ -49,7 +49,7 @@
     ]
   },
   "privacy": {
-    "intro": "ProTip365 (\"the app\") is published by Defacto365. This policy explains what happens to your information when you use ProTip365.",
+    "intro": "This policy explains what happens to your information when you use ProTip365.",
     "sections": [
       [
         "No account required",
@@ -57,7 +57,7 @@
       ],
       [
         "Where your data lives",
-        "All information you enter into ProTip365 — including employer names, shift schedules, hours worked, tips, tip-outs, sales figures, payout details, goals, and notes — is stored in an encrypted local database on your device. ProTip365 does not upload these records to Defacto365, Supabase, a cloud-sync service, an analytics provider, or an advertising provider."
+        "All information you enter into ProTip365 — including employer names, shift schedules, hours worked, tips, tip-outs, sales figures, payout details, goals, and notes — is stored in an encrypted local database on your device. ProTip365 does not upload these records to ProTip365, Supabase, a cloud-sync service, an analytics provider, or an advertising provider."
       ],
       [
         "What we collect",
@@ -73,7 +73,7 @@
       ],
       [
         "Purchases",
-        "If you purchase a lifetime unlock or monthly subscription, the transaction is processed by Apple App Store or Google Play. The store returns purchase status to the app on your device so ProTip365 can grant or restore access. Defacto365 does not operate a receipt server and does not receive your payment-card details or billing address."
+        "If you purchase a lifetime unlock or monthly subscription, the transaction is processed by Apple App Store or Google Play. The store returns purchase status to the app on your device so ProTip365 can grant or restore access. ProTip365 does not operate a receipt server and does not receive your payment-card details or billing address."
       ],
       [
         "Security, backups, and notifications",
@@ -106,7 +106,7 @@
       ],
       [
         "How do I make or restore a backup?",
-        "Open Settings → Encrypted backup &amp; restore. Choose a strong password and save the <code>.pt365</code> file somewhere you control. To restore, select that file and enter the same password. Defacto365 cannot recover a forgotten backup password. Restoring records requires active trial or paid write access."
+        "Open Settings → Encrypted backup &amp; restore. Choose a strong password and save the <code>.pt365</code> file somewhere you control. To restore, select that file and enter the same password. ProTip365 cannot recover a forgotten backup password. Restoring records requires active trial or paid write access."
       ],
       [
         "How do purchases work?",
@@ -118,7 +118,7 @@
       ],
       [
         "Passcode or biometric trouble",
-        "Try the device passcode or configured recovery method shown by the app. Because the database key is local and Defacto365 has no copy, support cannot bypass the app lock or recover encrypted records without an available recovery method."
+        "Try the device passcode or configured recovery method shown by the app. Because the database key is local and ProTip365 has no copy, support cannot bypass the app lock or recover encrypted records without an available recovery method."
       ],
       [
         "Erase local data",
