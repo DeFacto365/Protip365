@@ -123,7 +123,17 @@
     else if (url.origin === location.origin && url.pathname === '/prototype.html') name = 'demo_open';
     else if (url.hostname === 'www.facebook.com' || url.hostname === 'facebook.com') name = 'facebook_click';
     if (!name) return;
-    window.gtag('event', name, { send_to: ID, page_language: lang(), link_url: cleanURL(url.href), cta_location: link.closest('header') ? 'header' : link.closest('footer') ? 'footer' : link.closest('#pricing') ? 'pricing' : 'content' });
+    const parameters = { send_to: ID, page_language: lang(), link_url: cleanURL(url.href), cta_location: link.closest('header') ? 'header' : link.closest('footer') ? 'footer' : link.closest('#pricing') ? 'pricing' : 'content' };
+    // Give same-tab navigation a short delivery window; never trap a visitor if Google is blocked.
+    if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && (!link.target || link.target === '_self')) {
+      event.preventDefault();
+      let navigated = false;
+      const navigate = () => { if (!navigated) { navigated = true; location.assign(link.href); } };
+      parameters.event_callback = navigate;
+      parameters.event_timeout = 500;
+      setTimeout(navigate, 600);
+    }
+    window.gtag('event', name, parameters);
   });
   const saved = preference();
   window.addEventListener('storage', event => {
