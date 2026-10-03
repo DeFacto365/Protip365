@@ -23,17 +23,31 @@ export function AccessSheet({visible, onClose, t, onMessage}: {
 }) {
   const access = useAccess(), catalog = usePurchaseStore();
   const [busy, setBusy] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  useEffect(() => {if (visible) setMessage('');}, [visible]);
+  useEffect(() => {
+    if (['lifetime', 'subscription'].includes(access.status) && message === t('purchasePending')) {
+      setMessage(t('purchaseSuccess'));
+      onMessage(t('purchaseSuccess'));
+    }
+  }, [access.status, message, t, onMessage]);
   const action = async (fn: () => Promise<void>) => {
+    setMessage('');
     setBusy(true);
     try {await fn(); onMessage(t(['lifetime', 'subscription'].includes(useAccess.getState().status) ? 'purchaseSuccess' : 'noPurchases')); onClose();}
     catch (error) {
       const code = (error as {code?: string}).code;
-      if (code !== 'iap_cancelled') onMessage(t(code === 'iap_pending' ? 'purchasePending' : 'storeUnavailable'));
+      if (code !== 'iap_cancelled') {
+        const result = t(code === 'iap_pending' ? 'purchasePending' : 'storeUnavailable');
+        setMessage(result);
+        onMessage(result);
+      }
     } finally {setBusy(false);}
   };
   return <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
     <ScrollView contentContainerStyle={{padding: 28, paddingTop: 64, gap: 20, flexGrow: 1, backgroundColor: C.bg}}>
       <Txt kind="title">{t('accessTitle')}</Txt>
+      {!!message && <View accessibilityLiveRegion="polite"><Txt>{message}</Txt></View>}
       <Txt>{t(access.status === 'expired' ? 'accessExpired' : access.status === 'trial' ? 'accessTrial' : 'accessPaid')}
         {access.status === 'trial' ? ` ${access.trialDaysRemaining}` : ''}</Txt>
       <Txt kind="small">{t('accessDataSafe')}</Txt>

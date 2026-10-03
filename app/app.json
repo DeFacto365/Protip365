@@ -32,7 +32,8 @@
       "package": "com.defacto365.protip365",
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
-      ]
+      ],
+      "versionCode": 14
     },
     "web": {
       "favicon": "./assets/favicon.png"

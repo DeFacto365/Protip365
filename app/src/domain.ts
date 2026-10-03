@@ -26,11 +26,14 @@ export type Shift = {
   note: string;
   rate: number;
   planned?: boolean;
+  status?: "planned" | "worked" | "missed" | "cancelled";
+  otherIncome?: number | null;
   createdAt: string;
   updatedAt: string;
 };
 export type Settings = {
   language: "fr" | "en";
+  currencyCode?: string;
   weekStart: number;
   reminder: boolean;
   offset: number;
@@ -39,6 +42,7 @@ export type Settings = {
 };
 export type Data = {
   version: 1;
+  legacyArchive?: import("./legacy").LegacyArchive;
   onboarded: boolean;
   jobs: Job[];
   shifts: Shift[];
@@ -68,7 +72,7 @@ export const net = (s: Shift) =>
   (s.tipOut ?? 0);
 export const wage = (s: Shift) => Math.round(hours(s) * s.rate);
 export const hourly = (s: Shift) =>
-  hours(s) > 0 ? Math.round((wage(s) + net(s)) / hours(s)) : null;
+  hours(s) > 0 ? Math.round((wage(s) + net(s) + (s.otherIncome ?? 0)) / hours(s)) : null;
 export function weekStart(d: string, start: number) {
   return addDays(d, -((localDate(d).getDay() - start + 7) % 7));
 }
@@ -88,13 +92,14 @@ export function range(
         ]
       : [today.slice(0, 4) + "-01-01", today];
 }
+export const recorded = (s: Shift) => !s.planned && (!s.status || s.status === "worked");
 export function inRange(shifts: Shift[], from: string, to: string) {
-  return shifts.filter((s) => !s.planned && s.date >= from && s.date <= to);
+  return shifts.filter((s) => recorded(s) && s.date >= from && s.date <= to);
 }
 export function totals(shifts: Shift[]) {
   const tips = shifts.reduce((v, s) => v + net(s), 0),
     h = shifts.reduce((v, s) => v + hours(s), 0),
-    pay = tips + shifts.reduce((v, s) => v + wage(s), 0);
+    pay = tips + shifts.reduce((v, s) => v + wage(s) + (s.otherIncome ?? 0), 0);
   return {
     tips,
     h,
@@ -141,9 +146,11 @@ export function validData(value: unknown): value is Data {
     typeof d.settings.reminder === "boolean" &&
     Number.isFinite(d.settings.offset) &&
     d.settings.offset >= 0 &&
-    d.settings.offset <= 120 &&
+    d.settings.offset <= 1440 &&
     (d.settings.goal === null ||
       (Number.isSafeInteger(d.settings.goal) && d.settings.goal >= 0)) &&
+    (d.settings.currencyCode === undefined || (typeof d.settings.currencyCode === "string" && /^[A-Z]{3}$/.test(d.settings.currencyCode))) &&
+    (d.legacyArchive === undefined || (d.legacyArchive.database === "protip365.db" && Number.isInteger(d.legacyArchive.userVersion) && !!d.legacyArchive.tables && typeof d.legacyArchive.tables === "object" && Object.values(d.legacyArchive.tables).every(Array.isArray))) &&
     typeof d.settings.name === "string" &&
     new Set(d.jobs.map((j) => j?.id)).size === d.jobs.length &&
     new Set(d.shifts.map((s) => s?.id)).size === d.shifts.length &&
@@ -162,13 +169,15 @@ export function validData(value: unknown): value is Data {
         validTime(j.end) &&
         Number.isInteger(j.brk) &&
         j.brk >= 0 &&
-        j.brk <= 60,
+        j.brk <= 1440,
     ) &&
     d.shifts.every(
       (s) =>
         !!s &&
         typeof s.id === "string" &&
         s.id.length > 0 &&
+        (s.status === undefined || ["planned", "worked", "missed", "cancelled"].includes(s.status)) &&
+        (s.otherIncome == null || (Number.isSafeInteger(s.otherIncome) && s.otherIncome >= 0)) &&
         (s.planned === undefined || typeof s.planned === "boolean") &&
         typeof s.createdAt === "string" &&
         Number.isFinite(Date.parse(s.createdAt)) &&
@@ -180,7 +189,7 @@ export function validData(value: unknown): value is Data {
         validTime(s.end) &&
         Number.isInteger(s.brk) &&
         s.brk >= 0 &&
-        s.brk <= 60 &&
+        s.brk <= 1440 &&
         Number.isSafeInteger(s.rate) &&
         s.rate >= 0 &&
         [s.cash, s.card, s.tipIn, s.tipOut, s.sales, s.other].every(

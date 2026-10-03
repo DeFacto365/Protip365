@@ -1,5 +1,7 @@
 # Android emulator validation — October 3, 2026
 
+Current continuation status is recorded in ANDROID_RELEASE_STATUS.md. Its October 3 checkpoint supersedes historical pending/completed labels below. Legacy upgrade currently fails closed after a successful inherited passcode check; production is blocked until corrected.
+
 Native runtime tested over SSH on the user's Apple Silicon MacBook, using Android SDK adb and UI Automator hierarchy inspection with actual input, screenshots, and logcat. This was a standalone APK; Metro was not used.
 
 ## Environment and artifact

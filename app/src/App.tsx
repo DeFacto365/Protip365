@@ -33,6 +33,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import {
   Data,
+  recorded,
   Job,
   Shift,
   addDays,
@@ -76,6 +77,7 @@ import {
   s,
 } from "./ui";
 import { DateField, HoursForm, JobForm, TipsForm } from "./forms";
+import {LockGate} from "./security/LockGate";
 import {BillingHost, AccessSheet, useAccess} from './billing/access';
 type Screen =
   | "welcome"
@@ -112,7 +114,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <BillingHost />
-      <Main />
+      <LockGate><Main /></LockGate>
     </SafeAreaProvider>
   );
 }
@@ -177,7 +179,8 @@ function Main() {
       ND(value.settings.name);
       S(value.onboarded ? "home" : "welcome");
       G(value.settings.goal === null ? "" : String(value.settings.goal / 100));
-    } catch {
+    } catch (error) {
+      console.warn('Local record load failed', error instanceof Error ? error.name : 'UnknownError');
       F(true);
     }
   }, []);
@@ -193,7 +196,7 @@ function Main() {
       ? "—"
       : new Intl.NumberFormat(
           data?.settings.language === "fr" ? "fr-CA" : "en-CA",
-          { style: "currency", currency: "CAD" },
+          { style: "currency", currency: data?.settings.currencyCode ?? "CAD" },
         ).format(n / 100);
   const fmt = (
     d: string,
@@ -227,7 +230,7 @@ function Main() {
     const d = reference.current;
     if (!d) return;
     const last = d.shifts
-        .filter((x) => !x.planned)
+        .filter(recorded)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0],
       scheduled = d.shifts.find((s) => s.date === date && s.planned),
       source = shift ?? scheduled;
@@ -365,7 +368,7 @@ function Main() {
       <Pressable
         key={shift.id}
         accessibilityRole="button"
-        onPress={() => begin(shift.date, shift, !!shift.planned)}
+        onPress={() => {if (shift.status === "missed" || shift.status === "cancelled") return; begin(shift.date, shift, !!shift.planned);}}
         style={s.listItem}
       >
         <View style={s.row}>
@@ -379,12 +382,12 @@ function Main() {
               {hours(shift).toLocaleString(undefined, {
                 maximumFractionDigits: 2,
               })}{" "}
-              h{shift.planned ? " · " + t("planned") : ""}
+              h{shift.status === "missed" || shift.status === "cancelled" ? ` · ${data.settings.language === "fr" ? (shift.status === "missed" ? "Absent" : "Annulé") : shift.status}` : ""}{shift.planned ? " · " + t("planned") : ""}
             </Txt>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Txt>{shift.planned ? "—" : money(net(shift))}</Txt>
-            {!shift.planned && <Txt kind="small">{money(hourly(shift))}/h</Txt>}
+            <Txt>{!recorded(shift) ? "—" : money(net(shift))}</Txt>
+            {recorded(shift) && <Txt kind="small">{money(hourly(shift))}/h</Txt>}
           </View>
         </View>
       </Pressable>
@@ -579,7 +582,7 @@ function Main() {
       break;
     case "home": {
       const recent = data.shifts
-        .filter((s) => !s.planned)
+        .filter(recorded)
         .sort(
           (a, b) =>
             b.date.localeCompare(a.date) ||
@@ -697,7 +700,7 @@ function Main() {
                     ...data,
                     shifts: [
                       ...data.shifts.filter((s) => s.id !== draft.id),
-                      { ...draft, planned: true, updatedAt: new Date().toISOString() },
+                      { ...draft, planned: true, status: "planned", updatedAt: new Date().toISOString() },
                     ],
                   });
                   S("calendar");
@@ -744,7 +747,7 @@ function Main() {
           (s) =>
             s.id !== saved.id &&
             s.job === saved.job &&
-            !s.planned &&
+            recorded(s) &&
             localDate(s.date).getDay() === localDate(saved.date).getDay(),
         ),
         difference = history.length
@@ -772,7 +775,7 @@ function Main() {
           </Card>
           <View style={s.split}>
             {metric(t("hourly"), money(hourly(saved)), t("hourlyHint"))}
-            {metric(t("hours"), hours(saved) + " h")}
+            {metric(t("hours"), hours(saved).toLocaleString(undefined, {maximumFractionDigits: 2}) + " h")}
           </View>
           {difference > 0 && (
             <Txt>
@@ -855,7 +858,7 @@ function Main() {
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {cells.map((d) => {
-              const ss = data.shifts.filter((s) => s.date === d && !s.planned),
+              const ss = data.shifts.filter((s) => s.date === d && recorded(s)),
                 jobs = [
                   ...new Set(
                     data.shifts.filter((s) => s.date === d).map((s) => s.job),
@@ -942,7 +945,7 @@ function Main() {
         max = Math.max(1, ...bars);
       const averages = Array.from({ length: 7 }, (_, n) => {
         const rows = data.shifts.filter(
-          (s) => !s.planned && localDate(s.date).getDay() === n,
+          (s) => recorded(s) && localDate(s.date).getDay() === n,
         );
         return {
           n,

@@ -5,6 +5,8 @@ const mockDb = {
   runAsync: jest.fn(async () => {}),
   closeAsync: jest.fn(async () => {}),
 };
+jest.mock("expo-file-system", () => ({File: class {exists = false}}));
+jest.mock("./security/appLock", () => ({requireDatabaseUnlocked: jest.fn()}));
 jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
 jest.mock("expo-sqlite", () => ({
   openDatabaseAsync: jest.fn(async () => mockDb),
@@ -60,4 +62,15 @@ test("a failed write is reported and does not poison subsequent saves", async ()
   await expect(storage.save(storage.fresh())).rejects.toThrow("disk full");
   await expect(storage.save(storage.fresh())).resolves.toBeUndefined();
   expect(mockDb.runAsync).toHaveBeenCalledTimes(2);
+});
+
+test("inherited lock rejects record reads and queued writes before keys or SQLite are accessed", async () => {
+  const gate = jest.requireMock("./security/appLock").requireDatabaseUnlocked as jest.Mock;
+  gate.mockImplementation(() => {throw new Error("App is locked");});
+  const storage = await import("./storage"), sqlite = await import("expo-sqlite"), secure = await import("expo-secure-store");
+  await expect(storage.load()).rejects.toThrow("App is locked");
+  await expect(storage.save(storage.fresh())).rejects.toThrow("App is locked");
+  expect(sqlite.openDatabaseAsync).not.toHaveBeenCalled();
+  expect(secure.getItemAsync).not.toHaveBeenCalled();
+  gate.mockImplementation(() => {});
 });

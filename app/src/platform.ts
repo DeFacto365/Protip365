@@ -26,10 +26,10 @@ const escape = (v: unknown) =>
         c
       ]!,
   );
-const money = (v: number, language: "fr" | "en") =>
+const money = (v: number, language: "fr" | "en", currency = "CAD") =>
   new Intl.NumberFormat(language === "fr" ? "fr-CA" : "en-CA", {
     style: "currency",
-    currency: "CAD",
+    currency,
   }).format(v / 100);
 export async function shareFile(name: string, value: string, type: string) {
   if (Platform.OS === "web") {
@@ -56,6 +56,7 @@ export const backup = (d: Data) =>
     "application/json",
   );
 export function csv(data: Data) {
+  const currency = data.settings.currencyCode ?? "CAD";
   const cell = (v: unknown) => {
     const s = String(v ?? "");
     return (
@@ -74,15 +75,17 @@ export function csv(data: Data) {
         "End",
         "Break minutes",
         "Hours",
-        "Wage CAD/hour",
-        "Cash CAD",
-        "Card CAD",
-        "Shared in CAD",
-        "Shared out CAD",
-        "Other direct tips CAD",
-        "Net tips CAD",
-        "Sales CAD",
-        "Wages CAD",
+        `Wage ${currency}/hour`,
+        `Cash ${currency}`,
+        `Card ${currency}`,
+        `Shared in ${currency}`,
+        `Shared out ${currency}`,
+        `Other direct tips ${currency}`,
+        `Net tips ${currency}`,
+        `Sales ${currency}`,
+        `Wages ${currency}`,
+        "Other income " + currency,
+        "Status",
         "Planned",
         "Note",
         "Created",
@@ -110,6 +113,8 @@ export function csv(data: Data) {
           m(net(s)),
           m(s.sales),
           m(wage(s)),
+          m(s.otherIncome ?? null),
+          s.status ?? (s.planned ? "planned" : "worked"),
           s.planned ?? false,
           s.note,
           s.createdAt,
@@ -144,6 +149,7 @@ export async function statement(
   annual = false,
 ) {
   const l = data.settings.language,
+    currency = data.settings.currencyCode ?? "CAD",
     t = (k: Parameters<typeof text>[0]) => text(k, l);
   const sum = (fn: (s: Shift) => number) =>
     shifts.reduce((v, s) => v + fn(s), 0);
@@ -153,20 +159,20 @@ export async function statement(
           const ss = shifts.filter((s) => s.job === j.id);
           return `<tr><td>${escape(j.name)}</td><td>${money(
             ss.reduce((n, s) => n + net(s), 0),
-            l,
+            l, currency,
           )}</td><td>${money(
             ss.reduce((n, s) => n + wage(s), 0),
-            l,
+            l, currency,
           )}</td></tr>`;
         })
         .join("")
     : shifts
         .map(
           (s) =>
-            `<tr><td>${escape(s.date)}</td><td>${s.sales === null ? "—" : money(s.sales, l)}</td><td>${money((s.cash ?? 0) + (s.card ?? 0), l)}</td><td>${money(s.other ?? 0, l)}</td><td>${money(s.tipIn ?? 0, l)}</td><td>${money(s.tipOut ?? 0, l)}</td></tr>`,
+            `<tr><td>${escape(s.date)}</td><td>${s.sales === null ? "—" : money(s.sales, l, currency)}</td><td>${money((s.cash ?? 0) + (s.card ?? 0), l, currency)}</td><td>${money(s.other ?? 0, l, currency)}</td><td>${money(s.tipIn ?? 0, l, currency)}</td><td>${money(s.tipOut ?? 0, l, currency)}</td></tr>`,
         )
         .join("");
-  const html = `<!doctype html><html lang="${l}"><head><meta charset="utf-8"><style>body{font-family:Arial;color:#3f2a22;padding:32px}h1{font-family:Georgia;font-size:28px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;border-bottom:1px solid #e7e2d8;text-align:left}.total{background:#e0e5d6;padding:20px;margin:24px 0;font-size:24px}p{line-height:1.5}</style></head><body><h1>ProTip365 — ${escape(t(annual ? "tax" : "statement"))}</h1><p>${escape(data.settings.name)}<br>${escape(job)}<br>${escape(from)} → ${escape(to)}</p><table><thead><tr>${(annual ? [t("employer"), t("net"), l === "fr" ? "Salaire" : "Wages"] : [t("date"), t("sales"), "B", "C", "D", "E"]).map((v) => `<th>${escape(v)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><div class="total">${escape(t(annual ? "net" : "declare"))}: ${money(sum(net), l)}</div><p>${annual ? (l === "fr" ? "Totaux personnels par employeur. Compare avec tes feuillets fiscaux pour éviter de déclarer deux fois les mêmes pourboires." : "Personal totals by employer. Compare with your tax slips to avoid reporting the same tips twice.") : escape(t("statementNote"))}</p><p>${annual ? "https://www.canada.ca/en/revenue-agency/campaigns/track-report-tips-gratuities.html" : RQ}</p></body></html>`;
+  const html = `<!doctype html><html lang="${l}"><head><meta charset="utf-8"><style>body{font-family:Arial;color:#3f2a22;padding:32px}h1{font-family:Georgia;font-size:28px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:10px;border-bottom:1px solid #e7e2d8;text-align:left}.total{background:#e0e5d6;padding:20px;margin:24px 0;font-size:24px}p{line-height:1.5}</style></head><body><h1>ProTip365 — ${escape(t(annual ? "tax" : "statement"))}</h1><p>${escape(data.settings.name)}<br>${escape(job)}<br>${escape(from)} → ${escape(to)}</p><table><thead><tr>${(annual ? [t("employer"), t("net"), l === "fr" ? "Salaire" : "Wages"] : [t("date"), t("sales"), "B", "C", "D", "E"]).map((v) => `<th>${escape(v)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table><div class="total">${escape(t(annual ? "net" : "declare"))}: ${money(sum(net), l, currency)}</div><p>${annual ? (l === "fr" ? "Totaux personnels par employeur. Compare avec tes feuillets fiscaux pour éviter de déclarer deux fois les mêmes pourboires." : "Personal totals by employer. Compare with your tax slips to avoid reporting the same tips twice.") : escape(t("statementNote"))}</p><p>${annual ? "https://www.canada.ca/en/revenue-agency/campaigns/track-report-tips-gratuities.html" : RQ}</p></body></html>`;
   if (Platform.OS === "web") {
     const win = window.open("", "_blank");
     if (!win) throw new Error("Pop-up blocked");

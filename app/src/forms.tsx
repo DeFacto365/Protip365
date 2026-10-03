@@ -356,7 +356,7 @@ export function TipsForm({
         <Txt kind="eyebrow">2 / 2</Txt>
         <Txt kind="title">{t("net")}</Txt>
         <Txt kind="small">
-          {job.name} · {draft.date} · {hours(draft)} h
+          {job.name} · {draft.date} · {hours(draft).toLocaleString(undefined, {maximumFractionDigits: 2})} h
         </Txt>
         <Field
           label={t("cash")}
@@ -450,6 +450,7 @@ export function TipsForm({
               ...Object.fromEntries(fields.map((k) => [k, a(k)])),
               note,
               planned: false,
+              status: "worked",
               updatedAt: new Date().toISOString(),
             })
               .catch(() => E(t("storageError")))
