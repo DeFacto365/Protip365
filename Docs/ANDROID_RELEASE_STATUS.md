@@ -25,8 +25,8 @@ Current test artifact: `artifacts/ProTip365-3.0.0-billing-test.apk`, SHA-256 `B9
 
 ## Release blockers / remaining validation
 
-1. Recover the matching upload key. The configured `C:\Users\jack_\protip365-keys\protip365-upload.keystore` is missing and EAS has no uploaded credentials. Two older archived JKS files exist, but their certificate match has not been established and the current credential password does not unlock them. Never upload a guessed replacement or silently reset the upload key.
-2. Reconnect native test access. The prior temporary Mac SSH authorization was removed after testing; the Mac is not currently a connected host in this Windows Codex session.
+1. **Resolved on the Mac, October 3:** recovered `~/Library/CloudStorage/OneDrive-Synergia365ConseilInc/Documents/protip365-keys/protip365-upload.keystore`. The adjacent credential note unlocks alias `protip365-upload`; keytool confirms both SHA-256 and SHA-1 exactly match the recorded Play upload certificate. Passwords and private keys remain outside the repository. A second copy exists in the DeFacto365 finance folder. Correctly signed production artifacts remain to be built and tested.
+2. **Resolved on the Mac, October 3:** direct local SDK/adb access is available; `ProTip365_QA_API36` starts as `emulator-5554`. No SSH authorization was reintroduced.
 3. Run actual Google Play license-tester purchase tests for monthly and lifetime, cancellation/pending, restore, refund/revocation and subscription renewal/expiry. Use Google's test payment methods and verify the test banner; no real charges.
 4. Implement and test preservation/import of the legacy encrypted database, respecting its existing passcode lock. The redesign currently uses its own database and leaves the old database untouched. Preserving the file alone is not a completed upgrade migration.
 5. Complete native backup restore/file inspection, notification delivery/actions/cancellation and accessibility checks listed in `ANDROID_EMULATOR_VALIDATION.md`. Planning today's shift, cold notification routing, stale snooze prevention and visible Undo were improved after the earlier emulator session and need native verification.
@@ -34,3 +34,14 @@ Current test artifact: `artifacts/ProTip365-3.0.0-billing-test.apk`, SHA-256 `B9
 7. Produce a correctly signed production AAB with a version code above 11, validate through Play's internal track and pre-launch checks, then submit the production update. Publication is not complete until the new production release is available.
 
 User has authorized Android publication; no release has been uploaded or submitted yet.
+
+## Mac continuation at ca9f9da
+
+- Fetched the requested remote branch and used an isolated managed checkout because the original Mac checkout contains substantial uncommitted work. Those changes were preserved.
+- Reinstalled dependencies from the lockfile; TypeScript and all 24 tests across four suites pass.
+- Play Console is accessible under the user's DeFacto365 Chrome profile. Live inspection confirms production and internal tracks still serve version code 11.
+- With explicit user approval, added `defacto365@gmail.com` to the selected Maya license-tester email list. Play confirms three members; existing members remain. The emulator is signed in with this account. Actual test purchases remain unverified.
+- Downloaded Play's signed universal build 11 APK for upgrade validation. Its bundled code contains the legacy encrypted database and passcode keys, confirming that migration and lock preservation are relevant to the released app.
+- Native build setup uses the existing JDK 21 at `~/.local/share/protip-tools/jdk21/Contents/Home`. Android Studio's bundled newer Java failed native configuration; the default 512 MiB Gradle metaspace limit also failed. `assembleRelease -PreactNativeArchitectures=arm64-v8a` passed in 1m32s with local heap/metaspace limits of 4096/1536 MiB. The debug-signed APK installed successfully with `adb install -r`; SHA-256 `6568A4B34A10979BF45FA7DC30FDFAFA5999BD4D0EB9A761188C101AD716E07A`. This is version 3.0.0, version code 1, and cannot update the Play production app. Runtime and billing checks on this rebuilt artifact remain unverified.
+- Emulator UI automation via the previous adb/UI Automator scripts is awaiting the user's requested method confirmation. The computer-control tool cannot bind the standalone emulator process. Android Studio was opened as an alternative, but its initial project sync used the incompatible bundled Java; local project SDK/JDK settings now point to the existing SDK and JDK 21.
+- The user requires the landing-page logo before Google Play publication. The remote branch subsequently advanced to `e02ca96` with app and launcher branding aligned to the latest landing-page logo. This incoming change is preserved; the APK tested above predates it and the new branding still needs a rebuild and native verification.
