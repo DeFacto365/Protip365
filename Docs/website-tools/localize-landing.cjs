@@ -2,7 +2,6 @@
 // Usage: node Docs/website-tools/localize-landing.cjs <site-directory> <local-server-url>
 const fs = require('fs');
 const path = require('path');
-const {chromium} = require('playwright');
 const rows = [
 ['Hi Maya','Salut Maya','Hola Maya'],
 ['Your tips this week','Tes pourboires cette semaine','Tus propinas esta semana'],
@@ -101,24 +100,31 @@ const rows = [
 ['Total','Total','Total'],
 ['Net tips to declare','Pourboires nets à déclarer','Propinas netas a declarar'],
 ['Tips are 15.0% of sales.','Les pourboires représentent 15.0 % des ventes.','Las propinas son el 15.0 % de las ventas.'],
-['Share PDF with my manager','Partager le PDF avec mon responsable','Compartir PDF con mi responsable'],
+['Share PDF with my manager','Partager mon relevé.','Compartir PDF con mi responsable'],
 ['Keep a record of your tips for each pay period. Reporting requirements depend on your country and region.','Garde un relevé de tes pourboires par période de paie. Les règles de déclaration dépendent de ton pays et de ta région.','Guarda tus propinas por período de pago. Las normas de declaración dependen de tu país y región.'],
 ['Back','Retour','Volver'],['colour','couleur','color'],
 ['toggle reminder','activer le rappel','activar recordatorio'],
 ['Previous month','Mois précédent','Mes anterior'],['Next month','Mois suivant','Mes siguiente'],
 ['e.g. Bar Le Zinc','Ex. : Bar Le Zinc','Ej.: Bar Le Zinc']
-];
+].map(row=>[row[0],row[1].replace(/\bemplois?\b/gi,word=>{
+ const plural=word.toLowerCase()==='emplois';
+ const value=plural?'employeurs':'employeur';
+ return word[0]===word[0].toUpperCase()?value[0].toUpperCase()+value.slice(1):value;
+}),row[2]]);
 async function main() {
+ const {chromium}=require('playwright');
  const dir=process.argv[2]||path.resolve(__dirname,'../website-live');
  const base=process.argv[3]||'http://localhost:4317';
  const b=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),args:['--no-sandbox']});
  const p=await b.newPage();
+ await p.goto(base+'/prototype.html?lang=en',{waitUntil:'networkidle'});
+ const captions=await p.evaluate(()=>window.LAND);
  await p.goto(base+'/',{waitUntil:'networkidle'});
  const originals=await p.locator('.phone').evaluateAll(els=>els.map(e=>e.outerHTML));
  for(const [lang,route] of [['en','/'],['fr','/fr/'],['es','/es/']]){
   await p.goto(base+route,{waitUntil:'networkidle'});
   const count=await p.locator('.phone').count();if(count!==originals.length)throw Error('Phone count mismatch '+lang);
-  await p.evaluate(({lang,originals,rows})=>{
+  await p.evaluate(({lang,originals,rows,captions})=>{
    const locale={en:'en-CA',fr:'fr-FR',es:'es-ES'}[lang];
    const dictionary=Object.fromEntries(rows.map(r=>[r[0],r[lang==='fr'?1:lang==='es'?2:0]]));
    const days={en:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],fr:['lun.','mar.','mer.','jeu.','ven.','sam.','dim.'],es:['lun.','mar.','mié.','jue.','vie.','sáb.','dom.']};
@@ -162,7 +168,29 @@ async function main() {
     const firstNote=document.querySelector('#screen-welcome .shot-copy li');
     if(firstNote)firstNote.textContent='Pick French, English or Spanish up front. Everything else can wait.';
    }
-  },{lang,originals,rows});
+   if(lang!=='en'){
+    const L=captions[lang];
+    document.querySelectorAll('article.shot').forEach(article=>{
+     const id=article.id.replace('screen-',''),note=L.notes[id];
+     if(!note)throw Error('Missing translated caption '+lang+' '+id);
+     article.querySelector('.shot-num').lastChild.nodeValue=L.items[id];
+     article.querySelector('h3').textContent=note.t;
+     [...article.querySelectorAll('.shot-copy li')].forEach((el,i)=>el.textContent=note.n[i]);
+     const next=article.querySelector('.shot-next');next.firstChild.nodeValue=L.s.nextPrefix;next.querySelector('b').textContent=note.next;
+    });
+   }
+   if(lang==='fr'){
+    const normalize=text=>text.replace(/\bemplois?\b/gi,word=>{
+     const value=word.toLowerCase()==='emplois'?'employeurs':'employeur';
+     return word[0]===word[0].toUpperCase()?value[0].toUpperCase()+value.slice(1):value;
+    });
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;
+    while(node=walker.nextNode())if(!['SCRIPT','STYLE'].includes(node.parentElement.tagName))node.nodeValue=normalize(node.nodeValue);
+    document.querySelectorAll('meta[name="description"],meta[property="og:description"],meta[name="twitter:description"]').forEach(e=>e.content=normalize(e.content));
+    document.querySelectorAll('script[type="application/ld+json"]').forEach(e=>e.textContent=normalize(e.textContent));
+   }
+   document.querySelectorAll('a[href^="/prototype.html"]').forEach(a=>a.setAttribute('href','/prototype.html?lang='+lang));
+  },{lang,originals,rows,captions});
   fs.writeFileSync(path.join(dir,lang==='en'?'index.html':lang+'/index.html'),'<!DOCTYPE html>\n'+await p.locator('html').evaluate(e=>e.outerHTML));
   console.log(lang,await p.locator('.phone').count(),'localized phones');
  }

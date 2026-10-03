@@ -3,7 +3,11 @@ const TODAY = '2026-10-02';
 const COLORS = ['#A67B65', '#6F8FA3', '#8A9C7D', '#C9A15B', '#9C7A9A'];
 
 const state = {
-  lang: 'en',
+  lang: (() => {
+    let preferred;
+    try { preferred = new URLSearchParams(location.search).get('lang') || localStorage.getItem('pt365lang'); } catch {}
+    return ['en','fr','es'].includes(preferred) ? preferred : 'en';
+  })(),
   weekStart: 1, // 0=Sun,1=Mon...
   reminder: true,
   goal: 600,
@@ -41,6 +45,9 @@ const state = {
 const $ = (s, el = document) => el.querySelector(s);
 const money = (n, d = 0) => '$' + Number(n || 0).toLocaleString('en-CA', { minimumFractionDigits: d, maximumFractionDigits: d });
 const money2 = n => money(n, 2);
+const displayText = text => window.DemoI18n ? window.DemoI18n.text(text, state.lang) : text;
+const parseAmount = value => Number(String(value).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')) || 0;
+const html = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const job = id => state.jobs.find(j => j.id === id) || state.jobs[0];
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const hoursOf = s => { let d = toMin(s.end) - toMin(s.start); if (d <= 0) d += 1440; return Math.max(0, (d - (Number(s.brk) || 0)) / 60); };
@@ -104,7 +111,7 @@ const FLOW = [
 const ORDER = FLOW.flatMap(g => g.items.map(i => i.id));
 
 const NOTES = {
-  welcome: { t: 'Start in one tap, no account', n: ['Pick French or English up front. Everything else can wait.', 'There\'s no sign-up wall. Data stays on the phone until the user chooses to back it up, because competitors get criticized for forcing accounts first.', 'The importer helps people switching from ServerLife, TipKeepr or a spreadsheet.'], next: 'Add first job' },
+  welcome: { t: 'Start in one tap, no account', n: ['Pick French, English or Spanish up front. Everything else can wait.', 'There\'s no sign-up wall. Data stays on the phone until the user chooses to back it up, because competitors get criticized for forcing accounts first.', 'The importer helps people switching from ServerLife, TipKeepr or a spreadsheet.'], next: 'Add first job' },
   onbJob: { t: 'One job, three fields', n: ['Only the employer name is required. Role and rate come pre-filled.', 'Set the hourly rate for each job. The amount shown here is sample data, not a universal minimum wage.', 'Each job gets a colour. That colour follows it everywhere: calendar, lists and charts.'], next: 'Week & reminder' },
   onbWeek: { t: 'Week that matches the paycheque', n: ['The user picks the day their week starts, so totals line up with their real pay period. This is the most requested fix in competitor reviews.', 'The end-of-shift reminder is on by default. It is the habit loop that keeps the data complete.', 'This is the last onboarding screen. A new user is on Home within about 30 seconds.'], next: 'Home' },
   home: { t: 'Home answers "how am I doing this week?"', n: ['The week\'s total is the biggest thing on screen, with progress toward a goal under it.', 'The + button is always in the same spot. It is the only primary action in the app.', 'Recent shifts show net tips plus the real hourly rate (wage + tips ÷ hours).'], next: 'Calendar, Stats, or tap +' },
@@ -129,10 +136,11 @@ S.welcome = () => `
   <div class="lang" style="margin-bottom:12px">
     <button class="chip ${state.lang === 'fr' ? 'on' : ''}" data-act="lang" data-v="fr">Français</button>
     <button class="chip ${state.lang === 'en' ? 'on' : ''}" data-act="lang" data-v="en">English</button>
+    <button class="chip ${state.lang === 'es' ? 'on' : ''}" data-act="lang" data-v="es">Español</button>
   </div>
   <div class="stack">
     <button class="btn" data-go="onbJob">Get started</button>
-    <button class="btn ghost small" data-act="toast" data-v="Import from ServerLife, TipKeepr or CSV">I already use another app</button>
+    <button class="btn ghost small" data-act="toast" data-v="Demo: import preview from ServerLife, TipKeepr or CSV">I already use another app</button>
   </div>
   <p class="sub-sm" style="text-align:center;margin-top:12px">No account needed. Your data stays on your phone.</p>`;
 
@@ -142,7 +150,7 @@ S.onbJob = () => {
   <div class="topbar">${back('welcome')}<div class="steps"><i class="on"></i><i></i></div><span style="width:40px"></span></div>
   <div class="h1">Where do you work?</div>
   <div class="stack">
-    <div class="field"><label for="oName">Employer name</label><input id="oName" class="input" placeholder="e.g. Bar Le Zinc" value="${o.name}" data-bind="onb.name" autocomplete="off"></div>
+    <div class="field"><label for="oName">Employer name</label><input id="oName" class="input" placeholder="e.g. Bar Le Zinc" value="${html(o.name)}" data-bind="onb.name" autocomplete="off"></div>
     <div class="field"><label>Your role</label>
       <div class="chips">${['Server', 'Bartender', 'Busser', 'Host', 'Barback'].map(r => `<button class="chip ${o.role === r ? 'on' : ''}" data-act="onbRole" data-v="${r}">${r}</button>`).join('')}</div></div>
     <div class="field"><label for="oRate">Hourly wage</label><div class="money"><span>$</span><input id="oRate" class="input" inputmode="decimal" value="${o.rate}" data-bind="onb.rate"></div><div class="help">Sample rate. Enter the hourly wage for this job.</div></div>
@@ -196,7 +204,7 @@ S.home = () => {
 function shiftRow(s) {
   const j = job(s.job);
   return `<div class="shift-row"><span class="dot" style="background:${j.color}"></span>
-    <div><div class="title-sm">${j.name}</div><div class="sub-sm">${fmtDay(s.date)} · ${hoursOf(s).toFixed(1)} h</div></div>
+    <div><div class="title-sm" data-user-text>${html(j.name)}</div><div class="sub-sm">${fmtDay(s.date)} · ${hoursOf(s).toFixed(1)} h</div></div>
     <div class="amt">${money2(net(s))}<small>${money2(perHour(s))}/h</small></div></div>`;
 }
 
@@ -231,7 +239,7 @@ S.log1 = () => {
     <div class="stack" style="gap:8px">${state.jobs.map(j => `
       <button class="job-pick ${d.job === j.id ? 'on' : ''}" data-act="pickJob" data-v="${j.id}">
         <span class="dot" style="background:${j.color};width:16px;height:16px"></span>
-        <span><span class="title-sm" style="display:block">${j.name}</span><span class="sub-sm">${j.role} · ${money2(j.rate)}/h</span></span><span class="chk"></span>
+        <span><span class="title-sm" style="display:block" data-user-text>${html(j.name)}</span><span class="sub-sm">${j.role} · ${money2(j.rate)}/h</span></span><span class="chk"></span>
       </button>`).join('')}
     </div></div>
   <div class="field" style="margin-bottom:16px"><label>When?</label>
@@ -258,7 +266,7 @@ S.log2 = () => {
   return `
   <div class="topbar">${back('log1')}<div class="steps"><i class="on"></i><i class="on"></i></div><span style="width:40px"></span></div>
   <div class="h1" style="margin-bottom:4px">Your tips</div>
-  <p class="sub-sm" style="margin-bottom:16px"><span class="dot" style="display:inline-block;width:8px;height:8px;background:${j.color};vertical-align:middle"></span> ${j.name} · ${fmtDay(d.date)} · ${hoursOf(d).toFixed(1)} h</p>
+  <p class="sub-sm" style="margin-bottom:16px"><span class="dot" style="display:inline-block;width:8px;height:8px;background:${j.color};vertical-align:middle"></span> <span data-user-text>${html(j.name)}</span> · ${fmtDay(d.date)} · ${hoursOf(d).toFixed(1)} h</p>
   <div class="stack">
     ${mf('cash', 'Cash tips')}
     <div class="quick" style="margin-top:-6px">${[5, 10, 20, 50].map(v => `<button data-act="addCash" data-v="${v}">+${v}</button>`).join('')}</div>
@@ -267,7 +275,7 @@ S.log2 = () => {
     ${mf('tipOut', 'Given to others (tip-out)', 'To bar, kitchen, bussers…')}
     <button class="link" data-act="more" style="text-align:left">${d.more ? '− Hide' : '+ More'}: sales & note</button>
     ${d.more ? `${mf('sales', 'Your sales (before tax)', 'Optional. Used to calculate tips as a percentage of sales and prepare your tip statement.')}
-      <div class="field"><label for="f_note">Note</label><input id="f_note" class="input" placeholder="e.g. Hockey night, busy patio" value="${d.note}" data-bind="draft.note"></div>` : ''}
+      <div class="field"><label for="f_note">Note</label><input id="f_note" class="input" placeholder="e.g. Hockey night, busy patio" value="${html(d.note)}" data-bind="draft.note"></div>` : ''}
   </div>
   <div class="tip-sum">
     <div class="row" style="margin-bottom:10px"><span class="muted">You take home</span><span id="liveNet" style="font-family:var(--display);font-weight:600;font-size:26px">${money2(net(d))}</span></div>
@@ -286,7 +294,7 @@ S.saved = () => {
   return `
   <div class="success-ring">${icon.check}</div>
   <div class="h1" style="text-align:center;margin-bottom:4px">Shift saved</div>
-  <p class="muted" style="text-align:center;margin-bottom:20px">${j.name} · ${fmtDay(s.date)}</p>
+  <p class="muted" style="text-align:center;margin-bottom:20px"><span data-user-text>${html(j.name)}</span> · ${fmtDay(s.date)}</p>
   <div class="kpis" style="margin-bottom:12px">
     <div class="kpi"><div class="k">Tips you made</div><div class="v">${money2(net(s))}</div></div>
     <div class="kpi"><div class="k">Real hourly</div><div class="v">${money2(perHour(s))}</div></div>
@@ -312,7 +320,7 @@ S.calendar = () => {
   const monthTot = sum(state.shifts.filter(s => s.date.startsWith(mStr)), net);
   return `
   <div class="row" style="margin:4px 0 4px"><div class="row" style="gap:8px"><button class="back" data-act="calMonth" data-v="9" aria-label="Previous month" ${mm === 9 ? 'disabled style="opacity:.3"' : ''}>${icon.back}</button><div class="h1" style="margin:0">${mm === 10 ? 'October' : 'September'}</div><button class="back" data-act="calMonth" data-v="10" aria-label="Next month" style="transform:scaleX(-1);${mm === 10 ? 'opacity:.3' : ''}">${icon.back}</button></div><div class="title-sm">${money(monthTot)}</div></div>
-  <div class="chips" style="margin:10px 0 14px">${state.jobs.map(j => `<span class="sub-sm" style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:${j.color};width:8px;height:8px"></span>${j.name}</span>`).join('')}</div>
+  <div class="chips" style="margin:10px 0 14px">${state.jobs.map(j => `<span class="sub-sm" style="display:inline-flex;align-items:center;gap:6px" data-user-text><span class="dot" style="background:${j.color};width:8px;height:8px"></span>${html(j.name)}</span>`).join('')}</div>
   <div class="cal">
     ${order.map(i => `<div class="dow">${DOW[i][0]}</div>`).join('')}
     ${days.map(dt => {
@@ -353,7 +361,7 @@ S.stats = () => {
   </div>
   ${state.statsRange === 'week' ? weekGlance() : ''}
   <div class="h2">By job</div>
-  <div class="card bars">${byJob.map(x => `<div class="bar-row"><span>${x.j.name.split(' ').slice(-1)[0]}</span><span class="track"><i style="width:${x.v / maxJ * 100}%;background:${x.j.color}"></i></span><b>${money(x.v)}</b></div>`).join('')}</div>
+  <div class="card bars">${byJob.map(x => `<div class="bar-row"><span data-user-text>${html(x.j.name.split(' ').slice(-1)[0])}</span><span class="track"><i style="width:${x.v / maxJ * 100}%;background:${x.j.color}"></i></span><b>${money(x.v)}</b></div>`).join('')}</div>
   <div class="h2">Best day: ${DOWL[best.d]}</div>
   <div class="card bars">${[1, 2, 3, 4, 5, 6, 0].map(d => { const x = byDow[d]; return `<div class="bar-row"><span>${DOW[d]}</span><span class="track"><i style="width:${x.avg / maxD * 100}%;background:${d === best.d ? 'var(--green)' : '#D9D6C8'}"></i></span><b>${money(x.avg)}</b></div>`; }).join('')}
     <div class="sub-sm">Average tips per shift, all time</div></div>
@@ -364,21 +372,22 @@ S.jobs = () => `
   <div class="h1">Me</div>
   <div class="h2" style="margin-top:0">My jobs</div>
   <div class="card" style="padding:4px 16px">
-    ${state.jobs.map(j => `<div class="shift-row"><span class="dot" style="background:${j.color};width:16px;height:16px"></span><div><div class="title-sm">${j.name}</div><div class="sub-sm">${j.role} · ${money2(j.rate)}/h · usually ${j.start}–${j.end}</div></div><span class="amt sub-sm">Edit</span></div>`).join('')}
+    ${state.jobs.map(j => `<div class="shift-row"><span class="dot" style="background:${j.color};width:16px;height:16px"></span><div><div class="title-sm" data-user-text>${html(j.name)}</div><div class="sub-sm">${j.role} · ${money2(j.rate)}/h · usually ${j.start}–${j.end}</div></div><span class="amt sub-sm">Edit</span></div>`).join('')}
     <button class="list-btn" data-go="onbJob"><span class="ic">${icon.plus}</span><span class="title-sm">Add a job</span><span class="chev">›</span></button>
   </div>
   <div class="h2">Paperwork</div>
   <div class="card" style="padding:0 16px">
     <button class="list-btn" data-go="statement"><span class="ic">${icon.doc}</span><span><span class="title-sm" style="display:block">Tip statement for my boss</span><span class="sub-sm">Pay-period tip statement · PDF</span></span><span class="chev">›</span></button>
-    <button class="list-btn" data-act="toast" data-v="2026 summary PDF ready: total tips by employer"><span class="ic">${icon.cal}</span><span><span class="title-sm" style="display:block">Year summary for taxes</span><span class="sub-sm">Jan 1 – Dec 31, by employer</span></span><span class="chev">›</span></button>
-    <button class="list-btn" data-act="toast" data-v="CSV exported: 19 shifts"><span class="ic">${icon.dl}</span><span><span class="title-sm" style="display:block">Export all my data</span><span class="sub-sm">CSV · free, always</span></span><span class="chev">›</span></button>
+    <button class="list-btn" data-act="toast" data-v="Demo: annual summary preview by employer"><span class="ic">${icon.cal}</span><span><span class="title-sm" style="display:block">Year summary for taxes</span><span class="sub-sm">Jan 1 – Dec 31, by employer</span></span><span class="chev">›</span></button>
+    <button class="list-btn" data-act="toast" data-v="Demo: CSV export preview · ${state.shifts.length} shifts"><span class="ic">${icon.dl}</span><span><span class="title-sm" style="display:block">Export all my data</span><span class="sub-sm">CSV · free, always</span></span><span class="chev">›</span></button>
   </div>
   <div class="h2">Settings</div>
   <div class="card" style="padding:0 16px">
     <div class="list-btn"><span class="ic">${icon.cloud}</span><span><span class="title-sm" style="display:block">Back up my data</span><span class="sub-sm">So you never lose it if you change phones</span></span><span class="chev link">Turn on</span></div>
     <div class="list-btn"><span class="ic">${icon.bell}</span><span class="title-sm">Shift reminders</span><button class="toggle ${state.reminder ? 'on' : ''}" data-act="rem" style="margin-left:auto" aria-label="toggle reminder"></button></div>
     <button class="list-btn" data-go="onbWeek"><span class="ic">${icon.cal}</span><span><span class="title-sm" style="display:block">Week starts on</span><span class="sub-sm">${DOWL[state.weekStart]}</span></span><span class="chev">›</span></button>
-    <button class="list-btn" data-act="lang" data-v="${state.lang === 'en' ? 'fr' : 'en'}"><span class="ic">${icon.globe}</span><span class="title-sm">Language</span><span class="chev">${state.lang === 'en' ? 'English' : 'Français'}</span></button>
+    <div class="list-btn"><span class="ic">${icon.globe}</span><span class="title-sm">Language</span></div>
+    <div class="lang" style="padding:0 0 14px">${['fr','en','es'].map(l=>`<button class="chip ${state.lang===l?'on':''}" data-act="lang" data-v="${l}">${{fr:'Français',en:'English',es:'Español'}[l]}</button>`).join('')}</div>
   </div>`;
 
 S.statement = () => {
@@ -390,17 +399,17 @@ S.statement = () => {
   return `
   <div class="topbar">${back('jobs')}<span class="title-sm">Tip statement</span><span style="width:40px"></span></div>
   <div class="card" style="margin-bottom:12px">
-    <div class="row"><div><div class="title-sm">${j.name}</div><div class="sub-sm">Pay period ${fmtDay(a)} – ${fmtDay(b)}</div></div><span class="dot" style="background:${j.color};width:14px;height:14px"></span></div>
+    <div class="row"><div><div class="title-sm" data-user-text>${html(j.name)}</div><div class="sub-sm">Pay period ${fmtDay(a)} – ${fmtDay(b)}</div></div><span class="dot" style="background:${j.color};width:14px;height:14px"></span></div>
     <table class="sheet-table" style="margin-top:12px">
       <thead><tr><th>Day</th><th>Sales</th><th>B · Tips</th><th>D · In</th><th>E · Out</th></tr></thead>
-      <tbody>${ss.map(s => `<tr><td>${fmtDay(s.date).slice(0, 10)}</td><td>${money(s.sales)}</td><td>${money2((+s.cash || 0) + (+s.card || 0))}</td><td>${money2(s.tipIn)}</td><td>${money2(s.tipOut)}</td></tr>`).join('')}
+      <tbody>${ss.map(s => `<tr><td>${fmtDay(s.date)}</td><td>${money(s.sales)}</td><td>${money2((+s.cash || 0) + (+s.card || 0))}</td><td>${money2(s.tipIn)}</td><td>${money2(s.tipOut)}</td></tr>`).join('')}
       <tr class="tot"><td>Total</td><td>${money(T('sales'))}</td><td>${money2(B)}</td><td>${money2(D)}</td><td>${money2(E)}</td></tr></tbody>
     </table>
   </div>
   <div class="card row" style="margin-bottom:10px"><div><div class="h-eyebrow">Net tips to declare</div><div class="sub-sm">B + C + D − E</div></div><div style="font-family:var(--display);font-weight:600;font-size:26px">${money2(B + D - E)}</div></div>
   <div class="alert ok" style="margin-bottom:16px">Tips are ${(B / Math.max(1, T('sales')) * 100).toFixed(1)}% of sales.</div>
   <div class="stack">
-    <button class="btn" data-act="toast" data-v="PDF ready: share by text, email or print">Share PDF with my manager</button>
+    <button class="btn" data-act="toast" data-v="Demo: PDF sharing preview">Share PDF with my manager</button>
     <p class="sub-sm" style="text-align:center">Keep a record of your tips for each pay period. Reporting requirements depend on your country and region.</p>
   </div>`;
 };
@@ -437,11 +446,29 @@ function render() {
   // flow nav
   document.querySelectorAll('.flow-item').forEach(b => b.classList.toggle('active', b.dataset.screen === current));
   const idx = ORDER.indexOf(current);
-  const n = NOTES[current];
-  $('#notesStep').textContent = `Screen ${idx + 1} of ${ORDER.length}`;
+  const L = window.LAND && window.LAND[state.lang];
+  const n = L && L.notes && L.notes[current] || NOTES[current];
+  $('#notesStep').textContent = displayText(`Screen ${idx + 1} of ${ORDER.length}`);
   $('#notesTitle').textContent = n.t;
   $('#notesList').innerHTML = n.n.map(x => `<li>${x}</li>`).join('');
-  $('#notesNext').innerHTML = `Next in the flow: <b>${n.next}</b>`;
+  $('#notesNext').textContent = '';
+  $('#notesNext').append(document.createTextNode(displayText('Next in the flow: ')));
+  const next = document.createElement('b'); next.textContent = n.next; $('#notesNext').append(next);
+  document.querySelectorAll('.flow-group h3').forEach((e,i)=>e.textContent=L?L.groups[i]:FLOW[i].group);
+  document.querySelectorAll('.flow-item').forEach(e=>{
+    const id=e.dataset.screen, item=FLOW.flatMap(g=>g.items).find(x=>x.id===id);
+    e.lastChild.nodeValue=L&&L.items?L.items[id]:item.label;
+  });
+  document.querySelectorAll('#tabbar [data-go]').forEach(e=>{
+    const labels={home:'Home',calendar:'Calendar',stats:'Stats',jobs:'Me'};
+    if(labels[e.dataset.go])e.lastChild.nodeValue=labels[e.dataset.go];
+  });
+  $('#tabbar .tab-plus').setAttribute('aria-label','Log a shift');
+  if(window.DemoI18n){
+    window.DemoI18n.localize(scr,state.lang,state.weekStart);
+    window.DemoI18n.localize($('#tabbar'),state.lang,state.weekStart);
+    window.DemoI18n.chrome(state.lang);
+  }
 }
 
 function buildFlowNav() {
@@ -458,7 +485,8 @@ function buildFlowNav() {
 
 function toast(msg) {
   const t = document.createElement('div');
-  t.textContent = msg;
+  t.className = 'demo-toast';
+  t.textContent = displayText(msg);
   Object.assign(t.style, { position: 'absolute', left: '16px', right: '16px', bottom: '96px', background: '#3F2A22', color: '#fff', padding: '14px 16px', borderRadius: '14px', fontSize: '14px', zIndex: 10, textAlign: 'center' });
   $('#phone').appendChild(t);
   setTimeout(() => t.remove(), 2200);
@@ -471,13 +499,20 @@ document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]'); if (!a) return;
   const v = a.dataset.v;
   switch (a.dataset.act) {
-    case 'lang': state.lang = v; if (current === 'jobs') toast('Language: ' + (v === 'fr' ? 'Français' : 'English')); render(); break;
+    case 'lang': {
+      if(!['en','fr','es'].includes(v))break;
+      state.lang = v;
+      document.querySelectorAll('.demo-toast').forEach(el=>el.remove());
+      try {localStorage.setItem('pt365lang',v);}catch{}
+      const url=new URL(location.href);url.searchParams.set('lang',v);history.replaceState(null,'',url);
+      render(); break;
+    }
     case 'onbRole': state.onbJob.role = v; render(); break;
     case 'onbColor': state.onbJob.color = v; render(); break;
     case 'onbSave': {
       const o = state.onbJob;
       if (o.name.trim()) {
-        state.jobs.push({ id: 'j' + Date.now(), name: o.name.trim(), role: o.role, rate: parseFloat(o.rate) || 13.30, color: o.color, start: '17:00', end: '23:00' });
+        state.jobs.push({ id: 'j' + Date.now(), name: o.name.trim(), role: o.role, rate: parseAmount(o.rate) || 13.30, color: o.color, start: '17:00', end: '23:00' });
         state.onbJob = { name: '', role: 'Server', rate: '13.30', color: COLORS[state.jobs.length % COLORS.length] };
       }
       go(state.onbReturn || 'onbWeek'); break;
@@ -514,13 +549,13 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   const b = e.target.dataset.bind; if (!b) return;
   const val = e.target.value;
-  if (b === 'goal') { state.goal = +val || 0; return; }
+  if (b === 'goal') { state.goal = parseAmount(val); return; }
   const [obj, key] = b.split('.');
   if (obj === 'onb') { state.onbJob[key] = val; return; }
   if (obj === 'draft') {
-    const d = ensureDraft(); d[key] = val;
-    const live = $('#liveNet'); if (live) live.textContent = money2(net(d));
-    const pill = $('#hrsPill'); if (pill) pill.textContent = hoursOf(d).toFixed(2).replace(/\.?0+$/, '') + ' h worked';
+    const d = ensureDraft(); d[key] = ['cash','card','tipIn','tipOut','sales'].includes(key) ? String(parseAmount(val)) : val;
+    const live = $('#liveNet'); if (live) live.textContent = displayText(money2(net(d)));
+    const pill = $('#hrsPill'); if (pill) pill.textContent = displayText(hoursOf(d).toFixed(2).replace(/\.?0+$/, '') + ' h worked');
     if (key === 'date') render();
   }
 });
@@ -568,7 +603,10 @@ function buildShowcase() {
 }
 
 if (document.body.dataset.mode === 'showcase') buildShowcase();
-else { buildFlowNav(); render(); }
+else {
+  const init=()=>{buildFlowNav();render();};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else setTimeout(init,0);
+}
 })();
 
 window.LAND = {
@@ -600,18 +638,18 @@ window.LAND = {
   },
   fr: {
     title: "Tes quarts. Tes pourboires. | ProTip365",
-    desc: "Ajoute tes quarts et tes pourboires pour tous tes emplois en quelques secondes. Vois ce que tu gagnes vraiment — cette semaine, ce mois, cette année. ProTip365 est un suivi de pourboires privé pour serveuses, serveurs et personnel de bar.",
+    desc: "Ajoute tes quarts et tes pourboires pour tous tes employeurs en quelques secondes. Vois ce que tu gagnes vraiment — cette semaine, ce mois, cette année. ProTip365 est un suivi de pourboires privé pour serveuses, serveurs et personnel de bar.",
     s: {
       navFlow: "Le parcours", navScreens: "Écrans", navDemo: "Démo", navCta: "Disponible sur Google Play",
       heroEyebrow: "Suivi de quarts et de pourboires",
       heroH1: "Tes quarts.<br>Tes pourboires.",
       heroHook: "Tu travailles fort pour tes pourboires. Fais compter chaque quart.",
-      heroLede: "ProTip365 est une appli simple pour le personnel de restaurant et de bar : suis tes quarts, tes pourboires et tes revenus pour tous tes emplois. Ajoute tes pourboires en quelques secondes et vois ce que tu gagnes vraiment chaque semaine, chaque mois et chaque année.",
+      heroLede: "ProTip365 est une appli simple pour le personnel de restaurant et de bar : suis tes quarts, tes pourboires et tes revenus pour tous tes employeurs. Ajoute tes pourboires en quelques secondes et vois ce que tu gagnes vraiment chaque semaine, chaque mois et chaque année.",
       ctaPlay: "Disponible sur Google Play", ctaDemo: "Essayer la démo",
       iosNote: "<strong>Bientôt sur iOS.</strong> La même appli, les mêmes données.",
       k1Label: "Écrans", k1Note: "un parcours tout simple",
       k2Label: "Pour ajouter un quart", k2Note: "prérempli à partir de ton horaire",
-      k3Label: "Emplois", k3Value: "Illimités", k3Note: "tous tes employeurs, une seule appli",
+      k3Label: "Employeurs", k3Value: "Illimités", k3Note: "tous tes employeurs, une seule appli",
       flowEyebrow: "Le parcours utilisateur", flowH2: "Quatre moments. C'est toute l'appli.",
       flowSub: "On configure une fois, on ajoute chaque quart, on vérifie son argent et on s'occupe du papier. Touche un écran pour y sauter.",
       scrEyebrow: "Écran par écran", scrH2: "Chaque écran, et pourquoi il est conçu ainsi.", scrSub: "Écrans affichés avec des données de démonstration.",
@@ -623,18 +661,19 @@ window.LAND = {
     },
     groups: ["Premier lancement", "Chaque quart", "Voir mon argent", "Papier"],
     phone: { eyebrow: "Tes pourboires cette semaine", kept: "pourboires gardés", logged: "quarts enregistrés", btn: "Ajouter mes pourboires", goal: "{p} % de ton objectif de {v} $", m1e: "Ce mois-ci", m1k: "pourboires gardés", m2e: "Pourboires / heure", m2k: "salaire + pourboires", recent: "Quarts récents" },
-    items: { welcome: "Bienvenue", onbJob: "Ajouter un premier emploi", onbWeek: "Semaine et rappel", reminder: "Rappel de fin de quart", log1: "Ajouter un quart · emploi et heures", log2: "Ajouter un quart · pourboires", saved: "Quart enregistré", home: "Accueil · cette semaine", calendar: "Calendrier", stats: "Statistiques · semaine/mois/année", jobs: "Moi · emplois et exports", statement: "Relevé de pourboires" },
+    items: { welcome: "Bienvenue", onbJob: "Ajouter un premier employeur", onbWeek: "Semaine et rappel", reminder: "Rappel de fin de quart", log1: "Ajouter un quart · employeur et heures", log2: "Ajouter un quart · pourboires", saved: "Quart enregistré", home: "Accueil · cette semaine", calendar: "Calendrier", stats: "Statistiques · semaine/mois/année", jobs: "Moi · employeurs et exports", statement: "Relevé de pourboires" },
     notes: {
-      welcome: { t: "On commence en un geste, sans compte", n: ["Choisis ta langue au départ. Tout le reste peut attendre.", "Aucun mur de connexion. Les données restent sur le téléphone jusqu'à ce que tu choisisses de les sauvegarder — les concurrents se font critiquer pour ça.", "L'importateur aide les gens qui arrivent de ServerLife, TipKeepr ou d'un tableur."], next: "Ajouter un premier emploi" },
-      onbJob: { t: "Un emploi, trois champs", n: ["Seul le nom de l'employeur est obligatoire. Le poste et le taux sont déjà remplis.", "Définis le taux horaire de chaque emploi. Le montant affiché est un exemple, pas un salaire minimum universel.", "Chaque emploi reçoit une couleur qui le suit partout : calendrier, listes et graphiques."], next: "Semaine et rappel" },
+      home: { t: "L’accueil répond à « comment va ma semaine ? »", n: ["Le total de la semaine est le chiffre le plus visible, avec la progression vers ton objectif juste en dessous.", "Le bouton + reste toujours au même endroit. C’est l’action principale de l’appli.", "Les quarts récents affichent les pourboires nets et le taux horaire réel : (salaire + pourboires) ÷ heures."], next: "Calendrier, statistiques ou bouton +" },
+      welcome: { t: "On commence en un geste, sans compte", n: ["Choisis ta langue au départ. Tout le reste peut attendre.", "Aucun mur de connexion. Les données restent sur le téléphone jusqu'à ce que tu choisisses de les sauvegarder — les concurrents se font critiquer pour ça.", "L'importateur aide les gens qui arrivent de ServerLife, TipKeepr ou d'un tableur."], next: "Ajouter un premier employeur" },
+      onbJob: { t: "Un employeur, trois champs", n: ["Seul le nom de l'employeur est obligatoire. Le poste et le taux sont déjà remplis.", "Définis le taux horaire de chaque employeur. Le montant affiché est un exemple, pas un salaire minimum universel.", "Chaque employeur reçoit une couleur qui le suit partout : calendrier, listes et graphiques."], next: "Semaine et rappel" },
       onbWeek: { t: "Une semaine alignée sur la paie", n: ["La personne choisit le premier jour de sa semaine, pour que les totaux suivent sa vraie période de paie. C'est la correction la plus demandée dans les avis des concurrents.", "Le rappel de fin de quart est activé par défaut : c'est lui qui garde les données complètes.", "C'est le dernier écran de configuration. Quelqu'un de nouveau arrive à l'accueil en environ 30 secondes."], next: "Accueil" },
-      reminder: { t: "La relance qui ouvre l'étape 1", n: ["Le rappel part 15 minutes après l'heure habituelle de fin.", "Un appui ouvre l'ajout de quart avec l'emploi, la date et les heures déjà remplis. La plupart du temps, il ne reste qu'à taper les pourboires.", "Si on le glisse de côté, il revient le lendemain matin. Le ton ne harcèle jamais."], next: "Ajouter un quart · emploi et heures" },
-      log1: { t: "Quel emploi, quand, combien d'heures", n: ["Emploi, date et heures sont préremplis à partir du rappel ou du dernier quart. Souvent, rien à changer.", "On saisit l'heure de début et de fin, pas des « heures travaillées ». L'appli calcule tout, y compris les quarts de nuit et les pauses.", "Plusieurs quarts le même jour sont permis : un lunch au Chez Lou, une soirée au Zinc."], next: "Pourboires" },
+      reminder: { t: "La relance qui ouvre l'étape 1", n: ["Le rappel part 15 minutes après l'heure habituelle de fin.", "Un appui ouvre l'ajout de quart avec l'employeur, la date et les heures déjà remplis. La plupart du temps, il ne reste qu'à taper les pourboires.", "Si on le glisse de côté, il revient le lendemain matin. Le ton ne harcèle jamais."], next: "Ajouter un quart · employeur et heures" },
+      log1: { t: "Quel employeur, quand, combien d'heures", n: ["Employeur, date et heures sont préremplis à partir du rappel ou du dernier quart. Souvent, rien à changer.", "On saisit l'heure de début et de fin, pas des « heures travaillées ». L'appli calcule tout, y compris les quarts de nuit et les pauses.", "Plusieurs quarts le même jour sont permis : un lunch au Chez Lou, une soirée au Zinc."], next: "Pourboires" },
       log2: { t: "Des pourboires en mots simples", n: ["Quatre montants : comptant, carte, reçus du partage et donnés aux autres. Chaque champ est optionnel.", "Le total que tu gardes se met à jour en direct en bas : aucun calcul à faire.", "Les ventes et la note sont repliées sous « Plus ». Elles permettent de comparer les pourboires aux ventes et de compléter le relevé."], next: "Quart enregistré" },
       saved: { t: "La récompense, tout de suite", n: ["Une confirmation claire avec les deux chiffres qui comptent : les pourboires et le vrai taux horaire.", "La comparaison avec la moyenne de ce jour de semaine donne une raison de revenir.", "Annuler et Modifier sont là, à portée de main : ça installe la confiance."], next: "Accueil" },
-      calendar: { t: "Le mois d'un coup d'œil", n: ["Chaque jour affiche les pourboires nets et des pastilles de couleur par emploi.", "Un appui sur un jour liste ses quarts en dessous; un appui sur un quart le modifie.", "Les quarts planifiés pourraient s'afficher en contour plus tard (V2 : import d'horaire)."], next: "Statistiques" },
+      calendar: { t: "Le mois d'un coup d'œil", n: ["Chaque jour affiche les pourboires nets et des pastilles de couleur par employeur.", "Un appui sur un jour liste ses quarts en dessous; un appui sur un quart le modifie.", "Les quarts planifiés pourraient s'afficher en contour plus tard (V2 : import d'horaire)."], next: "Statistiques" },
       stats: { t: "Semaine · Mois · Année, en un geste", n: ["Trois plages fixes, sans sélecteur de dates. Une plage personnalisée arrive en V2.", "La répartition par employeur et le meilleur jour de la semaine : les chiffres que le personnel demande le plus.", "Quand les ventes sont saisies, le pourcentage de pourboires aide à mieux comprendre chaque quart."], next: "Moi" },
-      jobs: { t: "Emplois, exports, sauvegarde", n: ["Un nombre illimité d'emplois, gratuitement. Les concurrents facturent environ 6 $ par emploi additionnel.", "Les exports sont gratuits : relevé par période de paie, sommaire annuel des revenus, CSV.", "La sauvegarde est optionnelle, expliquée en une phrase. Proposée, jamais imposée."], next: "Relevé de pourboires" },
+      jobs: { t: "Employeurs, exports, sauvegarde", n: ["Un nombre illimité d'employeurs, gratuitement. Les concurrents facturent environ 6 $ par employeur additionnel.", "Les exports sont gratuits : relevé par période de paie, sommaire annuel des revenus, CSV.", "La sauvegarde est optionnelle, expliquée en une phrase. Proposée, jamais imposée."], next: "Relevé de pourboires" },
       statement: { t: "Ton relevé de pourboires, généré", n: ["Un relevé clair des pourboires reçus, partagés et donnés, avec un total net par période de paie.", "Partage le sommaire avec ton gestionnaire ou conserve-le avec tes documents personnels.", "Les obligations de déclaration varient selon le pays et la région. Ce sommaire ne remplace pas les formulaires fiscaux locaux ni les conseils professionnels."], next: "Retour à l'accueil" }
     }
   },
@@ -665,6 +704,7 @@ window.LAND = {
     phone: { eyebrow: "Tus propinas esta semana", kept: "propinas netas", logged: "turnos registrados", btn: "Añadir mis propinas", goal: "{p} % de tu meta de {v} $", m1e: "Este mes", m1k: "propinas netas", m2e: "Propinas / hora", m2k: "salario + propinas", recent: "Turnos recientes" },
     items: { welcome: "Bienvenida", onbJob: "Añadir el primer trabajo", onbWeek: "Semana y recordatorio", reminder: "Recordatorio de fin de turno", log1: "Registrar turno · trabajo y horas", log2: "Registrar turno · propinas", saved: "Turno guardado", home: "Inicio · esta semana", calendar: "Calendario", stats: "Estadísticas · semana/mes/año", jobs: "Yo · trabajos y exportaciones", statement: "Estado de propinas" },
     notes: {
+      home: { t: "Inicio responde a «¿cómo va mi semana?»", n: ["El total de la semana es la cifra más visible, con el progreso hacia tu meta debajo.", "El botón + siempre está en el mismo lugar. Es la acción principal de la app.", "Los turnos recientes muestran las propinas netas y el ingreso real por hora: (salario + propinas) ÷ horas."], next: "Calendario, estadísticas o botón +" },
       welcome: { t: "Empieza en un toque, sin cuenta", n: ["Elige tu idioma al empezar. Todo lo demás puede esperar.", "Sin muro de registro. Los datos quedan en el teléfono hasta que decidas respaldarlos; a las apps rivales las critican por exigir cuenta primero.", "El importador ayuda a quien llega de ServerLife, TipKeepr o una hoja de cálculo."], next: "Añadir el primer trabajo" },
       onbJob: { t: "Un trabajo, tres campos", n: ["Solo el nombre del empleador es obligatorio. El puesto y la tarifa ya vienen listos.", "Configura la tarifa por hora de cada trabajo. El monto mostrado es un ejemplo, no un salario mínimo universal.", "Cada trabajo recibe un color que lo sigue a todas partes: calendario, listas y gráficos."], next: "Semana y recordatorio" },
       onbWeek: { t: "Una semana que sigue tu paga", n: ["La persona elige el día en que empieza su semana, para que los totales cuadren con su período real de pago. Es lo más pedido en las reseñas de las apps rivales.", "El recordatorio de fin de turno viene activado: es el hábito que mantiene los datos completos.", "Es la última pantalla de configuración. Alguien nuevo llega al inicio en unos 30 segundos."], next: "Inicio" },
