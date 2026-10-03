@@ -1,4 +1,4 @@
-export const TRIAL_DAYS = 30;
+export const TRIAL_DAYS = 7;
 /**
  * Paid access is enforced in production. The purchase UI additionally requires
  * a connected native store adapter and a complete product catalog before it can

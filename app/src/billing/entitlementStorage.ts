@@ -57,7 +57,7 @@ function parseRecord(
 
 /**
  * Version 1 shipped while enforcement was disabled. On its one-time migration,
- * start a fair 30-day trial at the greatest wall-clock value already observed,
+ * start a fair 7-day trial at the greatest wall-clock value already observed,
  * while preserving purchases for immediate store reconciliation.
  */
 export function migrateEntitlementRecord(

@@ -10,20 +10,29 @@ import {
 const startedAt = '2026-07-01T00:00:00.000Z';
 
 describe('local entitlement evaluation', () => {
-  it('starts with the complete 30-day trial', () => {
+  it('starts with the complete 7-day trial', () => {
     const result = evaluateEntitlement(
       { trialStartedAt: startedAt, lifetimeUnlocked: false, subscriptionExpiresAt: null },
       new Date(startedAt)
     );
 
-    expect(TRIAL_DAYS).toBe(30);
-    expect(result).toMatchObject({ status: 'trial', canWrite: true, trialDaysRemaining: 30 });
+    expect(TRIAL_DAYS).toBe(7);
+    expect(result).toMatchObject({ status: 'trial', canWrite: true, trialDaysRemaining: 7 });
+  });
+
+  it('allows recording through the final instant of the seventh day', () => {
+    const result = evaluateEntitlement(
+      { trialStartedAt: startedAt, lifetimeUnlocked: false, subscriptionExpiresAt: null },
+      new Date('2026-07-07T23:59:59.999Z')
+    );
+
+    expect(result).toMatchObject({ status: 'trial', canWrite: true, trialDaysRemaining: 1 });
   });
 
   it('enforces read-only access at the exact trial boundary', () => {
     const result = evaluateEntitlement(
       { trialStartedAt: startedAt, lifetimeUnlocked: false, subscriptionExpiresAt: null },
-      new Date('2026-07-31T00:00:00.000Z')
+      new Date('2026-07-08T00:00:00.000Z')
     );
 
     expect(ENTITLEMENT_ENFORCEMENT_ENABLED).toBe(true);
@@ -81,14 +90,14 @@ describe('local entitlement evaluation', () => {
     const result = evaluateEntitlement(
       {
         trialStartedAt: startedAt,
-        lastSeenAt: '2026-07-21T00:00:00.000Z',
+        lastSeenAt: '2026-07-06T00:00:00.000Z',
         lifetimeUnlocked: false,
         subscriptionExpiresAt: null,
       },
-      new Date('2026-07-11T00:00:00.000Z')
+      new Date('2026-07-03T00:00:00.000Z')
     );
 
-    expect(result).toMatchObject({ status: 'trial', trialDaysRemaining: 10 });
+    expect(result).toMatchObject({ status: 'trial', trialDaysRemaining: 2 });
   });
 
   it('fails closed before hydration in production', () => {

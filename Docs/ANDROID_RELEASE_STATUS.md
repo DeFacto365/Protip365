@@ -15,7 +15,7 @@
 
 ## Billing implementation and checks
 
-The new interface now mounts the Expo IAP adapter and preserves the existing `protip365.entitlement.v1` SecureStore record. It retains the existing 30-day trial and monthly/lifetime products. Google Play supplies localized prices. Pending or suspended payments do not unlock access; completed purchases are acknowledged. Restore and foreground reconciliation update cached access. Corrupt access records fail closed rather than starting another trial. Exports, backup restore and record deletion remain accessible after expiry.
+The new interface now mounts the Expo IAP adapter and preserves the existing `protip365.entitlement.v1` SecureStore record. The trial is now 7 days, as approved on October 3, 2026; monthly/lifetime products are retained. Existing trial start dates are preserved rather than reset, and paid entitlements are unchanged. Google Play supplies localized prices. Pending or suspended payments do not unlock access; completed purchases are acknowledged. Restore and foreground reconciliation update cached access. Corrupt access records fail closed rather than starting another trial. Exports, backup restore and record deletion remain accessible after expiry.
 
 TypeScript and **24 tests across four suites** passed. Tests cover financial calculations, trial expiry/clock rollback, purchase restoration/revocation, pending/cancelled purchases, offline access, subscription expiry and old entitlement-record compatibility.
 

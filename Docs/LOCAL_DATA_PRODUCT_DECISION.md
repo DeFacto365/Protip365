@@ -5,6 +5,7 @@ The user confirmed the redesigned ProTip365 experience:
 - No sign-up, email, username, password or cloud account.
 - Tips, shifts and earnings stay on the user's device.
 - No multi-device synchronization or web dashboard.
+- A seven-day app-managed trial starts on first launch; no store checkout is required to start it. After expiry, adding or editing records requires a purchase. Existing trial start dates and paid entitlements are preserved.
 - Exports remain available even when the user stops using the app.
 - An optional local PIN is desired to keep earnings private on a shared phone.
 
