@@ -1,4 +1,4 @@
-body.landing{background:var(--bg)}
+body.landing{background:var(--bg);--ink3:#6B564C;--green:#4F6045}
 .landing a{color:inherit}
 .lp-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:18px 32px;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .lp-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
@@ -71,7 +71,7 @@ body.landing{background:var(--bg)}
 @media (max-width:1000px){
   .lp-hero{grid-template-columns:1fr;padding-top:40px}
   .lp-overview{grid-template-columns:1fr 1fr}
-  .shot,.shot.flip{grid-template-columns:1fr;gap:28px}
+  .shot,.shot.flip{grid-template-columns:minmax(0,1fr);gap:28px}
   .shot.flip .shot-phone{order:0}
   .shot.flip .shot-copy{justify-self:start}
   .lp-nav a:not(.lp-cta-sm),.lp-tag{display:none}
@@ -93,9 +93,9 @@ body.landing{background:var(--bg)}
 .lp-foot-nav a{text-decoration:none;color:var(--ink2)}
 .lp-foot-nav a:hover{color:var(--ink);text-decoration:underline}
 .lp-lang{display:flex;background:var(--paper);border-radius:999px;padding:3px}
-.lp-lang button{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink2)}
-.lp-lang button.on{background:var(--ink);color:#FBFAF6}
-@media (max-width:1000px){.lp-nav a:not(.lp-cta-sm){display:none}.lp-lang{order:-1}}
+.lp-lang button,.lp-lang a{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink2);text-decoration:none}
+.lp-lang button.on,.lp-lang a.on{background:var(--ink);color:#FBFAF6}
+@media (max-width:1000px){.lp-nav a:not(.lp-cta-sm){display:none}.lp-nav .lp-lang a{display:block}.lp-lang{order:-1}}
 @media (max-width:560px){
   .lp-nav .lp-cta-sm{display:none}
   .lp-nav{gap:8px}
