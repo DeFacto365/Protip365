@@ -1,0 +1,63 @@
+const mockDb = {
+  execAsync: jest.fn(async (_sql: string) => {}),
+  getFirstAsync: jest.fn(async (sql: string) =>
+    sql === "PRAGMA cipher_version" ? { cipher_version: "4.6" } : null),
+  runAsync: jest.fn(async () => {}),
+  closeAsync: jest.fn(async () => {}),
+};
+jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
+jest.mock("expo-sqlite", () => ({
+  openDatabaseAsync: jest.fn(async () => mockDb),
+}));
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn(async () => null),
+  setItemAsync: jest.fn(async () => {}),
+}));
+jest.mock("expo-crypto", () => ({
+  randomUUID: () => "01234567-89ab-4cde-8fab-0123456789ab",
+}));
+jest.mock("expo-localization", () => ({ getLocales: () => [] }));
+
+beforeEach(() => {
+  jest.resetModules();
+  jest.clearAllMocks();
+  mockDb.getFirstAsync.mockImplementation(async (sql: string) =>
+    sql === "PRAGMA cipher_version" ? { cipher_version: "4.6" } : null);
+});
+
+test("concurrent loads generate one key and open one encrypted connection", async () => {
+  const storage = await import("./storage");
+  const secure = await import("expo-secure-store");
+  const sqlite = await import("expo-sqlite");
+  await Promise.all([storage.load(), storage.load(), storage.save(storage.fresh())]);
+  expect(secure.setItemAsync).toHaveBeenCalledTimes(1);
+  expect(sqlite.openDatabaseAsync).toHaveBeenCalledTimes(1);
+  expect(mockDb.execAsync.mock.calls[0][0]).toContain("PRAGMA key");
+  expect(mockDb.runAsync).toHaveBeenCalledTimes(1);
+});
+
+test("missing encryption support closes connection and permits safe retry", async () => {
+  const storage = await import("./storage");
+  mockDb.getFirstAsync.mockResolvedValueOnce(null);
+  await expect(storage.load()).rejects.toThrow("Encrypted database");
+  expect(mockDb.closeAsync).toHaveBeenCalledTimes(1);
+  expect(mockDb.runAsync).not.toHaveBeenCalled();
+  await expect(storage.load()).resolves.toEqual(storage.fresh());
+});
+
+test("invalid stored key is rejected before opening database", async () => {
+  const storage = await import("./storage");
+  const secure = await import("expo-secure-store");
+  const sqlite = await import("expo-sqlite");
+  (secure.getItemAsync as jest.Mock).mockResolvedValueOnce("invalid-key");
+  await expect(storage.load()).rejects.toThrow("Invalid database encryption key");
+  expect(sqlite.openDatabaseAsync).not.toHaveBeenCalled();
+});
+
+test("a failed write is reported and does not poison subsequent saves", async () => {
+  const storage = await import("./storage");
+  mockDb.runAsync.mockRejectedValueOnce(new Error("disk full"));
+  await expect(storage.save(storage.fresh())).rejects.toThrow("disk full");
+  await expect(storage.save(storage.fresh())).resolves.toBeUndefined();
+  expect(mockDb.runAsync).toHaveBeenCalledTimes(2);
+});

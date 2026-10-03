@@ -6,6 +6,7 @@ import { getLocales } from "expo-localization";
 import { Data, validData } from "./domain";
 const KEY = "protip365.new-app.v1";
 let db: SQLite.SQLiteDatabase;
+let opening: Promise<SQLite.SQLiteDatabase> | undefined;
 export const fresh = (): Data => ({
   version: 1,
   onboarded: false,
@@ -22,17 +23,39 @@ export const fresh = (): Data => ({
 });
 async function database() {
   if (db) return db;
+  if (opening) return opening;
+  opening = openDatabase();
+  try {
+    db = await opening;
+    return db;
+  } finally {
+    opening = undefined;
+  }
+}
+async function openDatabase() {
   let key = await SecureStore.getItemAsync("protip365.new-app.database-key");
   if (!key) {
     key = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
     await SecureStore.setItemAsync("protip365.new-app.database-key", key);
   }
+  if (!/^[0-9a-f]{64}$/i.test(key))
+    throw new Error("Invalid database encryption key");
   const opened = await SQLite.openDatabaseAsync("protip365-redesign.db");
-  await opened.execAsync(
-    `PRAGMA key = "x'${key}'"; CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY, value TEXT NOT NULL);`,
-  );
-  db = opened;
-  return db;
+  try {
+    await opened.execAsync(`PRAGMA key = "x'${key}'";`);
+    const cipher = await opened.getFirstAsync<{ cipher_version: string }>(
+      "PRAGMA cipher_version",
+    );
+    if (!cipher?.cipher_version)
+      throw new Error("Encrypted database support is unavailable");
+    await opened.execAsync(
+      "CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY, value TEXT NOT NULL);",
+    );
+    return opened;
+  } catch (error) {
+    await opened.closeAsync().catch(() => {});
+    throw error;
+  }
 }
 export async function load() {
   const text =
