@@ -39,6 +39,15 @@
     },
     "plugins": [
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 100,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAF8F3"
+        }
+      ],
       "expo-notifications",
       [
         "expo-sqlite",

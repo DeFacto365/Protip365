@@ -4,6 +4,8 @@ This is a continuation of the Android publication task. The user has authorized 
 
 Use the repository `https://github.com/DeFacto365/Protip365.git`, branch `codex/v4-reset-and-landing-ux`. Check the latest remote commit and protect any local modifications before updating. The current source is in `app/`; all previous code is in `Archive/2026-10-02-before-new-app/`.
 
+Brand update: the in-app vector mark, app/adaptive/monochrome icons, favicon and configured splash screen now use the latest landing-page logo geometry and colors. Pull the latest branch before building; the earlier billing test APK predates this logo alignment. `app/scripts/create-brand.cjs` regenerates all logo assets from the canonical mark in `app/src/brand.ts`. Android prebuild and browser export were verified after this update; the Mac must build/install the updated native app.
+
 The Mac's existing test directory is `~/ProTip365-emulator-test-20261003`; its AVD is `ProTip365_QA_API36`, Google Play API 36 ARM64. Android SDK is `~/Library/Android/sdk`. The prior test authorization was removed; do not assume SSH remains available.
 
 Build/install the current native app locally, then verify:

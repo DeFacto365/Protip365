@@ -8,7 +8,8 @@ import {
   Switch,
   Platform,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
+import { brand } from "./brand";
 export const C = {
   bg: "#FAF8F3",
   surface: "#FFFEFB",
@@ -200,25 +201,13 @@ export function Logo({ size = 44 }: { size?: number }) {
   return (
     <View
       accessibilityLabel="ProTip365"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 4,
-        backgroundColor: C.sage,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+      accessibilityRole="image"
+      style={{ width: size, height: size }}
     >
-      <Txt
-        style={{
-          fontFamily: "Fraunces_600SemiBold",
-          fontSize: size * 0.8,
-          lineHeight: size,
-          color: C.surface,
-        }}
-      >
-        p.
-      </Txt>
+      <Svg width={size} height={size} viewBox="0 0 48 48" accessible={false}>
+        <Rect width={48} height={48} rx={12} fill={brand.sage} />
+        <Path d={brand.markPath} fill={brand.cream} />
+      </Svg>
     </View>
   );
 }
