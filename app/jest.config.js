@@ -1,14 +1,11 @@
-/** Jest runs the pure domain layer only (no React Native runtime needed). */
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src/domain'],
+  preset: "ts-jest",
+  testEnvironment: "node",
+  testMatch: ["**/src/**/*.test.ts"],
   transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      { tsconfig: { jsx: 'react-jsx', module: 'commonjs', types: ['jest'] } },
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      { tsconfig: { module: "commonjs", jsx: "react-jsx" } },
     ],
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js'],
-  // The managed Windows workspace blocks Jest child-process fan-out (EPERM).
-  maxWorkers: 1,
 };

@@ -1,59 +1,54 @@
-# OS and editors
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Secrets and local configuration
-.env
-.env.*
-!.env.example
-*.pem
-*.p8
-*.p12
-*.key
-*.jks
-*.mobileprovision
-GoogleService-Info.plist
-
-# Node, Expo, and tests
+# dependencies
 node_modules/
+
+# Expo
 .expo/
 dist/
 web-build/
-coverage/
 expo-env.d.ts
-*.tsbuildinfo
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
 .metro-health-check*
+
+# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# Generated native and build output
-ios/
-android/
-build/
-Pods/
-.kotlin/
-.supabase/
+# macOS
+.DS_Store
+*.pem
 
-# Temporary files
-*.lock
-*.tmp
-*.bak
-*.log
-*.orig.*
-# Local release artifacts
-/artifacts/*.aab
-/artifacts/*.apk
+# local env files
+.env*.local
+.env
+.env.*
+!.env.example
 
-# excluded before laptop reset 2026-08-29
-application-*.apk
-app/.expo-export-android-final/
-app/.expo-export-ios-final/
-iOS app/
-.claude/
+# typescript
+*.tsbuildinfo
 
-# Local redesign verification bundles
-app/dist-redesign/
+# generated native folders
+/ios
+/android
+credentials.json
+
+app/android/
+app/ios/
+app/dist-android/
+artifacts/
+*.apk
+*.aab
+app/dist-web/

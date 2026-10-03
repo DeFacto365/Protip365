@@ -36,3 +36,6 @@ credentials.json
 
 app/src/domain/__tests__/
 app/jest.config.js
+
+app/src/billing/__tests__/
+app/src/domain.test.ts

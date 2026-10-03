@@ -3,11 +3,11 @@
     "name": "ProTip365",
     "slug": "protip365",
     "scheme": "protip365",
-    "version": "2.0.0",
-    "primaryColor": "#20211E",
+    "version": "3.0.0",
+    "primaryColor": "#3F2A22",
     "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.protip365.monthly",
@@ -24,15 +24,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F6F2E9",
+        "backgroundColor": "#8A9C7D",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
       "package": "com.defacto365.protip365",
       "permissions": [
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
         "android.permission.POST_NOTIFICATIONS"
       ]
     },
@@ -40,152 +38,18 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-font",
-        {
-          "android": {
-            "fonts": [
-              {
-                "fontFamily": "IBM Plex Mono",
-                "fontDefinitions": [
-                  {
-                    "path": "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
-                    "weight": 400
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
-                    "weight": 500
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",
-                    "weight": 600
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/ibm-plex-mono/700Bold/IBMPlexMono_700Bold.ttf",
-                    "weight": 700
-                  }
-                ]
-              },
-              {
-                "fontFamily": "Fraunces",
-                "fontDefinitions": [
-                  {
-                    "path": "./node_modules/@expo-google-fonts/fraunces/600SemiBold/Fraunces_600SemiBold.ttf",
-                    "weight": 600
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/fraunces/700Bold/Fraunces_700Bold.ttf",
-                    "weight": 700
-                  }
-                ]
-              },
-              {
-                "fontFamily": "Caveat",
-                "fontDefinitions": [
-                  {
-                    "path": "./node_modules/@expo-google-fonts/caveat/600SemiBold/Caveat_600SemiBold.ttf",
-                    "weight": 600
-                  }
-                ]
-              },
-              {
-                "fontFamily": "Outfit",
-                "fontDefinitions": [
-                  {
-                    "path": "./node_modules/@expo-google-fonts/outfit/400Regular/Outfit_400Regular.ttf",
-                    "weight": 400
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf",
-                    "weight": 500
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/outfit/600SemiBold/Outfit_600SemiBold.ttf",
-                    "weight": 600
-                  },
-                  {
-                    "path": "./node_modules/@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf",
-                    "weight": 700
-                  }
-                ]
-              }
-            ]
-          },
-          "ios": {
-            "fonts": [
-              "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
-              "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
-              "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",
-              "./node_modules/@expo-google-fonts/ibm-plex-mono/700Bold/IBMPlexMono_700Bold.ttf",
-              "./node_modules/@expo-google-fonts/fraunces/600SemiBold/Fraunces_600SemiBold.ttf",
-              "./node_modules/@expo-google-fonts/fraunces/700Bold/Fraunces_700Bold.ttf",
-              "./node_modules/@expo-google-fonts/caveat/600SemiBold/Caveat_600SemiBold.ttf",
-              "./node_modules/@expo-google-fonts/outfit/400Regular/Outfit_400Regular.ttf",
-              "./node_modules/@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf",
-              "./node_modules/@expo-google-fonts/outfit/600SemiBold/Outfit_600SemiBold.ttf",
-              "./node_modules/@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf"
-            ]
-          }
-        }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash-logo.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#F6F2E9",
-          "dark": {
-            "image": "./assets/splash-logo.png",
-            "backgroundColor": "#171714"
-          }
-        }
-      ],
+      "expo-font",
+      "expo-notifications",
       [
         "expo-sqlite",
         {
           "useSQLCipher": true
         }
       ],
-      "expo-status-bar",
-      "expo-notifications",
-      "expo-sharing",
-      [
-        "expo-localization",
-        {
-          "supportedLocales": {
-            "ios": [
-              "en",
-              "fr-CA",
-              "es"
-            ],
-            "android": [
-              "en",
-              "fr-CA",
-              "es"
-            ]
-          }
-        }
-      ],
-      "@react-native-community/datetimepicker",
       "expo-secure-store",
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "Allow ProTip365 to unlock your private shift and earnings records."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "16.4"
-          }
-        }
-      ],
-      "./plugins/withMaterial3AndroidTheme",
-      "expo-iap"
+      "expo-localization",
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
     ],
     "extra": {
       "router": {},
@@ -195,7 +59,7 @@
     },
     "owner": "defacto365",
     "runtimeVersion": {
-      "policy": "sdkVersion"
+      "policy": "appVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/c1a2f4a8-14ee-4093-a4ee-a96bbe9317e2"
