@@ -1,0 +1,129 @@
+{
+  "terms": {
+    "intro": "These terms govern your use of the ProTip365 mobile application (\"the app\"), published by Defacto365. By installing or using the app, you agree to these terms.",
+    "sections": [
+      [
+        "What ProTip365 is",
+        "ProTip365 is a personal record-keeping tool for scheduling shifts and tracking tips, wages, and related earnings. All records are created by you and stored on your device (see our <a href=\"/privacy\">Privacy Policy</a>)."
+      ],
+      [
+        "Not financial, tax, or legal advice",
+        "The app's calculations (including expected earnings, effective hourly rates, variances, and estimated deductions) are informational estimates based solely on the numbers you enter. They are not financial, tax, accounting, or legal advice, and they are not a substitute for professional advice or official payroll records. You are responsible for verifying any figures you rely on, including for tax-filing purposes."
+      ],
+      [
+        "License",
+        "We grant you a personal, non-exclusive, non-transferable licence to use the app on devices you own or control. You may not copy, modify, distribute, sell, or reverse-engineer the app except where the law permits."
+      ],
+      [
+        "Purchases",
+        "The app includes 30 days of full local access. After the trial, creating or changing records requires a one-time lifetime purchase or monthly subscription. Purchases are processed by Apple App Store or Google Play under the store's payment, renewal, cancellation, and refund terms. Monthly subscriptions renew automatically until cancelled in your store account. If a trial or subscription ends, existing records remain readable, exportable, backed up, and erasable. Restore Purchases restores access associated with your store account; it does not restore locally stored records."
+      ],
+      [
+        "Your data, your responsibility",
+        "Because your records are stored only on your device, you are responsible for keeping your device secure and for making backups (the app provides export tools). We cannot recover data lost through device loss, damage, deletion, or failure to back up."
+      ],
+      [
+        "Acceptable use",
+        "You agree not to use the app for unlawful purposes or attempt to interfere with its operation."
+      ],
+      [
+        "Disclaimer of warranties",
+        "The app is provided \"as is\" and \"as available\", without warranties of any kind, express or implied, to the maximum extent permitted by law. We do not warrant that the app will be uninterrupted or error-free."
+      ],
+      [
+        "Limitation of liability",
+        "To the maximum extent permitted by law, Defacto365 will not be liable for indirect, incidental, special, or consequential damages, or for loss of data or profits, arising from your use of the app. Where liability cannot be excluded, it is limited to the amount you paid for the app in the twelve months before the claim. Nothing in these terms excludes liability that cannot be excluded under applicable consumer-protection law, including the laws of Québec."
+      ],
+      [
+        "Changes",
+        "We may update these terms; the \"Last updated\" date above will change, and material changes will be described in the app's release notes. Continued use after a change means you accept the updated terms."
+      ],
+      [
+        "Governing law",
+        "These terms are governed by the laws of the Province of Québec and the federal laws of Canada applicable therein, without depriving you of any mandatory consumer protections of your place of residence."
+      ],
+      [
+        "Contact",
+        "Questions about these terms: <a href=\"mailto:info@defacto365.com\">info@defacto365.com</a>. Product help is available on the <a href=\"/support\">support page</a>."
+      ]
+    ]
+  },
+  "privacy": {
+    "intro": "ProTip365 (\"the app\") is published by Defacto365. This policy explains what happens to your information when you use ProTip365.",
+    "sections": [
+      [
+        "No account required",
+        "ProTip365 does not require you to create an account, sign in, or provide an email address, password, or any other identifying credential to use the app."
+      ],
+      [
+        "Where your data lives",
+        "All information you enter into ProTip365 — including employer names, shift schedules, hours worked, tips, tip-outs, sales figures, payout details, goals, and notes — is stored in an encrypted local database on your device. ProTip365 does not upload these records to Defacto365, Supabase, a cloud-sync service, an analytics provider, or an advertising provider."
+      ],
+      [
+        "What we collect",
+        "ProTip365 does not use advertising or product-analytics services. The app may contact Apple App Store or Google Play to display prices, process purchases, and restore purchase status. It may also contact Expo's update service to check for signed app updates. Those providers may receive technical request information such as your IP address, operating-system version, store account context, or a randomized update identifier under their own policies. Employer, shift, tip, wage, goal, payout, and note contents are not included in those requests."
+      ],
+      [
+        "Exporting your data",
+        "You may export your shift history to a CSV file at any time from within the app (Settings → Export CSV). This is an action you take deliberately — the app does not export or share your data automatically. Once exported, the file is handed to your device's normal share/save mechanism, and what happens to it after that (which app you send it to, where you save it) is entirely your choice and outside ProTip365's control."
+      ],
+      [
+        "Deleting your data",
+        "You can permanently erase all data stored by ProTip365 on your device at any time from within the app (Settings → Erase All Local Data), after a confirmation step. This deletes the local database on your device. Because we never receive a copy of your data, there is no separate \"delete my account\" request to make with us — erasing it in the app is deletion."
+      ],
+      [
+        "Purchases",
+        "If you purchase a lifetime unlock or monthly subscription, the transaction is processed by Apple App Store or Google Play. The store returns purchase status to the app on your device so ProTip365 can grant or restore access. Defacto365 does not operate a receipt server and does not receive your payment-card details or billing address."
+      ],
+      [
+        "Security, backups, and notifications",
+        "The app protects its local database with SQLCipher and stores the random database key in the operating system keychain or keystore. Optional passcode and biometric controls restrict access on the device. Password-encrypted backup files and CSV exports leave the app only when you choose a destination through the system share interface. Optional post-shift reminders are scheduled locally on your device."
+      ],
+      [
+        "Children",
+        "ProTip365 is intended for general audiences of working adults and is not directed at children."
+      ],
+      [
+        "Changes to this policy",
+        "If this policy changes, the \"Last updated\" date above will change, and material changes affecting how your data is handled will be described in the app's release notes."
+      ],
+      [
+        "Contact",
+        "Questions about this policy or ProTip365's data practices can be sent to <a href=\"mailto:info@defacto365.com\">info@defacto365.com</a>. Information you choose to include in a support email is processed only to answer your request. See the <a href=\"/support\">support page</a> for self-service help."
+      ],
+      [
+        "Website and interactive demo",
+        "The website stores your selected language in your browser’s local storage. The interactive web demo uses sample records that reset when it reloads; it is not your mobile-app account or a cloud backup. The site loads fonts from Google Fonts and is hosted on Vercel, so these providers receive requests needed to serve the site, including technical information such as your IP address. Do not use the demo to store sensitive earnings records."
+      ]
+    ]
+  },
+  "support": {
+    "intro": "For help with ProTip365, email <a href=\"mailto:info@defacto365.com\">info@defacto365.com</a>. Include your app version, device model, operating-system version, and the steps that led to the issue. Do not email employer names, shift notes, earnings records, backup passwords, purchase receipts, or other sensitive information.",
+    "sections": [
+      [
+        "Where are my records?",
+        "Your employers, shifts, tips, wages, goals, and settings are stored only in the encrypted ProTip365 database on your device. There is no account or cloud sync. Reinstalling the app or losing the device may lose records that you have not exported or backed up."
+      ],
+      [
+        "How do I make or restore a backup?",
+        "Open Settings → Encrypted backup &amp; restore. Choose a strong password and save the <code>.pt365</code> file somewhere you control. To restore, select that file and enter the same password. Defacto365 cannot recover a forgotten backup password. Restoring records requires active trial or paid write access."
+      ],
+      [
+        "How do purchases work?",
+        "Open Settings → Trial &amp; purchase options. Prices are supplied by Apple App Store or Google Play. If you previously bought ProTip365 using the current store account, select Restore Purchases. Restoration unlocks the app; it does not download your local records."
+      ],
+      [
+        "My subscription ended",
+        "Your records remain readable, exportable, backed up, and erasable. Creating or changing records requires an active monthly subscription or lifetime unlock. Subscription cancellation and refund requests are managed by the store where you purchased."
+      ],
+      [
+        "Passcode or biometric trouble",
+        "Try the device passcode or configured recovery method shown by the app. Because the database key is local and Defacto365 has no copy, support cannot bypass the app lock or recover encrypted records without an available recovery method."
+      ],
+      [
+        "Erase local data",
+        "Settings → Erase All Local Data permanently removes ProTip365 records from the device after confirmation. This remains available after the trial ends. Export or create an encrypted backup first if you may need the records later."
+      ]
+    ]
+  }
+}
