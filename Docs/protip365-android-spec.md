@@ -3,7 +3,7 @@
 **For:** Codex
 **From:** the approved web prototype (landing page + interactive demo)
 **Updated:** 2026-10-03
-**Version:** 2.0 — Global positioning
+**Version:** 2.1 — Global positioning and approved French wording
 **Status:** This document is the source of truth for the Android build's UX, visual design, and business logic.
 
 ## Global revision: read this first
@@ -351,7 +351,7 @@ Home, first run: show a zero amount in the user's currency and locale, plus “L
 - Highlight card: "Net tips" with the formula “Cash + card + shared tips − tip-outs,” in Fraunces.
 - Show the employer, selected currency, period, generation date and selected language. Offer a custom start/end range rather than assuming weekly payroll.
 - Show customer tips / recorded sales as a neutral percentage when data exists. Do not reproduce government form codes or imply certified compliance.
-- CTA "Share PDF" → Android share sheet (PDF), suitable for a manager or personal records.
+- CTA "Share PDF" in English; the French caption must be exactly **“Partager mon relevé.”**, including the final period. Both open the Android share sheet (PDF), suitable for a manager or personal records.
 - Footer: “Reporting requirements depend on your country and region. This summary is for your records and does not replace official tax forms or professional advice.”
 
 ---
@@ -359,6 +359,8 @@ Home, first run: show a zero amount in the user's currency and locale, plus “L
 ## 8. Localization
 
 - Ship complete `en`, `fr` and `es` dictionaries, including onboarding, validation, notifications, accessibility labels, exports, errors and offline states. Do not ship a Spanish landing page with an English-only app.
+- **Approved French employer terminology (required):** use **“employeur”** (singular) and **“employeurs”** (plural), never “emploi” or “emplois” for employer-related captions. Apply this across onboarding, navigation, form labels, filters, summaries, validation, accessibility labels and generated PDF headings. Examples: “Employeur”, “Mes employeurs”, “Ajouter un employeur”, “Tous les employeurs” and “Par employeur”. English labels such as “My jobs”, “Add a job” and “By job” in this spec describe the English UI; their French employer-related equivalents must follow this rule. Do not rewrite employer names or other user-entered text.
+- **Approved French statement-sharing caption (required):** the button text must be exactly **“Partager mon relevé.”**, including the final period. This overrides literal translations of “Share PDF” or older prototype captions; retain the PDF export and Android share-sheet behavior.
 - Use the device's supported language on first launch and English as fallback. Language, formatting locale, time zone and currency are separate settings; Spanish does not imply a particular country or currency.
 - Use locale-aware number and currency formatting with ISO currency codes. Symbol placement, grouping, decimal separators and precision follow locale and currency metadata. Never hardcode a dollar prefix or two decimal places.
 - Accept comma and period decimal entry as appropriate; reject ambiguous values instead of guessing. Convert to precise storage values only after parsing.
@@ -403,6 +405,8 @@ Home, first run: show a zero amount in the user's currency and locale, plus “L
 - [ ] Undo right after save removes the shift; Edit reopens it with values.
 - [ ] CSV export contains every shift, every field, one row per shift.
 - [ ] Full FR, EN and ES pass with no clipped text at 320dp width and system font scale 1.3, including errors, notifications and PDFs.
+- [ ] Given French is selected, all employer-related captions use “employeur” or “employeurs”; none use “emploi” or “emplois”. User-entered employer names remain unchanged.
+- [ ] Given the French tip-statement screen, the sharing button reads exactly “Partager mon relevé.”; tapping it generates the localized PDF and opens the Android share sheet.
 - [ ] Given a fresh install, no wage is assumed. An unset wage produces Tips/hour rather than falsely complete wage-inclusive earnings.
 - [ ] Given two jobs in EUR and USD, Home and Stats never combine them into one unconverted amount or one average.
 - [ ] Given a currency change on a job, historical shifts retain their original currency and wage snapshot.
