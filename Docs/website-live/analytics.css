@@ -1,0 +1,10 @@
+#pt365-consent[hidden]{display:none}
+#pt365-consent{position:fixed;z-index:10000;bottom:16px;right:16px;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:24px;background:#faf9f5;color:#33251f;border:1px solid #8c9b7e;border-radius:16px;box-shadow:0 8px 32px #0002;font:15px/1.5 'Work Sans',sans-serif;box-sizing:border-box}
+#pt365-consent h2{font:600 20px/1.3 'Work Sans',sans-serif;margin:0 0 10px}
+#pt365-consent p{margin:0 0 10px}
+#pt365-consent a{color:#33251f;text-decoration:underline}
+.pt365-consent-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.pt365-consent-actions button{flex:1 1 150px;padding:12px;border:1px solid #33251f;border-radius:8px;background:#faf9f5;color:#33251f;font:600 14px/1.4 'Work Sans',sans-serif;cursor:pointer;min-height:44px}
+.pt365-consent-actions button:hover{background:#e2e6d8}
+.pt365-consent-settings{border:0;background:none;padding:0;color:inherit;font:inherit;text-align:left;text-decoration:underline;cursor:pointer}
+.pt365-consent-actions button:focus-visible,.pt365-consent-settings:focus-visible{outline:3px solid #657854;outline-offset:3px}
