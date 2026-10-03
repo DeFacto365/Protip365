@@ -14,7 +14,8 @@ body.landing{background:var(--bg)}
 
 .lp-hero{max-width:1200px;margin:0 auto;padding:72px 32px 48px;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
 .lp-hero h1{font-family:var(--display);font-weight:500;font-size:clamp(48px,6.4vw,88px);line-height:.98;letter-spacing:-.03em;margin:16px 0 20px}
-.lp-lede{font-size:19px;line-height:1.55;color:var(--ink2);max-width:34ch}
+.lp-hook{font-size:21px;line-height:1.4;font-weight:500;color:var(--ink);max-width:34ch;margin-bottom:12px}
+.lp-lede{font-size:18px;line-height:1.55;color:var(--ink2);max-width:42ch}
 .lp-actions{display:flex;gap:12px;margin:28px 0 36px;flex-wrap:wrap}
 .lp-btn{width:auto;padding:0 28px;text-decoration:none}
 .lp-btn.ghost{color:var(--ink)}
@@ -95,3 +96,9 @@ body.landing{background:var(--bg)}
 .lp-lang button{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink2)}
 .lp-lang button.on{background:var(--ink);color:#FBFAF6}
 @media (max-width:1000px){.lp-nav a:not(.lp-cta-sm){display:none}.lp-lang{order:-1}}
+@media (max-width:560px){
+  .lp-nav .lp-cta-sm{display:none}
+  .lp-nav{gap:8px}
+  .lp-brand{gap:8px}
+  .lp-header{gap:12px}
+}
