@@ -1,5 +1,15 @@
 # Continue Android verification on the MacBook
 
+## Windows follow-up - October 3, 2026, 16:01 EDT
+
+Fetched and fast-forwarded the clean Windows checkout at C:\Github\Protip365 to the Mac handoff ebc062a on codex/v4-reset-and-landing-ux. No local changes were discarded.
+
+Live inspection of Google Play Console Publishing overview confirms production 14 (3.0.0), Start full rollout, and the release/listing changes are still in review. Managed publishing remains off. No actionable review issue is displayed on this page; it says Google may find additional issues during review. Last published remains July 30, 2026.
+
+The refreshed public listing at https://play.google.com/store/apps/details?id=com.defacto365.protip365 still shows the earlier short description (Plan shifts across every job. See real hours, tips, and expected pay.), July 21, 2026 update date, and earlier receipt/date-picker release notes. Public build 14 and the updated branding/listing are not yet confirmed. No release or listing setting was changed during this check.
+
+Next: check again after Google review, address any reported issue, then verify production build 14 and the public logo, screenshots and localized descriptions. Native results below are the Mac agent's committed evidence; they were not rerun on Windows. Physical-device and comprehensive spoken accessibility checks remain unavailable.
+
 ## Production submission — October 3, 2026, 15:52 EDT
 
 Build 14 (3.0.0) and the updated store listing are submitted for **production, full rollout to all targeted countries**. Google Play's initial automated checks finished and Publishing overview now says "Your changes are now in review." Managed publishing is **off**, so approval publishes automatically. Build 11 remains the public version until Google approves the update. Do not report build 14 as live yet.
