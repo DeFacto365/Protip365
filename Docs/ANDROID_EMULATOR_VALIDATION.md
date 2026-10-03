@@ -1,6 +1,39 @@
 # Android emulator validation — October 3, 2026
 
-Current status: see ANDROID_RELEASE_STATUS.md, October 3 at 14:33 EDT. Its checkpoint supersedes the historical results below. Build 14 fixes the diagnosed bare-path/file-URI startup failure; actual Play-signed production upgrade verification and publication remain pending while the Mac is locked.
+## Production submission — October 3, 2026, 15:52 EDT
+
+Build 14 (3.0.0) and the updated store listing are submitted for **production, full rollout to all targeted countries**. Google Play's initial automated checks finished and Publishing overview now says "Your changes are now in review." Managed publishing is **off**, so approval publishes automatically. Build 11 remains the public version until Google approves the update. Do not report build 14 as live yet.
+
+Final AAB: ~/ProTip365-emulator-test-20261003/build14-upload-final.aab, SHA-256 27db59ea297c7916564688cd2322d14e1fd3a5927dac8fcae830618338a4abb5. Internal release 7 contains build 14; production release 2 contains build 14 only, with seven-locale release notes. All 22 release/listing changes were sent for review, including the landing-page logo, feature graphics, screenshots and localized copy. Source fixes are pushed at 22c51d9. Original upload keystore was recovered and its certificate matches Play; credentials remain outside Git.
+
+### Completed final Play-signed upgrade and billing tests
+
+- Downloaded Google's signed universal build-14 APK and installed it over the preserved production-11-to-12 fixture **without uninstalling**. Its signing certificate matches the production APK.
+- Wrong inherited passcode is rejected; correct passcode and recovery key unlock. Background return, share return and cold restart relock before exposing records. Repeated restarts do not duplicate imports.
+- Original employer, planned shift, worked shift and amounts survive: six hours at USD 13.30/hour; USD 79.80 wages + USD 95.50 net tips + USD 15.25 other income = USD 190.55. Home shows one worked shift and the planned shift separately.
+- Actual build-14 CSV has the two original rows and preserved identifiers/timestamps. Actual JSON backup has one employer, two shifts and the legacy database archive. Older templates, recurrence, goals and payouts remain archived; they are not all active redesign features.
+- Existing lifetime access survives the upgrade and Restore Purchases. Ordinary refund with entitlement removal returned access to the seven-day trial. Google's delayed-approval test payment kept trial access while pending, then granted full access after approval. All payments used Google's test instruments, with no real charges. Google's pending notice is visible; the app's additional pending message can reset when the inherited lock remounts its main screen.
+- Earlier monthly tests passed: checkout cancel, declined payment, approval, Restore, accelerated renewal, store cancellation and expiry. Earlier lifetime delayed decline, chargeback/revocation, delayed approval and Restore passed.
+
+### Completed native checks and disclosures
+
+Offline record creation, cold persistence, backup restore, malformed-backup rejection and actual CSV/JSON/PDF export inspection pass. Real reminder delivery, cold-start routing, snooze, completed/removed-shift protection and alarm cancellation pass. Today's planned shifts stay planned; ended planned shifts become worked when saved. Erase confirmation, Undo and preservation of trial/purchases pass using disposable test data.
+
+Targeted TalkBack double-tap navigation and labeled form checks pass. French/English, keyboard-visible entry, landscape entry and 320dp/font 1.3 save checks pass after the compact form fix. Display, rotation, accessibility and connectivity settings were restored. TypeScript and 39 tests in seven suites pass; final signed all-architecture AAB build and certificate checks pass.
+
+English/French/Spanish Android 3 privacy disclosures are live on www.protip365.com/privacy, website branch website/protip365-landing-2026-10 at 48ec754. Live native Chrome inspection confirms readable JSON backup, inherited lock behavior and erase/purchase/trial scope.
+
+Google's pre-launch report has no device report for this internal release. A physical Android device, comprehensive spoken accessibility audit and human-observed entry speed were not available; do not claim those checks passed. No source change followed the final AAB build.
+
+### Handoff and remaining external step
+
+Only Google review and subsequent public availability remain. Inspect Publishing overview for approval or actionable issues, then confirm production build 14 and the updated public logo/listing. Production track: 4698220799313296574; app: 4973804276694301111; developer: 6320222294638558312; package: com.defacto365.protip365.
+
+Continue in ~/.codex/worktrees/android-release/Protip365, branch codex/v4-reset-and-landing-ux. Preserve the original checkout's other bots' uncommitted work and incoming remote commits. GitHub connector is authenticated as DeFacto365; commit author email is jacques.bolduc@defacto365.com. Local HTTPS push uses another cached account and returns 403; use the correct connector without force pushing. This handoff is committed in all three Android status documents; the exact originating laptop chat is unidentified, so no guessed chat was messaged.
+
+Local evidence in ~/ProTip365-emulator-test-20261003 includes play-production14-in-review.png, play-internal-v14.png, upgrade14-records-preserved.png, upgrade14-export.csv, upgrade14-backup.json, play-refund-v14-test.png, build14-pending-test-payment.png, build14-approved-test-payment.png and live-privacy-android3.png. Test-account screenshots, synthetic recovery credentials and signing secrets are excluded from Git.
+
+## Earlier validation checkpoints (superseded where noted)
 
 ## Additional native build-14 verification
 
