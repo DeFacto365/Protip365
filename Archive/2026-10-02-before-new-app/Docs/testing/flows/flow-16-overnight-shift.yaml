@@ -1,0 +1,44 @@
+appId: com.defacto365.protip365
+name: 16 Create an overnight cross-employer overlap shift
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- tapOn: "Schedule"
+- tapOn: "Add shift"
+- tapOn: "Regression Bar"
+- tapOn: '.*Bartender.*24\.00.*'
+- tapOn: "Expected tips (optional)"
+- inputText: "50"
+- tapOn: "Expected other income (optional)"
+- inputText: "10"
+- tapOn: "Notes (optional)"
+- inputText: "Overnight regression"
+- pressKey: ESCAPE
+- scrollUntilVisible:
+    element:
+      text: "Start,.*"
+- tapOn: "Start,.*"
+- tapOn: "PM"
+- tapOn: "8"
+- tapOn: "OK"
+- tapOn: "End,.*"
+- tapOn: "AM"
+- tapOn: "2"
+- tapOn: "OK"
+- scrollUntilVisible:
+    element:
+      text: "Unpaid break"
+- tapOn: "Unpaid break"
+- scrollUntilVisible:
+    element:
+      text: "Save"
+- assertVisible: ".*Overlaps another shift.*"
+- tapOn: "Save"
+- assertVisible: ".*Regression Bar.*20:00–02:00.*"
+- takeScreenshot: overnight-overlap-pass

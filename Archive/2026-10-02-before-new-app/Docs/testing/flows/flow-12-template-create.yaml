@@ -1,0 +1,50 @@
+appId: com.defacto365.protip365
+name: 12 Create a schedule template
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      text: "Schedule templates"
+- tapOn: "Schedule templates"
+- tapOn: "Template name"
+- eraseText
+- inputText: "Dinner Server"
+- tapOn: "Server"
+- tapOn: "Unpaid break"
+- scrollUntilVisible:
+    element:
+      text: "EXPECTED TIPS (OPTIONAL)"
+    visibilityPercentage: 20
+- tapOn: "Expected tips (optional)"
+- eraseText
+- inputText: "25.00"
+- scrollUntilVisible:
+    element:
+      text: "EXPECTED OTHER INCOME (OPTIONAL)"
+    visibilityPercentage: 20
+- tapOn: "Expected other income (optional)"
+- eraseText
+- inputText: "5.00"
+- scrollUntilVisible:
+    element:
+      text: "NOTES"
+    visibilityPercentage: 20
+- tapOn: "Notes"
+- eraseText
+- inputText: "Regression template"
+- swipe:
+    start: "50%,80%"
+    end: "50%,20%"
+    duration: 800
+- assertVisible: "Create template"
+- tapOn: "Create template"
+- assertVisible: "Dinner Server"
+- takeScreenshot: template-created

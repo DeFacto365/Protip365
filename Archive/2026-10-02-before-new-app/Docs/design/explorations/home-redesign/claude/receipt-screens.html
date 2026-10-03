@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProTip365 — The Shift Receipt · full screen set</title>
+<!-- DRAFT full-app exploration in the "Shift Receipt" direction (Claude, 2026-07-20).
+     Not approved. Follows owner selection of concept D from the home-screen sheet.
+     Design system: cream paper, IBM Plex Mono, dashed rules, rubber stamps,
+     hard offset shadows, blue "pen ink" for user-edited/interactive values,
+     Caveat for handwritten notes. Twelve screens incl. one dark-mode variant.
+     All data fictional; calculations unvalidated; copy must follow PRD_V4. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@600&family=Fraunces:opsz,wght@9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',system-ui,sans-serif;background:#07080D;color:#E9ECF5;-webkit-font-smoothing:antialiased;padding:48px 0 80px}
+  .intro{max-width:980px;margin:0 auto 40px;padding:0 24px;text-align:center}
+  .intro .k{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:#E3A876;font-weight:600}
+  .intro h1{font-family:'Fraunces',Georgia,serif;font-size:2.3rem;color:#fff;margin:12px 0 10px}
+  .intro p{color:#B9C1D4;max-width:46rem;margin:0 auto;font-size:1rem;line-height:1.55}
+  .stage{display:flex;gap:52px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:0 24px}
+  figure{margin:0 0 34px}
+  figcaption{max-width:352px;margin-top:16px;color:#B9C1D4;font-size:.88rem;line-height:1.5}
+  figcaption b{color:#fff;display:block;margin-bottom:3px;font-size:1rem;font-family:'Fraunces',Georgia,serif}
+  figcaption .tag{display:inline-block;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#E3A876;margin-bottom:6px}
+
+  /* Entrance animations intentionally omitted: at 12 phones the preview
+     renderer drops composited layers and elements fail to paint. Motion
+     specs for the real app live in the figcaption notes instead. */
+
+  /* ================= SHARED RECEIPT SYSTEM ================= */
+  .ph{--paper:#F6F2E9;--bg:#E9E4D7;--ink:#20211E;--dim:#7C7A70;--red:#D8472B;--grn:#2E7D4F;--pen:#2B4BD7;--rule:#C9C3B2;
+      width:360px;border:10px solid #05060a;border-radius:44px;overflow:hidden;box-shadow:0 44px 90px -34px rgba(0,0,0,.8);
+      display:flex;flex-direction:column;height:768px;background:var(--bg);color:var(--ink);font-family:'IBM Plex Mono',monospace}
+  .ph .sb{display:flex;justify-content:space-between;padding:13px 24px 4px;font-size:11px;font-weight:600;color:var(--dim)}
+  .ph .scr{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .ph .head{padding:8px 20px 6px;display:flex;justify-content:space-between;align-items:baseline}
+  .ph .head .brand{font-weight:700;font-size:13px;letter-spacing:.06em}
+  .ph .head .date{font-size:10px;color:var(--dim)}
+  .ph .ttl{padding:2px 20px 8px}
+  .ph .ttl b{font-size:16px;letter-spacing:.08em;font-weight:700}
+  .ph .ttl span{display:block;font-size:9.5px;color:var(--dim);letter-spacing:.1em;margin-top:2px}
+
+  .rcpt{margin:6px 18px 0;background:var(--paper);box-shadow:0 12px 30px -14px rgba(60,50,20,.4);padding:14px 16px 12px;position:relative}
+  .rcpt::before,.rcpt::after{content:"";position:absolute;left:0;right:0;height:8px;background:radial-gradient(circle at 6px -2px,transparent 6px,var(--paper) 6.5px);background-size:14px 8px}
+  .rcpt::before{top:-7px;transform:rotate(180deg)}
+  .rcpt::after{bottom:-7px}
+  .rc-h{text-align:center;font-size:10px;letter-spacing:.2em;color:var(--dim);font-weight:600}
+  .rc-t{text-align:center;font-weight:700;font-size:13px;letter-spacing:.1em;margin-top:3px}
+  .rule{border-top:1.5px dashed var(--rule);margin:9px 0}
+  .ln{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0}
+  .ln .k{color:var(--dim)}
+  .ln .v{font-weight:600}
+  .ln .v.neg{color:var(--red)}
+  .ln .v.pen{color:var(--pen)}
+  .ln .v.grn{color:var(--grn)}
+  .total{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0 2px}
+  .total .k{font-weight:700;font-size:12px;letter-spacing:.08em}
+  .total .v{font-weight:700;font-size:25px;letter-spacing:-.01em}
+  .rate{text-align:center;font-size:11px;color:var(--grn);font-weight:600;margin-top:2px}
+  .stamp{position:absolute;border:2.5px solid var(--grn);color:var(--grn);font-weight:700;font-size:11px;letter-spacing:.14em;padding:4px 9px;transform:rotate(8deg);opacity:.85;border-radius:4px}
+  .stamp.red{border-color:var(--red);color:var(--red);transform:rotate(-7deg)}
+  .stamp.pen{border-color:var(--pen);color:var(--pen)}
+  .barcode{margin:8px auto 0;height:24px;width:78%;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 9px,var(--ink) 9px 12px,transparent 12px 14px)}
+  .btn{background:var(--ink);color:var(--paper);font-size:11.5px;font-weight:700;padding:12px;letter-spacing:.08em;text-align:center;box-shadow:3px 3px 0 rgba(32,33,30,.35)}
+  .btn.blk{margin:12px 18px 0}
+  .btn.pen{background:var(--pen);box-shadow:3px 3px 0 rgba(43,75,215,.3)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink);box-shadow:none}
+  .card{margin:10px 18px 0;background:#fff;border:1.5px solid var(--ink);padding:11px 13px;box-shadow:3px 3px 0 var(--ink)}
+  .pen-note{font-family:'Caveat',cursive;color:var(--pen);font-size:17px;line-height:1.1;transform:rotate(-2deg)}
+  .tabs{display:flex;margin:4px 18px 0;border:1.5px solid var(--ink)}
+  .tabs div{flex:1;text-align:center;font-size:10px;font-weight:700;letter-spacing:.1em;padding:8px 0;color:var(--dim)}
+  .tabs .on{background:var(--ink);color:var(--paper)}
+  .chip{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;border:1.5px solid var(--ink);padding:3px 8px}
+  .chip.on{background:var(--ink);color:var(--paper)}
+  .chip.pen{border-color:var(--pen);color:var(--pen)}
+  .field{margin:0 0 9px}
+  .field label{display:block;font-size:9px;letter-spacing:.14em;color:var(--dim);font-weight:700;margin-bottom:3px}
+  .field .in{border-bottom:1.5px solid var(--ink);font-size:13px;font-weight:600;padding:2px 0 4px;display:flex;justify-content:space-between}
+  .field .in .pen{color:var(--pen)}
+  .field .in .caret{color:var(--dim);font-size:11px}
+  .nav{margin-top:auto;display:flex;justify-content:space-around;padding:11px 8px 15px;border-top:1.5px solid var(--ink);background:var(--paper)}
+  .nav div{font-size:9.5px;font-weight:600;color:var(--dim);width:64px;text-align:center;letter-spacing:.04em}
+  .nav .on{color:var(--ink);font-weight:700}
+  .fabx{position:absolute;right:16px;bottom:74px;background:var(--ink);color:var(--paper);font-size:10.5px;font-weight:700;letter-spacing:.08em;padding:12px 15px;box-shadow:4px 4px 0 rgba(32,33,30,.3);z-index:5}
+
+  /* agenda / schedule bits */
+  .dayhead{display:flex;justify-content:space-between;align-items:baseline;margin:12px 20px 5px;font-size:10px;letter-spacing:.12em;color:var(--dim);font-weight:700}
+  .dayhead .sum{font-weight:600}
+  .stub{margin:0 18px 8px;background:var(--paper);box-shadow:0 8px 20px -10px rgba(60,50,20,.35);padding:10px 13px;display:flex;align-items:center;gap:11px;position:relative}
+  .stub::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:7px;background:radial-gradient(circle at 6px -2px,transparent 5px,var(--paper) 5.5px);background-size:13px 7px}
+  .stub .init{width:34px;height:34px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;background:#fff}
+  .stub .who{flex:1;min-width:0}
+  .stub .who b{font-size:12px;display:block;letter-spacing:.02em}
+  .stub .who span{font-size:9.5px;color:var(--dim)}
+  .stub .amt{text-align:right}
+  .stub .amt .m{font-weight:700;font-size:13.5px}
+  .stub .amt small{display:block;font-size:8px;color:var(--dim);letter-spacing:.08em}
+  .stub .amt .m.grn{color:var(--grn)}
+  .stub.todo{border:1.5px solid var(--red);box-shadow:3px 3px 0 rgba(216,71,43,.25)}
+  .stub.todo .amt .m{color:var(--red);font-size:10.5px;letter-spacing:.06em}
+
+  /* week lanes */
+  .lane{display:flex;align-items:center;gap:8px;margin:0 18px 6px}
+  .lane .d{width:34px;font-size:9.5px;color:var(--dim);font-weight:700;text-align:right}
+  .lane .d b{display:block;font-size:12px;color:var(--ink)}
+  .lane .bar{flex:1;height:34px;background:var(--paper);box-shadow:0 4px 12px -6px rgba(60,50,20,.3);position:relative;display:flex;align-items:center}
+  .lane .seg{position:absolute;top:4px;bottom:4px;border:1.5px solid var(--ink);background:#fff;font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;letter-spacing:.04em}
+  .lane .seg.done{background:var(--ink);color:var(--paper)}
+  .lane .seg.todo{border-color:var(--red);color:var(--red)}
+  .lane .tot{width:46px;font-size:10px;font-weight:700;text-align:right}
+  .lane .tot.grn{color:var(--grn)}
+  .lane.today .d b{color:var(--pen)}
+  .lane.today .bar{outline:1.5px solid var(--pen)}
+
+  /* stats bars */
+  .bars{display:flex;align-items:flex-end;gap:7px;height:74px;margin:10px 4px 4px;padding:0 6px}
+  .bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+  .bars .b i{width:100%;background:var(--ink);min-height:4px}
+  .bars .b.hi i{background:var(--grn)}
+  .bars .b small{font-size:8px;color:var(--dim);letter-spacing:.04em}
+  .meterx{font-size:12px;letter-spacing:.06em;font-weight:700}
+  .meterx .fillc{color:var(--grn)}
+  .meterx .emp{color:var(--rule)}
+
+  /* toggles */
+  .tgl{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1.5px dashed var(--rule);font-size:11.5px}
+  .tgl .k{color:var(--ink);font-weight:600}
+  .tgl .k small{display:block;font-size:9px;color:var(--dim);font-weight:400;margin-top:1px}
+  .sw{width:40px;height:20px;border:1.5px solid var(--ink);position:relative;flex-shrink:0}
+  .sw i{position:absolute;top:2px;bottom:2px;width:14px;background:var(--ink)}
+  .sw.on i{right:2px}
+  .sw.off i{left:2px;background:var(--rule)}
+  .sw.on::after{content:"ON";position:absolute;left:5px;top:3px;font-size:8px;font-weight:700}
+
+  /* ============ DARK "NIGHT TICKET" VARIANT ============ */
+  .ph.dark{--paper:#1E222C;--bg:#12151C;--ink:#F0EEE6;--dim:#8B92A5;--red:#FF7A5C;--grn:#5CD69B;--pen:#8FA8FF;--rule:#3A4152}
+  .ph.dark .rcpt{box-shadow:0 12px 30px -12px rgba(0,0,0,.7)}
+  .ph.dark .stub{box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}
+  .ph.dark .stub .init{background:var(--bg)}
+  .ph.dark .card{background:var(--bg);box-shadow:3px 3px 0 var(--ink)}
+  .ph.dark .btn{box-shadow:3px 3px 0 rgba(240,238,230,.2)}
+  .ph.dark .barcode{background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 9px,var(--ink) 9px 12px,transparent 12px 14px)}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <p class="k">ProTip365 · "The Shift Receipt" · full screen set · unapproved draft</p>
+  <h1>Your whole week, printed like a check.</h1>
+  <p>The receipt language carried through the entire app: cream paper, mono type, dashed tallies, rubber stamps for state, hard-shadow buttons — and blue "pen ink" wherever <i>you</i> wrote something, like a server annotating a ticket. Twelve screens, including the dark-mode "night ticket".</p>
+</div>
+
+<div class="stage">
+
+  <!-- ============ 1 · FIRST RUN ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          <div class="rcpt r1" style="margin-top:0">
+            <div class="rc-h">* * * WELCOME * * *</div>
+            <div class="rc-t" style="font-size:17px;margin-top:6px">PROTIP365</div>
+            <div style="text-align:center;font-size:10px;color:var(--dim);letter-spacing:.14em;margin-top:3px">YOUR PRIVATE SHIFT LEDGER</div>
+            <div class="rule"></div>
+            <div class="ln"><span class="k">ACCOUNT NEEDED</span><span class="v">NONE</span></div>
+            <div class="ln"><span class="k">YOUR DATA LIVES</span><span class="v">ON THIS PHONE</span></div>
+            <div class="ln"><span class="k">STORAGE</span><span class="v">ENCRYPTED</span></div>
+            <div class="ln"><span class="k">FIRST 30 DAYS</span><span class="v grn">FREE — ALL FEATURES</span></div>
+            <div class="rule"></div>
+            <div style="text-align:center;font-size:10.5px;color:var(--dim);line-height:1.6">Plan every shift.<br>Know what it actually paid.</div>
+            <div class="stamp" style="right:10px;top:22px">NO CLOUD</div>
+            <div class="barcode"></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:16px" class="r2">
+            <span class="chip on">EN</span><span class="chip">FR</span><span class="chip">ES</span>
+          </div>
+          <div class="btn blk r3" style="margin-top:14px">START MY LEDGER →</div>
+          <div class="r4" style="text-align:center;margin-top:12px"><span class="pen-note">no sign-up. promise.</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">01 · First run</span><b>The privacy pitch, printed</b>
+      Onboarding is one receipt: no account, data on-device, encrypted, 30 days free. The "NO CLOUD" stamp and a handwritten "no sign-up. promise." do the emotional work. Language chips cover EN / FR / ES right up front.</figcaption>
+  </figure>
+
+  <!-- ============ 2 · HOME ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="head r1"><span class="brand">PROTIP365</span><span class="date">SUN JUL 26 · 21:42</span></div>
+        <div class="rcpt r2">
+          <div class="rc-h">* * * WEEK OF JUL 20–26 * * *</div>
+          <div class="rc-t">YOUR WEEK SO FAR</div>
+          <div class="stamp" style="right:12px;top:20px">ON TRACK</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">HOURS WORKED</span><span class="v">13.7</span></div>
+          <div class="ln"><span class="k">WAGES</span><span class="v">$114.00</span></div>
+          <div class="ln"><span class="k">TIPS — CASH</span><span class="v">$113.00</span></div>
+          <div class="ln"><span class="k">TIPS — CARD</span><span class="v">$185.50</span></div>
+          <div class="ln"><span class="k">TIP-OUT PAID</span><span class="v neg">−$48.00</span></div>
+          <div class="rule"></div>
+          <div class="total"><span class="k">TOTAL EARNED</span><span class="v">$412.50</span></div>
+          <div class="rate">= $30.10 / HOUR REAL RATE</div>
+          <div class="ln" style="margin-top:2px"><span class="k">GOAL $540</span><span class="v meterx"><span class="fillc">██████░</span><span class="emp">░░░</span> 76%</span></div>
+          <div class="barcode"></div>
+        </div>
+        <div class="card r3" style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:9.5px;letter-spacing:.14em;color:var(--dim);font-weight:600">NEXT SHIFT — TONIGHT 17:00</span><b style="display:block;font-size:12.5px;margin-top:2px">BAR TORO · EXPECTED $205</b></div>
+          <div class="btn" style="padding:9px 12px;font-size:10.5px">LOG&nbsp;IT</div>
+        </div>
+        <div class="card r4" style="border-color:var(--red);box-shadow:3px 3px 0 var(--red);display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:9.5px;letter-spacing:.14em;color:var(--red);font-weight:700">1 SHIFT TO CLOSE OUT</span><b style="display:block;font-size:12.5px;margin-top:2px">FRI · LA MAISON 11:00–15:00</b></div>
+          <span class="pen-note">don't forget!</span>
+        </div>
+        <div class="nav">
+          <div class="on">HOME</div><div>SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">02 · Home</span><b>The week tally</b>
+      Refined from the concept you picked: the week receipt with an "ON TRACK" stamp and an in-tally goal meter drawn in block characters. Below it, exactly two actions — tonight's shift, and any shift still waiting to be closed out (flagged in red with a pen scribble).</figcaption>
+  </figure>
+
+  <!-- ============ 3 · SCHEDULE · AGENDA ============ -->
+  <figure>
+    <div class="ph" style="position:relative">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>SCHEDULE</b><span>WEEK OF JUL 20–26 · 11.5 H PLANNED</span></div>
+        <div class="tabs r1"><div class="on">AGENDA</div><div>WEEK</div><div>DAY</div></div>
+        <div class="dayhead r2"><span>MON JUL 20</span><span class="sum grn">CLOSED · $188.00</span></div>
+        <div class="stub r2">
+          <div class="init">BT</div>
+          <div class="who"><b>BAR TORO · CLOSING</b><span>17:00–23:00 · 30 MIN BREAK</span></div>
+          <div class="amt"><span class="m grn">$188.00</span><small>EARNED</small></div>
+        </div>
+        <div class="dayhead r3"><span>WED JUL 22</span><span class="sum grn">CLOSED · $224.50</span></div>
+        <div class="stub r3">
+          <div class="init">BT</div>
+          <div class="who"><b>BAR TORO · CLOSING</b><span>17:00–23:30 · 20 MIN BREAK</span></div>
+          <div class="amt"><span class="m grn">$224.50</span><small>EARNED</small></div>
+        </div>
+        <div class="dayhead r4"><span>FRI JUL 24</span><span class="sum" style="color:var(--red)">TO CLOSE OUT</span></div>
+        <div class="stub todo r4">
+          <div class="init">LM</div>
+          <div class="who"><b>LA MAISON · LUNCH</b><span>11:00–15:00 · NO BREAK</span></div>
+          <div class="amt"><span class="m">CLOSE OUT →</span></div>
+        </div>
+        <div class="dayhead r5"><span>SUN JUL 26 · TODAY</span><span class="sum">PLANNED · ~$205</span></div>
+        <div class="stub r5">
+          <div class="init">BT</div>
+          <div class="who"><b>BAR TORO · CLOSING</b><span>17:00–23:00 · EXPECTED $205</span></div>
+          <div class="amt"><span class="m">17:00</span><small>TONIGHT</small></div>
+        </div>
+        <div class="fabx">+ ADD SHIFT</div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">03 · Schedule — Agenda</span><b>Ticket stubs on a rail</b>
+      The approved Agenda/Week/Day navigation as a printed tab bar. Each shift is a torn ticket stub: closed shifts show green earned totals, un-logged shifts get the red "CLOSE OUT" treatment so nothing slips.</figcaption>
+  </figure>
+
+  <!-- ============ 4 · SCHEDULE · WEEK ============ -->
+  <figure>
+    <div class="ph" style="position:relative">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>SCHEDULE</b><span>‹ WEEK OF JUL 20–26 › · 11.5 H PLANNED</span></div>
+        <div class="tabs r1"><div>AGENDA</div><div class="on">WEEK</div><div>DAY</div></div>
+        <div style="height:12px"></div>
+        <div class="lane r2"><div class="d">MON<b>20</b></div><div class="bar"><div class="seg done" style="left:52%;width:44%">BT 17–23</div></div><div class="tot grn">$188</div></div>
+        <div class="lane r2"><div class="d">TUE<b>21</b></div><div class="bar"></div><div class="tot" style="color:var(--dim)">—</div></div>
+        <div class="lane r3"><div class="d">WED<b>22</b></div><div class="bar"><div class="seg done" style="left:52%;width:46%">BT 17–23:30</div></div><div class="tot grn">$225</div></div>
+        <div class="lane r3"><div class="d">THU<b>23</b></div><div class="bar"></div><div class="tot" style="color:var(--dim)">—</div></div>
+        <div class="lane r4"><div class="d">FRI<b>24</b></div><div class="bar"><div class="seg todo" style="left:26%;width:30%">LM 11–15</div></div><div class="tot" style="color:var(--red)">LOG</div></div>
+        <div class="lane r4"><div class="d">SAT<b>25</b></div><div class="bar"></div><div class="tot" style="color:var(--dim)">—</div></div>
+        <div class="lane today r5"><div class="d">SUN<b>26</b></div><div class="bar"><div class="seg" style="left:52%;width:44%">BT 17–23</div></div><div class="tot">~$205</div></div>
+        <div class="rcpt r5" style="margin-top:14px;padding:10px 16px 8px">
+          <div class="ln"><span class="k">WEEK TOTAL SO FAR</span><span class="v">$412.50</span></div>
+          <div class="ln"><span class="k">IF TONIGHT GOES TO PLAN</span><span class="v grn">$617.50</span></div>
+        </div>
+        <div class="fabx">+ ADD SHIFT</div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">04 · Schedule — Week</span><b>Seven-day lanes, one tally</b>
+      The approved seven-lane week view redrawn in the receipt language: shift blocks sit on paper strips, closed shifts print solid, un-logged ones outline in red. The footer receipt answers the question the grid never did: "what does this week add up to?"</figcaption>
+  </figure>
+
+  <!-- ============ 5 · ADD SHIFT ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>NEW SHIFT</b><span>PRINTS TO YOUR SCHEDULE</span></div>
+        <div class="rcpt r2" style="padding-top:12px">
+          <div class="rc-h">* * * FILL IN THE TICKET * * *</div>
+          <div class="rule"></div>
+          <div class="field"><label>EMPLOYER</label><div class="in"><span>BAR TORO</span><span class="caret">▾</span></div></div>
+          <div class="field"><label>DATE</label><div class="in"><span class="pen">FRI · JUL 31</span><span class="caret">▾</span></div></div>
+          <div style="display:flex;gap:14px">
+            <div class="field" style="flex:1"><label>START</label><div class="in"><span class="pen">17:00</span></div></div>
+            <div class="field" style="flex:1"><label>END</label><div class="in"><span class="pen">23:00</span></div></div>
+            <div class="field" style="flex:1"><label>BREAK</label><div class="in"><span>30 MIN</span></div></div>
+          </div>
+          <div class="field"><label>EXPECTED TIPS</label><div class="in"><span class="pen">$180.00</span><span class="pen-note" style="font-size:15px">fri avg: $186</span></div></div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">PLANNED HOURS</span><span class="v">5.5 H</span></div>
+          <div class="ln"><span class="k">EXPECTED TOTAL</span><span class="v grn">~$205.00</span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin:12px 18px 0" class="r3">
+          <span class="chip on">REPEAT WEEKLY</span><span class="chip">USE TEMPLATE ▾</span>
+        </div>
+        <div class="btn blk pen r4">PRINT SHIFT TO SCHEDULE</div>
+        <div class="r5" style="margin:10px 18px 0;text-align:center"><span style="font-size:10px;color:var(--dim);letter-spacing:.08em">TEMPLATE SAVED: "FRIDAY CLOSE" ✓</span></div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">05 · Add shift</span><b>Fill in the ticket</b>
+      The form is the receipt being written: underlined blanks, your entries in blue pen, and the math printed live at the bottom ("expected total ~$205"). A handwritten hint shows your own Friday average. Repeat-weekly and templates are one tap.</figcaption>
+  </figure>
+
+  <!-- ============ 6 · CLOSE OUT · TIMES ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>CLOSE OUT</b><span>BAR TORO · SUN JUL 26 · STEP 1 OF 2</span></div>
+        <div class="rcpt r2">
+          <div class="rc-h">* * * WHAT ACTUALLY HAPPENED * * *</div>
+          <div class="rule"></div>
+          <div class="ln" style="font-size:9.5px;color:var(--dim)"><span>&nbsp;</span><span>PLANNED&nbsp;&nbsp;→&nbsp;&nbsp;ACTUAL</span></div>
+          <div class="ln"><span class="k">STARTED</span><span class="v">17:00&nbsp;&nbsp;→&nbsp;&nbsp;17:00 ✓</span></div>
+          <div class="ln"><span class="k">ENDED</span><span class="v">23:00&nbsp;&nbsp;→&nbsp;&nbsp;<span class="pen">23:45</span></span></div>
+          <div class="ln"><span class="k">BREAK</span><span class="v">30 MIN&nbsp;→&nbsp;&nbsp;<span class="pen">20 MIN</span></span></div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">HOURS WORKED</span><span class="v">6.42 H <span style="color:var(--grn)">(+0.9)</span></span></div>
+          <div class="ln"><span class="k">WAGE @ $8.50/H</span><span class="v">$54.57</span></div>
+          <div class="stamp pen" style="right:8px;top:12px;transform:rotate(6deg)">RAN LATE</div>
+        </div>
+        <div class="card r3" style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;letter-spacing:.1em;color:var(--dim);font-weight:700">DIDN'T WORK IT?</span>
+          <span class="chip">MARK MISSED ▾</span>
+        </div>
+        <div class="btn blk r4">NEXT: TIPS &amp; PAYOUT →</div>
+        <div class="r5" style="text-align:center;margin-top:10px"><span class="pen-note">two taps if nothing changed</span></div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">06 · Close out — times</span><b>Planned → actual, one glance</b>
+      The core V4 idea — expected versus actual — becomes a two-column tally. Confirmed values get a ✓, edits print in pen ink, and the hours/wage math updates live. A "MARK MISSED" escape hatch covers shifts that never happened.</figcaption>
+  </figure>
+
+  <!-- ============ 7 · CLOSE OUT · TIPS ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>CLOSE OUT</b><span>BAR TORO · SUN JUL 26 · STEP 2 OF 2</span></div>
+        <div class="rcpt r2" style="padding-top:12px">
+          <div class="rc-h">* * * THE MONEY PART * * *</div>
+          <div class="rule"></div>
+          <div class="field"><label>CASH TIPS</label><div class="in"><span class="pen">$86.00</span></div></div>
+          <div class="field"><label>CARD TIPS</label><div class="in"><span class="pen">$154.00</span></div></div>
+          <div style="display:flex;gap:14px">
+            <div class="field" style="flex:1"><label>TIP-OUT PAID</label><div class="in"><span class="pen neg" style="color:var(--red)">−$24.00</span></div></div>
+            <div class="field" style="flex:1"><label>SHARE RECEIVED</label><div class="in"><span class="pen">$12.00</span></div></div>
+          </div>
+          <div class="field"><label>SALES (FOR TIP %)</label><div class="in"><span>$1,240.00</span></div></div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">CARD TIPS LAND</span><span class="v"><span class="chip on" style="font-size:8.5px">ON PAYCHECK</span> <span class="chip" style="font-size:8.5px">PAID CASH</span></span></div>
+        </div>
+        <div class="card r3" style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:9px;letter-spacing:.12em;color:var(--dim);font-weight:700">NOTE</span>
+          <span class="pen-note" style="font-size:18px">big party at table 9 🎉</span>
+        </div>
+        <div class="btn blk pen r4">PRINT MY RESULT →</div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">07 · Close out — tips</span><b>Cash, card, tip-out, done</b>
+      Every tip flow from the PRD — cash, card, tip-out paid, share received, sales, payout state — on one paper form. Notes are literally handwritten. The CTA sells the payoff: "print my result".</figcaption>
+  </figure>
+
+  <!-- ============ 8 · SHIFT RESULT ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>SHIFT CLOSED</b><span>BAR TORO · SUN JUL 26</span></div>
+        <div class="rcpt r2">
+          <div class="rc-h">* * * YOUR RESULT * * *</div>
+          <div class="rc-t">SUNDAY CLOSE · 6.42 H</div>
+          <div class="stamp" style="right:10px;top:24px;font-size:13px;padding:6px 12px">PAID</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">WAGES</span><span class="v">$54.57</span></div>
+          <div class="ln"><span class="k">TIPS — CASH</span><span class="v">$86.00</span></div>
+          <div class="ln"><span class="k">TIPS — CARD</span><span class="v">$154.00</span></div>
+          <div class="ln"><span class="k">TIP-OUT PAID</span><span class="v neg">−$24.00</span></div>
+          <div class="ln"><span class="k">SHARE RECEIVED</span><span class="v">$12.00</span></div>
+          <div class="rule"></div>
+          <div class="total"><span class="k">YOU MADE</span><span class="v">$282.57</span></div>
+          <div class="rate">= $44.01 / HOUR REAL RATE</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">VS EXPECTED $205</span><span class="v grn">+$77.57 ▲</span></div>
+          <div class="ln"><span class="k">TIP % OF SALES</span><span class="v">19.4%</span></div>
+          <div class="ln"><span class="k">YOUR SUNDAY AVG</span><span class="v">$231 — BEATEN ✓</span></div>
+          <div class="barcode"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin:12px 18px 0" class="r3">
+          <div class="btn ghost" style="flex:1;padding:10px;font-size:10px">COPY TO NEXT SUN</div>
+          <div class="btn" style="flex:1;padding:10px;font-size:10px">DONE</div>
+        </div>
+        <div class="r4" style="text-align:center;margin-top:10px"><span class="pen-note" style="font-size:19px">best Sunday this month!</span></div>
+        <div class="nav">
+          <div>HOME</div><div class="on">SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">08 · Shift result</span><b>The payoff receipt</b>
+      The emotional peak of the whole app: "YOU MADE $282.57" with a PAID stamp, the real hourly rate, and the beat — +$77 over expected, Sunday average beaten. This is the screen people will screenshot and send to friends. Copy-forward is right there.</figcaption>
+  </figure>
+
+  <!-- ============ 9 · STATS ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>STATS</b><span>‹ JULY 2026 › · 14 SHIFTS CLOSED</span></div>
+        <div class="rcpt r2" style="padding-top:12px">
+          <div class="rc-h">* * * MONTH TO DATE * * *</div>
+          <div class="rule"></div>
+          <div class="total" style="padding-top:0"><span class="k">EARNED</span><span class="v">$1,847.25</span></div>
+          <div class="rate">= $29.40 / HOUR · 62.8 H WORKED</div>
+          <div class="bars">
+            <div class="b"><i style="height:34%"></i><small>W1</small></div>
+            <div class="b"><i style="height:58%"></i><small>W2</small></div>
+            <div class="b hi"><i style="height:88%"></i><small>W3</small></div>
+            <div class="b"><i style="height:52%"></i><small>W4</small></div>
+          </div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">GOAL $2,400</span><span class="v meterx"><span class="fillc">███████░</span><span class="emp">░░</span> 77%</span></div>
+        </div>
+        <div class="rcpt r3" style="padding-top:12px">
+          <div class="rc-h">* * * WHAT WORKS * * *</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">BEST SHIFT</span><span class="v grn">SUN CLOSE · $44.01/H</span></div>
+          <div class="ln"><span class="k">BEST NIGHT</span><span class="v">FRIDAY · AVG $228</span></div>
+          <div class="ln"><span class="k">BAR TORO</span><span class="v">$1,102 · 8 SHIFTS</span></div>
+          <div class="ln"><span class="k">LA MAISON</span><span class="v">$745 · 6 SHIFTS</span></div>
+          <div class="ln"><span class="k">AVG TIP % OF SALES</span><span class="v">18.2%</span></div>
+        </div>
+        <div class="r4" style="text-align:center;margin-top:10px"><span class="pen-note">Fridays at Toro = money 💰</span></div>
+        <div class="nav">
+          <div>HOME</div><div>SCHED</div><div class="on">STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">09 · Stats</span><b>Two receipts: how much, and what works</b>
+      Month tally with inked bar chart and goal meter on the first receipt; the second answers the real question — which shifts are worth taking. Best shift, best night, per-employer totals, tip percentage.</figcaption>
+  </figure>
+
+  <!-- ============ 10 · EMPLOYERS ============ -->
+  <figure>
+    <div class="ph" style="position:relative">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>EMPLOYERS</b><span>2 ACTIVE · KEPT SEPARATE, ALWAYS</span></div>
+        <div class="rcpt r2" style="padding-top:12px">
+          <div style="display:flex;align-items:center;gap:11px">
+            <div class="stub-init" style="width:38px;height:38px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;background:#fff">BT</div>
+            <div style="flex:1"><b style="font-size:13px;letter-spacing:.04em">BAR TORO</b><span style="display:block;font-size:9.5px;color:var(--dim);margin-top:1px">BARTENDER · $8.50/H BASE</span></div>
+            <span class="chip on" style="font-size:8px">ACTIVE</span>
+          </div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">THIS MONTH</span><span class="v">$1,102.00 · 8 SHIFTS</span></div>
+          <div class="ln"><span class="k">AVG PER SHIFT</span><span class="v grn">$137.75</span></div>
+          <div class="ln"><span class="k">USUAL SCHEDULE</span><span class="v">WED / FRI / SUN CLOSE</span></div>
+        </div>
+        <div class="rcpt r3" style="padding-top:12px">
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="width:38px;height:38px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;background:#fff">LM</div>
+            <div style="flex:1"><b style="font-size:13px;letter-spacing:.04em">LA MAISON</b><span style="display:block;font-size:9.5px;color:var(--dim);margin-top:1px">SERVER · $9.25/H BASE</span></div>
+            <span class="chip on" style="font-size:8px">ACTIVE</span>
+          </div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">THIS MONTH</span><span class="v">$745.25 · 6 SHIFTS</span></div>
+          <div class="ln"><span class="k">AVG PER SHIFT</span><span class="v grn">$124.21</span></div>
+          <div class="ln"><span class="k">USUAL SCHEDULE</span><span class="v">TUE / FRI LUNCH</span></div>
+        </div>
+        <div class="btn blk ghost r4">+ ADD EMPLOYER</div>
+        <div class="r5" style="text-align:center;margin-top:10px"><span class="pen-note">each job keeps its own ledger</span></div>
+        <div class="nav">
+          <div>HOME</div><div>SCHED</div><div>STATS</div><div class="on">SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">10 · Employers</span><b>One ledger per job</b>
+      The multi-job differentiator: each employer is its own receipt with role, base wage, month total, and per-shift average — so a two-job worker can compare at a glance which job actually pays.</figcaption>
+  </figure>
+
+  <!-- ============ 11 · SETTINGS ============ -->
+  <figure>
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>100%</span></div>
+      <div class="scr">
+        <div class="ttl r1"><b>SETUP</b><span>YOUR APP, YOUR RULES</span></div>
+        <div class="rcpt r2" style="padding-top:12px">
+          <div class="rc-h">* * * PRIVACY * * *</div>
+          <div class="tgl"><span class="k">PASSCODE LOCK<small>required to open the app</small></span><span class="sw on"><i></i></span></div>
+          <div class="tgl"><span class="k">BIOMETRIC UNLOCK<small>fingerprint / face</small></span><span class="sw on"><i></i></span></div>
+          <div class="tgl" style="border-bottom:none"><span class="k">EXPORT MY DATA<small>CSV + encrypted backup</small></span><span class="chip">EXPORT ▾</span></div>
+        </div>
+        <div class="rcpt r3" style="padding-top:12px">
+          <div class="rc-h">* * * PREFERENCES * * *</div>
+          <div class="tgl"><span class="k">LANGUAGE</span><span><span class="chip on">EN</span> <span class="chip">FR</span> <span class="chip">ES</span></span></div>
+          <div class="tgl"><span class="k">DARK MODE<small>follows system</small></span><span class="chip pen">AUTO ▾</span></div>
+          <div class="tgl" style="border-bottom:none"><span class="k">WEEK STARTS ON</span><span class="chip">MONDAY ▾</span></div>
+        </div>
+        <div class="rcpt r4" style="padding-top:12px">
+          <div class="rc-h">* * * YOUR PLAN * * *</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">LIFETIME UNLOCK</span><span class="v">$19.99 ONCE</span></div>
+          <div class="ln"><span class="k">OR MONTHLY</span><span class="v">$2.99 / MO</span></div>
+          <div class="ln"><span class="k">CLOUD SYNC</span><span class="v" style="color:var(--dim)">COMING SOON</span></div>
+          <div style="text-align:center;margin-top:7px"><span class="stamp pen" style="position:static;display:inline-block;font-size:9px">TRIAL · 22 DAYS LEFT</span></div>
+        </div>
+        <div class="nav">
+          <div>HOME</div><div>SCHED</div><div>STATS</div><div class="on">SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">11 · Settings</span><b>Three short receipts</b>
+      Privacy first (passcode, biometrics, export), then preferences (EN/FR/ES, dark mode, week start), then the honest paywall: lifetime $19.99 or $2.99/month, trial days stamped in pen, Cloud Sync clearly marked "coming soon" — never sold early.</figcaption>
+  </figure>
+
+  <!-- ============ 12 · DARK MODE HOME ============ -->
+  <figure>
+    <div class="ph dark">
+      <div class="sb"><span>23:52</span><span>41%</span></div>
+      <div class="scr">
+        <div class="head r1"><span class="brand">PROTIP365</span><span class="date">SUN JUL 26 · 23:52</span></div>
+        <div class="rcpt r2">
+          <div class="rc-h">* * * WEEK OF JUL 20–26 * * *</div>
+          <div class="rc-t">YOUR WEEK SO FAR</div>
+          <div class="stamp" style="right:12px;top:20px">ON TRACK</div>
+          <div class="rule"></div>
+          <div class="ln"><span class="k">HOURS WORKED</span><span class="v">20.1</span></div>
+          <div class="ln"><span class="k">WAGES</span><span class="v">$168.57</span></div>
+          <div class="ln"><span class="k">TIPS — CASH</span><span class="v">$199.00</span></div>
+          <div class="ln"><span class="k">TIPS — CARD</span><span class="v">$339.50</span></div>
+          <div class="ln"><span class="k">TIP-OUT PAID</span><span class="v neg">−$72.00</span></div>
+          <div class="rule"></div>
+          <div class="total"><span class="k">TOTAL EARNED</span><span class="v">$695.07</span></div>
+          <div class="rate">= $34.58 / HOUR REAL RATE</div>
+          <div class="ln" style="margin-top:2px"><span class="k">GOAL $540</span><span class="v meterx"><span class="fillc">██████████</span> 129% ✓</span></div>
+          <div class="barcode"></div>
+        </div>
+        <div class="card r3" style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:9.5px;letter-spacing:.14em;color:var(--dim);font-weight:600">GOAL BEATEN — NICE WORK</span><b style="display:block;font-size:12.5px;margin-top:2px">NEXT SHIFT: WED · LA MAISON</b></div>
+          <span class="pen-note" style="font-size:19px">goal smashed ✓</span>
+        </div>
+        <div class="nav">
+          <div class="on">HOME</div><div>SCHED</div><div>STATS</div><div>SETUP</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><span class="tag">12 · Dark mode</span><b>The night ticket</b>
+      The same receipt printed on charcoal — warm off-white ink on deep cool grey per the approved dark direction, stamps and pen notes glowing softly. This is what the app looks like at 11:52 pm after close, when it will actually be used.</figcaption>
+  </figure>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProTip365 — App screen mockups (Claude, 2026-07-17)</title>
+<!--
+  DRAFT — app-screen mockup exploration (Claude, 2026-07-17). Not approved.
+  - Follows PRD §15 "Shift Ledger": warm off-white + dark ink, cobalt actions,
+    green reserved for confirmed positives, dark mode for after-shift screens.
+  - All employer names, amounts, and dates are fictional mock data; validate
+    against PRD calculation rules before implementation.
+  - Fonts load from Google Fonts; self-host before production.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* light app tokens — white background, cool lavender cards #E8E7F7 (owner direction, 2026-07-17) */
+    --bg:#FFFFFF; --surface:#E8E7F7; --ink:#23242E; --soft:#63667A; --line:#D9D8EC;
+    --cobalt:#2B4BD7; --cobalt-soft:#D9E1FC; --green:#1E7A5A; --green-soft:#DFF0E8;
+    --amber:#C97A10; --amber-soft:#F7E8D2; --rose:#C2536A; --rose-soft:#F6DEE3;
+    --teal:#25705F; --teal-soft:#DCEEE8; --coral:#D64530; --danger:#B3362B;
+    /* dark app tokens — deep cool charcoal; ALL text white, never grey (owner direction, 2026-07-17) */
+    --d-bg:#0E1118; --d-surface:#161A26; --d-card:#1D2231; --d-ink:#FFFFFF;
+    --d-soft:#FFFFFF; --d-line:#2B3144; --d-cobalt:#9DB1FF; --d-cobalt-btn:#4C67E8;
+    --d-green:#42D99B; --d-green-soft:#12332A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',system-ui,sans-serif;background:#0C0F16;color:#ECEFF7;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .serif{font-family:'Fraunces',Georgia,serif}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+  /* gallery chrome */
+  .intro{padding:64px 0 30px;text-align:center}
+  .intro .kicker{font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:#E3A876;font-weight:600}
+  .intro h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(1.9rem,3.8vw,2.9rem);margin:14px auto 16px;max-width:38rem;line-height:1.15;color:#FFFFFF}
+  .intro p{color:#C9D0E0;max-width:44rem;margin:0 auto;font-size:1rem}
+  .group{padding:44px 0 8px}
+  .group h2{font-family:'Fraunces',Georgia,serif;font-size:1.5rem;margin-bottom:6px;color:#FFFFFF}
+  .group .sub{color:#C9D0E0;font-size:.94rem;margin-bottom:28px}
+  .row{display:flex;gap:36px;flex-wrap:wrap;justify-content:flex-start}
+  figure{margin:0}
+  figcaption{margin-top:14px;max-width:300px}
+  figcaption b{display:block;font-size:.98rem;color:#FFFFFF}
+  figcaption span{font-size:.85rem;color:#C9D0E0}
+  .foot-note{padding:60px 0 70px;color:#C9D0E0;font-size:.88rem;max-width:52rem}
+  .foot-note b{color:#FFFFFF}
+
+  /* ---------- phone frame ---------- */
+  .phone{
+    width:300px;height:634px;border-radius:40px;border:9px solid #060504;overflow:hidden;
+    background:var(--bg);color:var(--ink);position:relative;flex-shrink:0;
+    box-shadow:0 30px 60px -25px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.06);
+    font-size:13px;line-height:1.45;display:flex;flex-direction:column;
+  }
+  .phone.dark{background:var(--d-bg);color:var(--d-ink)}
+  .sbar{display:flex;justify-content:space-between;padding:10px 20px 4px;font-size:10px;font-weight:600;color:var(--soft)}
+  .dark .sbar{color:var(--d-soft)}
+  .screen{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .pad{padding:0 16px}
+
+  .apphead{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 6px}
+  .apphead h3{font-family:'Fraunces',Georgia,serif;font-size:21px}
+  .iconbtn{width:34px;height:34px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:14px}
+  .dark .iconbtn{background:var(--d-card);border-color:var(--d-line);color:var(--d-soft)}
+
+  .seg{display:flex;background:#E3E2F2;border-radius:12px;padding:3px;margin:6px 16px}
+  .dark .seg{background:var(--d-card)}
+  .seg span{flex:1;text-align:center;font-size:11px;font-weight:600;padding:6px 0;border-radius:9px;color:var(--soft)}
+  .dark .seg span{color:var(--d-soft)}
+  .seg .on{background:#fff;color:var(--ink);box-shadow:0 2px 5px rgba(43,33,28,.14)}
+  .dark .seg .on{background:#333B58;color:var(--d-ink)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 22px -14px rgba(45,48,80,.25)}
+  .dark .card{background:var(--d-card);border-color:var(--d-line);box-shadow:0 10px 22px -14px rgba(0,0,0,.55)}
+
+  .num{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+
+  .chipst{font-size:8.5px;font-weight:700;letter-spacing:.06em;padding:2.5px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
+  .chipst.sched{background:var(--cobalt-soft);color:var(--cobalt)}
+  .chipst.done{background:var(--green-soft);color:var(--green)}
+  .chipst.pend{background:var(--amber-soft);color:var(--amber)}
+  .chipst.unpl{background:#EFE3F2;color:#7A4E8C}
+  .dark .chipst.done{background:var(--d-green-soft);color:var(--d-green)}
+  .dark .chipst.pend{background:#3A3012;color:#F5BB55}
+  .dark .chipst.sched{background:#232C4E;color:var(--d-cobalt)}
+
+  .navbar{display:flex;align-items:flex-end;justify-content:space-around;background:var(--surface);border-top:1px solid var(--line);padding:7px 6px 12px;position:relative}
+  .dark .navbar{background:var(--d-surface);border-color:var(--d-line)}
+  .navbar div{font-size:9px;font-weight:600;color:var(--soft);text-align:center;width:60px}
+  .dark .navbar div{color:var(--d-soft)}
+  .navbar .on{color:var(--cobalt)}
+  .dark .navbar .on{color:var(--d-cobalt)}
+  .navbar svg{display:block;margin:0 auto 3px}
+  /* M3 extended FAB, bottom-right above the navigation bar */
+  .fab{position:absolute;right:12px;top:-56px;height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 16px;border-radius:15px;background:var(--cobalt);color:#fff;font-size:12px;font-weight:700;box-shadow:0 8px 18px -6px rgba(43,75,215,.55);white-space:nowrap}
+  .dark .fab{background:var(--d-cobalt-btn)}
+  /* M3 active-indicator pill behind the selected destination's icon */
+  .navbar .on svg{background:var(--cobalt-soft);border-radius:999px;padding:3px 13px;box-sizing:content-box}
+  .dark .navbar .on svg{background:#232C4E}
+
+  .btn{display:block;text-align:center;background:var(--cobalt);color:#fff;font-weight:600;font-size:13.5px;border-radius:14px;padding:12px;margin:8px 16px 0}
+  .dark .btn{background:var(--d-cobalt-btn)}
+  .btn.ghost{background:transparent;color:var(--cobalt);border:1.5px solid var(--cobalt)}
+  .dark .btn.ghost{color:var(--d-cobalt);border-color:var(--d-cobalt-btn)}
+
+  .empdot{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;flex-shrink:0}
+  .empdot.mr{background:var(--amber-soft);color:var(--amber)}
+  .empdot.bc{background:var(--rose-soft);color:var(--rose)}
+  .empdot.jp{background:var(--teal-soft);color:var(--teal)}
+  .dark .empdot.mr{background:#3A2D0F;color:#F2B24C}
+  .dark .empdot.bc{background:#3D1B2B;color:#F27E95}
+  .dark .empdot.jp{background:#10362B;color:#3BD9A6}
+
+  .field{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line)}
+  .dark .field{border-color:var(--d-line)}
+  .field:last-child{border-bottom:none}
+  .field .lab{font-size:12px;color:var(--soft)}
+  .dark .field .lab{color:var(--d-soft)}
+  .field .val{font-weight:600;font-size:12.5px}
+  .field .val.link{color:var(--cobalt)}
+  .dark .field .val.link{color:var(--d-cobalt)}
+
+  .toggle{width:36px;height:21px;border-radius:999px;background:var(--cobalt);position:relative;flex-shrink:0}
+  .dark .toggle{background:var(--d-cobalt-btn)}
+  .toggle::after{content:"";position:absolute;right:2.5px;top:2.5px;width:16px;height:16px;border-radius:50%;background:#fff}
+  .toggle.off{background:#C6C5D8}
+  .toggle.off::after{right:auto;left:2.5px}
+  .dark .toggle.off{background:#3B4257}
+</style>
+</head>
+<body>
+
+<header class="intro wrap">
+  <p class="kicker">ProTip365 · V4 screen explorations · unapproved draft</p>
+  <h1>Nine screens. One calm, confident ledger.</h1>
+  <p>Warm off-white light surfaces, cobalt for the one primary action per screen, green only when money is confirmed, and Fraunces numerals that make totals feel like they matter. The after-shift flow runs in a deep cool-charcoal dark mode with white text and vivid accents. Material 3 navigation: extended “Add shift” FAB and an active-indicator pill in the nav bar. All data is fictional.</p>
+</header>
+
+<!-- ============ GROUP 1 : PLAN ============ -->
+<section class="group wrap">
+  <h2>Plan</h2>
+  <p class="sub">The calendar is the product's primary surface — every employer in one week, status always written, never just a dot.</p>
+  <div class="row">
+
+  <!-- 1 · AGENDA -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><h3>Schedule</h3><span class="iconbtn">⧉</span></div>
+        <div class="seg"><span class="on">Agenda</span><span>Week</span><span>Day</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 2px">
+          <span style="font-size:12.5px;font-weight:600">Jul 13 – 19</span>
+          <span style="font-size:11px;font-weight:600;color:var(--cobalt)">⧉ Copy week</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 16px;text-align:center;font-size:9px;color:var(--soft)">
+          <span>M<b style="display:block;font-size:12px;color:var(--ink)">13</b><i style="display:block;font-style:normal;font-size:7px;color:var(--amber)">1</i></span>
+          <span>T<b style="display:block;font-size:12px;color:var(--ink)">14</b></span>
+          <span>W<b style="display:block;font-size:12px;color:var(--ink)">15</b><i style="display:block;font-style:normal;font-size:7px;color:var(--rose)">1</i></span>
+          <span>T<b style="display:block;font-size:12px;color:var(--ink)">16</b><i style="display:block;font-style:normal;font-size:7px;color:var(--teal)">1</i></span>
+          <span>F<b style="display:block;font-size:12px;background:var(--cobalt);color:#fff;border-radius:8px;padding:1px 6px">17</b><i style="display:block;font-style:normal;font-size:7px;color:var(--amber)">2</i></span>
+          <span>S<b style="display:block;font-size:12px;color:var(--ink)">18</b><i style="display:block;font-style:normal;font-size:7px;color:var(--rose)">1</i></span>
+          <span>S<b style="display:block;font-size:12px;color:var(--ink)">19</b></span>
+        </div>
+        <div class="card" style="margin:8px 16px;display:flex;justify-content:space-around;text-align:center;padding:10px">
+          <div><span class="num" style="font-size:17px">26.5 h</span><small style="display:block;font-size:8.5px;letter-spacing:.08em;color:var(--soft)">SCHEDULED</small></div>
+          <div style="width:1px;background:var(--line)"></div>
+          <div><span class="num" style="font-size:17px">$718</span><small style="display:block;font-size:8.5px;letter-spacing:.08em;color:var(--soft)">EXPECTED</small></div>
+        </div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--soft);font-weight:600;margin:6px 2px 4px"><span>Today · Fri Jul 17</span><span>$172 expected</span></div>
+          <div class="card" style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-left:4px solid var(--amber);margin-bottom:6px">
+            <span class="empdot mr">MR</span>
+            <div style="flex:1"><b style="font-size:12px">Maple Room</b><br><span style="font-size:10px;color:var(--soft)">Server · 5:00 – 11:00 PM · 30 min break</span></div>
+            <div style="text-align:right"><span class="chipst sched">SCHEDULED</span><br><span class="num" style="font-size:13px">$172</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--soft);font-weight:600;margin:8px 2px 4px"><span>Thu Jul 16</span></div>
+          <div class="card" style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-left:4px solid var(--teal);margin-bottom:6px">
+            <span class="empdot jp">JP</span>
+            <div style="flex:1"><b style="font-size:12px">Juniper's</b><br><span style="font-size:10px;color:var(--soft)">Server · 6:00 PM – 12:00 AM</span></div>
+            <div style="text-align:right"><span class="chipst done">✓ WORKED</span><br><span class="num" style="font-size:13px">$181</span><br><span style="font-size:9px;color:var(--green);font-weight:600">+$23 vs expected</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--soft);font-weight:600;margin:8px 2px 4px"><span>Sat Jul 18</span><span>$210 expected</span></div>
+          <div class="card" style="display:flex;gap:9px;align-items:center;padding:9px 11px;border-left:4px solid var(--rose)">
+            <span class="empdot bc">BC</span>
+            <div style="flex:1"><b style="font-size:12px">Bar Céleste</b><br><span style="font-size:10px;color:var(--soft)">Bartender · 8 PM – 2 AM</span></div>
+            <div style="text-align:right"><span class="chipst sched">SCHEDULED</span><br><span class="num" style="font-size:13px">$210</span></div>
+          </div>
+        </div>
+        <div class="navbar">
+          <div class="on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</div>
+          <span class="fab">＋ Add shift</span>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V11M10 19V5M16 19v-6M21 19H3"/></svg>Stats</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7 7 0 01-2 1.2L14 21h-4l-.5-2.6a7 7 0 01-2-1.2l-2.4 1-2-3.4 2-1.6A7 7 0 015 12"/></svg>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Schedule · Agenda</b><span>Default view. Status is always a labeled chip; per-day dots carry a count, never stand alone. Confirmed variance is the only green.</span></figcaption>
+  </figure>
+
+  <!-- 2 · WEEK -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><h3>Schedule</h3><span class="iconbtn">⧉</span></div>
+        <div class="seg"><span>Agenda</span><span class="on">Week</span><span>Day</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px">
+          <span style="font-size:12.5px;font-weight:600">‹&nbsp;&nbsp;Jul 13 – 19&nbsp;&nbsp;›</span>
+          <span style="font-size:11px;color:var(--soft)">26.5 h · $718</span>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:2px 16px">
+          <div style="display:flex;font-size:8px;color:var(--soft);padding:0 0 3px 34px;justify-content:space-between"><span>8 AM</span><span>12</span><span>4 PM</span><span>8</span><span>12</span></div>
+          <!-- lanes -->
+          <div style="display:grid;grid-template-columns:30px 1fr;row-gap:7px;align-items:center">
+            <span style="font-size:10px;color:var(--soft)">Mon<b style="display:block;font-size:12px;color:var(--ink)">13</b></span>
+            <div style="position:relative;height:30px;background:var(--surface);border:1px solid var(--line);border-radius:9px">
+              <span style="position:absolute;left:12%;width:25%;top:4px;bottom:4px;background:var(--amber-soft);border-left:3px solid var(--amber);border-radius:6px;font-size:8px;font-weight:700;color:var(--amber);padding:2px 4px">MR 10–2</span>
+            </div>
+            <span style="font-size:10px;color:var(--soft)">Tue<b style="display:block;font-size:12px;color:var(--ink)">14</b></span>
+            <div style="height:30px;background:var(--surface);border:1px dashed var(--line);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#B9AC9C">day off</div>
+            <span style="font-size:10px;color:var(--soft)">Wed<b style="display:block;font-size:12px;color:var(--ink)">15</b></span>
+            <div style="position:relative;height:30px;background:var(--surface);border:1px solid var(--line);border-radius:9px">
+              <span style="position:absolute;left:55%;width:31%;top:4px;bottom:4px;background:var(--rose-soft);border-left:3px solid var(--rose);border-radius:6px;font-size:8px;font-weight:700;color:var(--rose);padding:2px 4px">BC 5–10</span>
+            </div>
+            <span style="font-size:10px;color:var(--soft)">Thu<b style="display:block;font-size:12px;color:var(--ink)">16</b></span>
+            <div style="position:relative;height:30px;background:var(--surface);border:1px solid var(--line);border-radius:9px">
+              <span style="position:absolute;left:60%;width:36%;top:4px;bottom:4px;background:var(--teal-soft);border-left:3px solid var(--teal);border-radius:6px;font-size:8px;font-weight:700;color:var(--teal);padding:2px 4px">JP ✓ 6–12</span>
+            </div>
+            <span style="font-size:10px;color:var(--cobalt)">Fri<b style="display:block;font-size:12px;color:var(--cobalt)">17</b></span>
+            <div style="position:relative;height:44px;background:var(--surface);border:1.5px solid var(--cobalt);border-radius:9px">
+              <span style="position:absolute;left:12%;width:25%;top:3px;height:17px;background:var(--amber-soft);border-left:3px solid var(--amber);border-radius:6px;font-size:8px;font-weight:700;color:var(--amber);padding:1px 4px">MR 10–2</span>
+              <span style="position:absolute;left:57%;width:36%;bottom:3px;height:17px;background:var(--rose-soft);border-left:3px solid var(--rose);border-radius:6px;font-size:8px;font-weight:700;color:var(--rose);padding:1px 4px">BC 5–11</span>
+              <span style="position:absolute;right:4px;top:3px;font-size:7.5px;font-weight:700;color:var(--amber)">⚠ 2 jobs</span>
+            </div>
+            <span style="font-size:10px;color:var(--soft)">Sat<b style="display:block;font-size:12px;color:var(--ink)">18</b></span>
+            <div style="position:relative;height:30px;background:var(--surface);border:1px solid var(--line);border-radius:9px">
+              <span style="position:absolute;left:72%;width:26%;top:4px;bottom:4px;background:var(--rose-soft);border-left:3px solid var(--rose);border-radius:6px;font-size:8px;font-weight:700;color:var(--rose);padding:2px 4px">BC 8–2</span>
+            </div>
+            <span style="font-size:10px;color:var(--soft)">Sun<b style="display:block;font-size:12px;color:var(--ink)">19</b></span>
+            <div style="height:30px;background:var(--surface);border:1px dashed var(--line);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#B9AC9C">day off</div>
+          </div>
+          <div class="card" style="margin-top:9px;padding:7px 10px;display:flex;gap:10px;font-size:9px;font-weight:600">
+            <span style="color:var(--amber)">▮ Maple Room</span><span style="color:var(--rose)">▮ Bar Céleste</span><span style="color:var(--teal)">▮ Juniper's</span>
+          </div>
+        </div>
+        <div class="navbar">
+          <div class="on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</div>
+          <span class="fab">＋ Add shift</span>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V11M10 19V5M16 19v-6M21 19H3"/></svg>Stats</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7 7 0 01-2 1.2L14 21h-4l-.5-2.6a7 7 0 01-2-1.2l-2.4 1-2-3.4 2-1.6A7 7 0 015 12"/></svg>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Schedule · Week lanes</b><span>Seven horizontal day lanes stay legible on a phone. Friday shows a two-employer day with an explicit "2 jobs" flag, not just overlapping color.</span></figcaption>
+  </figure>
+
+  <!-- 3 · ADD SHIFT -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><span style="font-size:13px;color:var(--cobalt);font-weight:600">‹ Cancel</span><h3 style="font-size:16px">New shift</h3><span style="width:44px"></span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <p style="font-size:10px;font-weight:600;color:var(--soft);letter-spacing:.06em;margin:4px 2px 5px">EMPLOYER</p>
+          <div style="display:flex;gap:6px;margin-bottom:9px">
+            <span style="flex:1;text-align:center;background:var(--amber-soft);border:1.5px solid var(--amber);border-radius:11px;padding:7px 0;font-size:11px;font-weight:700;color:var(--amber)">MR · Maple Room</span>
+            <span style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:7px 0;font-size:11px;font-weight:600;color:var(--soft)">BC</span>
+            <span style="flex:1;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:7px 0;font-size:11px;font-weight:600;color:var(--soft)">JP</span>
+          </div>
+          <div class="card">
+            <div class="field"><span class="lab">Role</span><span class="val">Server · $12.50/h ▾</span></div>
+            <div class="field"><span class="lab">Date</span><span class="val">Fri, Jul 24 ▾</span></div>
+            <div class="field"><span class="lab">Start</span><span class="val">5:00 PM ▾</span></div>
+            <div class="field"><span class="lab">End</span><span class="val">11:00 PM ▾</span></div>
+            <div class="field"><span class="lab">Break</span><span class="val">30 min · unpaid ▾</span></div>
+            <div class="field"><span class="lab">Repeat</span><span class="val link">Every Friday × 4 ▾</span></div>
+          </div>
+          <div class="card" style="margin-top:9px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;background:var(--cobalt-soft);border-color:transparent">
+            <div><span style="font-size:10px;font-weight:600;color:var(--cobalt);letter-spacing:.05em">EXPECTED</span><br><span style="font-size:10.5px;color:var(--soft)">5.5 paid h · incl. usual tips</span></div>
+            <span class="num" style="font-size:22px;color:var(--cobalt)">$172</span>
+          </div>
+          <p style="font-size:9.5px;color:var(--soft);margin:7px 2px 0">Template: <b>“Friday dinner · MR”</b> — prefills role, times, and break. <span style="color:var(--cobalt);font-weight:600">Change</span></p>
+        </div>
+        <div style="padding-bottom:14px">
+          <a class="btn">Save shift</a>
+          <a class="btn ghost" style="margin-top:7px">Save &amp; add another</a>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Add scheduled shift</b><span>Everything prefills from the employer template; a typical week should take under two minutes with "Save &amp; add another" and weekly repeat.</span></figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============ GROUP 2 : COMPLETE (dark) ============ -->
+<section class="group wrap">
+  <h2>Complete — after the shift, in the dark</h2>
+  <p class="sub">The check-in happens at midnight in a staff room or on the bus home. Dark surfaces, huge numerals, under 30 seconds.</p>
+  <div class="row">
+
+  <!-- 4 · CHECK-IN -->
+  <figure>
+    <div class="phone dark">
+      <div class="sbar"><span>12:07</span><span>64%</span></div>
+      <div class="screen">
+        <div class="apphead"><span style="font-size:13px;color:var(--d-cobalt);font-weight:600">‹ Back</span><h3 style="font-size:16px">Check-in</h3><span style="font-size:10px;color:var(--d-soft)">1 of 2</span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div style="display:flex;gap:9px;align-items:center;margin:4px 0 10px">
+            <span class="empdot jp">JP</span>
+            <div><b style="font-size:13px">Juniper's · Server</b><br><span style="font-size:10.5px;color:var(--d-soft)">Thu Jul 16 · scheduled 6:00 PM – 12:00 AM</span></div>
+          </div>
+          <p class="serif" style="font-size:19px;margin:2px 0 10px">Did tonight run as scheduled?</p>
+          <div class="card">
+            <div class="field"><span class="lab">Actual start</span><span class="val">6:00 PM <span style="color:var(--d-soft);font-weight:400">· as planned</span></span></div>
+            <div class="field"><span class="lab">Actual end</span><span class="val" style="color:var(--d-cobalt)">12:20 AM · +20 min</span></div>
+          </div>
+          <p style="font-size:10px;font-weight:600;color:var(--d-soft);letter-spacing:.06em;margin:11px 2px 5px">BREAKS TAKEN</p>
+          <div class="card">
+            <div class="field">
+              <div><span class="val">Dinner break</span><br><span style="font-size:10px;color:var(--d-soft)">9:15 PM · 30 min · unpaid</span></div>
+              <span class="toggle" aria-label="taken"></span>
+            </div>
+            <div class="field">
+              <div><span class="val" style="color:var(--d-soft)">Late lull</span><br><span style="font-size:10px;color:var(--d-soft)">not taken</span></div>
+              <span class="toggle off"></span>
+            </div>
+            <div class="field"><span class="val link" style="color:var(--d-cobalt)">+ Add a break</span></div>
+          </div>
+          <div class="card" style="margin-top:10px;padding:10px 13px;display:flex;justify-content:space-between">
+            <span style="font-size:11px;color:var(--d-soft)">Paid time tonight</span>
+            <span class="num" style="font-size:14px">5 h 50 · $12.50/h</span>
+          </div>
+        </div>
+        <div style="padding-bottom:14px"><a class="btn">Next · tips &amp; payout</a></div>
+      </div>
+    </div>
+    <figcaption><b>Post-shift check-in · step 1</b><span>Scheduled times prefill as user-reported actuals — confirm or nudge to the minute. No clock-in, no location. Prefilled breaks toggle taken / not taken.</span></figcaption>
+  </figure>
+
+  <!-- 5 · TIPS & PAYOUT -->
+  <figure>
+    <div class="phone dark">
+      <div class="sbar"><span>12:08</span><span>64%</span></div>
+      <div class="screen">
+        <div class="apphead"><span style="font-size:13px;color:var(--d-cobalt);font-weight:600">‹ Times</span><h3 style="font-size:16px">Tips &amp; payout</h3><span style="font-size:10px;color:var(--d-soft)">2 of 2</span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div class="seg" style="margin:2px 0 9px"><span class="on">Direct</span><span>Pooled</span><span>Mixed</span></div>
+          <div class="card">
+            <div class="field"><span class="lab">Direct tips</span><span class="val num" style="font-size:14px">$148.00</span></div>
+            <div class="field"><span class="lab">Tip-out paid</span><span class="val num" style="font-size:14px">− $22.00</span></div>
+            <div class="field"><span class="lab">Tip-share received</span><span class="val num" style="font-size:14px;color:var(--d-soft)">$0.00</span></div>
+            <div class="field"><span class="lab">Sales <i style="font-style:normal;font-size:9px">(optional)</i></span><span class="val num" style="font-size:14px;color:var(--d-soft)">$1,240</span></div>
+          </div>
+          <div class="card" style="margin-top:9px">
+            <div class="field"><span class="lab">Expected payout</span><span class="val num" style="font-size:14px">$181.00</span></div>
+            <div class="field"><span class="lab">Received so far</span><span class="val num" style="font-size:14px">$0.00</span></div>
+            <div class="field"><span class="lab">Payout status</span><span class="chipst pend">◷ PENDING</span></div>
+          </div>
+          <div class="card" style="margin-top:10px;padding:13px;text-align:center;background:linear-gradient(155deg,#232B4A 0%,#161A26 70%)">
+            <span style="font-size:9.5px;letter-spacing:.1em;font-weight:600;color:var(--d-soft)">TONIGHT</span>
+            <div class="num" style="font-size:30px;margin:1px 0">$181</div>
+            <span style="font-size:11px;color:var(--d-green);font-weight:600">+$23 vs expected · $32.90/h effective</span>
+            <br><span style="font-size:9.5px;color:var(--d-soft)">est. net after 18% deductions: $148</span>
+          </div>
+        </div>
+        <div style="padding-bottom:14px"><a class="btn">Save — mark shift worked</a></div>
+      </div>
+    </div>
+    <figcaption><b>Post-shift check-in · step 2</b><span>Direct / pooled / mixed methods, tip-out and tip-share lines, payout state. One transaction saves actuals and marks the shift worked.</span></figcaption>
+  </figure>
+
+  <!-- 6 · SHIFT RESULT -->
+  <figure>
+    <div class="phone dark">
+      <div class="sbar"><span>12:09</span><span>63%</span></div>
+      <div class="screen">
+        <div class="apphead"><span style="font-size:13px;color:var(--d-cobalt);font-weight:600">‹ Schedule</span><h3 style="font-size:16px">Shift result</h3><span class="iconbtn" style="font-size:11px">✎</span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div style="display:flex;gap:9px;align-items:center;margin:2px 0 8px">
+            <span class="empdot jp">JP</span>
+            <div style="flex:1"><b style="font-size:13px">Juniper's · Server</b><br><span style="font-size:10.5px;color:var(--d-soft)">Thu Jul 16</span></div>
+            <span class="chipst done">✓ WORKED</span>
+          </div>
+          <div class="card" style="padding:12px;text-align:center">
+            <div class="num" style="font-size:32px">$181.00</div>
+            <span style="font-size:11px;color:var(--d-green);font-weight:600">+$23.00 vs $158 expected</span>
+            <div style="display:flex;justify-content:space-around;margin-top:9px;border-top:1px solid var(--d-line);padding-top:8px">
+              <div><span class="num" style="font-size:14px">$32.90</span><br><small style="font-size:8.5px;color:var(--d-soft)">EFFECTIVE /H</small></div>
+              <div><span class="num" style="font-size:14px">5 h 50</span><br><small style="font-size:8.5px;color:var(--d-soft)">PAID TIME</small></div>
+              <div><span class="num" style="font-size:14px">10.2%</span><br><small style="font-size:8.5px;color:var(--d-soft)">TIPS / SALES</small></div>
+            </div>
+          </div>
+          <p style="font-size:10px;font-weight:600;color:var(--d-soft);letter-spacing:.06em;margin:10px 2px 5px">BREAKDOWN</p>
+          <div class="card" style="font-size:11.5px">
+            <div class="field"><span class="lab">Base wage · 5 h 50 × $12.50</span><span class="val num">$72.92</span></div>
+            <div class="field"><span class="lab">Direct tips</span><span class="val num">$148.00</span></div>
+            <div class="field"><span class="lab">Tip-out paid</span><span class="val num">− $22.00</span></div>
+            <div class="field"><span class="lab">Sched. 6:00 PM–12:00 AM → actual 6:00 PM–12:20 AM</span><span></span></div>
+            <div class="field"><span class="lab">Payout</span><span class="chipst pend">◷ PENDING $181.00</span></div>
+          </div>
+          <p style="font-size:9px;color:var(--d-soft);margin:7px 2px 0">Planned values preserved · edited Jul 16, 12:08 AM</p>
+        </div>
+        <div style="padding-bottom:14px"><a class="btn ghost">Update payout received</a></div>
+      </div>
+    </div>
+    <figcaption><b>Shift result detail</b><span>The trust screen: full calculation breakdown, planned values preserved beside actuals, audit timestamp, payout still pending in amber — not green until received.</span></figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============ GROUP 3 : UNDERSTAND ============ -->
+<section class="group wrap">
+  <h2>Understand</h2>
+  <p class="sub">Expected versus actual is the product's second promise — restrained charts, numbers first.</p>
+  <div class="row">
+
+  <!-- 7 · STATS -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><h3>Stats</h3><span class="iconbtn">⇩</span></div>
+        <div class="seg"><span class="on">Week</span><span>Month</span><span>Custom</span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div class="card" style="margin-top:4px;padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div><span style="font-size:9.5px;letter-spacing:.08em;color:var(--soft);font-weight:600">JUL 13 – 19 · ACTUAL</span>
+              <div class="num" style="font-size:28px">$412</div></div>
+              <div style="text-align:right"><span style="font-size:10px;color:var(--soft)">expected $389</span><br><span style="font-size:11px;font-weight:700;color:var(--green)">+$23 ahead</span></div>
+            </div>
+            <div style="margin-top:8px">
+              <div style="font-size:9px;color:var(--soft);display:flex;justify-content:space-between"><span>Expected</span><span>$389</span></div>
+              <div style="height:9px;border-radius:5px;background:var(--cobalt-soft);margin:2px 0 5px"><div style="width:88%;height:100%;border-radius:5px;background:var(--cobalt);opacity:.45"></div></div>
+              <div style="font-size:9px;color:var(--soft);display:flex;justify-content:space-between"><span>Actual · 2 of 5 shifts done</span><span>$412</span></div>
+              <div style="height:9px;border-radius:5px;background:var(--cobalt-soft);margin-top:2px"><div style="width:93%;height:100%;border-radius:5px;background:var(--cobalt)"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-around;margin-top:10px;border-top:1px solid var(--line);padding-top:8px;text-align:center">
+              <div><span class="num" style="font-size:13.5px">$30.10</span><br><small style="font-size:8.5px;color:var(--soft)">EFFECTIVE /H</small></div>
+              <div><span class="num" style="font-size:13.5px">13.7 h</span><br><small style="font-size:8.5px;color:var(--soft)">WORKED</small></div>
+              <div><span class="num" style="font-size:13.5px">82%</span><br><small style="font-size:8.5px;color:var(--soft)">OF $500 GOAL</small></div>
+            </div>
+          </div>
+          <p style="font-size:10px;font-weight:600;color:var(--soft);letter-spacing:.06em;margin:10px 2px 5px">BY EMPLOYER</p>
+          <div class="card" style="display:flex;gap:9px;align-items:center;padding:9px 11px;margin-bottom:6px">
+            <span class="empdot jp">JP</span>
+            <div style="flex:1"><b style="font-size:12px">Juniper's</b>
+              <div style="height:6px;border-radius:4px;background:var(--teal-soft);margin-top:3px"><div style="width:76%;height:100%;border-radius:4px;background:var(--teal)"></div></div>
+            </div>
+            <div style="text-align:right"><span class="num" style="font-size:13px">$231</span><br><span style="font-size:9px;color:var(--green);font-weight:600">$34.10/h</span></div>
+          </div>
+          <div class="card" style="display:flex;gap:9px;align-items:center;padding:9px 11px">
+            <span class="empdot mr">MR</span>
+            <div style="flex:1"><b style="font-size:12px">Maple Room</b>
+              <div style="height:6px;border-radius:4px;background:var(--amber-soft);margin-top:3px"><div style="width:58%;height:100%;border-radius:4px;background:var(--amber)"></div></div>
+            </div>
+            <div style="text-align:right"><span class="num" style="font-size:13px">$181</span><br><span style="font-size:9px;color:var(--soft);font-weight:600">$24.40/h</span></div>
+          </div>
+          <div class="card" style="margin-top:8px;padding:9px 11px;font-size:10.5px;background:var(--surface)">
+            💡 <b>Thursday nights at Juniper's</b> beat your average by 22% over the last 6 weeks.
+          </div>
+        </div>
+        <div class="navbar">
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</div>
+          <div class="on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V11M10 19V5M16 19v-6M21 19H3"/></svg>Stats</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7 7 0 01-2 1.2L14 21h-4l-.5-2.6a7 7 0 01-2-1.2l-2.4 1-2-3.4 2-1.6A7 7 0 015 12"/></svg>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Stats · expected vs actual</b><span>Twin bars, effective hourly, weekly goal progress, per-employer comparison, and one plain-language insight. Charts stay restrained; numerals lead.</span></figcaption>
+  </figure>
+  </div>
+</section>
+
+<!-- ============ GROUP 4 : CONFIGURE & TRUST ============ -->
+<section class="group wrap">
+  <h2>Configure &amp; trust</h2>
+  <p class="sub">No account anywhere. Privacy, employers, and data ownership live in Settings; the first run proves it.</p>
+  <div class="row">
+
+  <!-- 8 · EMPLOYERS -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><span style="font-size:13px;color:var(--cobalt);font-weight:600">‹ Settings</span><h3 style="font-size:16px">Employers</h3><span style="width:44px"></span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div class="card" style="padding:11px 13px;margin-top:4px;margin-bottom:8px">
+            <div style="display:flex;gap:9px;align-items:center">
+              <span class="empdot mr">MR</span>
+              <div style="flex:1"><b style="font-size:12.5px">Maple Room</b><br><span style="font-size:10px;color:var(--soft)">2 roles · deduction 18%</span></div>
+              <span style="color:var(--soft)">›</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <span style="font-size:9.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px">Server · $12.50/h</span>
+              <span style="font-size:9.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px">Host · $15.00/h</span>
+            </div>
+          </div>
+          <div class="card" style="padding:11px 13px;margin-bottom:8px">
+            <div style="display:flex;gap:9px;align-items:center">
+              <span class="empdot bc">BC</span>
+              <div style="flex:1"><b style="font-size:12.5px">Bar Céleste</b><br><span style="font-size:10px;color:var(--soft)">1 role · pooled tips · deduction 20%</span></div>
+              <span style="color:var(--soft)">›</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <span style="font-size:9.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px">Bartender · $13.25/h</span>
+            </div>
+          </div>
+          <div class="card" style="padding:11px 13px">
+            <div style="display:flex;gap:9px;align-items:center">
+              <span class="empdot jp">JP</span>
+              <div style="flex:1"><b style="font-size:12.5px">Juniper's</b><br><span style="font-size:10px;color:var(--soft)">1 role · direct tips · deduction 18%</span></div>
+              <span style="color:var(--soft)">›</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <span style="font-size:9.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px">Server · $12.50/h</span>
+            </div>
+          </div>
+          <p style="font-size:9.5px;color:var(--soft);margin:8px 2px 0">Colors and initials identify employers everywhere. Archiving an employer keeps its history.</p>
+        </div>
+        <div style="padding-bottom:14px"><a class="btn">+ Add employer</a></div>
+      </div>
+    </div>
+    <figcaption><b>Settings · Employers</b><span>Each employer owns roles, rates, tip method, and a deduction override — the prefill engine behind fast shift entry.</span></figcaption>
+  </figure>
+
+  <!-- 9 · SETTINGS -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div class="apphead"><h3>Settings</h3><span></span></div>
+        <div style="flex:1;overflow:hidden" class="pad">
+          <div class="card" style="padding:10px 13px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:var(--cobalt-soft);border-color:transparent">
+            <div><b style="font-size:12px;color:var(--cobalt)">Trial · 22 days left</b><br><span style="font-size:10px;color:var(--soft)">Unlock everything forever — once.</span></div>
+            <span style="background:var(--cobalt);color:#fff;font-size:11px;font-weight:700;border-radius:10px;padding:7px 11px">$19.99</span>
+          </div>
+          <p style="font-size:9.5px;font-weight:600;color:var(--soft);letter-spacing:.06em;margin:2px 2px 4px">PRIVACY &amp; SECURITY</p>
+          <div class="card" style="margin-bottom:8px">
+            <div class="field"><span class="val">App lock · 6-digit passcode</span><span class="toggle"></span></div>
+            <div class="field"><span class="val">Unlock with fingerprint / face</span><span class="toggle"></span></div>
+          </div>
+          <p style="font-size:9.5px;font-weight:600;color:var(--soft);letter-spacing:.06em;margin:2px 2px 4px">PREFERENCES</p>
+          <div class="card" style="margin-bottom:8px">
+            <div class="field"><span class="lab">Language</span><span class="val">English ▾</span></div>
+            <div class="field"><span class="lab">Currency · time</span><span class="val">CAD · 12 h ▾</span></div>
+            <div class="field"><span class="lab">Reminders · deductions</span><span class="val">2 h · 18% ▾</span></div>
+          </div>
+          <p style="font-size:9.5px;font-weight:600;color:var(--soft);letter-spacing:.06em;margin:2px 2px 4px">YOUR DATA</p>
+          <div class="card">
+            <div class="field"><span class="val link">Export CSV</span><span style="color:var(--soft)">›</span></div>
+            <div class="field"><span class="val link">Encrypted backup &amp; restore</span><span style="color:var(--soft)">›</span></div>
+            <div class="field"><span class="val" style="color:var(--danger)">Erase local data…</span><span style="color:var(--soft)">›</span></div>
+          </div>
+          <p style="font-size:9px;color:var(--soft);margin:7px 2px 0">Cloud Sync — <b>coming soon</b>. Nothing leaves this phone today.</p>
+        </div>
+        <div class="navbar">
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19V11M10 19V5M16 19v-6M21 19H3"/></svg>Stats</div>
+          <div class="on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7 7 0 01-2 1.2L14 21h-4l-.5-2.6a7 7 0 01-2-1.2l-2.4 1-2-3.4 2-1.6A7 7 0 015 12"/></svg>Settings</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>Settings</b><span>Trial state and one-time unlock up top — no placeholder paywall tab. Security, preferences, and full data ownership (export, backup, restore, erase).</span></figcaption>
+  </figure>
+
+  <!-- 10 · ONBOARDING -->
+  <figure>
+    <div class="phone">
+      <div class="sbar"><span>9:41</span><span>100%</span></div>
+      <div class="screen">
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:center" class="pad">
+          <p style="font-size:11px;font-weight:700;color:var(--coral);letter-spacing:.1em;margin-bottom:8px">PROTIP365</p>
+          <p class="serif" style="font-size:26px;line-height:1.15;margin-bottom:10px">Your tips.<br>Your schedule.<br>Your phone. <em style="font-style:normal;color:var(--cobalt)">Nobody else's.</em></p>
+          <p style="font-size:12px;color:var(--soft);margin-bottom:14px">No account. No email. No password. Your records are encrypted and stay on this phone.</p>
+          <div style="display:flex;gap:6px;margin-bottom:16px">
+            <span style="flex:1;text-align:center;border:1.5px solid var(--cobalt);background:var(--cobalt-soft);color:var(--cobalt);border-radius:11px;padding:8px 0;font-size:11.5px;font-weight:700">English</span>
+            <span style="flex:1;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:8px 0;font-size:11.5px;font-weight:600;color:var(--soft)">Français</span>
+            <span style="flex:1;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:8px 0;font-size:11.5px;font-weight:600;color:var(--soft)">Español</span>
+          </div>
+          <div class="card" style="padding:10px 13px;font-size:11px;color:var(--soft)">
+            Next: name your first employer, set a rate, and plan your first shift. <b style="color:var(--ink)">About 3 minutes.</b>
+          </div>
+        </div>
+        <div style="padding-bottom:16px">
+          <a class="btn">Start — no sign-up</a>
+          <p style="text-align:center;font-size:9.5px;color:var(--soft);margin-top:7px">Optional passcode &amp; biometrics offered next</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>First run</b><span>Privacy is the first promise the app makes. Language detected and switchable up front (EN · FR-CA · ES); the coral brand mark appears once, then cobalt takes over.</span></figcaption>
+  </figure>
+  </div>
+</section>
+
+<footer class="foot-note wrap">
+  <b>Draft status &amp; conformance.</b> Unapproved exploration. Follows PRD §15 (Shift Ledger: warm off-white light surfaces, cool-charcoal dark mode with white text, cobalt primary action, green reserved for confirmed positives, labeled statuses, one primary action per screen, no five-tab paywall) and its Material 3 conventions (extended `Add shift` FAB on Schedule only, navigation-bar active-indicator pill, 48 dp Android touch targets at implementation). Employer names, amounts, and insights are fictional; calculations must be validated against PRD §10 before implementation. Real screens must add full accessibility (dynamic type, screen-reader labels, 44 pt targets) that static mockups cannot prove.
+</footer>
+
+</body>
+</html>

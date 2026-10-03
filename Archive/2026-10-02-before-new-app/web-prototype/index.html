@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfaf6">
+  <title>ProTip365 — Tes quarts. Tes pourboires.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="journey.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Aller au contenu / Skip to content</a>
+  <div class="shell">
+    <header><a class="brand" href="#home" data-action="home" aria-label="ProTip365"><span class="brand-mark">p.</span> protip<span>365</span></a><div class="header-actions"><span class="prototype">PROTOTYPE</span><button id="preferences" class="icon-button" aria-label="Préférences">⚙</button></div></header>
+    <section class="landing-intro"><div><span id="landing-eyebrow" class="eyebrow"></span><h1 id="landing-title"></h1><p id="landing-subtitle" class="muted"></p></div><button id="try-demo" class="primary" data-action="screen" data-screen="8"></button></section>
+    <div class="prototype-layout"><aside id="journey" aria-label="Parcours"></aside><div class="phone-frame"><div class="phone-status" aria-hidden="true"><span>9:41</span><span class="notch"></span><span>●● ▮</span></div><main id="main" tabindex="-1"></main><nav id="navigation" aria-label="Navigation principale"></nav></div><aside id="flow-notes"></aside></div>
+    <footer id="footnote"></footer>
+  </div>
+  <dialog id="modal" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

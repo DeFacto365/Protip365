@@ -1,0 +1,19 @@
+appId: com.defacto365.protip365
+name: 01 Onboarding (fresh install)
+---
+- launchApp
+- assertVisible: "Choose your language"
+- tapOn: "English"
+- tapOn: "Next"
+- assertVisible: "Create your first employer"
+- tapOn:
+    below: "Employer name"
+- inputText: "Regression Bistro"
+- tapOn: "15.00"
+- eraseText
+- inputText: "20.00"
+- tapOn: "Next"
+- assertVisible: "Confirm your currency"
+- tapOn: "Confirm and add a shift"
+- assertVisible: "Add shift"
+- takeScreenshot: onboarding-done

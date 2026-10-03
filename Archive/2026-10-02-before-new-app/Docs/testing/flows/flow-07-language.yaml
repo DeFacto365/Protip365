@@ -1,0 +1,20 @@
+appId: com.defacto365.protip365
+name: 07 Switch language FR then back to EN
+---
+- launchApp
+- tapOn: "Settings"
+- takeScreenshot: settings-en
+- scrollUntilVisible:
+    element:
+      text: ".*[Ll]anguage.*"
+    optional: true
+- tapOn: ".*[Ll]anguage.*"
+- tapOn: "Français (Canada)"
+- takeScreenshot: settings-fr
+# Verify UI switched to French
+- assertVisible: ".*(Paramètres|Réglages|Horaire|Langue).*"
+# Switch back
+- tapOn: ".*[Ll]angue.*"
+- tapOn: "English"
+- assertVisible: ".*(Settings|Schedule|Language).*"
+- takeScreenshot: settings-back-en

@@ -1,0 +1,41 @@
+# EAS archives the Git repository root, even when invoked from app/.
+# Only the active application is needed by the native builder.
+/Archive
+/artifacts
+/Docs
+/iOS app
+/.agents
+/.claude
+
+node_modules/
+.expo/
+.claude/
+.agents/
+app/android/
+app/ios/
+app/dist/
+app/dist-redesign/
+app/web-build/
+app/coverage/
+app/.expo-*/
+*.tsbuildinfo
+*.log
+*.apk
+*.aab
+
+# Credentials remain local or in the credential service.
+.env*
+credentials.json
+*.keystore
+*.jks
+*.p8
+*.p12
+*.pem
+*.key
+*.mobileprovision
+
+app/src/domain/__tests__/
+app/jest.config.js
+
+app/src/billing/__tests__/
+app/src/domain.test.ts

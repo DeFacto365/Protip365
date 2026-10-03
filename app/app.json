@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "ProTip365",
+    "slug": "protip365",
+    "scheme": "protip365",
+    "version": "3.0.0",
+    "primaryColor": "#3F2A22",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.protip365.monthly",
+      "appleTeamId": "2VNLA63QB4",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "ITSAppUsesNonExemptEncryption": true
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": []
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#8A9C7D",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "package": "com.defacto365.protip365",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "versionCode": 14
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 100,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAF8F3"
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      "expo-secure-store",
+      "expo-localization",
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c1a2f4a8-14ee-4093-a4ee-a96bbe9317e2"
+      }
+    },
+    "owner": "defacto365",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c1a2f4a8-14ee-4093-a4ee-a96bbe9317e2"
+    }
+  }
+}

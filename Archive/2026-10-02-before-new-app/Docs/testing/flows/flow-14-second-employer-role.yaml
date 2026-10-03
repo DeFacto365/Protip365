@@ -1,0 +1,30 @@
+appId: com.defacto365.protip365
+name: 14 Create second employer and isolated role
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Unlock"
+    commands:
+      - tapOn: "6-digit passcode"
+      - inputText: "123456"
+      - tapOn: "Unlock"
+- tapOn: "Schedule"
+- tapOn: "Add shift"
+- tapOn: "＋ Add employer"
+- tapOn: "Employer name"
+- inputText: "Regression Bar"
+- tapOn: "Add employer Hourly rate"
+- inputText: "18.50"
+- tapOn: "Save"
+- assertVisible: "Regression Bar"
+- tapOn: "Regression Bar"
+- tapOn: "＋ Add role"
+- tapOn: "Role name"
+- inputText: "Bartender"
+- tapOn: "Add role Hourly rate"
+- inputText: "24.00"
+- tapOn: "Save"
+- assertVisible: '.*Bartender.*24\.00.*'
+- assertNotVisible: '.*Server.*22\.00.*'
+- takeScreenshot: second-employer-role

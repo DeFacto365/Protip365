@@ -1,0 +1,22 @@
+appId: com.defacto365.protip365
+name: 04 Add scheduled shift with unpaid break
+---
+- launchApp
+- tapOn: "Schedule"
+- tapOn: "Add shift"
+- assertVisible: "Unpaid break"
+# Use the default date and times here; flows 02 and 03 verify both native pickers.
+# Break: enable, keep the default 30 minutes.
+- tapOn:
+    text: "Unpaid break"
+    index: 1
+- assertVisible: "Duration (min)"
+- scrollUntilVisible:
+    element:
+      text: "Save"
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible: "Schedule"
+    timeout: 10000
+- assertVisible: ".*Regression Bistro.*"
+- takeScreenshot: shift-in-agenda

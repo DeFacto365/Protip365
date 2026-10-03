@@ -1,49 +1,56 @@
-# Xcode
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
 .DS_Store
-*.swp
-*.lock
-*.tmp
-*.log
+*.pem
 
-# Build artifacts
-build/
-*.xcscmblueprint
-
-# Note: Configuration is now handled through Info.plist and build settings
-# No .env files are used in this iOS project
+# local env files
+.env*.local
 .env
 .env.*
 !.env.example
-!ProTip365Shared/.env.example
 
-# IDE files
-.vscode/
-.idea/
+# typescript
+*.tsbuildinfo
 
-# OS generated files
-Thumbs.db
-.DS_Store
+# generated native folders
+/ios
+/android
+credentials.json
 
-# Swift Package Manager
-Packages/
-Package.pins
-Package.resolved
-
-# CocoaPods
-Pods/
-
-# Carthage
-Carthage/
-
-# SwiftLint
-.swiftlint.yml
-
-# Firebase
-GoogleService-Info.plist
-
-# Supabase
-.supabase/
-
-# Temporary files
-*.tmp
-*.bak
+app/android/
+app/ios/
+app/dist-android/
+artifacts/
+*.apk
+*.aab
+app/dist-web/
+Docs/google-play/preview/
+Docs/google-play/fonts/

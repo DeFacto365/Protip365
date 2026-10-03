@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProTip365 hero loop exporter</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #eee7de;
+      color: #33241e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    main { display: grid; justify-items: center; gap: 16px; }
+    canvas {
+      width: min(720px, calc(100vw - 48px));
+      height: auto;
+      border-radius: 24px;
+      box-shadow: 0 22px 60px rgba(51, 36, 30, .22);
+      background: #fbf6ef;
+    }
+    .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font: 700 14px/1 "Segoe UI", system-ui, sans-serif;
+      color: #fff;
+      background: #33241e;
+      cursor: pointer;
+    }
+    button.secondary { background: #d64530; }
+    button:disabled { cursor: wait; opacity: .55; }
+    p { margin: 0; color: #6b5a52; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <canvas id="hero" width="720" height="900" aria-label="Animated ProTip365 product demo"></canvas>
+    <div class="controls">
+      <button id="export-mp4">Export MP4</button>
+      <button id="export-webm">Export WebM</button>
+      <button id="export-poster" class="secondary">Export poster</button>
+    </div>
+    <p>10 seconds · 720 × 900 · silent · loop-friendly</p>
+  </main>
+
+  <script>
+    const W = 720;
+    const H = 900;
+    const FPS = 30;
+    const DURATION = 10;
+    const POSTER_TIME = 4.25;
+    const canvas = document.getElementById('hero');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const buttons = [...document.querySelectorAll('button')];
+
+    const agenda = new Image();
+    const week = new Image();
+    agenda.src = '../../approved/schedule-agenda.png';
+    week.src = '../../approved/schedule-week.png';
+
+    let assetsReady = false;
+    let recording = false;
+    let recordStart = 0;
+    let paused = false;
+
+    const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+    const mix = (a, b, p) => a + (b - a) * p;
+    const smooth = (p) => {
+      p = clamp(p);
+      return p * p * (3 - 2 * p);
+    };
+    const easeOut = (p) => 1 - Math.pow(1 - clamp(p), 3);
+    const windowed = (t, a, b, c, d) => smooth((t - a) / (b - a)) * (1 - smooth((t - c) / (d - c)));
+
+    function roundedRect(x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function radial(x, y, r, inner, outer) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, inner);
+      g.addColorStop(1, outer);
+      return g;
+    }
+
+    function drawBackground(t) {
+      ctx.fillStyle = '#FBF6EF';
+      ctx.fillRect(0, 0, W, H);
+
+      const drift = Math.sin(t * Math.PI * 0.2);
+      ctx.fillStyle = radial(585 + drift * 12, 760, 320, 'rgba(201,188,232,.48)', 'rgba(201,188,232,0)');
+      ctx.fillRect(240, 430, 480, 470);
+      ctx.fillStyle = radial(80, 705 - drift * 10, 300, 'rgba(246,198,206,.48)', 'rgba(246,198,206,0)');
+      ctx.fillRect(0, 400, 390, 500);
+      ctx.fillStyle = radial(520, 120, 285, 'rgba(255,217,196,.58)', 'rgba(255,217,196,0)');
+      ctx.fillRect(220, 0, 500, 390);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(214,69,48,.12)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(85, 150, 57 + drift * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(653, 520, 82 - drift * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawImageInPhone(img, x, y, w, h, alpha, zoom, focusY) {
+      if (!img.complete || !img.naturalWidth || alpha <= 0.001) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      roundedRect(x, y, w, h, 28);
+      ctx.clip();
+
+      const baseScale = w / img.naturalWidth;
+      const scale = baseScale * zoom;
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      const normalY = y + (h - img.naturalHeight * baseScale) / 2;
+      const focusTargetY = y + h * .56 - img.naturalHeight * focusY * scale;
+      const zoomProgress = clamp((zoom - 1) / .48);
+      const dy = mix(normalY, focusTargetY, zoomProgress);
+      const dx = x + (w - dw) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+    }
+
+    function drawPhone(t) {
+      const enter = easeOut(t / .75);
+      const leave = smooth((t - 9.2) / .65);
+      const visible = enter * (1 - leave);
+      const floatY = Math.sin(t * Math.PI * .8) * 3;
+      const cx = 360;
+      const cy = 446 + (1 - enter) * 84 + leave * 84 + floatY;
+      const outerW = 356;
+      const outerH = 772;
+      const innerW = 334;
+      const innerH = 724;
+      const angle = Math.sin(t * Math.PI * .22) * .009;
+
+      ctx.save();
+      ctx.globalAlpha = visible;
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(51,36,30,.30)';
+      ctx.shadowBlur = 34;
+      ctx.shadowOffsetY = 18;
+      roundedRect(-outerW / 2, -outerH / 2, outerW, outerH, 49);
+      ctx.fillStyle = '#33241E';
+      ctx.fill();
+      ctx.restore();
+
+      roundedRect(-outerW / 2 + 5, -outerH / 2 + 5, outerW - 10, outerH - 10, 44);
+      ctx.strokeStyle = 'rgba(255,255,255,.20)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const ix = -innerW / 2;
+      const iy = -innerH / 2;
+      roundedRect(ix, iy, innerW, innerH, 31);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+
+      const switchToWeek = smooth((t - 2.65) / .72);
+      const switchToAgenda = smooth((t - 5.2) / .68);
+      const weekAlpha = switchToWeek * (1 - switchToAgenda);
+      const agendaAlpha = 1 - weekAlpha;
+      const zoomPulse = windowed(t, 5.65, 6.25, 7.15, 7.7);
+      const zoom = 1 + .48 * zoomPulse;
+
+      drawImageInPhone(agenda, ix, iy, innerW, innerH, agendaAlpha, zoom, .715);
+      drawImageInPhone(week, ix, iy, innerW, innerH, weekAlpha, 1, .5);
+
+      // Subtle highlight around the actual result after the camera settles.
+      const resultGlow = windowed(t, 6.15, 6.45, 7.0, 7.5);
+      if (resultGlow > .001) {
+        ctx.save();
+        ctx.globalAlpha = resultGlow;
+        ctx.strokeStyle = '#2E8B57';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(46,139,87,.42)';
+        ctx.shadowBlur = 16;
+        roundedRect(-143, 80, 286, 112, 14);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPill(x, y, w, h, alpha, label, value, detail, accent, anchor = 'left') {
+      if (alpha <= .001) return;
+      const rise = (1 - easeOut(alpha)) * 18;
+      ctx.save();
+      ctx.globalAlpha = clamp(alpha);
+      ctx.shadowColor = 'rgba(51,36,30,.18)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      roundedRect(x, y + rise, w, h, 20);
+      ctx.fillStyle = 'rgba(255,255,255,.96)';
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = '#E9DCCC';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const tx = anchor === 'right' ? x + w - 20 : x + 20;
+      ctx.textAlign = anchor;
+      ctx.fillStyle = accent;
+      ctx.font = '700 12px "Segoe UI", sans-serif';
+      ctx.fillText(label, tx, y + rise + 27);
+      ctx.fillStyle = '#33241E';
+      ctx.font = '700 28px Georgia, serif';
+      ctx.fillText(value, tx, y + rise + 60);
+      if (detail) {
+        ctx.fillStyle = '#6B5A52';
+        ctx.font = '600 12px "Segoe UI", sans-serif';
+        ctx.fillText(detail, tx, y + rise + 82);
+      }
+      ctx.restore();
+    }
+
+    function drawPrivacyPill(t) {
+      const alpha = windowed(t, 7.35, 7.7, 8.75, 9.15);
+      if (alpha <= .001) return;
+      const x = 418;
+      const y = 714;
+      const w = 272;
+      const h = 84;
+      const rise = (1 - easeOut(alpha)) * 18;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = 'rgba(51,36,30,.18)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      roundedRect(x, y + rise, w, h, 20);
+      ctx.fillStyle = 'rgba(255,255,255,.96)';
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = '#E9DCCC';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.strokeStyle = '#D64530';
+      ctx.lineWidth = 3;
+      roundedRect(x + 21, y + rise + 34, 26, 26, 6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x + 34, y + rise + 34, 8, Math.PI, 0);
+      ctx.stroke();
+
+      ctx.fillStyle = '#33241E';
+      ctx.font = '700 17px "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Private on your phone', x + 61, y + rise + 38);
+      ctx.fillStyle = '#6B5A52';
+      ctx.font = '500 12px "Segoe UI", sans-serif';
+      ctx.fillText('No account required', x + 61, y + rise + 59);
+      ctx.restore();
+    }
+
+    function drawFrame(t) {
+      drawBackground(t);
+      drawPhone(t);
+
+      const allJobs = windowed(t, .72, 1.05, 2.25, 2.65);
+      drawPill(24, 130, 238, 96, allJobs, 'ALL YOUR JOBS', 'One week.', '', '#D64530');
+
+      const expected = windowed(t, 3.25, 3.62, 4.85, 5.28);
+      drawPill(475, 230, 221, 112, expected, 'EXPECTED', '$742', 'across 29.5 hours', '#D64530', 'right');
+
+      const actual = windowed(t, 6.05, 6.42, 7.06, 7.5);
+      drawPill(24, 626, 224, 118, actual, 'ACTUAL RESULT', '+$13', 'vs expected', '#2E8B57');
+
+      drawPrivacyPill(t);
+    }
+
+    function previewLoop(now) {
+      if (!paused) {
+        const t = recording
+          ? clamp((now - recordStart) / 1000, 0, DURATION)
+          : (now / 1000) % DURATION;
+        drawFrame(t);
+      }
+      requestAnimationFrame(previewLoop);
+    }
+
+    function setBusy(busy) {
+      buttons.forEach((button) => { button.disabled = busy; });
+    }
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    async function exportVideo(kind) {
+      if (!assetsReady || recording) return;
+      const isMp4 = kind === 'mp4';
+      const mimeType = isMp4
+        ? 'video/mp4;codecs=avc1.42E01E'
+        : 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        throw new Error(`Unsupported media type: ${mimeType}`);
+      }
+
+      setBusy(true);
+      paused = false;
+      drawFrame(0);
+      const stream = canvas.captureStream(FPS);
+      const recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: isMp4 ? 4200000 : 3200000,
+      });
+      const chunks = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size) chunks.push(event.data);
+      };
+      const finished = new Promise((resolve, reject) => {
+        recorder.onerror = () => reject(recorder.error || new Error('Recording failed'));
+        recorder.onstop = resolve;
+      });
+
+      recorder.start(250);
+      recordStart = performance.now();
+      recording = true;
+      await new Promise((resolve) => setTimeout(resolve, DURATION * 1000 + 90));
+      recording = false;
+      recorder.stop();
+      await finished;
+      stream.getTracks().forEach((track) => track.stop());
+
+      const extension = isMp4 ? 'mp4' : 'webm';
+      triggerDownload(
+        new Blob(chunks, { type: mimeType }),
+        `protip365-hero-loop-720x900.${extension}`
+      );
+      setBusy(false);
+    }
+
+    async function exportPoster() {
+      if (!assetsReady || recording) return;
+      setBusy(true);
+      paused = true;
+      drawFrame(POSTER_TIME);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      triggerDownload(blob, 'protip365-hero-loop-poster-720x900.png');
+      paused = false;
+      setBusy(false);
+    }
+
+    document.getElementById('export-mp4').addEventListener('click', () => exportVideo('mp4'));
+    document.getElementById('export-webm').addEventListener('click', () => exportVideo('webm'));
+    document.getElementById('export-poster').addEventListener('click', exportPoster);
+
+    Promise.all([
+      agenda.decode(),
+      week.decode(),
+      document.fonts.ready,
+    ]).then(() => {
+      assetsReady = true;
+      requestAnimationFrame(previewLoop);
+    });
+  </script>
+</body>
+</html>

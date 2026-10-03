@@ -1,0 +1,62 @@
+<en-US>
+A fresh ProTip365, inspired by our new website.
+• Simpler shift and tip entry
+• A colour-coded calendar for every job
+• Weekly, monthly and yearly earnings
+• PDF tip statements, year summaries and CSV exports
+• French and English, plus local backup and restore
+</en-US>
+
+<en-CA>
+A fresh ProTip365, inspired by our new website.
+• Simpler shift and tip entry
+• A colour-coded calendar for every job
+• Weekly, monthly and yearly earnings
+• PDF tip statements, year summaries and CSV exports
+• French and English, plus local backup and restore
+</en-CA>
+
+<fr-CA>
+Un nouveau ProTip365, inspiré de notre site.
+• Saisie des quarts et pourboires simplifiée
+• Calendrier par couleur pour chaque emploi
+• Revenus par semaine, mois et année
+• Relevés PDF, résumés annuels et exports CSV
+• Français et anglais, sauvegarde et restauration locales
+</fr-CA>
+
+<fr-FR>
+Un nouveau ProTip365, inspiré de notre site.
+• Saisie des quarts et pourboires simplifiée
+• Calendrier par couleur pour chaque emploi
+• Revenus par semaine, mois et année
+• Relevés PDF, résumés annuels et exports CSV
+• Français et anglais, sauvegarde et restauration locales
+</fr-FR>
+
+<es-419>
+Un nuevo ProTip365, inspirado en nuestra web.
+• Registro más sencillo de turnos y propinas
+• Calendario por colores para cada empleo
+• Ingresos semanales, mensuales y anuales
+• Informes PDF, resúmenes anuales y exportaciones CSV
+• Interfaz en francés e inglés; copia y restauración locales
+</es-419>
+
+<es-ES>
+Un nuevo ProTip365, inspirado en nuestra web.
+• Registro más sencillo de turnos y propinas
+• Calendario por colores para cada empleo
+• Ingresos semanales, mensuales y anuales
+• Informes PDF, resúmenes anuales y exportaciones CSV
+• Interfaz en francés e inglés; copia y restauración locales
+</es-ES>
+
+<es-US>
+Un nuevo ProTip365, inspirado en nuestra web.
+• Registro más sencillo de turnos y propinas
+• Calendario por colores para cada empleo
+• Ingresos semanales, mensuales y anuales
+• Informes PDF, resúmenes anuales y exportaciones CSV
+• Interfaz en francés e inglés; copia y restauración locales
+</es-US>

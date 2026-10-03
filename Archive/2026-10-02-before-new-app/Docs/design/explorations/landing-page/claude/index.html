@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tip Tracker &amp; Shift Planner for Servers | ProTip365</title>
+<meta name="description" content="Track cash and card tips, plan shifts across jobs, and see your real hourly rate. ProTip365 is a private tip tracker for servers and bartenders.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="theme-color" content="#F1F2F0">
+<link rel="canonical" href="https://www.protip365.com/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ProTip365">
+<meta property="og:title" content="Tip Tracker &amp; Shift Planner for Servers | ProTip365">
+<meta property="og:description" content="Plan shifts, track cash and card tips, and see what every shift really paid. Private records for servers and bartenders.">
+<meta property="og:url" content="https://www.protip365.com/">
+<meta property="og:image" content="https://www.protip365.com/logo.png">
+<meta property="og:image:width" content="192">
+<meta property="og:image:height" content="192">
+<meta property="og:image:alt" content="ProTip365 tip tracker app logo">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tip Tracker &amp; Shift Planner for Servers | ProTip365">
+<meta name="twitter:description" content="Plan shifts, track cash and card tips, and see what every shift really paid.">
+<meta name="twitter:image" content="https://www.protip365.com/logo.png">
+<meta name="twitter:image:alt" content="ProTip365 tip tracker app logo">
+<!--
+  Landing-page exploration, restyled 2026-07-20 to the owner-approved
+  "Shift Receipt" visual direction.
+  - Google Play CTAs link to the production Android listing.
+  - iOS must remain "Coming soon" until an App Store release exists.
+  - Privacy wording is unchanged and assumes encrypted local storage passes release tests.
+  - Product screens are real Android emulator captures using disposable test data.
+  - Fonts load from Google Fonts; self-host before production.
+-->
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.protip365.com/#organization",
+      "name": "Defacto365",
+      "url": "https://www.protip365.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.protip365.com/logo.png",
+        "width": 192,
+        "height": 192
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.protip365.com/#website",
+      "url": "https://www.protip365.com/",
+      "name": "ProTip365",
+      "description": "A private tip tracker and shift planner for servers and bartenders.",
+      "publisher": { "@id": "https://www.protip365.com/#organization" },
+      "inLanguage": "en"
+    },
+    {
+      "@type": ["SoftwareApplication", "MobileApplication"],
+      "@id": "https://www.protip365.com/#app",
+      "name": "ProTip365",
+      "url": "https://www.protip365.com/",
+      "description": "Plan shifts across jobs, track cash and card tips, tip-outs, wages, and see the real hourly rate for every shift.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Android",
+      "image": "https://www.protip365.com/logo.png",
+      "publisher": { "@id": "https://www.protip365.com/#organization" },
+      "availableLanguage": ["English", "French", "Spanish"],
+      "featureList": [
+        "Multi-employer shift planning",
+        "Cash and card tip tracking",
+        "Tip-out and pooled-tip records",
+        "Planned versus actual earnings",
+        "Real hourly rate calculations",
+        "CSV export and encrypted backup",
+        "Local encrypted storage"
+      ],
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Lifetime unlock",
+          "price": "19.99",
+          "priceCurrency": "USD"
+        },
+        {
+          "@type": "Offer",
+          "name": "Monthly subscription",
+          "price": "2.99",
+          "priceCurrency": "USD"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  :root{
+    --paper:#F6F2E9;
+    --ground:#F1F2F0;
+    --ink:#20211E;
+    --dim:#7C7A70;
+    --dim-aa:#626159;
+    --red:#D8472B;
+    --red-aa:#B63622;
+    --green:#2E7D4F;
+    --pen:#20211E;
+    --rule:#C9C3B2;
+    --white:#FFFDF8;
+    --hard-shadow:4px 4px 0 var(--ink);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+    background:var(--ground);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-weight:700;line-height:1.16}
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--pen);outline-offset:4px}
+  .wrap{width:min(1120px,calc(100% - 48px));margin:0 auto}
+
+  /* Header */
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(246,242,233,.96);
+    border-bottom:1.5px dashed var(--ink);
+  }
+  .nav{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .logo{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    text-decoration:none;
+    font-size:1.14rem;
+    font-weight:700;
+    letter-spacing:.03em;
+  }
+  .logo em{font-style:normal;color:var(--red-aa)}
+  .logo img{width:34px;height:34px;border:1.5px solid var(--ink);background:var(--white)}
+  .nav-right{display:flex;align-items:center;gap:18px}
+  .nav-cta{
+    background:var(--ink);
+    color:var(--paper);
+    border:1.5px solid var(--ink);
+    padding:8px 15px;
+    text-decoration:none;
+    font-size:.79rem;
+    font-weight:700;
+    letter-spacing:.04em;
+    box-shadow:3px 3px 0 var(--red);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .nav-cta:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--red)}
+  .lang{display:flex;border:1.5px solid var(--ink);background:var(--paper)}
+  .lang button{
+    border:0;
+    border-left:1px solid var(--ink);
+    background:transparent;
+    color:var(--dim-aa);
+    font:inherit;
+    font-size:.72rem;
+    font-weight:700;
+    padding:6px 9px;
+    cursor:pointer;
+  }
+  .lang button:first-child{border-left:0}
+  .lang button.on{background:var(--ink);color:var(--paper)}
+
+  /* Hero */
+  .hero{border-bottom:1.5px dashed var(--rule)}
+  .hero-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 390px;
+    align-items:center;
+    gap:62px;
+    padding:76px 0 92px;
+  }
+  .hero-copy{position:relative}
+  .eyebrow{
+    display:inline-block;
+    margin-bottom:22px;
+    border:2px solid var(--red);
+    color:var(--red-aa);
+    padding:5px 10px;
+    font-size:.76rem;
+    font-weight:700;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    transform:rotate(-2deg);
+  }
+  h1{font-size:clamp(2.35rem,5.2vw,4rem);letter-spacing:-.045em;margin-bottom:22px;max-width:44rem}
+  h1 .accent{color:var(--red-aa);border-bottom:4px solid var(--red)}
+  .lead{max-width:38rem;color:var(--dim-aa);font-size:1.05rem;margin-bottom:32px}
+  .cta-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .play-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    background:var(--ink);
+    color:var(--paper);
+    border:1.5px solid var(--ink);
+    padding:13px 23px;
+    text-decoration:none;
+    font-size:1rem;
+    font-weight:700;
+    box-shadow:var(--hard-shadow);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .play-btn:hover{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .play-btn small{display:block;font-size:.62rem;line-height:1.1;letter-spacing:.08em}
+  .play-btn .big{display:block;font-size:1rem;line-height:1.25}
+  .ios-note{
+    color:var(--pen);
+    font-family:'Caveat',cursive;
+    font-size:1.28rem;
+    line-height:1.08;
+    transform:rotate(-2deg);
+  }
+  .ios-note strong{font-weight:600}
+
+  /* Captured product screens */
+  .phone-zone{display:flex;justify-content:center;align-items:flex-start;min-width:0}
+  .hero-slider{
+    width:min(360px,100%);
+    min-width:0;
+    transform:rotate(1.2deg);
+  }
+  .hero-slider-frame{
+    position:relative;
+    overflow:hidden;
+    display:block;
+    width:100%;
+    aspect-ratio:1080/2424;
+    border-radius:44px;
+    background:#05060A;
+    box-shadow:15px 18px 0 rgba(32,33,30,.22);
+  }
+  .hero-slide{
+    position:absolute;
+    inset:0;
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    opacity:0;
+    visibility:hidden;
+  }
+  .hero-slide.is-active{opacity:1;visibility:visible}
+  .hero-slider-meta{
+    display:grid;
+    grid-template-columns:44px minmax(0,1fr) 44px;
+    gap:10px;
+    align-items:center;
+    margin:18px 4px 0;
+  }
+  .hero-slider-meta button{
+    width:44px;
+    height:44px;
+    border:1.5px solid var(--ink);
+    background:var(--paper);
+    color:var(--ink);
+    font:700 1rem/1 'IBM Plex Mono',monospace;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .hero-slider-meta button:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .hero-slider-meta button:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
+  .hero-slider-status{min-width:0;text-align:center;font-size:.72rem;line-height:1.35}
+  .hero-slider-status strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hero-slider-count{display:block;color:var(--red-aa);font-size:.62rem;font-weight:700;letter-spacing:.1em;margin-bottom:2px}
+
+  /* Outcomes */
+  .benefits{padding:82px 0 72px}
+  .section-kicker{text-align:center;color:var(--red-aa);font-size:.72rem;font-weight:700;letter-spacing:.14em;margin-bottom:12px}
+  .benefits h2{max-width:39rem;margin:0 auto 46px;text-align:center;font-size:clamp(1.65rem,3.4vw,2.45rem)}
+  .b-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .b-card{
+    position:relative;
+    background:var(--paper);
+    border:1.5px solid var(--ink);
+    padding:29px 25px 27px;
+    box-shadow:var(--hard-shadow);
+  }
+  .b-card::after{content:"";display:block;border-top:1.5px dashed var(--rule);margin-top:24px}
+  .b-no{display:inline-block;color:var(--red-aa);border:2px solid var(--red);padding:3px 7px;font-size:.65rem;font-weight:700;letter-spacing:.08em;transform:rotate(-5deg);margin-bottom:18px}
+  .b-card:nth-child(2) .b-no{color:var(--pen);border-color:var(--pen);transform:rotate(4deg)}
+  .b-card:nth-child(3) .b-no{color:var(--green);border-color:var(--green);transform:rotate(-3deg)}
+  .b-card h3{font-size:1.08rem;margin-bottom:10px}
+  .b-card p{color:var(--dim-aa);font-size:.9rem}
+
+  /* Product screens */
+  .screens{padding:22px 0 84px;border-top:1.5px dashed var(--rule)}
+  .screens-head{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-bottom:34px}
+  .screens-copy{max-width:47rem}
+  .screens .section-kicker{text-align:left;margin-bottom:10px}
+  .screens h2{font-size:clamp(1.65rem,3.4vw,2.45rem);margin-bottom:12px}
+  .screens-intro{color:var(--dim-aa);font-size:.94rem;max-width:42rem}
+  .screen-controls{display:flex;gap:10px;flex:0 0 auto}
+  .screen-controls button{
+    width:44px;
+    height:44px;
+    border:1.5px solid var(--ink);
+    background:var(--paper);
+    color:var(--ink);
+    font:700 1rem/1 'IBM Plex Mono',monospace;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .screen-controls button:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .screen-strip{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(240px,300px);
+    gap:26px;
+    overflow-x:auto;
+    padding:8px 6px 30px;
+    scroll-snap-type:x mandatory;
+    scrollbar-color:var(--ink) var(--rule);
+    overscroll-behavior-x:contain;
+  }
+  .screen-card{scroll-snap-align:start;min-width:0}
+  .screen-card img{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius:37px;
+    background:#05060A;
+    box-shadow:8px 10px 0 rgba(32,33,30,.2);
+  }
+  .screen-card figcaption{padding:18px 8px 0}
+  .screen-card figcaption span{display:block;color:var(--red-aa);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+  .screen-card figcaption i{font-style:normal}
+  .screen-card figcaption strong{display:block;font-size:.92rem;line-height:1.35}
+
+  /* Privacy and pricing */
+  .assure{padding:24px 0 82px}
+  .assure-box{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:42px;
+    align-items:center;
+    background:var(--ink);
+    color:var(--paper);
+    border:1.5px solid var(--ink);
+    padding:42px 44px;
+    box-shadow:6px 6px 0 var(--red);
+  }
+  .assure h2{font-size:clamp(1.4rem,2.8vw,2rem);margin-bottom:13px}
+  .assure .price em{display:block;color:#F4A897;font-style:normal;margin-top:5px}
+  .assure p{color:var(--paper);font-size:.89rem}
+  .assure ul{list-style:none}
+  .assure li{border-top:1.5px dashed var(--dim);padding:11px 0;color:var(--paper);font-size:.86rem}
+  .assure li:last-child{border-bottom:1.5px dashed var(--dim)}
+
+  /* Final CTA and footer */
+  .final{padding:24px 0 94px;text-align:center}
+  .final::before{content:"— — — — — — — —";display:block;color:var(--dim-aa);letter-spacing:.14em;margin-bottom:30px;overflow:hidden}
+  .final h2{font-size:clamp(1.7rem,3.6vw,2.55rem);margin-bottom:27px}
+  .final .cta-row{justify-content:center}
+  footer{background:var(--paper);border-top:1.5px dashed var(--ink);padding:29px 0 38px;color:var(--dim-aa);font-size:.78rem}
+  .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .foot nav{display:flex;gap:20px}
+  .foot a{text-decoration:none;border-bottom:1px solid var(--dim-aa)}
+  .foot a:hover{color:var(--red-aa);border-color:var(--red-aa)}
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition:none!important}
+  }
+  @media (max-width:920px){
+    .hero-grid{grid-template-columns:1fr;gap:58px;padding:56px 0 76px}
+    .hero-copy{text-align:center}
+    .lead{margin-left:auto;margin-right:auto}
+    .hero-copy .cta-row{justify-content:center}
+    .hero-slider{transform:none}
+    .b-grid{grid-template-columns:1fr;max-width:34rem;margin:0 auto}
+    .screens-head{align-items:center}
+    .assure-box{grid-template-columns:1fr;padding:34px 30px}
+  }
+  @media (max-width:600px){
+    .wrap{width:min(100% - 28px,1120px)}
+    .nav{min-height:64px}
+    .logo span{display:none}
+    .nav-right{gap:9px}
+    .nav-cta{padding:7px 10px;font-size:.7rem}
+    .lang button{padding:6px 8px}
+    .hero-grid{padding:44px 0 66px}
+    h1{font-size:clamp(2.15rem,12vw,3.05rem)}
+    .lead{font-size:.96rem}
+    .hero-slider{max-width:340px}
+    .benefits{padding:66px 0 58px}
+    .screens{padding-bottom:68px}
+    .screens-head{align-items:flex-start;margin-bottom:26px}
+    .screens-copy{max-width:calc(100% - 74px)}
+    .screen-controls button{width:38px;height:38px}
+    .screen-strip{grid-auto-columns:minmax(230px,82vw);gap:20px;margin-right:-14px;padding-right:24px}
+    .screen-card img{border-radius:32px}
+    .assure{padding-bottom:68px}
+    .assure-box{padding:30px 21px}
+    .final{padding-bottom:76px}
+  }
+  @media (max-width:370px){
+    .nav-cta{display:none}
+    .screens-head{display:block}
+    .screens-copy{max-width:none}
+    .screen-controls{margin-top:18px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/"><img src="logo.png" alt="" width="34" height="34"><span>Pro<em>Tip</em>365</span></a>
+    <nav class="nav-right" aria-label="Site">
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="on">EN</button>
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="es">ES</button>
+      </div>
+      <a class="nav-cta" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" data-i18n="nav_cta">Get the app</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="eyebrow">For servers &amp; bartenders</p>
+        <h1>
+          <span data-i18n="h1_l1">Plan every shift.</span><br>
+          <span data-i18n="h1_pre">Know what it</span>
+          <span class="accent" data-i18n="h1_accent">actually</span>
+          <span data-i18n="h1_post">paid.</span>
+        </h1>
+        <p class="lead" data-i18n="lead">One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.</p>
+        <div class="cta-row">
+          <a class="play-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" aria-label="Get ProTip365 on Google Play" data-i18n-aria="play_aria">
+            <svg width="26" height="28" viewBox="0 0 24 26" fill="none" aria-hidden="true">
+              <path d="M2 1.5v23l12-11.5L2 1.5z" fill="#F6F2E9"/>
+              <path d="M2 1.5l16 8.5-4 3L2 1.5z" fill="#2E7D4F"/>
+              <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#20211E"/>
+              <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D8472B"/>
+            </svg>
+            <span><small data-i18n="play_small">GET IT ON</small><span class="big">Google Play</span></span>
+          </a>
+          <p class="ios-note" data-i18n-html="ios_note"><strong>Coming soon for iOS.</strong><br>Same app, same records.</p>
+        </div>
+      </div>
+
+      <div class="phone-zone">
+        <figure class="hero-slider" data-hero-slider role="region" aria-label="ProTip365 app screens" data-i18n-aria="screens_aria">
+          <div class="hero-slider-frame">
+            <img class="hero-slide is-active" data-source-index="0" src="screens/screen-01-first-run.png" alt="" width="1080" height="2424" fetchpriority="high" decoding="async">
+            <img class="hero-slide" data-source-index="1" src="screens/screen-02-home.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="2" src="screens/screen-03-schedule-agenda.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="3" src="screens/screen-04-schedule-week.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="4" src="screens/screen-05-add-shift.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="5" src="screens/screen-06-closeout-times.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="6" src="screens/screen-07-closeout-tips.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="7" src="screens/screen-08-shift-result.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="8" src="screens/screen-09-stats.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="9" src="screens/screen-10-employers.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="10" src="screens/screen-11-settings.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+            <img class="hero-slide" data-source-index="11" src="screens/screen-12-dark-mode.png" alt="" width="1080" height="2424" loading="lazy" decoding="async">
+          </div>
+          <figcaption class="hero-slider-meta">
+            <button type="button" data-hero-prev aria-label="Previous screens" data-i18n-aria="screens_prev">←</button>
+            <span class="hero-slider-status" data-hero-status aria-live="polite">
+              <span class="hero-slider-count" data-hero-count>01 / 12</span>
+              <strong data-hero-caption>First run — Private from day one</strong>
+            </span>
+            <button type="button" data-hero-next aria-label="Next screens" data-i18n-aria="screens_next">→</button>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="benefits" aria-labelledby="benefits-title">
+    <div class="wrap">
+      <p class="section-kicker" aria-hidden="true">* * * PROTIP365 * * *</p>
+      <h2 id="benefits-title" data-i18n="ben_h2">Made for the way tipped work actually works</h2>
+      <div class="b-grid">
+        <article class="b-card">
+          <span class="b-no" aria-hidden="true">01</span>
+          <h3 data-i18n="b1_h">Every job, one week</h3>
+          <p data-i18n="b1_p">Two jobs? Three? See all your shifts in one calendar, color-coded by employer — and copy a week forward when the schedule repeats.</p>
+        </article>
+        <article class="b-card">
+          <span class="b-no" aria-hidden="true">02</span>
+          <h3 data-i18n="b2_h">Tonight, in real numbers</h3>
+          <p data-i18n="b2_p">After close, enter your actual start, end, breaks, and tips. ProTip365 shows your real hourly rate and how the night compared with what you expected.</p>
+        </article>
+        <article class="b-card">
+          <span class="b-no" aria-hidden="true">03</span>
+          <h3 data-i18n="b3_h">Yours alone</h3>
+          <p data-i18n="b3_p">No account, no login, no cloud. Your records stay encrypted on your phone — export a CSV or an encrypted backup whenever you want.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="screens" id="screens" aria-labelledby="screens-title">
+    <div class="wrap">
+      <div class="screens-head">
+        <div class="screens-copy">
+          <p class="section-kicker" aria-hidden="true">* * * INSIDE THE APP * * *</p>
+          <h2 id="screens-title" data-i18n="screens_h2">See the whole shift, from schedule to payoff</h2>
+          <p class="screens-intro" data-i18n="screens_intro">Plan it, close it, and keep the receipt. Swipe through the real ProTip365 screens.</p>
+        </div>
+        <div class="screen-controls">
+          <button type="button" data-gallery-prev aria-label="Previous screens" data-i18n-aria="screens_prev">←</button>
+          <button type="button" data-gallery-next aria-label="Next screens" data-i18n-aria="screens_next">→</button>
+        </div>
+      </div>
+      <div class="screen-strip" data-gallery role="list" aria-label="ProTip365 app screens" data-i18n-aria="screens_aria" tabindex="0">
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-01-first-run.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>01 · <i data-i18n="s1_t">First run</i></span><strong data-i18n="s1_d">Private from day one</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-02-home.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>02 · <i data-i18n="s2_t">Home</i></span><strong data-i18n="s2_d">Your week tally</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-03-schedule-agenda.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>03 · <i data-i18n="s3_t">Day</i></span><strong data-i18n="s3_d">One day at a glance</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-04-schedule-week.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>04 · <i data-i18n="s4_t">Week</i></span><strong data-i18n="s4_d">Every shift, one total</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-05-add-shift.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>05 · <i data-i18n="s5_t">Add shift</i></span><strong data-i18n="s5_d">Plan the ticket</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-06-closeout-times.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>06 · <i data-i18n="s6_t">Close out</i></span><strong data-i18n="s6_d">Planned versus actual</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-07-closeout-tips.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>07 · <i data-i18n="s7_t">Tips</i></span><strong data-i18n="s7_d">Cash, card, and tip-out</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-08-shift-result.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>08 · <i data-i18n="s8_t">Payout preview</i></span><strong data-i18n="s8_d">See the total before saving</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-09-stats.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>09 · <i data-i18n="s9_t">Stats</i></span><strong data-i18n="s9_d">Your weekly breakdown</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-10-employers.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>10 · <i data-i18n="s10_t">Employers</i></span><strong data-i18n="s10_d">Set each job's defaults</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-11-settings.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>11 · <i data-i18n="s11_t">Settings</i></span><strong data-i18n="s11_d">Your privacy and plan</strong></figcaption>
+        </figure>
+        <figure class="screen-card" role="listitem">
+          <img src="screens/screen-12-dark-mode.png" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1080" height="2424">
+          <figcaption><span>12 · <i data-i18n="s12_t">Dark mode</i></span><strong data-i18n="s12_d">The night ticket</strong></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="assure" id="privacy-pricing" aria-labelledby="assure-title">
+    <div class="wrap">
+      <div class="assure-box">
+        <div>
+          <h2 id="assure-title" class="price" data-i18n-html="price_h2">30 days free. Then <em>$19.99 once — or $2.99/month.</em></h2>
+          <p data-i18n="price_p">Your choice, no pressure. Either way every feature is included — and if you ever stop, your records stay readable and exportable. That's the deal.</p>
+        </div>
+        <ul>
+          <li data-i18n="li1">Every feature included — employers, tips, tip-outs, stats, export.</li>
+          <li data-i18n="li2">Optional passcode and fingerprint or face unlock.</li>
+          <li data-i18n="li3">English, Français (Canada), and Español.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2 data-i18n-html="final_h2">Your next shift is coming.<br>Know what it pays.</h2>
+      <div class="cta-row">
+        <a class="play-btn" href="https://play.google.com/store/apps/details?id=com.defacto365.protip365" aria-label="Get ProTip365 on Google Play" data-i18n-aria="play_aria">
+          <svg width="26" height="28" viewBox="0 0 24 26" fill="none" aria-hidden="true">
+            <path d="M2 1.5v23l12-11.5L2 1.5z" fill="#F6F2E9"/>
+            <path d="M2 1.5l16 8.5-4 3L2 1.5z" fill="#2E7D4F"/>
+            <path d="M2 24.5l16-8.5-4-3L2 24.5z" fill="#20211E"/>
+            <path d="M18 10l4.5 2.4a1.2 1.2 0 010 2.2L18 17l-4-3.5 4-3.5z" fill="#D8472B"/>
+          </svg>
+          <span><small data-i18n="play_small2">GET IT ON</small><span class="big">Google Play</span></span>
+        </a>
+        <p class="ios-note"><strong data-i18n="ios_short">Coming soon for iOS.</strong></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>© 2026 ProTip365</span>
+    <nav aria-label="Legal">
+      <a href="/privacy" data-i18n="f_privacy">Privacy</a>
+      <a href="/terms" data-i18n="f_terms">Terms</a>
+      <a href="/support" data-i18n="f_support">Support</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var T = {
+    en: {
+      nav_cta:"Get the app",
+      eyebrow:"For servers & bartenders",
+      h1_l1:"Plan every shift.", h1_pre:"Know what it", h1_accent:"actually", h1_post:"paid.",
+      lead:"One private schedule for every job you work. Log your tips after close — cash, card, and tip-outs — and see what each shift was really worth.",
+      play_small:"GET IT ON", play_small2:"GET IT ON", play_aria:"Get ProTip365 on Google Play",
+      ios_note:"<strong>Coming soon for iOS.</strong><br>Same app, same records.",
+      m_phone_aria:"ProTip365 demo showing weekly earnings, the shift schedule, and performance statistics",
+      m_date:"SUN JUL 26 · 9:42 PM",
+      m_week:"* * * WEEK OF JUL 20–26 * * *", m_so_far:"YOUR WEEK SO FAR", m_on_track:"ON TRACK",
+      m_hours:"HOURS WORKED", m_wages:"WAGES", m_tips_cash:"TIPS — CASH", m_tips_card:"TIPS — CARD", m_tipout:"TIP-OUT PAID",
+      m_total:"TOTAL EARNED", m_rate:"= $30.10 / HOUR REAL RATE", m_goal:"GOAL $540",
+      m_next:"NEXT SHIFT — TONIGHT 5:00 PM", m_next_detail:"BAR TORO · EXPECTED $205", m_log:"LOG IT",
+      m_close:"1 SHIFT TO CLOSE OUT", m_close_detail:"FRI · LA MAISON 11:00 AM–3:00 PM", m_note:"don't forget!",
+      m_nav_home:"HOME", m_nav_sched:"SCHED", m_nav_stats:"STATS", m_nav_setup:"SETUP",
+      screens_h2:"See the whole shift, from schedule to payoff",
+      screens_intro:"Plan it, close it, and keep the receipt. Swipe through the real ProTip365 screens.",
+      screens_prev:"Previous screens", screens_next:"Next screens", screens_aria:"ProTip365 app screens",
+      s1_t:"First run", s1_d:"Private from day one",
+      s2_t:"Home", s2_d:"Your week tally",
+      s3_t:"Day", s3_d:"One day at a glance",
+      s4_t:"Week", s4_d:"Every shift, one total",
+      s5_t:"Add shift", s5_d:"Plan the ticket",
+      s6_t:"Close out", s6_d:"Planned versus actual",
+      s7_t:"Tips", s7_d:"Cash, card, and tip-out",
+      s8_t:"Payout preview", s8_d:"See the total before saving",
+      s9_t:"Stats", s9_d:"Your weekly breakdown",
+      s10_t:"Employers", s10_d:"Set each job's defaults",
+      s11_t:"Settings", s11_d:"Your privacy and plan",
+      s12_t:"Dark mode", s12_d:"The night ticket",
+      ben_h2:"Made for the way tipped work actually works",
+      b1_h:"Every job, one week",
+      b1_p:"Two jobs? Three? See all your shifts in one calendar, color-coded by employer — and copy a week forward when the schedule repeats.",
+      b2_h:"Tonight, in real numbers",
+      b2_p:"After close, enter your actual start, end, breaks, and tips. ProTip365 shows your real hourly rate and how the night compared with what you expected.",
+      b3_h:"Yours alone",
+      b3_p:"No account, no login, no cloud. Your records stay encrypted on your phone — export a CSV or an encrypted backup whenever you want.",
+      price_h2:"30 days free. Then <em>$19.99 once — or $2.99/month.</em>",
+      price_p:"Your choice, no pressure. Either way every feature is included — and if you ever stop, your records stay readable and exportable. That's the deal.",
+      li1:"Every feature included — employers, tips, tip-outs, stats, export.",
+      li2:"Optional passcode and fingerprint or face unlock.",
+      li3:"English, Français (Canada), and Español.",
+      final_h2:"Your next shift is coming.<br>Know what it pays.",
+      ios_short:"Coming soon for iOS.",
+      f_privacy:"Privacy", f_terms:"Terms", f_support:"Support"
+    },
+    fr: {
+      nav_cta:"Obtenir l’app",
+      eyebrow:"Pour serveuses, serveurs et bartenders",
+      h1_l1:"Planifiez chaque quart.", h1_pre:"Sachez ce qu’il a", h1_accent:"vraiment", h1_post:"rapporté.",
+      lead:"Un seul horaire privé pour tous vos emplois. Entrez vos pourboires après la fermeture — comptant, carte et tip-out — et voyez ce que chaque quart a vraiment rapporté.",
+      play_small:"DISPONIBLE SUR", play_small2:"DISPONIBLE SUR", play_aria:"Télécharger ProTip365 sur Google Play",
+      ios_note:"<strong>Bientôt offert sur iOS.</strong><br>Même app, mêmes données.",
+      m_phone_aria:"Démo ProTip365 montrant les gains de la semaine, l’horaire des quarts et les statistiques de performance",
+      m_date:"DIM. 26 JUILL. · 21 H 42",
+      m_week:"* * * SEMAINE DU 20 AU 26 JUILL. * * *", m_so_far:"VOTRE SEMAINE À CE JOUR", m_on_track:"BON RYTHME",
+      m_hours:"HEURES TRAVAILLÉES", m_wages:"SALAIRE", m_tips_cash:"POURBOIRES — COMPTANT", m_tips_card:"POURBOIRES — CARTE", m_tipout:"TIP-OUT PAYÉ",
+      m_total:"TOTAL GAGNÉ", m_rate:"= 30,10 $ / HEURE RÉELLE", m_goal:"OBJECTIF 540 $",
+      m_next:"PROCHAIN QUART — CE SOIR 17 H", m_next_detail:"BAR TORO · 205 $ ATTENDUS", m_log:"SAISIR",
+      m_close:"1 QUART À FERMER", m_close_detail:"VEN. · LA MAISON 11 H–15 H", m_note:"n’oublie pas!",
+      m_nav_home:"ACCUEIL", m_nav_sched:"HORAIRE", m_nav_stats:"STATS", m_nav_setup:"RÉGLAGES",
+      screens_h2:"Voyez tout le quart, de l’horaire au résultat",
+      screens_intro:"Planifiez-le, fermez-le et gardez le reçu. Faites défiler les vrais écrans de ProTip365.",
+      screens_prev:"Écrans précédents", screens_next:"Écrans suivants", screens_aria:"Écrans de l’application ProTip365",
+      s1_t:"Première ouverture", s1_d:"Privé dès le premier jour",
+      s2_t:"Accueil", s2_d:"Le bilan de votre semaine",
+      s3_t:"Jour", s3_d:"Un jour en un coup d’œil",
+      s4_t:"Semaine", s4_d:"Tous les quarts, un seul total",
+      s5_t:"Ajouter un quart", s5_d:"Remplissez le billet",
+      s6_t:"Fermer le quart", s6_d:"Prévu contre réel",
+      s7_t:"Pourboires", s7_d:"Comptant, carte et tip-out",
+      s8_t:"Aperçu du paiement", s8_d:"Voyez le total avant d’enregistrer",
+      s9_t:"Statistiques", s9_d:"Le bilan de votre semaine",
+      s10_t:"Employeurs", s10_d:"Réglez les valeurs par défaut de chaque emploi",
+      s11_t:"Réglages", s11_d:"Votre vie privée et votre forfait",
+      s12_t:"Mode sombre", s12_d:"Le billet de nuit",
+      ben_h2:"Pensée pour la vraie réalité du travail au pourboire",
+      b1_h:"Tous vos emplois, une seule semaine",
+      b1_p:"Deux emplois? Trois? Tous vos quarts dans un seul calendrier, codés par couleur selon l’employeur — et copiez la semaine quand l’horaire se répète.",
+      b2_h:"Ce soir, en vrais chiffres",
+      b2_p:"Après la fermeture, entrez vos heures réelles, vos pauses et vos pourboires. ProTip365 calcule votre taux horaire réel et compare la soirée à ce que vous attendiez.",
+      b3_h:"À vous, un point c’est tout",
+      b3_p:"Pas de compte, pas de mot de passe, pas d’infonuagique. Vos données restent chiffrées sur votre téléphone — exportez un CSV ou une sauvegarde chiffrée quand vous voulez.",
+      price_h2:"30 jours gratuits. Ensuite <em>19,99&nbsp;$ une seule fois — ou 2,99&nbsp;$/mois.</em>",
+      price_p:"À votre choix, sans pression. Dans les deux cas, tout est inclus — et si vous arrêtez, vos données restent lisibles et exportables. C’est ça, l’entente.",
+      li1:"Tout est inclus — employeurs, pourboires, tip-out, statistiques, export.",
+      li2:"NIP optionnel et déverrouillage par empreinte ou visage.",
+      li3:"English, Français (Canada) et Español.",
+      final_h2:"Votre prochain quart s’en vient.<br>Sachez ce qu’il paie.",
+      ios_short:"Bientôt offert sur iOS.",
+      f_privacy:"Confidentialité", f_terms:"Conditions", f_support:"Soutien"
+    },
+    es: {
+      nav_cta:"Descargar la app",
+      eyebrow:"Para meseras, meseros y bartenders",
+      h1_l1:"Planea cada turno.", h1_pre:"Descubre lo que", h1_accent:"de verdad", h1_post:"te dejó.",
+      lead:"Un solo horario privado para todos tus trabajos. Registra tus propinas al cerrar — efectivo, tarjeta y tip-outs — y descubre cuánto valió realmente cada turno.",
+      play_small:"DISPONIBLE EN", play_small2:"DISPONIBLE EN", play_aria:"Descargar ProTip365 en Google Play",
+      ios_note:"<strong>Muy pronto en iOS.</strong><br>La misma app, los mismos registros.",
+      m_phone_aria:"Demostración de ProTip365 con ganancias semanales, horario de turnos y estadísticas de rendimiento",
+      m_date:"DOM 26 JUL · 9:42 P. M.",
+      m_week:"* * * SEMANA DEL 20 AL 26 JUL * * *", m_so_far:"TU SEMANA HASTA AHORA", m_on_track:"AL DÍA",
+      m_hours:"HORAS TRABAJADAS", m_wages:"SALARIO", m_tips_cash:"PROPINAS — EFECTIVO", m_tips_card:"PROPINAS — TARJETA", m_tipout:"TIP-OUT PAGADO",
+      m_total:"TOTAL GANADO", m_rate:"= $30.10 / HORA REAL", m_goal:"META $540",
+      m_next:"PRÓXIMO TURNO — HOY 5:00 P. M.", m_next_detail:"BAR TORO · $205 ESPERADOS", m_log:"REGISTRAR",
+      m_close:"1 TURNO POR CERRAR", m_close_detail:"VIE · LA MAISON 11:00 A. M.–3:00 P. M.", m_note:"¡no lo olvides!",
+      m_nav_home:"INICIO", m_nav_sched:"HORARIO", m_nav_stats:"DATOS", m_nav_setup:"AJUSTES",
+      screens_h2:"Mira todo el turno, del horario al resultado",
+      screens_intro:"Planéalo, ciérralo y guarda el recibo. Desliza por las pantallas reales de ProTip365.",
+      screens_prev:"Pantallas anteriores", screens_next:"Pantallas siguientes", screens_aria:"Pantallas de la aplicación ProTip365",
+      s1_t:"Primer inicio", s1_d:"Privado desde el primer día",
+      s2_t:"Inicio", s2_d:"El total de tu semana",
+      s3_t:"Día", s3_d:"Un día de un vistazo",
+      s4_t:"Semana", s4_d:"Todos los turnos, un total",
+      s5_t:"Añadir turno", s5_d:"Completa el recibo",
+      s6_t:"Cerrar turno", s6_d:"Planeado frente a real",
+      s7_t:"Propinas", s7_d:"Efectivo, tarjeta y tip-out",
+      s8_t:"Vista previa del pago", s8_d:"Mira el total antes de guardar",
+      s9_t:"Estadísticas", s9_d:"El desglose de tu semana",
+      s10_t:"Empleadores", s10_d:"Configura los valores de cada trabajo",
+      s11_t:"Ajustes", s11_d:"Tu privacidad y tu plan",
+      s12_t:"Modo oscuro", s12_d:"El recibo nocturno",
+      ben_h2:"Hecha para cómo funciona de verdad el trabajo con propinas",
+      b1_h:"Todos tus trabajos, una sola semana",
+      b1_p:"¿Dos trabajos? ¿Tres? Mira todos tus turnos en un solo calendario, con un color por empleador — y copia la semana cuando el horario se repite.",
+      b2_h:"Esta noche, en números reales",
+      b2_p:"Al cerrar, registra tus horas reales, descansos y propinas. ProTip365 muestra tu tarifa real por hora y cómo salió la noche frente a lo que esperabas.",
+      b3_h:"Tuyo y de nadie más",
+      b3_p:"Sin cuenta, sin contraseña, sin nube. Tus registros quedan cifrados en tu teléfono — exporta un CSV o un respaldo cifrado cuando quieras.",
+      price_h2:"30 días gratis. Luego <em>$19.99 una sola vez — o $2.99 al mes.</em>",
+      price_p:"Tú eliges, sin presión. En ambos casos todo está incluido — y si algún día lo dejas, tus registros siguen legibles y exportables. Ese es el trato.",
+      li1:"Todo incluido — empleadores, propinas, tip-outs, estadísticas, exportación.",
+      li2:"Código opcional y desbloqueo con huella o rostro.",
+      li3:"English, Français (Canada) y Español.",
+      final_h2:"Tu próximo turno ya viene.<br>Sabe cuánto paga.",
+      ios_short:"Muy pronto en iOS.",
+      f_privacy:"Privacidad", f_terms:"Términos", f_support:"Ayuda"
+    }
+  };
+  function setLang(lang){
+    var t = T[lang] || T.en;
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var k = el.getAttribute('data-i18n');
+      if (t[k] !== undefined) el.textContent = t[k];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){
+      var k = el.getAttribute('data-i18n-html');
+      if (t[k] !== undefined) el.innerHTML = t[k];
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+      var k = el.getAttribute('data-i18n-aria');
+      if (t[k] !== undefined) el.setAttribute('aria-label',t[k]);
+    });
+    document.documentElement.lang = lang === 'fr' ? 'fr-CA' : lang;
+    document.querySelectorAll('.lang button').forEach(function(b){
+      b.classList.toggle('on',b.getAttribute('data-lang') === lang);
+    });
+    refreshHeroSliderText();
+    try{localStorage.setItem('pt365-lang',lang);}catch(e){}
+  }
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
+  });
+  var gallery = document.querySelector('[data-gallery]');
+  var heroSlider = document.querySelector('[data-hero-slider]');
+  var heroSlides = heroSlider ? Array.from(heroSlider.querySelectorAll('.hero-slide')) : [];
+  var heroCurrent = 0;
+  var heroCount = heroSlider ? heroSlider.querySelector('[data-hero-count]') : null;
+  var heroCaption = heroSlider ? heroSlider.querySelector('[data-hero-caption]') : null;
+  function heroSlideCopy(slide){
+    if (!gallery || !slide) return '';
+    var sourceIndex = parseInt(slide.getAttribute('data-source-index'),10);
+    var source = gallery.querySelectorAll('.screen-card')[sourceIndex];
+    if (!source) return '';
+    var title = source.querySelector('i');
+    var description = source.querySelector('strong');
+    return [title && title.textContent,description && description.textContent].filter(Boolean).join(' — ');
+  }
+  function refreshHeroSliderText(){
+    if (!heroSlides.length) return;
+    heroSlides.forEach(function(slide,index){
+      var active = index === heroCurrent;
+      var copy = heroSlideCopy(slide);
+      slide.classList.toggle('is-active',active);
+      slide.setAttribute('aria-hidden',active ? 'false' : 'true');
+      slide.alt = active ? copy : '';
+    });
+    if (heroCount) heroCount.textContent = String(heroCurrent + 1).padStart(2,'0') + ' / ' + String(heroSlides.length).padStart(2,'0');
+    if (heroCaption) heroCaption.textContent = heroSlideCopy(heroSlides[heroCurrent]);
+  }
+  function moveHeroSlider(direction){
+    if (!heroSlides.length) return;
+    heroCurrent = (heroCurrent + direction + heroSlides.length) % heroSlides.length;
+    refreshHeroSliderText();
+  }
+  var heroPrevious = document.querySelector('[data-hero-prev]');
+  var heroNext = document.querySelector('[data-hero-next]');
+  if (heroPrevious) heroPrevious.addEventListener('click',function(){moveHeroSlider(-1);});
+  if (heroNext) heroNext.addEventListener('click',function(){moveHeroSlider(1);});
+  if (heroSlider) heroSlider.addEventListener('keydown',function(event){
+    if (event.key === 'ArrowLeft') { event.preventDefault(); moveHeroSlider(-1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); moveHeroSlider(1); }
+  });
+  function moveGallery(direction){
+    if (!gallery) return;
+    var card = gallery.querySelector('.screen-card');
+    var gap = parseFloat(getComputedStyle(gallery).columnGap) || 0;
+    var step = card ? card.getBoundingClientRect().width + gap : gallery.clientWidth * .8;
+    gallery.scrollBy({left:direction * step,behavior:'smooth'});
+  }
+  var previous = document.querySelector('[data-gallery-prev]');
+  var next = document.querySelector('[data-gallery-next]');
+  if (previous) previous.addEventListener('click',function(){moveGallery(-1);});
+  if (next) next.addEventListener('click',function(){moveGallery(1);});
+  var saved = null;
+  try{saved = localStorage.getItem('pt365-lang');}catch(e){}
+  var auto = (navigator.language || 'en').slice(0,2).toLowerCase();
+  setLang(saved || (T[auto] ? auto : 'en'));
+})();
+</script>
+</body>
+</html>
