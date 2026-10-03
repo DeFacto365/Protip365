@@ -345,8 +345,50 @@ export function TipsForm({
     (a("tipIn") ?? 0) +
     (a("other") ?? 0) -
     (a("tipOut") ?? 0);
+  // Keep entry fields usable when rotation or the keyboard reduces available height.
+  const [compact, setCompact] = useState(false);
+  const footer = (
+    <View
+      style={{
+        padding: 16,
+        gap: 8,
+        borderTopWidth: 1,
+        borderColor: C.line,
+        backgroundColor: C.bg,
+      }}
+    >
+      <Card tint={C.soft}>
+        <Txt>{t("net")}</Txt>
+        <Txt kind="section">{money(total)}</Txt>
+        <Txt kind="small">{t("netHint")}</Txt>
+      </Card>
+      {!!error && <Txt style={s.error}>{error}</Txt>}
+      <Button
+        label={t("save")}
+        disabled={busy}
+        onPress={() => {
+          if (fields.some((k) => a(k) === undefined)) {
+            E(t("invalid"));
+            return;
+          }
+          B(true);
+          void onSave({
+            ...draft,
+            ...Object.fromEntries(fields.map((k) => [k, a(k)])),
+            note,
+            planned: false,
+            status: "worked",
+            updatedAt: new Date().toISOString(),
+          })
+            .catch(() => E(t("storageError")))
+            .finally(() => B(false));
+        }}
+      />
+    </View>
+  );
   return (
     <View
+      onLayout={(e) => setCompact(e.nativeEvent.layout.height < 450)}
       style={{ flex: 1, width: "100%", maxWidth: 600, alignSelf: "center" }}
     >
       <ScrollView
@@ -420,44 +462,9 @@ export function TipsForm({
             <Field label={t("note")} value={note} onChange={N} multiline />
           </>
         )}
+        {compact && footer}
       </ScrollView>
-      <View
-        style={{
-          padding: 16,
-          gap: 8,
-          borderTopWidth: 1,
-          borderColor: C.line,
-          backgroundColor: C.bg,
-        }}
-      >
-        <Card tint={C.soft}>
-          <Txt>{t("net")}</Txt>
-          <Txt kind="section">{money(total)}</Txt>
-          <Txt kind="small">{t("netHint")}</Txt>
-        </Card>
-        {!!error && <Txt style={s.error}>{error}</Txt>}
-        <Button
-          label={t("save")}
-          disabled={busy}
-          onPress={() => {
-            if (fields.some((k) => a(k) === undefined)) {
-              E(t("invalid"));
-              return;
-            }
-            B(true);
-            void onSave({
-              ...draft,
-              ...Object.fromEntries(fields.map((k) => [k, a(k)])),
-              note,
-              planned: false,
-              status: "worked",
-              updatedAt: new Date().toISOString(),
-            })
-              .catch(() => E(t("storageError")))
-              .finally(() => B(false));
-          }}
-        />
-      </View>
+      {!compact && footer}
     </View>
   );
 }

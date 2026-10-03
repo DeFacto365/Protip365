@@ -1,6 +1,16 @@
 # Android emulator validation — October 3, 2026
 
-Current continuation status is recorded in ANDROID_RELEASE_STATUS.md. Its October 3 checkpoint supersedes historical pending/completed labels below. Legacy upgrade currently fails closed after a successful inherited passcode check; production is blocked until corrected.
+Current status: see ANDROID_RELEASE_STATUS.md, October 3 at 14:33 EDT. Its checkpoint supersedes the historical results below. Build 14 fixes the diagnosed bare-path/file-URI startup failure; actual Play-signed production upgrade verification and publication remain pending while the Mac is locked.
+
+## Additional native build-14 verification
+
+Separate QA package com.defacto365.protip365.qa preserves the real Play-signed upgrade fixture. Offline restore, actual CSV/JSON export, new record creation and cold persistence passed with no default network. Two reminders delivered at 14:17; snooze scheduled tomorrow 09:00, completing the snoozed shift removed the alarm, an old completed-shift notification refused another snooze, and disabling reminders cancelled the remaining future alarm. Native TalkBack activated Add with a double tap and exposed form labels; comprehensive spoken-output coverage remains unverified.
+
+The fixed totals footer initially hid landscape entry fields. The corrected short-layout form scrolls the footer with its fields: a landscape $3.50 save passed, and 320dp/font 1.3 entry with keyboard open accepted $2.25 and scrolled to its correct total and successful Save. French/English and cold persistence passed. Normal display, rotation, accessibility and network settings were restored. Final QA totals were $138.50 across six test shifts. These QA-package tests do not establish Google Play billing or legacy production migration.
+
+Local evidence is in ~/ProTip365-emulator-test-20261003: qa-talkback-form-final.png, qa14-landscape-fields-fixed.png, qa14-landscape-save-fixed.png, qa14-en-320-font13-field-fixed.png, qa14-en-320-font13-save-fixed.png and offline-final-exports/. Personal license-tester screenshots are excluded from Git.
+
+## Historical laptop emulator session
 
 Native runtime tested over SSH on the user's Apple Silicon MacBook, using Android SDK adb and UI Automator hierarchy inspection with actual input, screenshots, and logcat. This was a standalone APK; Metro was not used.
 

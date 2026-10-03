@@ -112,7 +112,9 @@ async function write(data: Data) {
 
 async function loadLegacy(): Promise<Data> {
   requireDatabaseUnlocked();
-  const oldFile = new File(SQLite.defaultDatabaseDirectory, 'protip365.db');
+  // SQLite returns a bare Android path; File requires an absolute file URI.
+  const directory = SQLite.defaultDatabaseDirectory;
+  const oldFile = new File(directory.startsWith('file://') ? directory : 'file://' + directory, 'protip365.db');
   if (!oldFile.exists) return fresh();
   const key = await SecureStore.getItemAsync('protip365.database-key.v1');
   requireDatabaseUnlocked();

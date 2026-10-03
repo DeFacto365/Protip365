@@ -1,27 +1,33 @@
 # Android release status — October 3, 2026
 
-## Mac release continuation — current checkpoint, October 3, 2026
+## Mac release continuation — current checkpoint, October 3, 2026, 14:33 EDT
 
-Production is still version code 11. Internal builds 12 and 13 were uploaded with the recovered original upload key; build 13 is available to internal testers. Publication is authorized, but production must wait for the legacy upgrade defect described below.
+Production remains version code 11. Internal builds 12 and 13 were uploaded with the recovered original upload key; 13 is available to testers. Publication remains authorized. The Mac is locked, preventing native Chrome/Play Console upload and download steps; the user has been asked to unlock it. Do not report production complete.
 
 Verified in the API 36 Google Play emulator with the approved license-tester account:
 - Monthly: real Google test checkout cancellation, declined card, approved payment, Restore Purchases, accelerated renewal, store cancellation, and expiry back to the existing trial.
 - Lifetime: delayed decline stays locked; approved chargeback payment grants access, then revokes after Play cache refresh; delayed approval grants access and Restore Purchases succeeds. No real charges.
 - Native CSV/JSON/PDF files saved through Android's share interface and inspected. Valid JSON backup restores; malformed backup fails without changing records.
-- Today's planned shift remains planned; an ended planned shift opens earnings entry and becomes worked when saved.
-- A delivered notification opened the correct shift after a cold start with data loaded. Actual stale-snooze/cancellation and remaining offline/accessibility checks still need completion.
-- Native erase confirmation preserves purchases/trial; visible Undo restores records.
+- Today's planned shift remains planned; ended planned shifts become worked when saved. Native erase confirmation preserves purchases/trial; visible Undo restores records.
+- A delivered notification opened the correct shift after a cold start with data loaded.
 
-Recovered signing certificate matches Play: SHA-256 2E:A5:53:BD:B0:15:31:C4:D3:D6:AE:EA:08:68:B6:C3:0C:5A:F3:DF:EA:B4:AA:40:80:96:EB:4F:47:98:6F:16. Private keys/passwords stay outside Git.
-Build 13 AAB SHA-256: 05b388523ebcd98d9c2f54292b47519bc4ab3676325f6a7e1aa120157ed3263e. Includes landing-page logo, seven-day trial, French employer wording, pending-payment feedback and inherited-lock/import implementation. TypeScript and 39 tests across seven suites pass.
+Subsequent build-14 checks use a separate QA package, com.defacto365.protip365.qa, leaving the actual production-upgrade fixture intact. They establish native behavior, not Play Billing or production migration:
+- Offline backup restore, actual CSV/JSON export, new record saving and cold persistence pass with Wi-Fi/mobile data disabled and no default network. Repeated saves and multiple shifts are retained.
+- Two real reminders delivered at 14:17. Tomorrow morning scheduled an October 4 09:00 alarm; completing that shift cancelled the snoozed alarm. Completing the other shift through the normal UI left its old notification available; tapping its stale snooze did not schedule another alarm. Turning reminders off cancelled the remaining future alarm.
+- TalkBack's actual spoken/touch-exploration service was bound; double-tap activated the Add button and opened the labeled form. This is targeted navigation coverage, not a comprehensive audio accessibility audit.
+- Landscape testing found a fixed-total-panel obstruction. Short layouts now scroll the total/Save panel with the fields. Native landscape entry saved $3.50; at 320dp/font 1.3 the keyboard-visible field accepted $2.25, and scrolling exposed the matching total and Save, which succeeded. English/French and cold persistence pass. Display, accessibility, rotation and connectivity settings were restored.
 
-Upgrade blocker: installed production 11 through Play; created employer Legacy Upgrade QA, one planned shift, and one worked shift ($190.55 USD = $79.80 wages + $95.50 net tips + $15.25 other income). Enabled a disposable six-digit app lock. Upgraded without uninstall to Play-generated build 12. Existing lock blocks records and rejects a wrong code; correct code unlocks but record loading fails closed. Original records are not erased. Diagnose and verify a corrected build before production. Templates, recurrence, goals and payout rows are retained in the original database and JSON legacy archive; they are not all active redesign features.
+Recovered upload certificate matches Play: SHA-256 2E:A5:53:BD:B0:15:31:C4:D3:D6:AE:EA:08:68:B6:C3:0C:5A:F3:DF:EA:B4:AA:40:80:96:EB:4F:47:98:6F:16. Keys/passwords stay outside Git.
 
-Website disclosure corrections in English/French/Spanish are pushed to website/protip365-landing-2026-10 at 48ec754 and live on www.protip365.com. They distinguish readable JSON backups from earlier encrypted .pt365 files, explain inherited locks and erase scope, and confirm restore/export remain accessible after expiry.
+FINAL candidate build 14: ~/ProTip365-emulator-test-20261003/build14-upload-final.aab; SHA-256 27db59ea297c7916564688cd2322d14e1fd3a5927dac8fcae830618338a4abb5. Includes landing-page logo, seven-day trial, French employer wording, pending-payment feedback, inherited-lock/import implementation, Android database-path correction and compact form layout. Signed all-architecture AAB build and certificate verification pass; TypeScript and 39 tests in seven suites pass. Earlier build14-upload.aab and build14-upload-corrected.aab are superseded. Build 14 has NOT been uploaded.
 
-Continue in the isolated Mac worktree ~/.codex/worktrees/android-release/Protip365. The original checkout contains other bots' uncommitted work. Preserve it and incoming remote commits. Use the authenticated DeFacto365 GitHub connector for fast-forward pushes; local HTTPS push uses another cached account and fails 403. Git author email: jacques.bolduc@defacto365.com.
+Upgrade fixture: installed production 11 through Play; created employer Legacy Upgrade QA, one planned shift and one worked shift ($190.55 USD = $79.80 wages + $95.50 net tips + $15.25 other income). Enabled a disposable six-digit lock. Upgraded without uninstall to Play-generated 12. Wrong passcode is rejected; correct passcode unlocks but loading fails closed. The failure also reproduced on fresh QA installation. Diagnosis: expo-sqlite returns a bare Android directory path, whereas expo-file-system File requires file://. The path normalization and a strict regression mock fix fresh native startup and backup restore. Actual production-record migration still needs verification by installing Play-generated 14 WITHOUT uninstalling the original com.defacto365.protip365 package. Original records remain intact. Templates, recurrence, goals and payout rows remain in the old database/JSON archive; they are not all active redesign features.
 
-Remaining: corrected production upgrade/import and lock/recovery/relock checks; native stale-snooze, cancellation, offline and accessibility checks; latest signed internal build and pre-launch report; final store listing/disclosure verification; production submission and availability. The laptop loop closes through these committed status documents; do not claim complete while this list remains.
+Website disclosures in English/French/Spanish are pushed to website/protip365-landing-2026-10 at 48ec754 and live on www.protip365.com. They distinguish readable JSON from earlier encrypted .pt365 backups, explain inherited locks and erase scope, and confirm restore/export after expiry. Vercel production deployment ChJHtAEXQhVDVq5usNxez5wM1iz2 was promoted and live content verified.
+
+Continue in ~/.codex/worktrees/android-release/Protip365. The original checkout contains other bots' uncommitted work; preserve it and incoming remote commits. Use the authenticated DeFacto365 GitHub connector for fast-forward pushes; local HTTPS uses another cached account and fails 403. Git author email: jacques.bolduc@defacto365.com. Source and the earlier checkpoint were pushed at 49cc37d; this checkpoint accompanies the later path/layout fixes.
+
+Remaining after manual Mac unlock: upload FINAL 14 to internal testing; download Play-signed universal APK and update the preserved 12 fixture; verify imported values, idempotent restart and inherited lock/recovery/relock; verify latest seven-day billing/pending feedback and ordinary refund/revoke test; inspect pre-launch report and final store listing/disclosures; submit authorized production update and verify availability. A physical Android device and user-observed entry speed have not been available. The originating laptop chat is unidentified; committed continuation/status documents provide its handoff. Do not message another bot's chat by guessing.
 
 ## Earlier handoff / historical checks
 

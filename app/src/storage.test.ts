@@ -5,10 +5,14 @@ const mockDb = {
   runAsync: jest.fn(async () => {}),
   closeAsync: jest.fn(async () => {}),
 };
-jest.mock("expo-file-system", () => ({File: class {exists = false}}));
+jest.mock("expo-file-system", () => ({File: class {
+  exists = false;
+  constructor(uri: string) {if (!uri.startsWith('file://')) throw new Error('File requires an absolute file URI');}
+}}));
 jest.mock("./security/appLock", () => ({requireDatabaseUnlocked: jest.fn()}));
 jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
 jest.mock("expo-sqlite", () => ({
+  defaultDatabaseDirectory: "/data/user/0/com.defacto365.protip365/files/SQLite",
   openDatabaseAsync: jest.fn(async () => mockDb),
 }));
 jest.mock("expo-secure-store", () => ({
