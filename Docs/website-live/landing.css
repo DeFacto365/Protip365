@@ -1,4 +1,6 @@
 body.landing{background:var(--bg);--ink3:#6B564C;--green:#4F6045}
+.landing .phone .lang{grid-template-columns:repeat(3,minmax(0,1fr))}
+.landing .phone .lang .chip{padding:10px 5px;font-size:13px}
 .landing a{color:inherit}
 .lp-header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:18px 32px;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .lp-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
