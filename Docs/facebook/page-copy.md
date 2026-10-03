@@ -26,3 +26,16 @@ https://www.facebook.com/permalink.php?story_fbid=pfbid0miAgSmG9pzDNZHVfUDqq44nC
 English: Your shifts. Your tips. Your money. Welcome to ProTip365: a simple app to track your tips and schedule across all your employers. No account needed. Your data stays on your phone, and you can export it.
 
 Spanish: Tus turnos. Tus propinas. Tu dinero. Bienvenido a ProTip365: una app sencilla para llevar el control de tus propinas y horarios con todos tus empleadores. Sin crear una cuenta. Tus datos se quedan en tu teléfono y puedes exportarlos.
+
+## About and future posts - October 3, 2026
+
+User clarified multilingual content means About/app information and future posts, not the banner. The existing French lifestyle cover remains live. cover-trilingual.png is an unpublished optional draft generated from cover-lifestyle-mobile-safe.png; it was previewed and cancelled without publishing.
+
+The live About bio now uses one shared 174-character field:
+FR · Quarts et pourboires. Sans compte. Données locales.
+EN · Shifts and tips. No account. Data stays on your phone.
+ES · Turnos y propinas. Sin cuenta. Datos en tu teléfono.
+
+The current bio editor has a 255-character limit and no language variants. Keep full app descriptions in the existing pinned trilingual introduction. Future posts should contain reviewed French, English and Spanish text in clearly labelled blocks unless this Page later exposes an authored language-variant composer. No automatic Page-language switching was configured.
+
+Meta documented multilingual post composition in 2016 at https://engineering.fb.com/2016/07/01/web/building-a-better-way-to-write-posts-in-multiple-languages/. Its former linked help article https://www.facebook.com/help/181155025579876 now displays generic Create posts and save drafts instructions. Do not use the historical article as evidence that the option is available on this Page today.
