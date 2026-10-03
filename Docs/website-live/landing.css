@@ -103,7 +103,7 @@ body.landing{background:var(--bg);--ink3:#6B564C;--green:#4F6045}
 .landing a.btn{color:#FBFAF6}
 .landing a.btn.ghost{color:var(--ink)}
 .lp-ios{font-size:14px;color:var(--ink2);margin:-20px 0 32px}
-.lp-foot-nav{display:flex;gap:20px}
+.lp-foot-nav{display:flex;flex-wrap:wrap;gap:12px 20px}
 .lp-foot-nav a{text-decoration:none;color:var(--ink2)}
 .lp-foot-nav a:hover{color:var(--ink);text-decoration:underline}
 .lp-lang{display:flex;background:var(--paper);border-radius:999px;padding:3px}
