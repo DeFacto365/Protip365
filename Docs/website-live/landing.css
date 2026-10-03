@@ -1,4 +1,16 @@
 body.landing{background:var(--bg);--ink3:#6B564C;--green:#4F6045}
+.lp-trust{color:var(--green);font-size:14px;font-weight:600;line-height:1.6;margin-top:18px}
+.lp-privacy{scroll-margin-top:96px}
+.lp-privacy .lp-sub{max-width:64ch}
+.lp-privacy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:32px}
+.lp-privacy-card{padding:28px;border-radius:24px;background:var(--paper)}
+.lp-privacy-card:nth-child(2){background:var(--sage-soft)}
+.lp-privacy-card:nth-child(3){background:var(--blush)}
+.lp-privacy-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--ink);color:#FBFAF6;font-size:12px}
+.lp-privacy-card h3{font-family:var(--display);font-size:26px;line-height:1.2;font-weight:500;margin:20px 0 12px}
+.lp-privacy-card p,.lp-privacy-note{color:var(--ink2);font-size:15px;line-height:1.65}
+.lp-privacy-note{margin-top:22px;max-width:72ch}
+@media(max-width:760px){.lp-privacy-grid{grid-template-columns:1fr}.lp-privacy-card{padding:24px}}
 .landing .phone .lang{grid-template-columns:repeat(3,minmax(0,1fr))}
 .landing .phone .lang .chip{padding:10px 5px;font-size:13px}
 .landing a{color:inherit}
